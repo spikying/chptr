@@ -1,11 +1,12 @@
 import {Command, flags} from '@oclif/command'
 import * as d from 'debug'
 import * as fs from 'fs'
+import * as matter from 'gray-matter'
 import * as inquirer from 'inquirer'
 import * as path from 'path'
 const debug = d('command:add')
 
-import {sanitizeFileName, stringifyNumber, walk} from '../helpers'
+import {sanitizeFileName, walk} from '../helpers'
 
 export default class Add extends Command {
   static description = 'Adds a file or set of files as a new chapter'
@@ -55,6 +56,8 @@ export default class Add extends Command {
       name = responses.name
     }
 
+    const single = flags.single
+
     const dir = path.join(flags.path as string) //path.parse(flags.path || '')
     this.log(`Walking directory ${JSON.stringify(dir)}`)
 
@@ -64,21 +67,56 @@ export default class Add extends Command {
         this.exit(1)
       }
 
-      const re: RegExp = /^(\d+)(.*)/
-
       const numberedFiles = files
         .filter(value => {
           return value.number >= 0
         })
         .sort((a, b) => {
           const aNum = a.number
-          const bNum = b.number //parseInt(path.basename(b.filename).replace(re, '$1'), 10) //parseInt(path.basename(b).replace(re, '$1'), 10)
+          const bNum = b.number
           return bNum - aNum
         })
-      this.log(`numberedFiles = ${JSON.stringify(files)}`)
 
       const highestNumber = numberedFiles[0].number
-      this.log(`highest number = ${highestNumber}`)
+      debug(`highest number = ${highestNumber}`)
+
+      const templateData = `# ${name}\n\n...`
+      const templateMeta = {
+        name,
+        summary: `.
+.
+.`,
+        datetimeRange: '',
+        revisionStep: 0,
+        characters: [],
+        mainCharacter: '',
+        mainCharacterQuest: '',
+        otherQuest: '',
+        wordCount: 0
+      }
+      if (single) {
+        const fullPath = path.join(dir, highestNumber + 1 + '.' + name + '.md')
+        const template = matter.stringify(templateData, templateMeta)
+        debug(template)
+
+        fs.writeFileSync(fullPath, template, {encoding: 'utf8'})
+        this.log(`Added ${fullPath}`)
+      } else {
+        const fullPathMD = path.join(
+          dir,
+          highestNumber + 1 + '.' + name + '.md'
+        )
+        const fullPathMeta = path.join(
+          dir,
+          highestNumber + 1 + '.' + name + '.metadata.json'
+        )
+        debug(JSON.stringify(templateMeta, null, 4))
+        fs.writeFileSync(fullPathMD, templateData, {encoding: 'utf8'})
+        fs.writeFileSync(fullPathMeta, JSON.stringify(templateMeta, null, 4), {
+          encoding: 'utf8'
+        })
+        this.log(`Added ${fullPathMD} and ${fullPathMeta}`)
+      }
     })
   }
 }

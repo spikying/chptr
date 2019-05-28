@@ -3,8 +3,9 @@ import * as d from 'debug'
 import * as fs from 'fs'
 import * as path from 'path'
 const debug = d('command:reorder')
+const debugEnabled = d.enabled('command:reorder')
 
-import {stringifyNumber, walk} from '../helpers'
+import {renumberedFilename, walk} from '../helpers'
 
 export default class Reorder extends Command {
   static description =
@@ -53,7 +54,7 @@ export default class Reorder extends Command {
 
     const forwardBump: boolean = dest < origin
 
-    const dir = path.join(flags.path as string) //path.parse(flags.path || '')
+    const dir = path.join(flags.path as string)
     this.log(`Walking directory ${JSON.stringify(dir)}`)
 
     await walk(dir, flags.deep, 0, (err, files) => {
@@ -62,29 +63,23 @@ export default class Reorder extends Command {
         this.exit(1)
       }
 
-      const re: RegExp = /^(\d+)(.*)/
-
       const toRenameFiles = files
         .filter(value => {
-          const filename = path.basename(value.filename)
-          // this.log(
-          //   `filename=${filename} file value=${value.filename} file dir=${value.directory} priority=${value.priority}`
-          // )
-          const fileNumber = parseInt(filename.replace(re, '$1'), 10)
+          const fileNumber = value.number
           if (
             fileNumber < Math.min(origin, dest) ||
             fileNumber > Math.max(origin, dest)
           ) {
             return false
           }
-          if (isNaN(fileNumber)) {
+          if (fileNumber < 0) {
             return false
           }
           return true
         })
         .sort((a, b) => {
-          const aNum = a.priority //parseInt(path.basename(a).replace(re, '$1'), 10)
-          const bNum = b.priority //parseInt(path.basename(b).replace(re, '$1'), 10)
+          const aNum = a.priority
+          const bNum = b.priority
           return bNum - aNum
         })
 
@@ -93,11 +88,14 @@ export default class Reorder extends Command {
         this.exit(0)
       }
 
-      debug('List of files to rename in order:')
-      toRenameFiles.forEach(file => {
-        debug(`    Original file: ${file.filename} priority: ${file.priority}`)
-      })
-
+      if (debugEnabled) {
+        debug('List of files to rename in order:')
+        toRenameFiles.forEach(file => {
+          debug(
+            `    Original file: ${file.filename} priority: ${file.priority}`
+          )
+        })
+      }
       /*
         //get number of digits to put in chapter number
       let highestFileNumber = 0
@@ -134,18 +132,10 @@ export default class Reorder extends Command {
         }
       })
 
-      // let renumberAll = false
-
       toRenameFiles.forEach(file => {
         const filename = path.basename(file.filename)
-        const fileNumberString: string = filename.replace(re, '$1')
-        const digits = fileNumberString.length
 
-        // if (fileNumberString.length !== digits) {
-        //   renumberAll = true
-        //   this.log('renumbering all')
-        // }
-        const fileNumber: number = parseInt(fileNumberString, 10)
+        const fileNumber: number = file.number
         let newFileNumber: number
 
         if (fileNumber === origin) {
@@ -157,7 +147,7 @@ export default class Reorder extends Command {
             newFileNumber = fileNumber - 1
           }
         }
-        // this.log(`fileNumber = ${fileNumber}, newFileNumber=${newFileNumber}`)
+        debug(`fileNumber = ${fileNumber}, newFileNumber=${newFileNumber}`)
 
         const fromFilename =
           file.priority === 0
@@ -165,7 +155,7 @@ export default class Reorder extends Command {
             : path.join(path.dirname(file.filename), filename)
         const toFilename = path.join(
           path.dirname(file.filename),
-          filename.replace(re, stringifyNumber(newFileNumber, digits) + '$2')
+          renumberedFilename(filename, newFileNumber)
         )
         this.log(
           `renaming with new file number "${fromFilename}" to "${toFilename}"`
@@ -175,13 +165,6 @@ export default class Reorder extends Command {
 
       this.log(`Deleting temp dir: ${tempDir}`)
       fs.rmdirSync(tempDir)
-
-      // originFiles.forEach(file => {
-      //   fs.renameSync(
-      //     file.replace(re, 'XXXX$2'),
-      //     file.replace(re, stringifyNumber(dest, digits) + '$2')
-      //   )
-      // })
     })
   }
 }

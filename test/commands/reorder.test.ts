@@ -12,9 +12,8 @@ describe('reorder', () => {
     .it('exits with 1 args')
 
   test
-    .stdout()
-    .command(['reorder', '2', '1'])
-    .it('runs reorder 2 1', ctx => {
-      expect(ctx.stdout).to.contain('hello jeff')
+    .command(['reorder', '2', '1', '--path=../testNovel'])
+    .it('runs reorder 2 1 --path="../testNovel"', ctx => {
+      expect(ctx).not.to.throw
     })
 })

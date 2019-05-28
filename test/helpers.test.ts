@@ -63,10 +63,11 @@ describe('Helpers stringifyNumber', () => {
 })
 
 describe('Helpers walk', () => {
-  it('should see 4 files in node_modules/@oclif/test when not deep', done => {
-    walk('../node_modules/@oclif/test', false, 0, (err, result) => {
-      assert.strictEqual(result.length, 4)
-      done()
+  it('should see 5 files/dir in node_modules/@oclif/test when not deep', async () => {
+    await walk('./node_modules/@oclif/test', false, 0, (err, result) => {
+      assert.strictEqual(result.length, 5)
+      // done()
     })
+    // done()
   })
 })

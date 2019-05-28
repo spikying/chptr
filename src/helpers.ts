@@ -1,4 +1,5 @@
 import {Command} from '@oclif/command'
+import * as d from 'debug'
 import * as fs from 'fs'
 import * as path from 'path'
 import * as sanitize from 'sanitize-filename'
@@ -10,14 +11,19 @@ export interface FileWithPriority {
   number: number
 }
 
-export const walk = function (
+const numberingRegex: RegExp = /^(\d+)(.*)/
+
+export const walk = async function (
   dir: string,
   deep: boolean,
   level = 0,
   done: (err: Error | null, results: FileWithPriority[]) => void
 ) {
+  const debug = d('helpers:walk')
+
   let results: FileWithPriority[] = []
-  fs.readdir(dir, function (err, list) {
+  debug(`Entering fs.readdir in Walk function with dir=${dir}`)
+  await fs.readdir(dir, function (err, list) {
     if (err) {
       return done(err, [])
     }
@@ -27,9 +33,11 @@ export const walk = function (
       return done(null, results)
     }
 
-    const re: RegExp = /^(\d+)(.*)/
     const extractNumber = (filename: string) => {
-      const fileNumber = parseInt(path.basename(filename).replace(re, '$1'), 10)
+      const fileNumber = parseInt(
+        path.basename(filename).replace(numberingRegex, '$1'),
+        10
+      )
       if (isNaN(fileNumber)) {
         return -1
       }
@@ -38,9 +46,19 @@ export const walk = function (
 
     list.forEach(function (file) {
       file = path.resolve(dir, file)
-      fs.stat(file, function (err, stat) {
+      fs.stat(file, async function (err, stat) {
+        if (err) {
+          Command.prototype.error(err)
+          Command.prototype.exit(1)
+        }
+
         if (stat && stat.isDirectory() && deep) {
-          walk(file, deep, level + 2, function (err, res) {
+          await walk(file, deep, level + 2, function (err, res) {
+            if (err) {
+              Command.prototype.error(err)
+              Command.prototype.exit(1)
+            }
+
             results = results.concat(res)
             if (!--pending) {
               done(null, results)
@@ -59,7 +77,6 @@ export const walk = function (
             priority: level,
             number: extractNumber(file)
           })
-          // Command.prototype.log(`walking file ${file}`)
 
           if (!--pending) {
             done(null, results)
@@ -86,4 +103,18 @@ export const stringifyNumber = function (x: number, digits: number): string {
 
 export const sanitizeFileName = function (original: string): string {
   return sanitize(original)
+}
+
+export const renumberedFilename = function (
+  filename: string,
+  newFilenumber: number
+): string {
+  const fileNumberString: string = path
+    .basename(filename)
+    .replace(numberingRegex, '$1')
+  const digits = fileNumberString.length
+  return filename.replace(
+    numberingRegex,
+    stringifyNumber(newFilenumber, digits) + '$2'
+  )
 }
