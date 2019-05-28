@@ -1,0 +1,76 @@
+{
+  "name": "spixnovel",
+  "description": "git ",
+  "version": "0.0.0",
+  "author": "spikying @spikying",
+  "bin": {
+    "spixNovel": "./bin/run"
+  },
+  "bugs": "https://github.com/spikying/spixNovel/issues",
+  "dependencies": {
+    "@oclif/command": "1.5.13",
+    "@oclif/config": "1.13.0",
+    "@oclif/plugin-help": "2.1.6",
+    "@types/debug": "4.1.4",
+    "@types/inquirer": "6.0.3",
+    "@types/node-notifier": "5.4.0",
+    "@types/sanitize-filename": "1.1.28",
+    "cli-ux": "5.2.1",
+    "debug": "4.1.1",
+    "inquirer": "6.3.1",
+    "node-notifier": "5.4.0",
+    "sanitize-filename": "1.6.1",
+    "tslib": "1.9.3"
+  },
+  "devDependencies": {
+    "@oclif/dev-cli": "1.22.0",
+    "@oclif/test": "1.2.4",
+    "@oclif/tslint": "3.1.1",
+    "@types/chai": "4.1.7",
+    "@types/mocha": "5.2.6",
+    "@types/node": "10.14.4",
+    "chai": "4.2.0",
+    "globby": "8.0.2",
+    "mocha": "5.2.0",
+    "nyc": "13.3.0",
+    "rimraf": "2.6.3",
+    "ts-node": "8.0.3",
+    "tslint": "5.15.0",
+    "typescript": "3.4.3"
+  },
+  "engines": {
+    "node": ">=8.0.0"
+  },
+  "files": [
+    "/bin",
+    "/lib",
+    "/npm-shrinkwrap.json",
+    "/oclif.manifest.json"
+  ],
+  "homepage": "https://github.com/spikying/spixNovel",
+  "keywords": [
+    "oclif"
+  ],
+  "license": "MIT",
+  "main": "lib/index.js",
+  "oclif": {
+    "commands": "./lib/commands",
+    "bin": "spixNovel",
+    "plugins": [
+      "@oclif/plugin-help"
+    ]
+  },
+  "repository": "spikying/spixNovel",
+  "scripts": {
+    "postpack": "rimraf oclif.manifest.json",
+    "posttest": "tslint -p test -t stylish",
+    "prepack": "rimraf lib && tsc -b && oclif-dev manifest && oclif-dev readme",
+    "test": "nyc --extension .ts mocha --forbid-only \"test/**/*.test.ts\"",
+    "version": "oclif-dev readme && git add README.md",
+    "pkg": "pkg .",
+    "testbuild": "./bin/run.cmd build ../testNovel/index.json ../testNovel/novel.md",
+    "testreorder": "DEBUG='command:reorder' ./bin/run.cmd reorder 2 1 --path='../testNovel' -d",
+    "testadd": "DEBUG='command:add' ./bin/run.cmd add --path='../testNovel'"
+  },
+  "types": "lib/index.d.ts"
+}
