@@ -32,6 +32,7 @@ USAGE
 * [`spixNovel build [TOCFILE] [OUTPUTFILE]`](#spixnovel-build-tocfile-outputfile)
 * [`spixNovel hello [FILE]`](#spixnovel-hello-file)
 * [`spixNovel help [COMMAND]`](#spixnovel-help-command)
+* [`spixNovel init [NAME]`](#spixnovel-init-name)
 * [`spixNovel reorder ORIGIN DESTINATION`](#spixnovel-reorder-origin-destination)
 
 ## `spixNovel add [NAME]`
@@ -46,10 +47,8 @@ ARGUMENTS
   NAME  name of chapter file
 
 OPTIONS
-  -f, --folderStructure  puts file(s) in a folder structure
-  -h, --help             show CLI help
-  -p, --path=path        [default: .] Path where chapter files are
-  -s, --single           creates a single combined file
+  -h, --help       show CLI help
+  -p, --path=path  [default: .] Path where root of chapter files are
 ```
 
 _See code: [src\commands\add.ts](https://github.com/spikying/spixNovel/blob/v0.0.0/src\commands\add.ts)_
@@ -110,6 +109,25 @@ OPTIONS
 ```
 
 _See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v2.1.6/src\commands\help.ts)_
+
+## `spixNovel init [NAME]`
+
+Generates basic config files for a new novel project
+
+```
+USAGE
+  $ spixNovel init [NAME]
+
+ARGUMENTS
+  NAME  Name of first chapter file
+
+OPTIONS
+  -d, --digits=digits  [default: 2] Number of digits to use in file numbering initially.  Defaults to `2`.
+  -h, --help           show CLI help
+  -p, --path=path      [default: .] Path where root of project files are
+```
+
+_See code: [src\commands\init.ts](https://github.com/spikying/spixNovel/blob/v0.0.0/src\commands\init.ts)_
 
 ## `spixNovel reorder ORIGIN DESTINATION`
 

@@ -11,14 +11,20 @@
     "@oclif/command": "1.5.13",
     "@oclif/config": "1.13.0",
     "@oclif/plugin-help": "2.1.6",
+    "@types/comment-json": "1.1.1",
+    "@types/convict": "4.2.1",
     "@types/debug": "4.1.4",
     "@types/inquirer": "6.0.3",
+    "@types/json5": "0.0.30",
     "@types/node-notifier": "5.4.0",
     "@types/sanitize-filename": "1.1.28",
     "cli-ux": "5.2.1",
+    "comment-json": "1.1.3",
+    "convict": "5.0.0",
     "debug": "4.1.1",
     "gray-matter": "4.0.2",
     "inquirer": "6.3.1",
+    "json5": "2.1.0",
     "node-notifier": "5.4.0",
     "sanitize-filename": "1.6.1",
     "tslib": "1.9.3"
@@ -71,7 +77,8 @@
     "pkg": "pkg .",
     "testbuild": "./bin/run.cmd build ../testNovel/index.json ../testNovel/novel.md",
     "testreorder": "DEBUG='command:reorder' ./bin/run.cmd reorder 2 1 --path='../testNovel' -d",
-    "testadd": "DEBUG='command:add' ./bin/run.cmd add --path='../testNovel'"
+    "testadd": "DEBUG='command:add' ./bin/run.cmd add --path='../testNovel'",
+    "testinit": "DEBUG='command:init' ./bin/run.cmd init --path='../testNovel'"
   },
   "types": "lib/index.d.ts"
 }

@@ -5,7 +5,7 @@ import * as path from 'path'
 const debug = d('command:reorder')
 const debugEnabled = d.enabled('command:reorder')
 
-import {renumberedFilename, walk} from '../helpers'
+import {getHighestNumberAndDigits, renumberedFilename, walk} from '../helpers'
 
 export default class Reorder extends Command {
   static description =
@@ -96,6 +96,9 @@ export default class Reorder extends Command {
           )
         })
       }
+
+      const digits = getHighestNumberAndDigits(toRenameFiles).digits
+      debug(`Digits: ${digits}`)
       /*
         //get number of digits to put in chapter number
       let highestFileNumber = 0
@@ -155,7 +158,7 @@ export default class Reorder extends Command {
             : path.join(path.dirname(file.filename), filename)
         const toFilename = path.join(
           path.dirname(file.filename),
-          renumberedFilename(filename, newFileNumber)
+          renumberedFilename(filename, newFileNumber, digits)
         )
         this.log(
           `renaming with new file number "${fromFilename}" to "${toFilename}"`

@@ -6,7 +6,16 @@ import * as inquirer from 'inquirer'
 import * as path from 'path'
 const debug = d('command:add')
 
-import {sanitizeFileName, walk} from '../helpers'
+import {getFilenameFromInput} from '../common'
+import {config} from '../config'
+import {
+  addDigitsToAll,
+  getHighestNumberAndDigits,
+  numDigits,
+  sanitizeFileName,
+  stringifyNumber,
+  walk
+} from '../helpers'
 
 export default class Add extends Command {
   static description = 'Adds a file or set of files as a new chapter'
@@ -16,18 +25,19 @@ export default class Add extends Command {
     path: flags.string({
       char: 'p',
       default: '.',
-      description: 'Path where chapter files are'
-    }),
-    folderStructure: flags.boolean({
-      char: 'f',
-      description: 'puts file(s) in a folder structure',
-      default: false
-    }),
-    single: flags.boolean({
-      char: 's',
-      description: 'creates a single combined file',
-      default: false
+      description: 'Path where root of chapter files are'
     })
+    // ,
+    // folderStructure: flags.boolean({
+    //   char: 'f',
+    //   description: 'puts file(s) in a folder structure',
+    //   default: false
+    // }),
+    // single: flags.boolean({
+    //   char: 's',
+    //   description: 'creates a single combined file',
+    //   default: false
+    // })
   }
 
   static args = [
@@ -42,43 +52,38 @@ export default class Add extends Command {
   async run() {
     const {args, flags} = this.parse(Add)
 
-    let name = args.name
-    if (name === '') {
-      const responses: any = await inquirer.prompt([
-        {
-          name: 'name',
-          message: 'What name do you want as a filename?',
-          type: 'input',
-          default: 'chapter',
-          filter: sanitizeFileName
-        }
-      ])
-      name = responses.name
-    }
+    const name = args.name || getFilenameFromInput()
 
-    const single = flags.single
+    const single = config.metadataPattern === ''
 
-    const dir = path.join(flags.path as string) //path.parse(flags.path || '')
+    const dir = path.join(flags.path as string)
     this.log(`Walking directory ${JSON.stringify(dir)}`)
 
-    await walk(dir, false, 0, (err, files) => {
+    await walk(dir, false, 0, async (err, files) => {
       if (err) {
         this.error(err)
         this.exit(1)
       }
 
-      const numberedFiles = files
-        .filter(value => {
-          return value.number >= 0
-        })
-        .sort((a, b) => {
-          const aNum = a.number
-          const bNum = b.number
-          return bNum - aNum
-        })
+      // const numberedFiles = files
+      //   .filter(value => {
+      //     return value.number >= 0
+      //   })
+      //   .sort((a, b) => {
+      //     const aNum = a.number
+      //     const bNum = b.number
+      //     return bNum - aNum
+      //   })
 
-      const highestNumber = numberedFiles[0].number
-      debug(`highest number = ${highestNumber}`)
+      // const highestNumber = numberedFiles[0].number
+      // debug(`highest number = ${highestNumber}`)
+      const filesStats = getHighestNumberAndDigits(files)
+      const highestNumber = filesStats.highestNumber
+      const actualDigits = filesStats.digits
+      const newDigits = numDigits(highestNumber + 1)
+      if (newDigits > actualDigits) {
+        await addDigitsToAll(dir, newDigits)
+      }
 
       const templateData = `# ${name}\n\n...`
       const templateMeta = {
@@ -95,7 +100,10 @@ export default class Add extends Command {
         wordCount: 0
       }
       if (single) {
-        const fullPath = path.join(dir, highestNumber + 1 + '.' + name + '.md')
+        const fullPath = path.join(
+          dir,
+          stringifyNumber(highestNumber + 1, newDigits) + '.' + name + '.md'
+        )
         const template = matter.stringify(templateData, templateMeta)
         debug(template)
 
@@ -104,7 +112,7 @@ export default class Add extends Command {
       } else {
         const fullPathMD = path.join(
           dir,
-          highestNumber + 1 + '.' + name + '.md'
+          stringifyNumber(highestNumber + 1, newDigits) + '.' + name + '.md'
         )
         const fullPathMeta = path.join(
           dir,

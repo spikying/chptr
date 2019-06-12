@@ -88,7 +88,7 @@ export const walk = async function (
 }
 
 export const numDigits = function (x: number, buffer = 2) {
-  return Math.max(Math.floor(Math.log10(Math.abs(x + buffer))), 0) + 1
+  return Math.min(5, Math.max(Math.floor(Math.log10(Math.abs(x + buffer))), 0) + 1)
 }
 
 export const stringifyNumber = function (x: number, digits: number): string {
@@ -101,20 +101,78 @@ export const stringifyNumber = function (x: number, digits: number): string {
   }
 }
 
+export const addDigitsToAll = async function (dir: string, digits: number) {
+  await walk(dir, false, 0, (err, files) => {
+    if (err) {
+      Command.prototype.error(err)
+      Command.prototype.exit(1)
+    }
+
+    const numberedFiles = files.filter(value => {
+      return value.number >= 0
+    })
+
+    numberedFiles.forEach(file => {
+      const filename = path.basename(file.filename)
+      const fromFilename = path.join(path.dirname(file.filename), filename)
+      const toFilename = path.join(
+        path.dirname(file.filename),
+        renumberedFilename(filename, file.number, digits)
+      )
+      Command.prototype.log(
+        `renaming with new file number "${fromFilename}" to "${toFilename}"`
+      )
+      fs.renameSync(fromFilename, toFilename)
+    })
+  })
+}
+
 export const sanitizeFileName = function (original: string): string {
   return sanitize(original)
 }
 
 export const renumberedFilename = function (
   filename: string,
-  newFilenumber: number
+  newFilenumber: number,
+  digits: number
 ): string {
-  const fileNumberString: string = path
-    .basename(filename)
-    .replace(numberingRegex, '$1')
-  const digits = fileNumberString.length
+  // const fileNumberString: string = path
+  //   .basename(filename)
+  //   .replace(numberingRegex, '$1')
+  // digits = digits || fileNumberString.length
   return filename.replace(
     numberingRegex,
     stringifyNumber(newFilenumber, digits) + '$2'
   )
+}
+
+export const getHighestNumberAndDigits = function (
+  files: FileWithPriority[]
+): { highestNumber: number; digits: number } {
+  const debug = d('helpers:getHighestNumberAndDigits')
+  const numberedFiles = files
+    .filter(value => {
+      return value.number >= 0
+    })
+    .sort((a, b) => {
+      const aNum = a.number
+      const bNum = b.number
+      return bNum - aNum
+    })
+
+  const highestNumber = numberedFiles[0].number
+  const digits = numberedFiles
+    .map(value => {
+      debug(`map value=${JSON.stringify(value)} return ${numDigits(value.number)}`)
+      return path.basename(value.filename).replace(numberingRegex, '$1').length
+      // return numDigits(value.number)
+    })
+    .reduce((previous, current) => {
+      debug(`reduce previous=${previous} current=${current} return ${Math.max(previous, current)}`)
+      return Math.max(previous, current)
+    })
+
+  debug(`highest number = ${highestNumber}`)
+  debug(`digits = ${digits}`)
+  return {highestNumber, digits}
 }
