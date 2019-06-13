@@ -1,23 +1,22 @@
-import {Command, flags} from '@oclif/command'
+import { flags } from '@oclif/command'
 import * as d from 'debug'
 import * as fs from 'fs'
 import * as path from 'path'
+
+import { getHighestNumberAndDigits, renumberedFilename, walk } from '../helpers'
+
+import Command from "./base"
 const debug = d('command:reorder')
 const debugEnabled = d.enabled('command:reorder')
 
-import {getHighestNumberAndDigits, renumberedFilename, walk} from '../helpers'
+
 
 export default class Reorder extends Command {
   static description =
     'Takes a chapter and modifies its index number to fit another ordering place'
 
   static flags = {
-    help: flags.help({char: 'h'}),
-    path: flags.string({
-      char: 'p',
-      default: '.',
-      description: 'Path where chapter files are'
-    }),
+    ...Command.flags,
     deep: flags.boolean({
       char: 'd',
       description: 'Makes a recursive subfolder search'
@@ -25,7 +24,7 @@ export default class Reorder extends Command {
   }
 
   static args = [
-    {name: 'origin', description: 'chapter number to move', required: true},
+    { name: 'origin', description: 'chapter number to move', required: true },
     {
       name: 'destination',
       description: 'number it will become',
@@ -34,7 +33,7 @@ export default class Reorder extends Command {
   ]
 
   async run() {
-    const {args, flags} = this.parse(Reorder)
+    const { args, flags } = this.parse(Reorder)
 
     const origin: number = parseInt(args.origin, 10)
     const dest: number = parseInt(args.destination, 10)

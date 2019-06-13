@@ -1,17 +1,17 @@
-import {Command, flags} from '@oclif/command'
+import { flags } from '@oclif/command'
 import cli from 'cli-ux'
 // import {boolean} from '@oclif/parser/lib/flags'
 import * as fs from 'fs'
 import * as inquirer from 'inquirer'
 import * as notifier from 'node-notifier'
 
+import Command from "./base"
+
 export default class Build extends Command {
-  static description =
-    'Takes all original .MD files and outputs a single .MD file without metadata and comments.  Adds missing files to index file.'
+  static description = 'Takes all original .MD files and outputs a single .MD file without metadata and comments.  Adds missing files to index file.'
 
   static flags = {
-    help: flags.help({char: 'h'}),
-    // flag with a value (-o, --overwrite=yes)
+    ...Command.flags,
     overwrite: flags.string({
       char: 'o',
       description: 'allows overwriting output file if it exists',
@@ -41,7 +41,7 @@ export default class Build extends Command {
   ]
 
   async run() {
-    const {args, flags} = this.parse(Build)
+    const { args, flags } = this.parse(Build)
 
     const outputFile = args.outputfile
     let overwrite = flags.overwrite
@@ -63,8 +63,8 @@ export default class Build extends Command {
     const overwriting = overwrite === 'y' ? true : false
     this.log(`Overwriting ${outputFile} : ${overwriting}.`)
 
-    const tocFile=args.tocfile
-    
+    const tocFile = args.tocfile
+
 
     cli.action.start('Parsing all files')
     await cli.wait(3000)

@@ -1,119 +1,137 @@
-import {Command, flags} from '@oclif/command'
-import * as d from 'debug'
-import * as fs from 'fs'
-import * as json from 'json5'
-import * as path from 'path'
+import { flags } from "@oclif/command";
+import { cli } from "cli-ux";
+import * as d from "debug";
+import * as fs from "fs";
+// import { Config } from "../config";
+// import { StatusSummary } from 'simple-git';
+import * as simplegit from 'simple-git/promise';
+import { promisify } from "util";
 
-import {getFilenameFromInput} from '../common'
-import {Config} from '../config'
-import {stringifyNumber} from '../helpers'
+import { getFilenameFromInput, QueryBuilder } from "../common";
 
-const debug = d('command:init')
+import Command from "./base"
+
+const debug = d("command:init");
+const createDir = promisify(fs.mkdir);
+const createFile = promisify(fs.writeFile);
 
 export default class Init extends Command {
   // export default class Init extends Add {
-  static description = 'Generates basic config files for a new novel project'
+  static description = "Generates basic config files for a new novel project";
 
   static flags = {
-    help: flags.help({char: 'h'}),
-    digits: flags.string({
-      char: 'd',
-      default: '2',
-      description:
-        'Number of digits to use in file numbering initially.  Defaults to `2`.'
-    }),
-    path: flags.string({
-      char: 'p',
-      default: '.',
-      description: 'Path where root of project files are'
-    }),
-    force: flags.boolean({
-      char: 'd',
-      description: 'Overwrite config files if they exist',
-      default: false
-    })
-  }
+    ...Command.flags,
+    digits: flags.string(
+      {
+        char: "d",
+        default: "2",
+        description: "Number of digits to use in file numbering initially.  Defaults to `2`."
+      }),
+    gitRemote: flags.string(
+      {
+        char: "r",
+        required: false,
+        description: "Git address of remote repository."
+      }
+    ),
+    force: flags.boolean(
+      {
+        char: "d",
+        description: "Overwrite config files if they exist",
+        default: false
+      })
+  };
 
   static args = [
     {
-      name: 'name',
-      description: 'Name of project',
+      name: "name",
+      description: "Name of project",
       required: false,
-      default: ''
+      default: ""
     }
-  ]
+  ];
 
   async run() {
-    const {args, flags} = this.parse(Init)
+    const { args, flags } = this.parse(Init);
 
-    const name =
-      args.name ||
-      (await getFilenameFromInput(
-        'What is the project working name?',
-        'MyNovel'
-      ))
-    const dir = path.join(flags.path as string)
-    const configInstance = new Config(dir)
+    const queryBuilder = new QueryBuilder()
+    if (!args.name) {
+      queryBuilder.add('name', queryBuilder.filename("What is the project working name?", "MyNovel"))
+    }
+    debug(`flags.gitRemote = ${flags.gitRemote}`)
+    if (flags.gitRemote === undefined) {
+      queryBuilder.add('gitRemote', queryBuilder.gitremote())
+    }
+    const queryResponses: any = queryBuilder.responses()
+
+    // const name = args.name || (await getFilenameFromInput("What is the project working name?", "MyNovel"));
+    // const remoteRepo = flags.gitRemote || (await getFilenameFromInput("What is the project working name?", "MyNovel"));
+    const name = args.name || queryResponses.name
+    const remoteRepo = flags.gitRemote || queryResponses.gitRemote || '';
 
     // Create folder structure, with /config /chapters /characters /places /props /timeline
-    fs.mkdir(configInstance.configPath, err => {
-      if (err) {
-        debug(err)
-        this.warn(
-          `/config directory already exists in ${dir}, or filesystem access denied.`
-        )
-      }
+    debug("Before createDir");
+    try {
+      await createDir(this.configInstance.configPath);
+    } catch (err) {
+      debug(err);
+      this.warn(`${this.configInstance.configPath} already exists, or filesystem access denied.`);
+    }
 
-      if (!flags.force && fs.existsSync(configInstance.configFilePath)) {
-        this.warn(
-          `${
-            configInstance.configFilePath
-          } already exists.  Use option --force to overwrite.`
-        )
-      } else {
-        fs.writeFile(
-          configInstance.configFilePath,
-          json.stringify(configInstance.configDefaultsWithMeta, null, 4),
-          err => {
-            if (err) {
-              this.error(err)
-              this.exit(1)
-            } else {
-              this.log(
-                `Created ${configInstance.configFilePath} with basic config.`
-              )
-            }
-          }
-        )
-      }
+    debug("After createDir, before createFile (config.json5)");
 
-      if (!flags.force && fs.existsSync(configInstance.emptyFilePath)) {
-        this.warn(
-          `${
-            configInstance.emptyFilePath
-          } already exists.  Use option --force to overwrite.`
-        )
-      } else {
-        fs.writeFile(
-          configInstance.emptyFilePath,
-          configInstance.emptyFileString,
-          err => {
-            if (err) {
-              this.error(err)
-              this.exit(1)
-            } else {
-              this.log(
-                `Created ${
-                  configInstance.emptyFilePath
-                } with basic empty file template.`
-              )
-            }
-          }
-        )
+    // Create /config files: config.json5, empty.md, fields.json5
+    if (!flags.force && fs.existsSync(this.configInstance.configFilePath)) {
+      this.warn(`${this.configInstance.configFilePath} already exists.  Use option --force to overwrite.`);
+    } else {
+      try {
+        await createFile(
+          this.configInstance.configFilePath,
+          // json.stringify(configInstance.configDefaultsWithMeta, null, 4),
+          this.configInstance.configDefaultsWithMetaString
+        );
+        this.log(`Created ${this.configInstance.configFilePath} with basic config.`);
+      } catch (err) {
+        this.error(err);
+        this.exit(1);
       }
-      // Create /config files: config.json5, empty.md, fields.json5
+    }
 
-      // Create git repo
-    })
+    debug("After creating config.json5, before createFile (empty.md)");
+
+    if (!flags.force && fs.existsSync(this.configInstance.emptyFilePath)) {
+      this.warn(`${this.configInstance.emptyFilePath} already exists.  Use option --force to overwrite.`);
+    } else {
+      try {
+        await createFile(this.configInstance.emptyFilePath, this.configInstance.emptyFileString)
+        this.log(`Created ${this.configInstance.emptyFilePath} with basic empty file template.`);
+      } catch (err) {
+        this.error(err);
+        this.exit(1);
+      }
+    }
+
+    // Create git repo
+    try {
+
+      const git = simplegit(this.configInstance.projectRootPath);
+      const isRepo = await git.checkIsRepo()
+      if (!isRepo) {
+        await git.init()
+        if (remoteRepo) {
+          await git.addRemote('origin', remoteRepo)
+        }
+      }
+      await git.fetch()
+
+    } catch (err) {
+      this.error(err)
+    }
+
+
+
+    debug("End of config creation");
   }
+
 }
+

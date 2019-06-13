@@ -7,7 +7,12 @@
     "rootDir": "src",
     "strict": true,
     "target": "es2017",
-    "composite": true
+    "composite": true,
+    "plugins": [
+      {
+        "name": "typescript-tslint-plugin"
+      }
+    ]
   },
   "include": [
     "src/**/*"

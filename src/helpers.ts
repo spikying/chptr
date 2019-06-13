@@ -1,8 +1,9 @@
-import {Command} from '@oclif/command'
+import { Command } from '@oclif/command'
 import * as d from 'debug'
 import * as fs from 'fs'
 import * as path from 'path'
 import * as sanitize from 'sanitize-filename'
+import { url } from 'inspector';
 
 export interface FileWithPriority {
   filename: string
@@ -131,6 +132,15 @@ export const sanitizeFileName = function (original: string): string {
   return sanitize(original)
 }
 
+const sanitize_url = require('@braintree/sanitize-url').sanitizeUrl
+export const sanitizeUrl = function (original: string): string {
+  const sanitized = sanitize_url(original)
+  if (sanitized === 'about:blank') {
+    return ''
+  }
+  return sanitized
+}
+
 export const renumberedFilename = function (
   filename: string,
   newFilenumber: number,
@@ -174,5 +184,5 @@ export const getHighestNumberAndDigits = function (
 
   debug(`highest number = ${highestNumber}`)
   debug(`digits = ${digits}`)
-  return {highestNumber, digits}
+  return { highestNumber, digits }
 }

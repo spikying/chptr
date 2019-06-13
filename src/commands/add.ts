@@ -1,13 +1,12 @@
-import {Command, flags} from '@oclif/command'
+import { flags } from '@oclif/command'
 import * as d from 'debug'
 import * as fs from 'fs'
 import * as matter from 'gray-matter'
 import * as inquirer from 'inquirer'
 import * as path from 'path'
-const debug = d('command:add')
 
-import {getFilenameFromInput} from '../common'
-import {config} from '../config'
+import { getFilenameFromInput } from '../common'
+// import { config } from '../config'
 import {
   addDigitsToAll,
   getHighestNumberAndDigits,
@@ -17,11 +16,16 @@ import {
   walk
 } from '../helpers'
 
+import Command from "./base"
+
+const debug = d('command:add')
+
 export default class Add extends Command {
   static description = 'Adds a file or set of files as a new chapter'
 
   static flags = {
-    help: flags.help({char: 'h'}),
+    ...Command.flags,
+    help: flags.help({ char: 'h' }),
     path: flags.string({
       char: 'p',
       default: '.',
@@ -50,11 +54,11 @@ export default class Add extends Command {
   ]
 
   async run() {
-    const {args, flags} = this.parse(Add)
+    const { args, flags } = this.parse(Add)
 
     const name = args.name || getFilenameFromInput()
 
-    const single = config.metadataPattern === ''
+    const single = this.configInstance.config.metadataPattern === ''
 
     const dir = path.join(flags.path as string)
     this.log(`Walking directory ${JSON.stringify(dir)}`)
@@ -107,7 +111,7 @@ export default class Add extends Command {
         const template = matter.stringify(templateData, templateMeta)
         debug(template)
 
-        fs.writeFileSync(fullPath, template, {encoding: 'utf8'})
+        fs.writeFileSync(fullPath, template, { encoding: 'utf8' })
         this.log(`Added ${fullPath}`)
       } else {
         const fullPathMD = path.join(
@@ -119,7 +123,7 @@ export default class Add extends Command {
           highestNumber + 1 + '.' + name + '.metadata.json'
         )
         debug(JSON.stringify(templateMeta, null, 4))
-        fs.writeFileSync(fullPathMD, templateData, {encoding: 'utf8'})
+        fs.writeFileSync(fullPathMD, templateData, { encoding: 'utf8' })
         fs.writeFileSync(fullPathMeta, JSON.stringify(templateMeta, null, 4), {
           encoding: 'utf8'
         })
