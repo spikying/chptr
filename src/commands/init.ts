@@ -10,6 +10,7 @@ import { promisify } from "util";
 import { getFilenameFromInput, QueryBuilder } from "../common";
 
 import Command from "./base"
+import { sanitizeFileName } from '../helpers';
 
 const debug = d("command:init");
 const createDir = promisify(fs.mkdir);
@@ -47,7 +48,8 @@ export default class Init extends Command {
       name: "name",
       description: "Name of project",
       required: false,
-      default: ""
+      default: "",
+      parse: sanitizeFileName
     }
   ];
 
@@ -62,7 +64,7 @@ export default class Init extends Command {
     if (flags.gitRemote === undefined) {
       queryBuilder.add('gitRemote', queryBuilder.gitremote())
     }
-    const queryResponses: any = queryBuilder.responses()
+    const queryResponses: any = await queryBuilder.responses()
 
     // const name = args.name || (await getFilenameFromInput("What is the project working name?", "MyNovel"));
     // const remoteRepo = flags.gitRemote || (await getFilenameFromInput("What is the project working name?", "MyNovel"));
@@ -118,10 +120,23 @@ export default class Init extends Command {
       const isRepo = await git.checkIsRepo()
       if (!isRepo) {
         await git.init()
-        if (remoteRepo) {
+      }
+
+      await git.add('./*')
+      await git.commit('Initial commit')
+
+      if (remoteRepo) {
+        const hasRemote: boolean = await git.getRemotes(false).then(result => {
+          return result.find(value => value.name === 'origin') !== undefined
+        })
+        if (!hasRemote) {
+          debug(`adding remote to ${remoteRepo}`)
           await git.addRemote('origin', remoteRepo)
         }
+
+        await git.push('origin', 'master', { '-u': null })
       }
+
       await git.fetch()
 
     } catch (err) {

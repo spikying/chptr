@@ -129,15 +129,22 @@ export const addDigitsToAll = async function (dir: string, digits: number) {
 }
 
 export const sanitizeFileName = function (original: string): string {
-  return sanitize(original)
+  const debug = d('helpers:sanitizeFileName')
+  const sanitized = sanitize(original)
+  debug(`Original filename = ${original}`)
+  debug(`Sanitized filename = ${sanitized}`)
+  return sanitized
 }
 
 const sanitize_url = require('@braintree/sanitize-url').sanitizeUrl
 export const sanitizeUrl = function (original: string): string {
+  const debug = d('helpers:sanitizeUrl')
   const sanitized = sanitize_url(original)
   if (sanitized === 'about:blank') {
     return ''
   }
+  debug(`Original url = ${original}`)
+  debug(`Sanitized url = ${sanitized}`)
   return sanitized
 }
 
