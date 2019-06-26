@@ -4,12 +4,12 @@ import * as fs from 'fs';
 import * as matter from 'gray-matter';
 import * as path from 'path';
 import * as simplegit from 'simple-git/promise';
+
 import { getFilenameFromInput } from '../common';
 // import { config } from '../config'
-import { addDigitsToAll, getHighestNumberAndDigits, numDigits, stringifyNumber, walk, mapFilesToBeRelativeToRootPath } from '../helpers';
+import { addDigitsToAll, getHighestNumberAndDigits, mapFilesToBeRelativeToRootPath, numDigits, stringifyNumber, walk } from '../helpers';
+
 import Command from "./base";
-
-
 
 const debug = d('command:add')
 
