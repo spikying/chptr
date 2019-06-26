@@ -1,36 +1,23 @@
-import { flags } from '@oclif/command'
-import * as d from 'debug'
-import * as fs from 'fs'
-import * as matter from 'gray-matter'
-import * as inquirer from 'inquirer'
-import * as path from 'path'
-
-import { getFilenameFromInput } from '../common'
+import { cli } from "cli-ux";
+import * as d from 'debug';
+import * as fs from 'fs';
+import * as matter from 'gray-matter';
+import * as path from 'path';
+import * as simplegit from 'simple-git/promise';
+import { getFilenameFromInput } from '../common';
 // import { config } from '../config'
-import {
-  addDigitsToAll,
-  getHighestNumberAndDigits,
-  numDigits,
-  sanitizeFileName,
-  stringifyNumber,
-  walk
-} from '../helpers'
+import { addDigitsToAll, getHighestNumberAndDigits, numDigits, stringifyNumber, walk, mapFilesToBeRelativeToRootPath } from '../helpers';
+import Command from "./base";
 
-import Command from "./base"
+
 
 const debug = d('command:add')
 
 export default class Add extends Command {
-  static description = 'Adds a file or set of files as a new chapter'
+  static description = 'Adds a file or set of files as a new chapter, locally and in repository'
 
   static flags = {
-    ...Command.flags,
-    help: flags.help({ char: 'h' }),
-    path: flags.string({
-      char: 'p',
-      default: '.',
-      description: 'Path where root of chapter files are'
-    })
+    ...Command.flags
     // ,
     // folderStructure: flags.boolean({
     //   char: 'f',
@@ -47,7 +34,7 @@ export default class Add extends Command {
   static args = [
     {
       name: 'name',
-      description: 'name of chapter file',
+      description: 'name of chapter file(s) to add',
       required: false,
       default: ''
     }
@@ -56,7 +43,7 @@ export default class Add extends Command {
   async run() {
     const { args, flags } = this.parse(Add)
 
-    const name = args.name || getFilenameFromInput()
+    const name = args.name || await getFilenameFromInput()
 
     const single = this.configInstance.config.metadataPattern === ''
 
@@ -89,6 +76,7 @@ export default class Add extends Command {
         await addDigitsToAll(dir, newDigits)
       }
 
+      //TODO: implement those in config
       const templateData = `# ${name}\n\n...`
       const templateMeta = {
         name,
@@ -103,31 +91,60 @@ export default class Add extends Command {
         otherQuest: '',
         wordCount: 0
       }
-      if (single) {
-        const fullPath = path.join(
-          dir,
-          stringifyNumber(highestNumber + 1, newDigits) + '.' + name + '.md'
-        )
-        const template = matter.stringify(templateData, templateMeta)
-        debug(template)
 
-        fs.writeFileSync(fullPath, template, { encoding: 'utf8' })
-        this.log(`Added ${fullPath}`)
-      } else {
+      try {
+        cli.action.start('Adding file(s) locally and to repository')
+
+        const git = simplegit(this.configInstance.projectRootPath);
+        const isRepo = await git.checkIsRepo()
+        if (!isRepo) {
+          throw new Error("Directory is not a repository")
+        }
+
         const fullPathMD = path.join(
           dir,
-          stringifyNumber(highestNumber + 1, newDigits) + '.' + name + '.md'
+          this.configInstance.chapterFileNameFromParameters(stringifyNumber(highestNumber + 1, newDigits), name)
         )
-        const fullPathMeta = path.join(
-          dir,
-          highestNumber + 1 + '.' + name + '.metadata.json'
-        )
-        debug(JSON.stringify(templateMeta, null, 4))
-        fs.writeFileSync(fullPathMD, templateData, { encoding: 'utf8' })
-        fs.writeFileSync(fullPathMeta, JSON.stringify(templateMeta, null, 4), {
-          encoding: 'utf8'
-        })
-        this.log(`Added ${fullPathMD} and ${fullPathMeta}`)
+        if (single) {
+          // const fullPathMD = path.join(
+          //   dir,
+          //   stringifyNumber(highestNumber + 1, newDigits) + '.' + name + '.md'
+          // )
+          const template = matter.stringify(templateData, templateMeta)
+          debug(template)
+
+          fs.writeFileSync(fullPathMD, template, { encoding: 'utf8' })
+          this.log(`Added ${fullPathMD}`)
+          await git.add(mapFilesToBeRelativeToRootPath([fullPathMD], this.configInstance.projectRootPath))
+          await git.commit(`added ${fullPathMD}`)
+          await git.push()
+        } else {
+          // const fullPathMD = path.join(
+          //   dir,
+          //   stringifyNumber(highestNumber + 1, newDigits) + '.' + name + '.md'
+          // )
+          // const fullPathMeta = path.join(
+          //   dir,
+          //   highestNumber + 1 + '.' + name + '.metadata.json'
+          // )
+          const fullPathMeta = path.join(
+            dir,
+            this.configInstance.metadataFileNameFromParameters(stringifyNumber(highestNumber + 1, newDigits), name)
+          )
+          debug(JSON.stringify(templateMeta, null, 4))
+          fs.writeFileSync(fullPathMD, templateData, { encoding: 'utf8' })
+          fs.writeFileSync(fullPathMeta, JSON.stringify(templateMeta, null, 4), {
+            encoding: 'utf8'
+          })
+          this.log(`Added ${fullPathMD} and ${fullPathMeta}`)
+          await git.add(mapFilesToBeRelativeToRootPath([fullPathMD, fullPathMeta], this.configInstance.projectRootPath))
+          await git.commit(`added ${fullPathMD} and ${fullPathMeta}`)
+          await git.push()
+        }
+      } catch (err) {
+        this.error(err)
+      } finally {
+        cli.action.stop()
       }
     })
   }

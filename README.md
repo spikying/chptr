@@ -29,7 +29,9 @@ USAGE
 # Commands
 <!-- commands -->
 * [`spixNovel add [NAME]`](#spixnovel-add-name)
+* [`spixNovel base`](#spixnovel-base)
 * [`spixNovel build [TOCFILE] [OUTPUTFILE]`](#spixnovel-build-tocfile-outputfile)
+* [`spixNovel delete [NAME]`](#spixnovel-delete-name)
 * [`spixNovel hello [FILE]`](#spixnovel-hello-file)
 * [`spixNovel help [COMMAND]`](#spixnovel-help-command)
 * [`spixNovel init [NAME]`](#spixnovel-init-name)
@@ -53,6 +55,19 @@ OPTIONS
 
 _See code: [src\commands\add.ts](https://github.com/spikying/spixNovel/blob/v0.0.0/src\commands\add.ts)_
 
+## `spixNovel base`
+
+```
+USAGE
+  $ spixNovel base
+
+OPTIONS
+  -h, --help       show CLI help
+  -p, --path=path  [default: .] Path where root of project files are
+```
+
+_See code: [src\commands\base.ts](https://github.com/spikying/spixNovel/blob/v0.0.0/src\commands\base.ts)_
+
 ## `spixNovel build [TOCFILE] [OUTPUTFILE]`
 
 Takes all original .MD files and outputs a single .MD file without metadata and comments.  Adds missing files to index file.
@@ -69,9 +84,28 @@ OPTIONS
   -h, --help                  show CLI help
   -n, --[no-]notify           show a notification box when build is completed.  Use --no-notify to suppress notification
   -o, --overwrite=y|n|prompt  [default: prompt] allows overwriting output file if it exists
+  -p, --path=path             [default: .] Path where root of project files are
 ```
 
 _See code: [src\commands\build.ts](https://github.com/spikying/spixNovel/blob/v0.0.0/src\commands\build.ts)_
+
+## `spixNovel delete [NAME]`
+
+Delete a file locally and in the repository
+
+```
+USAGE
+  $ spixNovel delete [NAME]
+
+ARGUMENTS
+  NAME  filename pattern or chapter number to delete
+
+OPTIONS
+  -h, --help       show CLI help
+  -p, --path=path  [default: .] Path where root of project files are
+```
+
+_See code: [src\commands\delete.ts](https://github.com/spikying/spixNovel/blob/v0.0.0/src\commands\delete.ts)_
 
 ## `spixNovel hello [FILE]`
 
@@ -119,12 +153,14 @@ USAGE
   $ spixNovel init [NAME]
 
 ARGUMENTS
-  NAME  Name of first chapter file
+  NAME  Name of project
 
 OPTIONS
-  -d, --digits=digits  [default: 2] Number of digits to use in file numbering initially.  Defaults to `2`.
-  -h, --help           show CLI help
-  -p, --path=path      [default: .] Path where root of project files are
+  -d, --digits=digits        [default: 2] Number of digits to use in file numbering initially.  Defaults to `2`.
+  -d, --force                Overwrite config files if they exist
+  -h, --help                 show CLI help
+  -p, --path=path            [default: .] Path where root of project files are
+  -r, --gitRemote=gitRemote  Git address of remote repository.
 ```
 
 _See code: [src\commands\init.ts](https://github.com/spikying/spixNovel/blob/v0.0.0/src\commands\init.ts)_
@@ -144,7 +180,7 @@ ARGUMENTS
 OPTIONS
   -d, --deep       Makes a recursive subfolder search
   -h, --help       show CLI help
-  -p, --path=path  [default: .] Path where chapter files are
+  -p, --path=path  [default: .] Path where root of project files are
 ```
 
 _See code: [src\commands\reorder.ts](https://github.com/spikying/spixNovel/blob/v0.0.0/src\commands\reorder.ts)_

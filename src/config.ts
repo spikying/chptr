@@ -51,8 +51,8 @@ export class Config {
     metadataPattern: {
       doc: 'File naming pattern for metadata files.  Use NUM for chapter number, NAME for optional chapter name and REV for optional revision number.  Optionally use `/` for a folder structure.  Put an empty string to include metadata in chapter headers.  Defaults to `NUM Metadata`.',
       format: (val: string) => {
-        if (!/^(?=.*NUM).*$/.test(val)) {
-          throw new Error('Must have NUM and NAME in pattern')
+        if (!/^(?=.*NUM).*$/.test(val) && !/^$/.test(val)) {
+          throw new Error('Must have NUM in pattern or be empty string')
         }
       },
       default: 'NUM Metadata'
@@ -167,7 +167,28 @@ export class Config {
 # {TITLE}
 `
   }
+
+  public get readmeFilePath(): string {
+    return path.join(this.rootPath, 'readme.md')
+  }
+
+  public get gitignoreFilePath(): string {
+    return path.join(this.rootPath, '.gitignore')
+  }
+
+  public chapterWildcardWithNumber(num: number): string {
+    return this.config.chapterPattern.replace('NUM', '*(0)' + num.toString()).replace('NAME', '*') + '.md'
+  }
+
+  public chapterFileNameFromParameters(num: string, name: string, rev?: string): string {
+    return this.config.chapterPattern.replace('NUM', num).replace('NAME', name).replace('REV', rev || '') + '.md'
+  }
+
+  public metadataFileNameFromParameters(num: string, name: string, rev?: string): string {
+    return this.config.metadataPattern.replace('NUM', num).replace('NAME', name).replace('REV', rev || '') + '.json'
+  }
 }
+
 
 // const configDefaults: any = {}
 // const props = Object.keys(jsonConfig)

@@ -193,3 +193,9 @@ export const getHighestNumberAndDigits = function (
   debug(`digits = ${digits}`)
   return { highestNumber, digits }
 }
+
+export const mapFilesToBeRelativeToRootPath = function (files: string[], rootPath: string): string[] {
+  return files.map<string>((filename) => {
+    return path.relative(rootPath, filename)
+  });
+}
