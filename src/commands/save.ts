@@ -1,27 +1,19 @@
 import { flags } from '@oclif/command'
+import { integer } from '@oclif/parser/lib/flags';
 import { cli } from "cli-ux";
 import * as d from 'debug';
-import * as fs from 'fs';
 // import * as glob from "glob";
 import * as minimatch from 'minimatch'
 import * as path from "path";
 import * as simplegit from 'simple-git/promise';
-import { promisify } from "util";
 
 import { QueryBuilder } from '../common';
-import { mapFilesToBeRelativeToRootPath, filterNumbers, walk } from '../helpers';
+import { filterNumbers, mapFilesToBeRelativeToRootPath, walk } from '../helpers';
 
-import Command from "./base";
-import { integer } from '@oclif/parser/lib/flags';
+import Command from "./edit-save-base";
 
 const debug = d('command:save')
 // const listFiles = promisify(glob);
-const openFile = promisify(fs.open)
-const fileStats = promisify(fs.stat)
-const readOpenedFile = promisify(fs.read)
-const readFile = promisify(fs.readFile)
-const writeFile = promisify(fs.writeFile)
-const closeFile = promisify(fs.close)
 
 export default class Save extends Command {
   static description = 'Parse modified text files, adjust sentence and paragraph endings, commit files to repository and readjust endings.'
@@ -43,8 +35,6 @@ export default class Save extends Command {
     required: false,
     default: ''
   }]
-
-  private readonly sentenceBreakChar = '\u200D'// '\u000D' // '\u2028'
 
   async run() {
     const { args, flags } = this.parse(Save)
@@ -115,42 +105,5 @@ export default class Save extends Command {
     // cli.action.stop()
   }
 
-  private async processFile(filepath: string): Promise<void> {
-    try {
-      debug(`opening filepath: ${filepath}`)
-      const buff = await readFile(filepath)
-      const initialContent = await buff.toString('utf8', 0, buff.byteLength)
-      let paraCounter = 1
-      // \u2028 = line sep  \u200D = zero width joiner
-      const replacedContent = initialContent.replace(/([.!?…"]) {2}([A-ZÀ-Ú])/gm, '$1' + this.sentenceBreakChar + '\n$2')
-        .replace(/([.!?…"])\n{2}([A-ZÀ-Ú])/gm, (full, one, two) => {
-          paraCounter++
-          // return `$1\u2029\n\n$2{{${paraCounter}}}`
-          debug(`full: ${full} one: ${one} two: ${two}`)
-          return `${one}\n\n\u2029{{${paraCounter}}}\n${two}`
-        })
-      debug(`Processed content: \n${replacedContent.substring(0, 250)}`)
-      await writeFile(filepath, replacedContent, 'utf8')
-    } catch (error) {
-      this.error(error)
-      this.exit(1)
-    }
-  }
-
-  private async processFileBack(filepath: string): Promise<void> {
-    try {
-      debug(`opening filepath: ${filepath}`)
-      const buff = await readFile(filepath)
-      const initialContent = await buff.toString('utf8', 0, buff.byteLength)
-      const sentenceBreakRegex = new RegExp(this.sentenceBreakChar + '\n', 'gm')
-      const replacedContent = initialContent.replace(sentenceBreakRegex, '  ')
-        .replace(/\n\n\u2029{{\d+}}\n/gm, '\n\n')
-      debug(`Processed back content: \n${replacedContent.substring(0, 250)}`)
-      await writeFile(filepath, replacedContent, 'utf8')
-    } catch (error) {
-      this.error(error)
-      this.exit(1)
-    }
-  }
 
 }
