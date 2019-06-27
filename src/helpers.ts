@@ -1,9 +1,9 @@
 import { Command } from '@oclif/command'
 import * as d from 'debug'
 import * as fs from 'fs'
+import { url } from 'inspector';
 import * as path from 'path'
 import * as sanitize from 'sanitize-filename'
-import { url } from 'inspector';
 
 export interface FileWithPriority {
   filename: string

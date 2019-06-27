@@ -4,6 +4,7 @@ import cli from 'cli-ux'
 import * as fs from 'fs'
 import * as inquirer from 'inquirer'
 import * as notifier from 'node-notifier'
+import * as path from "path";
 
 import Command from "./base"
 

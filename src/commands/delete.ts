@@ -8,9 +8,9 @@ import * as simplegit from 'simple-git/promise';
 import { promisify } from "util";
 
 import { QueryBuilder } from '../common';
+import { mapFilesToBeRelativeToRootPath } from '../helpers';
 
 import Command from "./base"
-import { mapFilesToBeRelativeToRootPath } from '../helpers';
 
 const debug = d("command:delete");
 // const listFiles = promisify(fs.readdir);
