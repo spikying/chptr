@@ -86,7 +86,8 @@
     "testadd": "DEBUG='command:add' ./bin/run.cmd add --path='../testNovel'",
     "testinit": "DEBUG='command:init' ./bin/run.cmd init --path='../testNovel'",
     "testdelete": "DEBUG='command:delete' ./bin/run.cmd delete --path='../testNovel'",
-    "testsave": "DEBUG='command:save' ./bin/run.cmd save --path='../testNovel'"
+    "testsave": "DEBUG='command:save' ./bin/run.cmd save --path='../testNovel'",
+    "testedit": "DEBUG='command:edit' ./bin/run.cmd edit --path='../testNovel'"
   },
   "types": "lib/index.d.ts"
 }

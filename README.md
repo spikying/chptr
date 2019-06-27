@@ -30,12 +30,14 @@ USAGE
 <!-- commands -->
 * [`spixNovel add [NAME]`](#spixnovel-add-name)
 * [`spixNovel base`](#spixnovel-base)
-* [`spixNovel build [TOCFILE] [OUTPUTFILE]`](#spixnovel-build-tocfile-outputfile)
+* [`spixNovel build [OUTPUTFILE]`](#spixnovel-build-outputfile)
 * [`spixNovel delete [NAME]`](#spixnovel-delete-name)
+* [`spixNovel edit [FILTER]`](#spixnovel-edit-filter)
+* [`spixNovel edit-save-base`](#spixnovel-edit-save-base)
 * [`spixNovel help [COMMAND]`](#spixnovel-help-command)
 * [`spixNovel init [NAME]`](#spixnovel-init-name)
 * [`spixNovel reorder ORIGIN DESTINATION`](#spixnovel-reorder-origin-destination)
-* [`spixNovel save [NAME]`](#spixnovel-save-name)
+* [`spixNovel save [MESSAGE]`](#spixnovel-save-message)
 
 ## `spixNovel add [NAME]`
 
@@ -68,23 +70,28 @@ OPTIONS
 
 _See code: [src\commands\base.ts](https://github.com/spikying/spixNovel/blob/v0.0.0/src\commands\base.ts)_
 
-## `spixNovel build [TOCFILE] [OUTPUTFILE]`
+## `spixNovel build [OUTPUTFILE]`
 
 Takes all original .MD files and outputs a single .MD file without metadata and comments.  Adds missing files to index file.
 
 ```
 USAGE
-  $ spixNovel build [TOCFILE] [OUTPUTFILE]
+  $ spixNovel build [OUTPUTFILE]
 
 ARGUMENTS
-  TOCFILE     [default: ./index.json] input file containing all referenced files
-  OUTPUTFILE  [default: ./novel.md] output file concatenating all other files's contents
+  OUTPUTFILE  [default: novel] output file concatenating all other files's contents
 
 OPTIONS
-  -h, --help                  show CLI help
-  -n, --[no-]notify           show a notification box when build is completed.  Use --no-notify to suppress notification
-  -o, --overwrite=y|n|prompt  [default: prompt] allows overwriting output file if it exists
-  -p, --path=path             [default: .] Path where root of project files are
+  -h, --help                   show CLI help
+
+  -n, --[no-]notify            show a notification box when build is completed.  Use --no-notify to suppress
+                               notification
+
+  -o, --overwrite=y|n|prompt   [default: prompt] allows overwriting output file if it exists
+
+  -p, --path=path              [default: .] Path where root of project files are
+
+  -t, --filetypes=pdf|docx|md  [default: md] filetype to export in.  Can be set multiple times.
 ```
 
 _See code: [src\commands\build.ts](https://github.com/spikying/spixNovel/blob/v0.0.0/src\commands\build.ts)_
@@ -106,6 +113,41 @@ OPTIONS
 ```
 
 _See code: [src\commands\delete.ts](https://github.com/spikying/spixNovel/blob/v0.0.0/src\commands\delete.ts)_
+
+## `spixNovel edit [FILTER]`
+
+Adjust sentence and paragraph endings to allow for easier editing.
+
+```
+USAGE
+  $ spixNovel edit [FILTER]
+
+ARGUMENTS
+  FILTER  Chapter number(s) to modify, comma-separated.
+
+OPTIONS
+  -h, --help       show CLI help
+  -p, --path=path  [default: .] Path where root of project files are
+
+ALIASES
+  $ spixNovel modify
+  $ spixNovel mod
+```
+
+_See code: [src\commands\edit.ts](https://github.com/spikying/spixNovel/blob/v0.0.0/src\commands\edit.ts)_
+
+## `spixNovel edit-save-base`
+
+```
+USAGE
+  $ spixNovel edit-save-base
+
+OPTIONS
+  -h, --help       show CLI help
+  -p, --path=path  [default: .] Path where root of project files are
+```
+
+_See code: [src\commands\edit-save-base.ts](https://github.com/spikying/spixNovel/blob/v0.0.0/src\commands\edit-save-base.ts)_
 
 ## `spixNovel help [COMMAND]`
 
@@ -137,7 +179,7 @@ ARGUMENTS
 
 OPTIONS
   -d, --digits=digits        [default: 2] Number of digits to use in file numbering initially.  Defaults to `2`.
-  -d, --force                Overwrite config files if they exist
+  -f, --force                Overwrite config files if they exist
   -h, --help                 show CLI help
   -p, --path=path            [default: .] Path where root of project files are
   -r, --gitRemote=gitRemote  Git address of remote repository.
@@ -165,20 +207,21 @@ OPTIONS
 
 _See code: [src\commands\reorder.ts](https://github.com/spikying/spixNovel/blob/v0.0.0/src\commands\reorder.ts)_
 
-## `spixNovel save [NAME]`
+## `spixNovel save [MESSAGE]`
 
 Parse modified text files, adjust sentence and paragraph endings, commit files to repository and readjust endings.
 
 ```
 USAGE
-  $ spixNovel save [NAME]
+  $ spixNovel save [MESSAGE]
 
 ARGUMENTS
-  NAME  [default: **/*.*] file pattern of files to save.
+  MESSAGE  Message to use in commit to repository
 
 OPTIONS
-  -h, --help       show CLI help
-  -p, --path=path  [default: .] Path where root of project files are
+  -f, --filter=filter  Chapter number to filter which files to stage before saving to repository
+  -h, --help           show CLI help
+  -p, --path=path      [default: .] Path where root of project files are
 ```
 
 _See code: [src\commands\save.ts](https://github.com/spikying/spixNovel/blob/v0.0.0/src\commands\save.ts)_

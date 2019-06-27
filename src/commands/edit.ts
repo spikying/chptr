@@ -1,13 +1,10 @@
 import { flags } from '@oclif/command'
-import { integer } from '@oclif/parser/lib/flags';
 import { cli } from "cli-ux";
 import * as d from 'debug';
-import * as minimatch from 'minimatch'
+import * as glob from "glob";
 import * as path from "path";
-import * as simplegit from 'simple-git/promise';
 
 import { QueryBuilder } from '../common';
-import { filterNumbers, mapFilesToBeRelativeToRootPath, walk } from '../helpers';
 
 import Command from "./edit-save-base";
 
@@ -29,19 +26,39 @@ export default class Edit extends Command {
 
   static aliases = ['modify', 'mod']
 
+  // for variable length arguments (https://oclif.io/docs/args)
+  static strict = false
+
   async run() {
     const { args, flags, argv } = this.parse(Edit)
 
+    debug(`argv=${argv} argv.length=${argv.length} argv[0]=${argv[0]}`)
+
+    const chapterNumbers: number[] = []
     const toEditFiles: string[] = []
-    if (argv.length === 0) {
+    if (!argv[0]) {
       //no chapter given; must ask for it
       const queryBuilder = new QueryBuilder()
       queryBuilder.add('filter', queryBuilder.textinput("What chapters to put in edit mode? (comma-separated list)", ""))
-
       const queryResponses: any = await queryBuilder.responses()
+      chapterNumbers.push(...queryResponses.filter.split(',').map((v: string) => parseInt(v, 10)))
     } else {
-      //loop through all argv[i] to get all chapter numbers.
+      //loop through all argv[i] to get all chapter numbers.  If first argument contains commas, it's a single argument to split at ','.
+      if (argv[0].split(',').length > 1) {
+        chapterNumbers.push(...argv[0].split(',').map((v: string) => parseInt(v, 10)))
+      } else {
+        chapterNumbers.push(...argv.map((v: string) => parseInt(v, 10)))
+      }
     }
+
+    debug(`chapterNumbers: ${JSON.stringify(chapterNumbers)}`)
+
+    chapterNumbers.forEach(async num => {
+      debug(`glob fullpath: ${path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcardWithNumber(num))}`)
+      const foundFiles = glob.sync(path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcardWithNumber(num)))
+      debug(`foundFiles = ${foundFiles}`)
+      toEditFiles.push(...foundFiles)
+    })
 
     debug(`toEditFiles: ${JSON.stringify(toEditFiles)}`)
 
