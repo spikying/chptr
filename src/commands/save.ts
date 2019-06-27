@@ -44,6 +44,8 @@ export default class Save extends Command {
     default: ''
   }]
 
+  private readonly sentenceBreakChar = '\u200D'// '\u000D' // '\u2028'
+
   async run() {
     const { args, flags } = this.parse(Save)
 
@@ -81,6 +83,7 @@ export default class Save extends Command {
     cli.action.start('Reading and processing modified files')
     await toAddFiles.forEach(async filename => {
       const fullPath = path.join(this.configInstance.projectRootPath, filename)
+      await this.processFileBack(fullPath)
       await this.processFile(fullPath)
     });
     cli.action.stop()
@@ -119,14 +122,14 @@ export default class Save extends Command {
       const initialContent = await buff.toString('utf8', 0, buff.byteLength)
       let paraCounter = 1
       // \u2028 = line sep  \u200D = zero width joiner
-      const replacedContent = initialContent.replace(/([.!?…]) {2}([A-ZÀ-Ú])/gm, '$1\u2028\n$2')
-        .replace(/([.!?…])\n{2}([A-ZÀ-Ú])/gm, (full, one, two) => {
+      const replacedContent = initialContent.replace(/([.!?…"]) {2}([A-ZÀ-Ú])/gm, '$1' + this.sentenceBreakChar + '\n$2')
+        .replace(/([.!?…"])\n{2}([A-ZÀ-Ú])/gm, (full, one, two) => {
           paraCounter++
           // return `$1\u2029\n\n$2{{${paraCounter}}}`
           debug(`full: ${full} one: ${one} two: ${two}`)
-          return `${one}\u2029\n\n{{${paraCounter}}}\n${two}`
+          return `${one}\n\n\u2029{{${paraCounter}}}\n${two}`
         })
-      debug(`replaced content: \n${replacedContent.substring(0, 250)}`)
+      debug(`Processed content: \n${replacedContent.substring(0, 250)}`)
       await writeFile(filepath, replacedContent, 'utf8')
     } catch (error) {
       this.error(error)
@@ -139,9 +142,10 @@ export default class Save extends Command {
       debug(`opening filepath: ${filepath}`)
       const buff = await readFile(filepath)
       const initialContent = await buff.toString('utf8', 0, buff.byteLength)
-      const replacedContent = initialContent.replace(/\u2028\n/gm, '  ')
-        .replace(/\u2029\n/gm, '\n')
-      debug(`replaced content: \n${replacedContent.substring(0, 250)}`)
+      const sentenceBreakRegex = new RegExp(this.sentenceBreakChar + '\n', 'gm')
+      const replacedContent = initialContent.replace(sentenceBreakRegex, '  ')
+        .replace(/\n\n\u2029{{\d+}}\n/gm, '\n\n')
+      debug(`Processed back content: \n${replacedContent.substring(0, 250)}`)
       await writeFile(filepath, replacedContent, 'utf8')
     } catch (error) {
       this.error(error)
