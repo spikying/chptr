@@ -32,25 +32,25 @@ USAGE
 * [`spixNovel base`](#spixnovel-base)
 * [`spixNovel build [TOCFILE] [OUTPUTFILE]`](#spixnovel-build-tocfile-outputfile)
 * [`spixNovel delete [NAME]`](#spixnovel-delete-name)
-* [`spixNovel hello [FILE]`](#spixnovel-hello-file)
 * [`spixNovel help [COMMAND]`](#spixnovel-help-command)
 * [`spixNovel init [NAME]`](#spixnovel-init-name)
 * [`spixNovel reorder ORIGIN DESTINATION`](#spixnovel-reorder-origin-destination)
+* [`spixNovel save [NAME]`](#spixnovel-save-name)
 
 ## `spixNovel add [NAME]`
 
-Adds a file or set of files as a new chapter
+Adds a file or set of files as a new chapter, locally and in repository
 
 ```
 USAGE
   $ spixNovel add [NAME]
 
 ARGUMENTS
-  NAME  name of chapter file
+  NAME  name of chapter file(s) to add
 
 OPTIONS
   -h, --help       show CLI help
-  -p, --path=path  [default: .] Path where root of chapter files are
+  -p, --path=path  [default: .] Path where root of project files are
 ```
 
 _See code: [src\commands\add.ts](https://github.com/spikying/spixNovel/blob/v0.0.0/src\commands\add.ts)_
@@ -106,26 +106,6 @@ OPTIONS
 ```
 
 _See code: [src\commands\delete.ts](https://github.com/spikying/spixNovel/blob/v0.0.0/src\commands\delete.ts)_
-
-## `spixNovel hello [FILE]`
-
-describe the command here
-
-```
-USAGE
-  $ spixNovel hello [FILE]
-
-OPTIONS
-  -f, --force
-  -h, --help       show CLI help
-  -n, --name=name  name to print
-
-EXAMPLE
-  $ spixNovel hello
-  hello world from ./src/hello.ts!
-```
-
-_See code: [src\commands\hello.ts](https://github.com/spikying/spixNovel/blob/v0.0.0/src\commands\hello.ts)_
 
 ## `spixNovel help [COMMAND]`
 
@@ -184,4 +164,22 @@ OPTIONS
 ```
 
 _See code: [src\commands\reorder.ts](https://github.com/spikying/spixNovel/blob/v0.0.0/src\commands\reorder.ts)_
+
+## `spixNovel save [NAME]`
+
+Parse modified text files, adjust sentence and paragraph endings, commit files to repository and readjust endings.
+
+```
+USAGE
+  $ spixNovel save [NAME]
+
+ARGUMENTS
+  NAME  [default: **/*.*] file pattern of files to save.
+
+OPTIONS
+  -h, --help       show CLI help
+  -p, --path=path  [default: .] Path where root of project files are
+```
+
+_See code: [src\commands\save.ts](https://github.com/spikying/spixNovel/blob/v0.0.0/src\commands\save.ts)_
 <!-- commandsstop -->

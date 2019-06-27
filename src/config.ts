@@ -27,6 +27,7 @@ const loadFileSync = fs.readFileSync as (path: string) => string;
 export interface ConfigObject {
   chapterPattern: string
   metadataPattern: string
+  buildDirectory: string
 }
 
 export class Config {
@@ -58,6 +59,10 @@ export class Config {
       default: 'NUM Metadata'
       // ,
       // env: 'METADATA_PATTERN'
+    },
+    buildDirectory: {
+      doc: 'Directory where to output builds done with Pandoc.  Defaults to `build/`.',
+      default: 'build/'
     }
   }
   private readonly configSchema = Convict(this.configSchemaObject)
@@ -176,6 +181,10 @@ export class Config {
     return path.join(this.rootPath, '.gitignore')
   }
 
+  public get gitattributesFilePath(): string {
+    return path.join(this.rootPath, '.gitattributes')
+  }
+
   public chapterWildcardWithNumber(num: number): string {
     return this.config.chapterPattern.replace('NUM', '*(0)' + num.toString()).replace('NAME', '*') + '.md'
   }
@@ -186,6 +195,10 @@ export class Config {
 
   public metadataFileNameFromParameters(num: string, name: string, rev?: string): string {
     return this.config.metadataPattern.replace('NUM', num).replace('NAME', name).replace('REV', rev || '') + '.json'
+  }
+
+  public get buildDirectory(): string {
+    return path.join(this.rootPath, this.config.buildDirectory)
   }
 }
 

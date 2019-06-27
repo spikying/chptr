@@ -18,24 +18,31 @@ export default class Build extends Command {
       options: ['y', 'n', 'prompt'],
       default: 'prompt'
     }),
+    filetypes: flags.string({
+      char: 't',
+      description: 'filetype to export in.  Can be set multiple times.',
+      options: ['pdf', 'docx', 'md'],
+      default: 'md',
+      multiple: true
+    }),
     notify: flags.boolean({
       char: 'n',
       description:
         'show a notification box when build is completed.  Use --no-notify to suppress notification',
-      default: true,
+      default: false,
       allowNo: true
     })
   }
 
   static args = [
-    {
-      name: 'tocfile',
-      default: './index.json',
-      description: 'input file containing all referenced files'
-    },
+    // {
+    //   name: 'tocfile',
+    //   default: './index.json',
+    //   description: 'input file containing all referenced files'
+    // },
     {
       name: 'outputfile',
-      default: './novel.md',
+      default: 'novel',
       description: "output file concatenating all other files's contents"
     }
   ]
@@ -44,6 +51,7 @@ export default class Build extends Command {
     const { args, flags } = this.parse(Build)
 
     const outputFile = args.outputfile
+
     let overwrite = flags.overwrite
     if (overwrite === 'prompt') {
       await fs.access(args.outputfile, async err => {
@@ -63,12 +71,13 @@ export default class Build extends Command {
     const overwriting = overwrite === 'y' ? true : false
     this.log(`Overwriting ${outputFile} : ${overwriting}.`)
 
-    const tocFile = args.tocfile
+    const outputFiletype = flags.filetypes
 
-
-    cli.action.start('Parsing all files')
-    await cli.wait(3000)
-    cli.action.stop()
+    // const tocFile = args.tocfile
+    outputFiletype.forEach(filetype => {
+      const fullOutputFilePath = path.join(this.configInstance.buildDirectory, outputFile + '.' + filetype)
+    });
+    this.configInstance.buildDirectory
 
     if (flags.notify) {
       notifier.notify({

@@ -36,7 +36,7 @@ export default class Init extends Command {
     ),
     force: flags.boolean(
       {
-        char: "d",
+        char: "f",
         description: "Overwrite config files if they exist",
         default: false
       })
@@ -150,6 +150,26 @@ export default class Init extends Command {
 pandoc*/
 `)
         cli.log(`Created ${this.configInstance.gitignoreFilePath} with basic .gitignore file template.`);
+      } catch (err) {
+        this.error(err);
+        this.exit(1);
+      } finally {
+        cli.action.stop()
+      }
+    }
+
+    debug("After creating .gitignore, before creating .gitattributes")
+
+    if (!flags.force && fs.existsSync(this.configInstance.gitattributesFilePath)) {
+      this.warn(`${this.configInstance.gitattributesFilePath} already exists.  Use option --force to overwrite.`);
+    } else {
+      try {
+        cli.action.start('Creating gitattributes file')
+        await createFile(this.configInstance.gitattributesFilePath, `autocrlf=false
+eol=lf
+* text=auto
+`)
+        cli.log(`Created ${this.configInstance.gitattributesFilePath} with basic .gitattributes file template.`);
       } catch (err) {
         this.error(err);
         this.exit(1);

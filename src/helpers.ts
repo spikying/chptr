@@ -102,6 +102,10 @@ export const stringifyNumber = function (x: number, digits: number): string {
   }
 }
 
+export const filterNumbers = function (s: string): string {
+  return s.replace(/.*?(\d+).*/, '$1')
+}
+
 export const addDigitsToAll = async function (dir: string, digits: number) {
   await walk(dir, false, 0, (err, files) => {
     if (err) {

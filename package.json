@@ -28,6 +28,7 @@
     "gray-matter": "4.0.2",
     "inquirer": "6.3.1",
     "json5": "2.1.0",
+    "minimatch": "3.0.4",
     "node-notifier": "5.4.0",
     "sanitize-filename": "1.6.1",
     "simple-git": "1.113.0",
@@ -84,7 +85,8 @@
     "testreorder": "DEBUG='command:reorder' ./bin/run.cmd reorder 2 1 --path='../testNovel' -d",
     "testadd": "DEBUG='command:add' ./bin/run.cmd add --path='../testNovel'",
     "testinit": "DEBUG='command:init' ./bin/run.cmd init --path='../testNovel'",
-    "testdelete": "DEBUG='command:delete' ./bin/run.cmd delete --path='../testNovel'"
+    "testdelete": "DEBUG='command:delete' ./bin/run.cmd delete --path='../testNovel'",
+    "testsave": "DEBUG='command:save' ./bin/run.cmd save --path='../testNovel'"
   },
   "types": "lib/index.d.ts"
 }
