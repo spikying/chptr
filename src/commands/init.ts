@@ -2,7 +2,6 @@ import { flags } from "@oclif/command";
 import { cli } from "cli-ux";
 import * as d from "debug";
 import * as fs from "fs";
-// import { StatusSummary } from 'simple-git';
 import * as simplegit from 'simple-git/promise';
 import { promisify } from "util";
 

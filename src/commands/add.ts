@@ -45,7 +45,7 @@ export default class Add extends Command {
 
     const name = args.name || await getFilenameFromInput()
 
-    const single = this.configInstance.config.metadataPattern === ''
+    // const single = this.configInstance.config.metadataPattern === ''
 
     const dir = path.join(flags.path as string)
     this.log(`Walking directory ${JSON.stringify(dir)}`)
@@ -105,42 +105,30 @@ export default class Add extends Command {
           dir,
           this.configInstance.chapterFileNameFromParameters(stringifyNumber(highestNumber + 1, newDigits), name)
         )
-        if (single) {
-          // const fullPathMD = path.join(
-          //   dir,
-          //   stringifyNumber(highestNumber + 1, newDigits) + '.' + name + '.md'
-          // )
-          const template = matter.stringify(templateData, templateMeta)
-          debug(template)
+        // if (single) {
+        //   const template = matter.stringify(templateData, templateMeta)
+        //   debug(template)
 
-          fs.writeFileSync(fullPathMD, template, { encoding: 'utf8' })
-          this.log(`Added ${fullPathMD}`)
-          await git.add(mapFilesToBeRelativeToRootPath([fullPathMD], this.configInstance.projectRootPath))
-          await git.commit(`added ${fullPathMD}`)
-          await git.push()
-        } else {
-          // const fullPathMD = path.join(
-          //   dir,
-          //   stringifyNumber(highestNumber + 1, newDigits) + '.' + name + '.md'
-          // )
-          // const fullPathMeta = path.join(
-          //   dir,
-          //   highestNumber + 1 + '.' + name + '.metadata.json'
-          // )
-          const fullPathMeta = path.join(
-            dir,
-            this.configInstance.metadataFileNameFromParameters(stringifyNumber(highestNumber + 1, newDigits), name)
-          )
-          debug(JSON.stringify(templateMeta, null, 4))
-          fs.writeFileSync(fullPathMD, templateData, { encoding: 'utf8' })
-          fs.writeFileSync(fullPathMeta, JSON.stringify(templateMeta, null, 4), {
-            encoding: 'utf8'
-          })
-          this.log(`Added ${fullPathMD} and ${fullPathMeta}`)
-          await git.add(mapFilesToBeRelativeToRootPath([fullPathMD, fullPathMeta], this.configInstance.projectRootPath))
-          await git.commit(`added ${fullPathMD} and ${fullPathMeta}`)
-          await git.push()
-        }
+        //   fs.writeFileSync(fullPathMD, template, { encoding: 'utf8' })
+        //   this.log(`Added ${fullPathMD}`)
+        //   await git.add(mapFilesToBeRelativeToRootPath([fullPathMD], this.configInstance.projectRootPath))
+        //   await git.commit(`added ${fullPathMD}`)
+        //   await git.push()
+        // } else {
+        const fullPathMeta = path.join(
+          dir,
+          this.configInstance.metadataFileNameFromParameters(stringifyNumber(highestNumber + 1, newDigits), name)
+        )
+        debug(JSON.stringify(templateMeta, null, 4))
+        fs.writeFileSync(fullPathMD, templateData, { encoding: 'utf8' })
+        fs.writeFileSync(fullPathMeta, JSON.stringify(templateMeta, null, 4), {
+          encoding: 'utf8'
+        })
+        this.log(`Added ${fullPathMD} and ${fullPathMeta}`)
+        await git.add(mapFilesToBeRelativeToRootPath([fullPathMD, fullPathMeta], this.configInstance.projectRootPath))
+        await git.commit(`added ${fullPathMD} and ${fullPathMeta}`)
+        await git.push()
+        // }
       } catch (err) {
         this.error(err)
       } finally {

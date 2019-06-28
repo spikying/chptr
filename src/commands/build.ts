@@ -18,7 +18,7 @@ import { spawn, exec, execFile } from 'child_process';
 const debug = d('command:build')
 
 export default class Build extends Command {
-  static description = 'Takes all original .MD files and outputs a single .MD file without metadata and comments.  Adds missing files to index file.'
+  static description = 'Takes all original .MD files and outputs a single file without metadata and comments.  Handles output formats in .md, .pdf and .docx'
 
   static readonly exportableFileTypes = ['pdf', 'docx', 'md']
 

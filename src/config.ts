@@ -39,7 +39,7 @@ export class Config {
     //   env: 'NODE_ENV'
     // },
     chapterPattern: {
-      doc: 'File naming pattern for chapter files. Use NUM for chapter number, NAME for chapter name and REV for optional revision number.  Optionally use `/` for a folder structure, e.g. `NUM.NAME` or `NUM/NAME (REV)`.  Defaults to `NUM NAME`.',
+      doc: 'File naming pattern for chapter files. Use NUM for chapter number and NAME for chapter name.  Optionally use `/` for a folder structure, e.g. `NUM.NAME` or `NUM/NAME`.  Defaults to `NUM NAME`.',
       format: (val: string) => {
         if (!/^(?=.*NUM)(?=.*NAME).*$/.test(val)) {
           throw new Error('Must have NUM and NAME in pattern')
@@ -50,13 +50,13 @@ export class Config {
       // env: 'CHAPTER_PATTERN'
     },
     metadataPattern: {
-      doc: 'File naming pattern for metadata files.  Use NUM for chapter number, NAME for optional chapter name and REV for optional revision number.  Optionally use `/` for a folder structure.  Put an empty string to include metadata in chapter headers.  Defaults to `NUM Metadata`.',
+      doc: 'File naming pattern for metadata files.  Use NUM for chapter number and NAME for optional chapter name.  Optionally use `/` for a folder structure. Defaults to `NUM.metadata`.',
       format: (val: string) => {
-        if (!/^(?=.*NUM).*$/.test(val) && !/^$/.test(val)) {
+        if (!/^(?=.*NUM).*$/.test(val)) { // && !/^$/.test(val)
           throw new Error('Must have NUM in pattern or be empty string')
         }
       },
-      default: 'NUM Metadata'
+      default: 'NUM.metadata'
       // ,
       // env: 'METADATA_PATTERN'
     },
@@ -195,26 +195,15 @@ export class Config {
     return this.config.metadataPattern.replace('NUM', '+(0|1|2|3|4|5|6|7|8|9)').replace('NAME', '*') + '.md'
   }
 
-  public chapterFileNameFromParameters(num: string, name: string, rev?: string): string {
-    return this.config.chapterPattern.replace('NUM', num).replace('NAME', name).replace('REV', rev || '') + '.md'
+  public chapterFileNameFromParameters(num: string, name: string): string {
+    return this.config.chapterPattern.replace('NUM', num).replace('NAME', name) + '.md'
   }
 
-  public metadataFileNameFromParameters(num: string, name: string, rev?: string): string {
-    return this.config.metadataPattern.replace('NUM', num).replace('NAME', name).replace('REV', rev || '') + '.json'
+  public metadataFileNameFromParameters(num: string, name: string): string {
+    return this.config.metadataPattern.replace('NUM', num).replace('NAME', name) + '.json'
   }
 
   public get buildDirectory(): string {
     return path.join(this.rootPath, this.config.buildDirectory)
   }
 }
-
-
-// const configDefaults: any = {}
-// const props = Object.keys(jsonConfig)
-// for (let i = 0; i !== props.length; i++) {
-//   if (jsonConfig.hasOwnProperty(jsonConfig[props[i]])) {
-//     configDefaults[props[i]] = configSchema.default(props[i])
-//   }
-// }
-
-// export const defaults: ConfigObject = configDefaults as ConfigObject
