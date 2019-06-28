@@ -1,0 +1,30 @@
+// https://github.com/utatti/simple-pandoc
+import * as fs from 'fs'
+
+const spawn = require('child_process').spawnSync;
+
+const command = 'pandoc';
+
+export const pandoc = (...args: string[]) => {
+  const option = args;
+
+  // const converter = (src: Buffer) => new Promise((resolve, reject) => {
+  //   const proc = spawn(command, option);
+  //   proc.on('error', reject);
+  //   let data = '';
+  //   proc.stdout.on('data', (chunk: any) => {
+  //     data += chunk.toString();
+  //     console.log(data)
+  //   });
+  //   proc.stdout.on('end', () => resolve(data));
+  //   proc.stdout.on('error', reject);
+  //   proc.stdin.write(src);
+  //   proc.stdin.end();
+  // });
+
+  console.log(option)
+  const proc = spawn(command, option);
+  proc.return
+  // srcStream.pipe(proc.stdin);
+  // return proc.stdout;
+};

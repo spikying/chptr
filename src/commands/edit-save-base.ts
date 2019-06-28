@@ -19,6 +19,7 @@ export default abstract class extends Command {
     ...Command.flags
   }
 
+  // https://unicode.org/reports/tr29/#Sentence_Boundaries
   private readonly sentenceBreakChar = '\u200D'// '\u000D' // '\u2028'
 
   public async processFile(filepath: string): Promise<void> {

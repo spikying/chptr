@@ -75,6 +75,16 @@ export class QueryBuilder {
     return obj
   }
 
+  public checkboxinput(choices: string[], msg?: string, defaultValue?: string[]): object {
+    const obj = {
+      message: msg || 'Choose a value',
+      type: 'checkbox',
+      default: defaultValue,
+      choices
+    }
+    return obj
+  }
+
   // public addExistingFilesQuery(name: string, msg?: string): void {
   //   const obj = {
   //     type: 'list',

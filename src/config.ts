@@ -185,8 +185,14 @@ export class Config {
     return path.join(this.rootPath, '.gitattributes')
   }
 
+  public get chapterWildcard(): string {
+    return this.config.chapterPattern.replace('NUM', '+(0|1|2|3|4|5|6|7|8|9)').replace('NAME', '*') + '.md'
+  }
   public chapterWildcardWithNumber(num: number): string {
     return this.config.chapterPattern.replace('NUM', '*(0)' + num.toString()).replace('NAME', '*') + '.md'
+  }
+  public get metadataWildcard(): string {
+    return this.config.metadataPattern.replace('NUM', '+(0|1|2|3|4|5|6|7|8|9)').replace('NAME', '*') + '.md'
   }
 
   public chapterFileNameFromParameters(num: string, name: string, rev?: string): string {
