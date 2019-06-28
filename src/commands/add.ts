@@ -1,7 +1,7 @@
 import { cli } from "cli-ux";
 import * as d from 'debug';
 import * as fs from 'fs';
-import * as matter from 'gray-matter';
+// import * as matter from 'gray-matter';
 import * as path from 'path';
 import * as simplegit from 'simple-git/promise';
 

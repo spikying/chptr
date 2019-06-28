@@ -1,5 +1,4 @@
 import { Command } from '@oclif/command'
-import { spawn } from 'child_process';
 import * as d from 'debug'
 import * as fs from 'fs'
 import { url } from 'inspector';

@@ -9,20 +9,12 @@ import * as d from 'debug'
 import fs = require('fs');
 import * as json from 'json5'
 import path = require('path');
-import { promisify } from "util";
+// import { promisify } from "util";
 
 import { sanitizeFileName } from './helpers'
 const debug = d('config')
-const loadFile = promisify(fs.readFile) as (path: string) => Promise<string>;
+// const loadFile = promisify(fs.readFile) as (path: string) => Promise<string>;
 const loadFileSync = fs.readFileSync as (path: string) => string;
-
-// const configLoaded = require('dotenv').config(); //{ debug: true }
-
-// if (configLoaded.error) {
-//     console.log(configLoaded.error);
-// }
-
-// Convict.addParser({ extension: 'json', parse: JSON.parse });
 
 export interface ConfigObject {
   chapterPattern: string
@@ -32,12 +24,6 @@ export interface ConfigObject {
 
 export class Config {
   private readonly configSchemaObject: any = {
-    // env: {
-    //   doc: 'Either prod, dev or test.  By default prod.',
-    //   format: ['prod', 'dev', 'test'],
-    //   default: 'prod',
-    //   env: 'NODE_ENV'
-    // },
     chapterPattern: {
       doc: 'File naming pattern for chapter files. Use NUM for chapter number and NAME for chapter name.  Optionally use `/` for a folder structure, e.g. `NUM.NAME` or `NUM/NAME`.  Defaults to `NUM NAME`.',
       format: (val: string) => {
@@ -46,8 +32,6 @@ export class Config {
         }
       },
       default: 'NUM NAME'
-      // ,
-      // env: 'CHAPTER_PATTERN'
     },
     metadataPattern: {
       doc: 'File naming pattern for metadata files.  Use NUM for chapter number and NAME for optional chapter name.  Optionally use `/` for a folder structure. Defaults to `NUM.metadata`.',
@@ -57,8 +41,6 @@ export class Config {
         }
       },
       default: 'NUM.metadata'
-      // ,
-      // env: 'METADATA_PATTERN'
     },
     buildDirectory: {
       doc: 'Directory where to output builds done with Pandoc.  Defaults to `build/`.',
@@ -66,7 +48,6 @@ export class Config {
     }
   }
   private readonly configSchema = Convict(this.configSchemaObject)
-  // const private readonly dirname: string
   private readonly rootPath: string
   private readonly configPathName: string // = Path.join(__dirname, './config/')
   private readonly configFileName: string // = Path.join(this.configPathName, 'config.json5')
@@ -81,9 +62,7 @@ export class Config {
 
     try {
       const configFileString: string = loadFileSync(this.configFileName)
-      // debug(`configFileString = ${configFileString}`)
       const json5Config = jsonComment.parse(configFileString, undefined, true) // json.parse(configFileString)
-      // debug(`json5Config.stringify = ${jsonComment.stringify(json5Config)}`)
       this.configSchema.load(json5Config) //jsonComment.parse(json5Config, undefined, true))
       debug(`Loaded config from ${this.configFileName}:\n${jsonComment.stringify(json5Config)}`)
     } catch (err) {
@@ -98,8 +77,6 @@ export class Config {
 
     jsonConfig.chapterPattern = sanitizeFileName(jsonConfig.chapterPattern)
     jsonConfig.metadataPattern = sanitizeFileName(jsonConfig.metadataPattern)
-    // delete jsonConfig.chapterPatternInput
-    // delete jsonConfig.metadataPatternInput
 
     debug(`Config Object: ${json.stringify(jsonConfig)}`)
     return jsonConfig as ConfigObject

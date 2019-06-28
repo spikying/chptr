@@ -1,4 +1,5 @@
 import { flags } from '@oclif/command'
+import { exec } from 'child_process';
 import cli from 'cli-ux'
 // import {boolean} from '@oclif/parser/lib/flags'
 import * as d from 'debug';
@@ -8,12 +9,10 @@ import * as inquirer from 'inquirer'
 import * as minimatch from 'minimatch'
 import * as notifier from 'node-notifier'
 import * as path from "path";
-import { Stream } from 'stream';
 
 import { QueryBuilder } from '../common';
 
 import Command from "./base"
-import { spawn, exec, execFile } from 'child_process';
 
 const debug = d('command:build')
 
