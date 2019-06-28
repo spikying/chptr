@@ -7,6 +7,7 @@ import * as fs from 'fs'
 import * as glob from "glob";
 import * as inquirer from 'inquirer'
 import * as minimatch from 'minimatch'
+import * as moment from 'moment';
 import * as notifier from 'node-notifier'
 import * as path from "path";
 
@@ -17,18 +18,12 @@ import Command from "./base"
 const debug = d('command:build')
 
 export default class Build extends Command {
-  static description = 'Takes all original .MD files and outputs a single file without metadata and comments.  Handles output formats in .md, .pdf and .docx'
+  static readonly exportableFileTypes = ['md', 'pdf', 'docx', 'html']
+  static description = `Takes all original .MD files and outputs a single file without metadata and comments.  Handles these output formats: ${Build.exportableFileTypes.join(', ')}`
 
-  static readonly exportableFileTypes = ['pdf', 'docx', 'md']
 
   static flags = {
     ...Command.flags,
-    // overwrite: flags.string({
-    //   char: 'o',
-    //   description: 'allows overwriting output file if it exists',
-    //   options: ['y', 'n', 'prompt'],
-    //   default: 'prompt'
-    // }),
     filetype: flags.string({
       char: 't',
       description: 'filetype to export in.  Can be set multiple times.',
@@ -42,6 +37,11 @@ export default class Build extends Command {
         'show a notification box when build is completed.  Use --no-notify to suppress notification',
       default: false,
       allowNo: true
+    }),
+    datetimestamp: flags.boolean({
+      char: 'd',
+      description: 'adds datetime stamp before output filename',
+      default: false
     })
   }
 
@@ -56,7 +56,7 @@ export default class Build extends Command {
   async run() {
     const { args, flags } = this.parse(Build)
 
-    const outputFile = args.outputfile
+    const outputFile = `${flags.datetimestamp ? moment().format('YYYYMMDD.HHmm ') : ''}${args.outputfile}`
 
     // let overwrite = flags.overwrite
     // if (overwrite === 'prompt') {
@@ -111,8 +111,7 @@ export default class Build extends Command {
       let pandocArgs = [chapterFiles, '--smart', '--standalone', '-o', `"${fullOutputFilePath}"`] //
 
       if (filetype === 'md') {
-        pandocArgs = pandocArgs.concat(['--number-sections', '--to markdown-raw_html', '--wrap=none'])
-
+        pandocArgs = pandocArgs.concat(['--number-sections', '--to', 'markdown-raw_html', '--wrap=none'])
       }
 
       if (filetype === 'docx') {
@@ -124,6 +123,26 @@ export default class Build extends Command {
           this.warn(`For a better output, create an empty styled Word doc at ${referenceDocFullPath}`)
         }
         pandocArgs = pandocArgs.concat(['--toc', '--toc-depth', '2', '--top-level-division=chapter', '--number-sections'])
+      }
+
+      if (filetype === 'html') {
+        const templateFullPath = path.join(this.configInstance.configPath, 'template.html')
+        if (fs.existsSync(templateFullPath)) {
+          pandocArgs = pandocArgs.concat([`--template`, `"${templateFullPath}"`])
+        }
+        else {
+          this.warn(`For a better output, create an html template at ${templateFullPath}`)
+        }
+
+        const cssFullPath = path.join(this.configInstance.configPath, 'template.css')
+        if (fs.existsSync(cssFullPath)) {
+          pandocArgs = pandocArgs.concat([`--css`, `"${cssFullPath}"`])
+        }
+        else {
+          this.warn(`For a better output, create a css template at ${cssFullPath}`)
+        }
+
+        pandocArgs = pandocArgs.concat(['--to', 'html5-raw_html', '--toc', '--toc-depth', '2', '--top-level-division=chapter', '--number-sections', '--self-contained'])
       }
 
       if (filetype === 'pdf') {
