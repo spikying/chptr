@@ -242,4 +242,15 @@ export class Config {
   public get buildDirectory(): string {
     return path.join(this.rootPath, this.config.buildDirectory)
   }
+
+  public get globalMetadataContent(): string {
+    return `---
+title: ${this.config.projectTitle}
+author: ${this.config.projectAuthor}
+lang: ${this.config.projectLang}
+fontsize: ${this.config.fontSize}
+...
+
+`
+  }
 }
