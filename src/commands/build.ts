@@ -5,8 +5,8 @@ import cli from 'cli-ux'
 import * as d from 'debug';
 import * as fs from 'fs'
 import * as glob from "glob";
-import * as inquirer from 'inquirer'
-import * as minimatch from 'minimatch'
+// import * as inquirer from 'inquirer'
+// import * as minimatch from 'minimatch'
 import * as moment from 'moment';
 import * as notifier from 'node-notifier'
 import * as path from "path";

@@ -4,13 +4,13 @@ import * as d from "debug";
 import * as fs from "fs";
 import * as path from "path";
 import * as simplegit from 'simple-git/promise';
+// import { pathToFileURL } from 'url';
 import { promisify } from "util";
 
 import { QueryBuilder } from "../common";
 import { sanitizeFileName } from '../helpers';
 
 import Command from "./base"
-import { pathToFileURL } from 'url';
 
 const debug = d("command:init");
 const createDir = promisify(fs.mkdir);
