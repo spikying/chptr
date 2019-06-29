@@ -15,13 +15,13 @@ import { promisify } from "util";
 
 import { QueryBuilder } from '../common';
 
-import Command from "./base"
+import Command from "./edit-save-base"
 
 const debug = d('command:build')
 const writeInFile = promisify(fs.write);
 
 export default class Build extends Command {
-  static readonly exportableFileTypes = ['md', 'pdf', 'docx', 'html', 'epub']
+  static readonly exportableFileTypes = ['md', 'pdf', 'docx', 'html', 'epub', 'tex']
 
   static description = `Takes all original .MD files and outputs a single file without metadata and comments.  Handles these output formats: ${Build.exportableFileTypes.join(', ')}`
 
@@ -46,6 +46,11 @@ export default class Build extends Command {
       char: 'd',
       description: 'adds datetime stamp before output filename',
       default: false
+    }),
+    clean: flags.boolean({
+      char: 'c',
+      description: 'removes sentence, paragraph and other markup',
+      default: false
     })
   }
 
@@ -59,6 +64,8 @@ export default class Build extends Command {
 
   async run() {
     const { args, flags } = this.parse(Build)
+
+    const clean = flags.clean
 
     const outputFile = `${flags.datetimestamp ? moment().format('YYYYMMDD.HHmm ') : ''}${args.outputfile}`
 
@@ -82,12 +89,22 @@ export default class Build extends Command {
     try {
       await writeInFile(tempFd, this.configInstance.globalMetadataContent)
 
-      const chapterFiles = '"' + tempPath + '" ' +
-        glob.sync(path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcard))
-          .sort()
-          // .filter(f => !minimatch(f, this.configInstance.metadataWildcard))
-          .map(f => `"${path.normalize(f)}"`)
-          .join(' ')
+      const chapterFilesArray = glob.sync(path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcard))
+        .sort()
+      // .filter(f => !minimatch(f, this.configInstance.metadataWildcard))
+
+      if (clean) {
+        const cleanupPromises: Promise<void>[] = []
+        chapterFilesArray.forEach(c => {
+          debug(`cleaning ${c}`)
+          cleanupPromises.push(this.processFileBack(c))
+        });
+
+        await Promise.all(cleanupPromises)
+        debug(`cleaned all files`)
+      }
+
+      const chapterFiles = '"' + tempPath + '" ' + chapterFilesArray.map(f => `"${path.normalize(f)}"`).join(' ')
       debug(`chapterFiles= ${chapterFiles}`)
 
       const fullOutputDirectory = path.join(this.configInstance.projectRootPath, this.configInstance.buildDirectory)
@@ -140,7 +157,7 @@ export default class Build extends Command {
           pandocArgs = pandocArgs.concat(['--to', 'html5', '--toc', '--toc-depth', '2', '--top-level-division=chapter', '--number-sections', '--self-contained'])
         }
 
-        if (filetype === 'pdf') {
+        if (filetype === 'pdf' || filetype === 'tex') {
           const templateFullPath = path.join(this.configInstance.configPath, 'template.latex')
           if (fs.existsSync(templateFullPath)) {
             pandocArgs = pandocArgs.concat([`--template`, `"${templateFullPath}"`])
@@ -149,7 +166,7 @@ export default class Build extends Command {
             this.warn(`For a better output, create a latex template at ${templateFullPath}`)
           }
 
-          pandocArgs = pandocArgs.concat(['--toc', '--toc-depth', '2', '--top-level-division=chapter', '--number-sections']) //
+          pandocArgs = pandocArgs.concat(['--toc', '--toc-depth', '2', '--top-level-division=chapter', '--number-sections', '--latex-engine=xelatex']) //
         }
 
         if (filetype === 'epub') {
@@ -168,6 +185,18 @@ export default class Build extends Command {
       })
 
       await Promise.all(pandocRuns)
+
+      if (clean) {
+        const cleanupPromises: Promise<void>[] = []
+        chapterFilesArray.forEach(c => {
+          debug(`uncleaning ${c}`)
+          cleanupPromises.push(this.processFile(c))
+        });
+
+        await Promise.all(cleanupPromises)
+        debug(`uncleaned all files`)
+      }
+
       cli.action.stop()
 
       if (flags.notify) {

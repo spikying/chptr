@@ -16,11 +16,12 @@ export default class Reorder extends Command {
     'Takes a chapter and modifies its index number to fit another ordering place'
 
   static flags = {
-    ...Command.flags,
-    deep: flags.boolean({
-      char: 'd',
-      description: 'Makes a recursive subfolder search'
-    })
+    ...Command.flags
+    // ,
+    // deep: flags.boolean({
+    //   char: 'd',
+    //   description: 'Makes a recursive subfolder search'
+    // })
   }
 
   static args = [
@@ -35,8 +36,8 @@ export default class Reorder extends Command {
   async run() {
     const { args, flags } = this.parse(Reorder)
 
-    const origin: number = parseInt(args.origin, 10)
-    const dest: number = parseInt(args.destination, 10)
+    const origin: number = parseInt(args.origin.replace(/^(\d+).*$/, '$1'), 10)
+    const dest: number = parseInt(args.destination.replace(/^(\d+).*$/, '$1'), 10)
 
     if (isNaN(origin)) {
       this.error('Origin argument is not a number')
@@ -56,7 +57,8 @@ export default class Reorder extends Command {
     const dir = path.join(flags.path as string)
     this.log(`Walking directory ${JSON.stringify(dir)}`)
 
-    await walk(dir, flags.deep, 0, (err, files) => {
+    // TODO : use GLOB patterns instead
+    await walk(dir, false, 0, (err, files) => { //flags.deep
       if (err) {
         this.error(err)
         this.exit(1)

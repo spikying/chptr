@@ -19,6 +19,7 @@ const loadFileSync = fs.readFileSync as (path: string) => string;
 export interface ConfigObject {
   chapterPattern: string // | ConfigProperty
   metadataPattern: string // | ConfigProperty
+  summaryPattern: string
   buildDirectory: string // | ConfigProperty
   projectTitle: string // | ConfigProperty
   projectAuthor: string // | ConfigProperty
@@ -48,10 +49,19 @@ export class Config {
       doc: 'File naming pattern for metadata files.  Use NUM for chapter number and NAME for optional chapter name.  Optionally use `/` for a folder structure. Defaults to `NUM.metadata`.',
       format: (val: string) => {
         if (!/^(?=.*NUM).*$/.test(val)) { // && !/^$/.test(val)
-          throw new Error('Must have NUM in pattern or be empty string')
+          throw new Error('Must have NUM in pattern')
         }
       },
       default: 'NUM.metadata'
+    },
+    summaryPattern: {
+      doc: 'File naming pattern for summary files.  Use NUM for chapter number and NAME for optional chapter name.  Optionally use `/` for a folder structure. Defaults to `NUM.summary`.',
+      format: (val: string) => {
+        if (!/^(?=.*NUM).*$/.test(val)) { // && !/^$/.test(val)
+          throw new Error('Must have NUM in pattern')
+        }
+      },
+      default: 'NUM.summary'
     },
     buildDirectory: {
       doc: 'Directory where to output builds done with Pandoc.  Defaults to `build/`.',
@@ -113,52 +123,6 @@ export class Config {
     return jsonConfig as ConfigObject
   }
 
-  // //TODO: remove 1 of 2 configDefaultsWithMeta
-  // public get configDefaultsWithMeta(): ConfigObject {
-  //   const configDefaults: any = {}
-  //   const jsonConfig = this.config
-  //   const props = Object.keys(jsonConfig)
-  //   // debug(`props=${props}`)
-
-  //   for (let i = 0; i !== props.length; i++) {
-  //     if (jsonConfig.hasOwnProperty(props[i])) {
-  //       // debug(`default for prop ${props[i]}=${this.configSchema.default(props[i])}`)
-  //       // debug(`documentation: ${'// ' + props[i]}: ${this.configSchemaObject[props[i]].doc}`)
-  //       configDefaults['// ' + props[i]] = this.configSchemaObject[props[i]].doc
-  //       configDefaults[props[i]] = this.configSchema.default(props[i])
-  //     }
-  //   }
-  //   // debug(`configDefaults object = ${json.stringify(configDefaults)}`)
-  //   return configDefaults
-  // }
-
-  // public stringifyConfigWithComments(configObj: ConfigObject): string {
-  //   const props = Object.keys(configObj)
-  //   const spaces = 4
-  //   let configString = '{\n'
-
-  //   for (let i = 0; i !== props.length; i++) {
-  //     if (configObj.hasOwnProperty(props[i])) {
-  //       debug(`default for prop ${props[i]}=${this.configSchema.default(props[i])}`)
-  //       debug(`documentation: ${'// ' + props[i]}: ${this.configSchemaObject[props[i]].doc}`)
-  //       configString += ' '.repeat(spaces)
-  //       configString += '// '
-  //       configString += this.configSchemaObject[props[i]].doc
-  //       configString += '\n'
-  //       configString += ' '.repeat(spaces)
-  //       configString += `"`
-  //       configString += props[i]
-  //       configString += `"`
-  //       configString += `: "`
-  //       configString += this.configSchema.default(props[i])
-  //       configString += `",\n`
-  //     }
-  //   }
-  //   configString = configString.replace(/(.*),\n$/, '$1')
-  //   configString += '\n}'
-  //   debug(`configString = ${configString}`)
-  //   return configString
-  // }
   public configDefaultsWithMetaString(overrideObj?: object): string {
     const overrideObj2: any = overrideObj || {}
     const jsonConfig = this.config
@@ -230,6 +194,12 @@ export class Config {
   public get metadataWildcard(): string {
     return this.config.metadataPattern.replace('NUM', '+(0|1|2|3|4|5|6|7|8|9)').replace('NAME', '*') + '.md'
   }
+  public summaryWildcardWithNumber(num: number): string {
+    return this.config.summaryPattern.replace('NUM', '*(0)' + num.toString()).replace('NAME', '*') + '.md'
+  }
+  public metadataWildcardWithNumber(num: number): string {
+    return this.config.metadataPattern.replace('NUM', '*(0)' + num.toString()).replace('NAME', '*') + '.json'
+  }
 
   public chapterFileNameFromParameters(num: string, name: string): string {
     return this.config.chapterPattern.replace('NUM', num).replace('NAME', name) + '.md'
@@ -237,6 +207,10 @@ export class Config {
 
   public metadataFileNameFromParameters(num: string, name: string): string {
     return this.config.metadataPattern.replace('NUM', num).replace('NAME', name) + '.json'
+  }
+
+  public summaryFileNameFromParameters(num: string, name: string): string {
+    return this.config.summaryPattern.replace('NUM', num).replace('NAME', name) + '.md'
   }
 
   public get buildDirectory(): string {

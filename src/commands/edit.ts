@@ -14,7 +14,15 @@ export default class Edit extends Command {
   static description = 'Adjust sentence and paragraph endings to allow for easier editing.'
 
   static flags = {
-    ...Command.flags
+    ...Command.flags,
+    type: flags.string(
+      {
+        char: 't',
+        description: 'Edit either chapter file, summary file or all.',
+        default: 'all',
+        options: ['all', 'summary', 'chapter']
+      }
+    )
   }
 
   static args = [{
@@ -32,6 +40,8 @@ export default class Edit extends Command {
   async run() {
     const { args, flags, argv } = this.parse(Edit)
 
+    const editType = flags.type
+    debug(`edit type = ${editType}`)
     debug(`argv=${argv} argv.length=${argv.length} argv[0]=${argv[0]}`)
 
     const chapterNumbers: number[] = []
@@ -55,7 +65,15 @@ export default class Edit extends Command {
 
     chapterNumbers.forEach(async num => {
       debug(`glob fullpath: ${path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcardWithNumber(num))}`)
-      const foundFiles = glob.sync(path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcardWithNumber(num)))
+      const foundFiles: string[] = []
+      if (editType === 'all' || editType === 'chapter') {
+        debug(`adding chapter`)
+        foundFiles.push(...glob.sync(path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcardWithNumber(num))))
+      }
+      if (editType === 'all' || editType === 'summary') {
+        debug(`adding summary`)
+        foundFiles.push(...glob.sync(path.join(this.configInstance.projectRootPath, this.configInstance.summaryWildcardWithNumber(num))))
+      }
       debug(`foundFiles = ${foundFiles}`)
       toEditFiles.push(...foundFiles)
     })

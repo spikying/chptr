@@ -20,7 +20,15 @@ export default class Delete extends Command {
   static description = 'Delete a file locally and in the repository'
 
   static flags = {
-    ...Command.flags
+    ...Command.flags,
+    type: flags.string(
+      {
+        char: 't',
+        description: 'Delete either chapter file, summary file, metadata file or all.',
+        default: 'all',
+        options: ['all', 'summary', 'chapter', 'metadata']
+      }
+    )
   }
 
   static args = [
@@ -34,6 +42,8 @@ export default class Delete extends Command {
 
   async run() {
     const { args, flags } = this.parse(Delete)
+
+    const deleteType = flags.type
 
     const queryBuilder = new QueryBuilder()
     debug(`args.name = ${args.name}`)
@@ -54,21 +64,50 @@ export default class Delete extends Command {
     if (isNaN(nameOrNumber)) {
       // we will delete all files matching the name entered
       let filePattern = '*' + nameOrNumber + '*'
-      if (nameOrNumber.toString().match(/.*[\*].*/)) {
+      if (glob.hasMagic(nameOrNumber)) { //nameOrNumber.toString().match(/.*[\*].*/)
         filePattern = nameOrNumber
       }
       const pathName = path.join(this.configInstance.projectRootPath, filePattern)
       toDeleteFiles.push(...await listFiles(pathName))
     } else {
-      // we will delete all files matching the number patterns for chapters and metadata
-      const pathName = path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcardWithNumber(nameOrNumber))
-      debug(`pathName = ${pathName}`)
-      toDeleteFiles.push(...await listFiles(pathName))
+      // we will delete all files matching the number patterns for chapters, metadata and summary
+      const globPatterns: string[] = []
+      if (deleteType === 'all' || deleteType === 'chapter') {
+        globPatterns.push(this.configInstance.chapterWildcardWithNumber(nameOrNumber))
+      }
+      if (deleteType === 'all' || deleteType === 'summary') {
+        globPatterns.push(this.configInstance.summaryWildcardWithNumber(nameOrNumber))
+      }
+      if (deleteType === 'all' || deleteType === 'metadata') {
+        globPatterns.push(this.configInstance.metadataWildcardWithNumber(nameOrNumber))
+      }
+
+      debug(`globPatterns=${JSON.stringify(globPatterns)}`)
+
+      for (const gp of globPatterns) {
+        // const gp = globPatterns[index];
+        const pathName = path.join(this.configInstance.projectRootPath, gp)
+        debug(`pathName = ${pathName}`)
+        toDeleteFiles.push(...await listFiles(pathName))
+      }
+      // for (let index = 0; index < globPatterns.length; index++) {
+      //   const gp = globPatterns[index];
+      //   const pathName = path.join(this.configInstance.projectRootPath, gp)
+      //   debug(`pathName = ${pathName}`)
+      //   toDeleteFiles.push(...await listFiles(pathName))
+      // }
+
+      // this.configInstance.chapterWildcardWithNumber(nameOrNumber)
     }
     // toDeleteFiles = toDeleteFiles.map<string>((filename) => {
     //   return path.relative(this.configInstance.projectRootPath, filename)
     // });
-    debug(`toDeleteFiles = ${JSON.stringify(toDeleteFiles)}`)
+    debug(`toDeleteFiles = ${JSON.stringify(toDeleteFiles)} toDeleteFiles.length = ${toDeleteFiles.length}`)
+
+    if (toDeleteFiles.length === 0) {
+      cli.warn('No files to delete.')
+      cli.exit(0)
+    }
 
     try {
       cli.action.start('Deleting file(s) locally and from repository')
