@@ -257,15 +257,18 @@ eol=lf
       await git.add('./*')
       await git.commit('Initial commit')
 
-      if (remoteRepo) {
-        const hasRemote: boolean = await git.getRemotes(false).then(result => {
-          return result.find(value => value.name === 'origin') !== undefined
-        })
-        if (!hasRemote) {
-          debug(`adding remote to ${remoteRepo}`)
-          await git.addRemote('origin', remoteRepo)
-        }
+      const hasRemote: boolean = await git.getRemotes(false).then(result => {
+        return result.find(value => value.name === 'origin') !== undefined
+      })
+      if (!hasRemote && remoteRepo) {
 
+        debug(`adding remote to ${remoteRepo}`)
+        await git.addRemote('origin', remoteRepo)
+      }
+      const hasRemote2: boolean = await git.getRemotes(false).then(result => {
+        return result.find(value => value.name === 'origin') !== undefined
+      })
+      if (hasRemote2) {
         await git.pull('origin', 'master', { '--commit': null, '--allow-unrelated-histories': null })
         await git.push('origin', 'master', { '-u': null })
         await git.pull('origin', 'master')
