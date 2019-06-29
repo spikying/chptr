@@ -34,7 +34,7 @@ export default class Add extends Command {
   async run() {
     const { args, flags } = this.parse(Add)
 
-    const name = args.name || await getFilenameFromInput()
+    const name: string = args.name || await getFilenameFromInput()
 
     const dir = path.join(flags.path as string)
     this.log(`Walking directory ${JSON.stringify(dir)}`)
@@ -53,18 +53,19 @@ export default class Add extends Command {
         await addDigitsToAll(dir, newDigits)
       }
 
+      const filledTemplateData = this.configInstance.emptyFileString.toString().replace(/{TITLE}/gmi, name) //`# ${name}\n\n...`
       //TODO: implement those in config
-      const templateData = `# ${name}\n\n...`
-      const templateMeta = {
-        name,
-        datetimeRange: '',
-        revisionStep: 0,
-        characters: [],
-        mainCharacter: '',
-        mainCharacterQuest: '',
-        otherQuest: '',
-        wordCount: 0
-      }
+      const filledTemplateMeta = JSON.stringify(this.configInstance.config.metadataFields, undefined, 4).replace(/{TITLE}/gmi, name)
+      // {
+      //   name,
+      //   datetimeRange: '',
+      //   revisionStep: 0,
+      //   characters: [],
+      //   mainCharacter: '',
+      //   mainCharacterQuest: '',
+      //   otherQuest: '',
+      //   wordCount: 0
+      // }
 
       const fullPathMD = path.join(
         dir,
@@ -92,11 +93,9 @@ export default class Add extends Command {
 
         // debug(JSON.stringify(templateMeta, null, 4))
         const allPromises: Promise<void>[] = []
-        allPromises.push(createFile(fullPathMD, templateData, { encoding: 'utf8' }))
-        allPromises.push(createFile(fullPathMeta, JSON.stringify(templateMeta, null, 4), {
-          encoding: 'utf8'
-        }))
-        allPromises.push(createFile(fullPathSummary, templateData, { encoding: 'utf8' }))
+        allPromises.push(createFile(fullPathMD, filledTemplateData, { encoding: 'utf8' }))
+        allPromises.push(createFile(fullPathMeta, filledTemplateMeta, { encoding: 'utf8' }))
+        allPromises.push(createFile(fullPathSummary, filledTemplateData, { encoding: 'utf8' }))
         await Promise.all(allPromises)
 
         await git.add(mapFilesToBeRelativeToRootPath([fullPathMD, fullPathMeta, fullPathSummary], this.configInstance.projectRootPath))

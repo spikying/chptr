@@ -86,8 +86,6 @@ export default class Init extends Command {
     debug(`before queryBuilder.responses()`)
     const queryResponses: any = await queryBuilder.responses()
 
-    // const name = args.name || (await getFilenameFromInput("What is the project working name?", "MyNovel"));
-    // const remoteRepo = flags.gitRemote || (await getFilenameFromInput("What is the project working name?", "MyNovel"));
     debug(`queryResponses = ${queryResponses}`)
     const name = args.name || queryResponses.name
     const remoteRepo = flags.gitRemote || queryResponses.gitRemote || ''
@@ -97,43 +95,17 @@ export default class Init extends Command {
     // Create folder structure, with /config /chapters /characters /places /props /timeline
     debug("Before createDir");
     try {
-      // cli.action.start('Creating config directory')
       await createDir(this.configInstance.configPath);
       cli.info(`Created directory ${this.configInstance.configPath}`)
     } catch (err) {
       debug(err);
-      // this.warn(`${this.configInstance.configPath} already exists, or filesystem access denied.`);
     }
-    // finally {
-    // cli.action.stop()
-    // }
 
     // Create /config files
-    this.flagForce = flags.force || ''
+    this.flagForce = flags.force || 'false'
 
     debug("After createDir, before createFile (config.json5)");
-    // const forceAll = flags.force === 'true' || flags.force === ''
-    // const configForce = forceAll || flags.force === path.basename(this.configInstance.configFilePath)
-    // if (!configForce && fs.existsSync(this.configInstance.configFilePath)) {
-    //   this.warn(`${this.configInstance.configFilePath} already exists.  Use option --force to overwrite.`);
-    // } else {
-    //   try {
-    //     cli.action.start('Creating config file')
-    //     const configObj = this.configInstance.configDefaultsWithMetaString({ projectTitle: name, projectAuthor: author, projectLang: language }) // this.configInstance.configDefaultsWithMetaString
-    //     // configObj.projectTitle = name
-    //     await createFile(
-    //       this.configInstance.configFilePath,
-    //       // json.stringify(configInstance.configDefaultsWithMeta, null, 4),
-    //       configObj
-    //     );
-    //     // cli.log(`Created ${this.configInstance.configFilePath} with basic config.`);
-    //   } catch (err) {
-    //     this.error(err);
-    //     this.exit(1);
-    //   } finally {
-    //     cli.action.stop(`Created ${this.configInstance.configFilePath}`)
-    //   }
-    // }
+
     const allConfigFiles = [
       {
         fullPathName: this.configInstance.configFilePath,
@@ -168,81 +140,6 @@ eol=lf
     })
 
     await Promise.all(allConfigPromises)
-
-    /*
-    debug("After creating config.json5, before createFile (empty.md)");
-
-    if (!flags.force && fs.existsSync(this.configInstance.emptyFilePath)) {
-      this.warn(`${this.configInstance.emptyFilePath} already exists.  Use option --force to overwrite.`);
-    } else {
-      try {
-        cli.action.start('Creating empty chapter file')
-        await createFile(this.configInstance.emptyFilePath, this.configInstance.emptyFileString)
-        cli.log(`Created ${this.configInstance.emptyFilePath} with basic empty file template.`);
-      } catch (err) {
-        this.error(err);
-        this.exit(1);
-      } finally {
-        cli.action.stop()
-      }
-    }
-
-    debug("After creating empty.md, before creating readme.md")
-
-    if (!flags.force && fs.existsSync(this.configInstance.readmeFilePath)) {
-      this.warn(`${this.configInstance.readmeFilePath} already exists.  Use option --force to overwrite.`);
-    } else {
-      try {
-        cli.action.start('Creating readme file')
-        await createFile(this.configInstance.readmeFilePath, `# ${name}\n\nA novel.`)
-        cli.log(`Created ${this.configInstance.readmeFilePath} with basic readme file template.`);
-      } catch (err) {
-        this.error(err);
-        this.exit(1);
-      } finally {
-        cli.action.stop()
-      }
-    }
-
-    debug("After creating readme.md, before creating .gitignore")
-
-    if (!flags.force && fs.existsSync(this.configInstance.gitignoreFilePath)) {
-      this.warn(`${this.configInstance.gitignoreFilePath} already exists.  Use option --force to overwrite.`);
-    } else {
-      try {
-        cli.action.start('Creating gitignore file')
-        await createFile(this.configInstance.gitignoreFilePath, `build/
-pandoc* /
-`)
-        cli.log(`Created ${this.configInstance.gitignoreFilePath} with basic .gitignore file template.`);
-      } catch (err) {
-        this.error(err);
-        this.exit(1);
-      } finally {
-        cli.action.stop()
-      }
-    }
-
-    debug("After creating .gitignore, before creating .gitattributes")
-
-    if (!flags.force && fs.existsSync(this.configInstance.gitattributesFilePath)) {
-      this.warn(`${this.configInstance.gitattributesFilePath} already exists.  Use option --force to overwrite.`);
-    } else {
-      try {
-        cli.action.start('Creating gitattributes file')
-        await createFile(this.configInstance.gitattributesFilePath, `autocrlf=false
-eol=lf
-* text=auto
-`)
-        cli.log(`Created ${this.configInstance.gitattributesFilePath} with basic .gitattributes file template.`);
-      } catch (err) {
-        this.error(err);
-        this.exit(1);
-      } finally {
-        cli.action.stop()
-      }
-    }
-*/
 
     // Create git repo
     try {
@@ -284,11 +181,13 @@ eol=lf
   }
 
   private async createFile(fullPathName: string, content: string) {
-    const forceAll = this.flagForce === 'true' || this.flagForce === ''
+    const forceAll = this.flagForce === 'true'
     const baseName = path.basename(fullPathName)
     const configForce = forceAll || this.flagForce === baseName
     if (!configForce && fs.existsSync(fullPathName)) {
-      this.warn(`${fullPathName} already exists.  Use option --force=${baseName} to overwrite this one or -f, --force=true to overwrite all.`);
+      if (this.flagForce === 'false') {
+        this.warn(`${fullPathName} already exists.  Use option --force=${baseName} to overwrite this one or -f, --force=true to overwrite all.`);
+      }
     } else {
       try {
         // cli.action.start(`Creating ${baseName}`)

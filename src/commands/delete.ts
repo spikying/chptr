@@ -90,18 +90,8 @@ export default class Delete extends Command {
         debug(`pathName = ${pathName}`)
         toDeleteFiles.push(...await listFiles(pathName))
       }
-      // for (let index = 0; index < globPatterns.length; index++) {
-      //   const gp = globPatterns[index];
-      //   const pathName = path.join(this.configInstance.projectRootPath, gp)
-      //   debug(`pathName = ${pathName}`)
-      //   toDeleteFiles.push(...await listFiles(pathName))
-      // }
-
-      // this.configInstance.chapterWildcardWithNumber(nameOrNumber)
     }
-    // toDeleteFiles = toDeleteFiles.map<string>((filename) => {
-    //   return path.relative(this.configInstance.projectRootPath, filename)
-    // });
+
     debug(`toDeleteFiles = ${JSON.stringify(toDeleteFiles)} toDeleteFiles.length = ${toDeleteFiles.length}`)
 
     if (toDeleteFiles.length === 0) {

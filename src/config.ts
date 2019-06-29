@@ -9,11 +9,12 @@ import * as d from 'debug'
 import fs = require('fs');
 import * as json from 'json5'
 import path = require('path');
-// import { promisify } from "util";
+import { promisify } from "util";
 
 import { sanitizeFileName } from './helpers'
+import { empty } from 'rxjs';
 const debug = d('config')
-// const loadFile = promisify(fs.readFile) as (path: string) => Promise<string>;
+const loadFile = promisify(fs.readFile) as (path: string) => Promise<string>;
 const loadFileSync = fs.readFileSync as (path: string) => string;
 
 export interface ConfigObject {
@@ -26,6 +27,7 @@ export interface ConfigObject {
   projectLang: string // | ConfigProperty
   fontName: string // | ConfigProperty
   fontSize: string // | ConfigProperty
+  metadataFields: object
 }
 
 // interface ConfigProperty {
@@ -35,6 +37,69 @@ export interface ConfigObject {
 // }
 
 export class Config {
+
+  public get config(): ConfigObject {
+    const jsonConfig: any = this.configSchema.getProperties() // so we can operate with a plain old JavaScript object and abstract away convict (optional)
+
+    jsonConfig.chapterPattern = sanitizeFileName(jsonConfig.chapterPattern)
+    jsonConfig.metadataPattern = sanitizeFileName(jsonConfig.metadataPattern)
+
+    debug(`Config Object: ${json.stringify(jsonConfig)}`)
+    return jsonConfig as ConfigObject
+  }
+
+  public get projectRootPath(): string {
+    return this.rootPath
+  }
+  public get configPath(): string {
+    return this.configPathName
+  }
+  public get configFilePath(): string {
+    return this.configFileName
+  }
+
+  public get emptyFilePath(): string {
+    return path.join(this.configPathName, 'empty.md')
+  }
+
+  public get readmeFilePath(): string {
+    return path.join(this.rootPath, 'readme.md')
+  }
+
+  public get gitignoreFilePath(): string {
+    return path.join(this.rootPath, '.gitignore')
+  }
+
+  public get gitattributesFilePath(): string {
+    return path.join(this.rootPath, '.gitattributes')
+  }
+
+  public get chapterWildcard(): string {
+    return this.config.chapterPattern.replace('NUM', '+(0|1|2|3|4|5|6|7|8|9)').replace('NAME', '*') + '.md'
+  }
+  public get metadataWildcard(): string {
+    return this.config.metadataPattern.replace('NUM', '+(0|1|2|3|4|5|6|7|8|9)').replace('NAME', '*') + '.md'
+  }
+
+  public get buildDirectory(): string {
+    return path.join(this.rootPath, this.config.buildDirectory)
+  }
+
+  public get globalMetadataContent(): string {
+    return `---
+title: ${this.config.projectTitle}
+author: ${this.config.projectAuthor}
+lang: ${this.config.projectLang}
+fontsize: ${this.config.fontSize}
+...
+
+`
+  }
+  public emptyFileString: string = `
+# {TITLE}
+
+`
+
   private readonly configSchemaObject: any = {
     chapterPattern: {
       doc: 'File naming pattern for chapter files. Use NUM for chapter number and NAME for chapter name.  Optionally use `/` for a folder structure, e.g. `NUM.NAME` or `NUM/NAME`.  Defaults to `NUM NAME`.',
@@ -86,6 +151,19 @@ export class Config {
     fontSize: {
       doc: 'Font size for the rendering engines that use it',
       default: '12pt'
+    },
+    metadataFields: {
+      doc: 'All fields to be added in each Metadata file',
+      default: {
+        name: '{TITLE}',
+        datetimeRange: '',
+        revisionStep: 0,
+        characters: [],
+        mainCharacter: '',
+        mainCharacterQuest: '',
+        otherQuest: '',
+        wordCount: 0
+      }
     }
   }
   private readonly configSchema = Convict(this.configSchemaObject)
@@ -101,26 +179,28 @@ export class Config {
     debug(`configPathName = ${this.configPathName}`)
     debug(`configFileName = ${this.configFileName}`)
 
-    try {
-      const configFileString: string = loadFileSync(this.configFileName)
+    const filePromises: Promise<void>[] = []
+
+    const loadConfigFilePromise = loadFile(this.configFileName).then(configFileString => {
       const json5Config = jsonComment.parse(configFileString, undefined, true) // json.parse(configFileString)
       this.configSchema.load(json5Config) //jsonComment.parse(json5Config, undefined, true))
       debug(`Loaded config from ${this.configFileName}:\n${jsonComment.stringify(json5Config)}`)
-    } catch (err) {
+    }).catch(err => {
       debug(err)
-    }
+    })
+    filePromises.push(loadConfigFilePromise)
 
-    this.configSchema.validate({ allowed: 'strict' }) // 'strict' throws error if config does not conform to schema
-  }
+    const loadEmptyFilePromise = loadFile(this.emptyFilePath).then(emptyFileString => {
+      this.emptyFileString = emptyFileString
+    }).catch(err => {
+      debug(err)
+    })
+    filePromises.push(loadEmptyFilePromise)
 
-  public get config(): ConfigObject {
-    const jsonConfig: any = this.configSchema.getProperties() // so we can operate with a plain old JavaScript object and abstract away convict (optional)
+    void Promise.all(filePromises).then(() => {
+      this.configSchema.validate({ allowed: 'strict' }) // 'strict' throws error if config does not conform to schema
+    })
 
-    jsonConfig.chapterPattern = sanitizeFileName(jsonConfig.chapterPattern)
-    jsonConfig.metadataPattern = sanitizeFileName(jsonConfig.metadataPattern)
-
-    debug(`Config Object: ${json.stringify(jsonConfig)}`)
-    return jsonConfig as ConfigObject
   }
 
   public configDefaultsWithMetaString(overrideObj?: object): string {
@@ -144,7 +224,11 @@ export class Config {
         configDefaultsString += props[i]
         configDefaultsString += `"`
         configDefaultsString += `: "`
-        configDefaultsString += (overrideObj2[props[i]]) || this.configSchema.default(props[i])
+        let val = overrideObj2[props[i]] || this.configSchema.default(props[i])
+        if (typeof val === 'object') {
+          val = JSON.stringify(val)
+        }
+        configDefaultsString += val
         configDefaultsString += `",\n`
       }
     }
@@ -153,46 +237,8 @@ export class Config {
     debug(`configDefaultsString = ${configDefaultsString}`)
     return configDefaultsString
   }
-
-  public get projectRootPath(): string {
-    return this.rootPath
-  }
-  public get configPath(): string {
-    return this.configPathName
-  }
-  public get configFilePath(): string {
-    return this.configFileName
-  }
-
-  public get emptyFilePath(): string {
-    return path.join(this.configPathName, 'empty.md')
-  }
-  public get emptyFileString(): string {
-    return `
-# {TITLE}
-`
-  }
-
-  public get readmeFilePath(): string {
-    return path.join(this.rootPath, 'readme.md')
-  }
-
-  public get gitignoreFilePath(): string {
-    return path.join(this.rootPath, '.gitignore')
-  }
-
-  public get gitattributesFilePath(): string {
-    return path.join(this.rootPath, '.gitattributes')
-  }
-
-  public get chapterWildcard(): string {
-    return this.config.chapterPattern.replace('NUM', '+(0|1|2|3|4|5|6|7|8|9)').replace('NAME', '*') + '.md'
-  }
   public chapterWildcardWithNumber(num: number): string {
     return this.config.chapterPattern.replace('NUM', '*(0)' + num.toString()).replace('NAME', '*') + '.md'
-  }
-  public get metadataWildcard(): string {
-    return this.config.metadataPattern.replace('NUM', '+(0|1|2|3|4|5|6|7|8|9)').replace('NAME', '*') + '.md'
   }
   public summaryWildcardWithNumber(num: number): string {
     return this.config.summaryPattern.replace('NUM', '*(0)' + num.toString()).replace('NAME', '*') + '.md'
@@ -211,20 +257,5 @@ export class Config {
 
   public summaryFileNameFromParameters(num: string, name: string): string {
     return this.config.summaryPattern.replace('NUM', num).replace('NAME', name) + '.md'
-  }
-
-  public get buildDirectory(): string {
-    return path.join(this.rootPath, this.config.buildDirectory)
-  }
-
-  public get globalMetadataContent(): string {
-    return `---
-title: ${this.config.projectTitle}
-author: ${this.config.projectAuthor}
-lang: ${this.config.projectLang}
-fontsize: ${this.config.fontSize}
-...
-
-`
   }
 }
