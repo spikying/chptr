@@ -17,10 +17,21 @@ const debug = d('config')
 const loadFileSync = fs.readFileSync as (path: string) => string;
 
 export interface ConfigObject {
-  chapterPattern: string
-  metadataPattern: string
-  buildDirectory: string
+  chapterPattern: string // | ConfigProperty
+  metadataPattern: string // | ConfigProperty
+  buildDirectory: string // | ConfigProperty
+  projectTitle: string // | ConfigProperty
+  projectAuthor: string // | ConfigProperty
+  projectLang: string // | ConfigProperty
+  fontName: string // | ConfigProperty
+  fontSize: string // | ConfigProperty
 }
+
+// interface ConfigProperty {
+//   doc: string
+//   default: string
+//   format?(val: string): void
+// }
 
 export class Config {
   private readonly configSchemaObject: any = {
@@ -45,6 +56,26 @@ export class Config {
     buildDirectory: {
       doc: 'Directory where to output builds done with Pandoc.  Defaults to `build/`.',
       default: 'build/'
+    },
+    projectTitle: {
+      doc: 'Title for the project.  Will be used as a head title in renderings.',
+      default: 'MyNovel'
+    },
+    projectAuthor: {
+      doc: 'Author for the project.',
+      default: '---'
+    },
+    projectLang: {
+      doc: 'Project language',
+      default: 'en'
+    },
+    fontName: {
+      doc: 'Font to use for the rendering engines that use it',
+      default: 'Arial'
+    },
+    fontSize: {
+      doc: 'Font size for the rendering engines that use it',
+      default: '12pt'
     }
   }
   private readonly configSchema = Convict(this.configSchemaObject)
@@ -82,26 +113,54 @@ export class Config {
     return jsonConfig as ConfigObject
   }
 
-  //TODO: remove 1 of 2 configDefaultsWithMeta
-  public get configDefaultsWithMeta(): ConfigObject {
-    const configDefaults: any = {}
-    const jsonConfig = this.config
-    const props = Object.keys(jsonConfig)
-    // debug(`props=${props}`)
+  // //TODO: remove 1 of 2 configDefaultsWithMeta
+  // public get configDefaultsWithMeta(): ConfigObject {
+  //   const configDefaults: any = {}
+  //   const jsonConfig = this.config
+  //   const props = Object.keys(jsonConfig)
+  //   // debug(`props=${props}`)
 
-    for (let i = 0; i !== props.length; i++) {
-      if (jsonConfig.hasOwnProperty(props[i])) {
-        // debug(`default for prop ${props[i]}=${this.configSchema.default(props[i])}`)
-        // debug(`documentation: ${'// ' + props[i]}: ${this.configSchemaObject[props[i]].doc}`)
-        configDefaults['// ' + props[i]] = this.configSchemaObject[props[i]].doc
-        configDefaults[props[i]] = this.configSchema.default(props[i])
-      }
-    }
-    // debug(`configDefaults object = ${json.stringify(configDefaults)}`)
-    return configDefaults
-  }
+  //   for (let i = 0; i !== props.length; i++) {
+  //     if (jsonConfig.hasOwnProperty(props[i])) {
+  //       // debug(`default for prop ${props[i]}=${this.configSchema.default(props[i])}`)
+  //       // debug(`documentation: ${'// ' + props[i]}: ${this.configSchemaObject[props[i]].doc}`)
+  //       configDefaults['// ' + props[i]] = this.configSchemaObject[props[i]].doc
+  //       configDefaults[props[i]] = this.configSchema.default(props[i])
+  //     }
+  //   }
+  //   // debug(`configDefaults object = ${json.stringify(configDefaults)}`)
+  //   return configDefaults
+  // }
 
-  public get configDefaultsWithMetaString(): string {
+  // public stringifyConfigWithComments(configObj: ConfigObject): string {
+  //   const props = Object.keys(configObj)
+  //   const spaces = 4
+  //   let configString = '{\n'
+
+  //   for (let i = 0; i !== props.length; i++) {
+  //     if (configObj.hasOwnProperty(props[i])) {
+  //       debug(`default for prop ${props[i]}=${this.configSchema.default(props[i])}`)
+  //       debug(`documentation: ${'// ' + props[i]}: ${this.configSchemaObject[props[i]].doc}`)
+  //       configString += ' '.repeat(spaces)
+  //       configString += '// '
+  //       configString += this.configSchemaObject[props[i]].doc
+  //       configString += '\n'
+  //       configString += ' '.repeat(spaces)
+  //       configString += `"`
+  //       configString += props[i]
+  //       configString += `"`
+  //       configString += `: "`
+  //       configString += this.configSchema.default(props[i])
+  //       configString += `",\n`
+  //     }
+  //   }
+  //   configString = configString.replace(/(.*),\n$/, '$1')
+  //   configString += '\n}'
+  //   debug(`configString = ${configString}`)
+  //   return configString
+  // }
+  public configDefaultsWithMetaString(overrideObj?: object): string {
+    const overrideObj2: any = overrideObj || {}
     const jsonConfig = this.config
     const props = Object.keys(jsonConfig)
     // debug(`props=${props}`)
@@ -121,13 +180,13 @@ export class Config {
         configDefaultsString += props[i]
         configDefaultsString += `"`
         configDefaultsString += `: "`
-        configDefaultsString += this.configSchema.default(props[i])
+        configDefaultsString += (overrideObj2[props[i]]) || this.configSchema.default(props[i])
         configDefaultsString += `",\n`
       }
     }
     configDefaultsString = configDefaultsString.replace(/(.*),\n$/, '$1')
     configDefaultsString += '\n}'
-    // debug(`configDefaultsString = ${configDefaultsString}`)
+    debug(`configDefaultsString = ${configDefaultsString}`)
     return configDefaultsString
   }
 

@@ -2,6 +2,7 @@ import { flags } from "@oclif/command";
 import { cli } from "cli-ux";
 import * as d from "debug";
 import * as fs from "fs";
+import * as path from "path";
 import * as simplegit from 'simple-git/promise';
 import { promisify } from "util";
 
@@ -9,6 +10,7 @@ import { QueryBuilder } from "../common";
 import { sanitizeFileName } from '../helpers';
 
 import Command from "./base"
+import { pathToFileURL } from 'url';
 
 const debug = d("command:init");
 const createDir = promisify(fs.mkdir);
@@ -33,12 +35,21 @@ export default class Init extends Command {
         description: "Git address of remote repository."
       }
     ),
-    force: flags.boolean(
+    force: flags.string(
       {
         char: "f",
-        description: "Overwrite config files if they exist",
-        default: false
-      })
+        description: "Overwrite config files if they exist.  Specify a filename to overwrite only one; write `true` to overwrite all.",
+        default: 'false'
+      }
+    ),
+    author: flags.string({
+      char: "a",
+      description: "Author of project"
+    }),
+    language: flags.string({
+      char: "l",
+      description: "Language of project"
+    })
   };
 
   static args = [
@@ -51,6 +62,10 @@ export default class Init extends Command {
     }
   ];
 
+  static strict = false
+
+  private flagForce = 'false'
+
   async run() {
     const { args, flags } = this.parse(Init);
 
@@ -62,6 +77,12 @@ export default class Init extends Command {
     if (flags.gitRemote === undefined) {
       queryBuilder.add('gitRemote', queryBuilder.gitremote())
     }
+    if (!flags.author) {
+      queryBuilder.add('author', queryBuilder.textinput('What is the name of the author?'))
+    }
+    if (!flags.language) {
+      queryBuilder.add('language', queryBuilder.textinput('What language code do you use? (ex. en, fr, es...)'))
+    }
     debug(`before queryBuilder.responses()`)
     const queryResponses: any = await queryBuilder.responses()
 
@@ -69,41 +90,86 @@ export default class Init extends Command {
     // const remoteRepo = flags.gitRemote || (await getFilenameFromInput("What is the project working name?", "MyNovel"));
     debug(`queryResponses = ${queryResponses}`)
     const name = args.name || queryResponses.name
-    const remoteRepo = flags.gitRemote || queryResponses.gitRemote || '';
+    const remoteRepo = flags.gitRemote || queryResponses.gitRemote || ''
+    const author = flags.author || queryResponses.author || ''
+    const language = flags.language || queryResponses.language || 'en'
 
     // Create folder structure, with /config /chapters /characters /places /props /timeline
     debug("Before createDir");
     try {
-      cli.action.start('Creating config directory')
+      // cli.action.start('Creating config directory')
       await createDir(this.configInstance.configPath);
+      cli.info(`Created directory ${this.configInstance.configPath}`)
     } catch (err) {
       debug(err);
-      this.warn(`${this.configInstance.configPath} already exists, or filesystem access denied.`);
-    } finally {
-      cli.action.stop()
+      // this.warn(`${this.configInstance.configPath} already exists, or filesystem access denied.`);
     }
+    // finally {
+    // cli.action.stop()
+    // }
+
+    // Create /config files
+    this.flagForce = flags.force || ''
 
     debug("After createDir, before createFile (config.json5)");
-    // Create /config files: config.json5, empty.md, fields.json5
-    if (!flags.force && fs.existsSync(this.configInstance.configFilePath)) {
-      this.warn(`${this.configInstance.configFilePath} already exists.  Use option --force to overwrite.`);
-    } else {
-      try {
-        cli.action.start('Creating config file')
-        await createFile(
-          this.configInstance.configFilePath,
-          // json.stringify(configInstance.configDefaultsWithMeta, null, 4),
-          this.configInstance.configDefaultsWithMetaString
-        );
-        cli.log(`Created ${this.configInstance.configFilePath} with basic config.`);
-      } catch (err) {
-        this.error(err);
-        this.exit(1);
-      } finally {
-        cli.action.stop()
+    // const forceAll = flags.force === 'true' || flags.force === ''
+    // const configForce = forceAll || flags.force === path.basename(this.configInstance.configFilePath)
+    // if (!configForce && fs.existsSync(this.configInstance.configFilePath)) {
+    //   this.warn(`${this.configInstance.configFilePath} already exists.  Use option --force to overwrite.`);
+    // } else {
+    //   try {
+    //     cli.action.start('Creating config file')
+    //     const configObj = this.configInstance.configDefaultsWithMetaString({ projectTitle: name, projectAuthor: author, projectLang: language }) // this.configInstance.configDefaultsWithMetaString
+    //     // configObj.projectTitle = name
+    //     await createFile(
+    //       this.configInstance.configFilePath,
+    //       // json.stringify(configInstance.configDefaultsWithMeta, null, 4),
+    //       configObj
+    //     );
+    //     // cli.log(`Created ${this.configInstance.configFilePath} with basic config.`);
+    //   } catch (err) {
+    //     this.error(err);
+    //     this.exit(1);
+    //   } finally {
+    //     cli.action.stop(`Created ${this.configInstance.configFilePath}`)
+    //   }
+    // }
+    const allConfigFiles = [
+      {
+        fullPathName: this.configInstance.configFilePath,
+        content: this.configInstance.configDefaultsWithMetaString({ projectTitle: name, projectAuthor: author, projectLang: language })
+      },
+      {
+        fullPathName: this.configInstance.emptyFilePath,
+        content: this.configInstance.emptyFileString
+      },
+      {
+        fullPathName: this.configInstance.readmeFilePath,
+        content: `# ${name}\n\nA novel.`
+      },
+      {
+        fullPathName: this.configInstance.gitignoreFilePath,
+        content: `build/
+pandoc*/
+`
+      },
+      {
+        fullPathName: this.configInstance.gitattributesFilePath,
+        content: `autocrlf=false
+eol=lf
+* text=auto
+`
       }
-    }
+    ]
+    const allConfigPromises: Promise<void>[] = []
 
+    allConfigFiles.forEach(c => {
+      allConfigPromises.push(this.createFile(c.fullPathName, c.content))
+    })
+
+    await Promise.all(allConfigPromises)
+
+    /*
     debug("After creating config.json5, before createFile (empty.md)");
 
     if (!flags.force && fs.existsSync(this.configInstance.emptyFilePath)) {
@@ -146,7 +212,7 @@ export default class Init extends Command {
       try {
         cli.action.start('Creating gitignore file')
         await createFile(this.configInstance.gitignoreFilePath, `build/
-pandoc*/
+pandoc* /
 `)
         cli.log(`Created ${this.configInstance.gitignoreFilePath} with basic .gitignore file template.`);
       } catch (err) {
@@ -176,6 +242,7 @@ eol=lf
         cli.action.stop()
       }
     }
+*/
 
     // Create git repo
     try {
@@ -213,5 +280,27 @@ eol=lf
     cli.info("End of initialization");
   }
 
+  private async createFile(fullPathName: string, content: string) {
+    const forceAll = this.flagForce === 'true' || this.flagForce === ''
+    const baseName = path.basename(fullPathName)
+    const configForce = forceAll || this.flagForce === baseName
+    if (!configForce && fs.existsSync(fullPathName)) {
+      this.warn(`${fullPathName} already exists.  Use option --force=${baseName} to overwrite this one or -f, --force=true to overwrite all.`);
+    } else {
+      try {
+        // cli.action.start(`Creating ${baseName}`)
+        await createFile(
+          fullPathName,
+          content
+        );
+      } catch (err) {
+        this.error(err);
+        this.exit(1);
+      } finally {
+        cli.info(`Created ${fullPathName}`)
+      }
+    }
+
+  }
 }
 
