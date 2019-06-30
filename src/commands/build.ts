@@ -87,6 +87,7 @@ export default class Build extends Command {
     debug(`temp file = ${tempPath}`)
 
     try {
+      debug(`temp file content: ${this.configInstance.globalMetadataContent}`)
       await writeInFile(tempFd, this.configInstance.globalMetadataContent)
 
       const chapterFilesArray = glob.sync(path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcard))

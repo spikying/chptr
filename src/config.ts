@@ -13,6 +13,7 @@ import { promisify } from "util";
 
 import { sanitizeFileName } from './helpers'
 import { empty } from 'rxjs';
+import moment = require('moment');
 const debug = d('config')
 const loadFile = promisify(fs.readFile) as (path: string) => Promise<string>;
 const loadFileSync = fs.readFileSync as (path: string) => string;
@@ -86,11 +87,13 @@ export class Config {
   }
 
   public get globalMetadataContent(): string {
+    debug(`config=${JSON.stringify(this.config)}`)
     return `---
 title: ${this.config.projectTitle}
 author: ${this.config.projectAuthor}
 lang: ${this.config.projectLang}
 fontsize: ${this.config.fontSize}
+date: ${moment().format('D MMMM YYYY')}
 ...
 
 `
@@ -179,28 +182,20 @@ fontsize: ${this.config.fontSize}
     debug(`configPathName = ${this.configPathName}`)
     debug(`configFileName = ${this.configFileName}`)
 
-    const filePromises: Promise<void>[] = []
-
-    const loadConfigFilePromise = loadFile(this.configFileName).then(configFileString => {
+    try {
+      const configFileString = loadFileSync(this.configFileName)
+      debug(`configFileString=${configFileString}`)
       const json5Config = jsonComment.parse(configFileString, undefined, true) // json.parse(configFileString)
       this.configSchema.load(json5Config) //jsonComment.parse(json5Config, undefined, true))
       debug(`Loaded config from ${this.configFileName}:\n${jsonComment.stringify(json5Config)}`)
-    }).catch(err => {
+    } catch (err) {
       debug(err)
-    })
-    filePromises.push(loadConfigFilePromise)
+    }
 
-    const loadEmptyFilePromise = loadFile(this.emptyFilePath).then(emptyFileString => {
-      this.emptyFileString = emptyFileString
-    }).catch(err => {
-      debug(err)
-    })
-    filePromises.push(loadEmptyFilePromise)
+    const emptyFileString = loadFileSync(this.emptyFilePath)
+    this.emptyFileString = emptyFileString
 
-    void Promise.all(filePromises).then(() => {
-      this.configSchema.validate({ allowed: 'strict' }) // 'strict' throws error if config does not conform to schema
-    })
-
+    this.configSchema.validate({ allowed: 'strict' }) // 'strict' throws error if config does not conform to schema
   }
 
   public configDefaultsWithMetaString(overrideObj?: object): string {
@@ -223,13 +218,17 @@ fontsize: ${this.config.fontSize}
         configDefaultsString += `"`
         configDefaultsString += props[i]
         configDefaultsString += `"`
-        configDefaultsString += `: "`
+        configDefaultsString += `: `
         let val = overrideObj2[props[i]] || this.configSchema.default(props[i])
         if (typeof val === 'object') {
+          debug(`object val=${val}`)
           val = JSON.stringify(val)
+          debug(`object val stringified=${val}`)
+        } else {
+          val = `"${val}"`
         }
         configDefaultsString += val
-        configDefaultsString += `",\n`
+        configDefaultsString += `,\n`
       }
     }
     configDefaultsString = configDefaultsString.replace(/(.*),\n$/, '$1')

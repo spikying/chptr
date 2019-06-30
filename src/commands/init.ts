@@ -172,7 +172,7 @@ eol=lf
       }
 
     } catch (err) {
-      this.error(err)
+      this.warn(err)
     } finally {
       cli.action.stop()
     }

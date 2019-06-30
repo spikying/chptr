@@ -203,3 +203,4 @@ export const mapFilesToBeRelativeToRootPath = function (files: string[], rootPat
     return path.relative(rootPath, filename)
   });
 }
+

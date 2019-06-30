@@ -29,6 +29,7 @@ USAGE
 # Commands
 <!-- commands -->
 * [`spixNovel add [NAME]`](#spixnovel-add-name)
+* [`spixNovel antidote [FILE]`](#spixnovel-antidote-file)
 * [`spixNovel base`](#spixnovel-base)
 * [`spixNovel build [OUTPUTFILE]`](#spixnovel-build-outputfile)
 * [`spixNovel delete [NAME]`](#spixnovel-delete-name)
@@ -57,6 +58,22 @@ OPTIONS
 
 _See code: [src\commands\add.ts](https://github.com/spikying/spixNovel/blob/v0.0.0/src\commands\add.ts)_
 
+## `spixNovel antidote [FILE]`
+
+describe the command here
+
+```
+USAGE
+  $ spixNovel antidote [FILE]
+
+OPTIONS
+  -f, --force
+  -h, --help       show CLI help
+  -n, --name=name  name to print
+```
+
+_See code: [src\commands\antidote.ts](https://github.com/spikying/spixNovel/blob/v0.0.0/src\commands\antidote.ts)_
+
 ## `spixNovel base`
 
 ```
@@ -72,7 +89,7 @@ _See code: [src\commands\base.ts](https://github.com/spikying/spixNovel/blob/v0.
 
 ## `spixNovel build [OUTPUTFILE]`
 
-Takes all original .MD files and outputs a single .MD file without metadata and comments.  Adds missing files to index file.
+Takes all original .MD files and outputs a single file without metadata and comments.  Handles these output formats: md, pdf, docx, html, epub, tex
 
 ```
 USAGE
@@ -82,16 +99,16 @@ ARGUMENTS
   OUTPUTFILE  [default: novel] output file concatenating all other files's contents
 
 OPTIONS
-  -h, --help                   show CLI help
+  -c, --clean                               removes sentence, paragraph and other markup
+  -d, --datetimestamp                       adds datetime stamp before output filename
+  -h, --help                                show CLI help
 
-  -n, --[no-]notify            show a notification box when build is completed.  Use --no-notify to suppress
-                               notification
+  -n, --[no-]notify                         show a notification box when build is completed.  Use --no-notify to
+                                            suppress notification
 
-  -o, --overwrite=y|n|prompt   [default: prompt] allows overwriting output file if it exists
+  -p, --path=path                           [default: .] Path where root of project files are
 
-  -p, --path=path              [default: .] Path where root of project files are
-
-  -t, --filetypes=pdf|docx|md  [default: md] filetype to export in.  Can be set multiple times.
+  -t, --filetype=md|pdf|docx|html|epub|tex  filetype to export in.  Can be set multiple times.
 ```
 
 _See code: [src\commands\build.ts](https://github.com/spikying/spixNovel/blob/v0.0.0/src\commands\build.ts)_
@@ -108,8 +125,11 @@ ARGUMENTS
   NAME  filename pattern or chapter number to delete
 
 OPTIONS
-  -h, --help       show CLI help
-  -p, --path=path  [default: .] Path where root of project files are
+  -h, --help                               show CLI help
+  -p, --path=path                          [default: .] Path where root of project files are
+
+  -t, --type=all|summary|chapter|metadata  [default: all] Delete either chapter file, summary file, metadata file or
+                                           all.
 ```
 
 _See code: [src\commands\delete.ts](https://github.com/spikying/spixNovel/blob/v0.0.0/src\commands\delete.ts)_
@@ -126,8 +146,9 @@ ARGUMENTS
   FILTER  Chapter number(s) to modify, comma-separated.
 
 OPTIONS
-  -h, --help       show CLI help
-  -p, --path=path  [default: .] Path where root of project files are
+  -h, --help                      show CLI help
+  -p, --path=path                 [default: .] Path where root of project files are
+  -t, --type=all|summary|chapter  [default: all] Edit either chapter file, summary file or all.
 
 ALIASES
   $ spixNovel modify
@@ -178,10 +199,18 @@ ARGUMENTS
   NAME  Name of project
 
 OPTIONS
+  -a, --author=author        Author of project
   -d, --digits=digits        [default: 2] Number of digits to use in file numbering initially.  Defaults to `2`.
-  -f, --force                Overwrite config files if they exist
+
+  -f, --force=force          [default: false] Overwrite config files if they exist.  Specify a filename to overwrite
+                             only one; write `true` to overwrite all.
+
   -h, --help                 show CLI help
+
+  -l, --language=language    Language of project
+
   -p, --path=path            [default: .] Path where root of project files are
+
   -r, --gitRemote=gitRemote  Git address of remote repository.
 ```
 
@@ -200,7 +229,6 @@ ARGUMENTS
   DESTINATION  number it will become
 
 OPTIONS
-  -d, --deep       Makes a recursive subfolder search
   -h, --help       show CLI help
   -p, --path=path  [default: .] Path where root of project files are
 ```
