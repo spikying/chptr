@@ -1,11 +1,12 @@
 import { flags } from '@oclif/command'
 import { cli } from "cli-ux";
-import * as d from 'debug';
+// import * as d from 'debug';
 import * as glob from "glob";
 import * as path from "path";
 
 import { QueryBuilder } from '../common';
 
+import { d } from './base';
 import Command from "./edit-save-base";
 
 const debug = d('command:edit')

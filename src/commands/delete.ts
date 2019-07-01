@@ -1,20 +1,20 @@
 import { flags } from '@oclif/command'
 import { cli } from "cli-ux";
-import * as d from "debug";
-import * as fs from "fs";
+// import * as d from "debug";
+// import * as fs from "fs";
 import * as glob from "glob";
 import * as path from "path";
 import * as simplegit from 'simple-git/promise';
-import { promisify } from "util";
+// import { promisify } from "util";
 
 import { QueryBuilder } from '../common';
 import { mapFilesToBeRelativeToRootPath } from '../helpers';
 
-import Command from "./base"
+import Command, { d, listFiles } from "./base"
 
 const debug = d("command:delete");
 // const listFiles = promisify(fs.readdir);
-const listFiles = promisify(glob);
+// const listFiles = promisify(glob);
 
 export default class Delete extends Command {
   static description = 'Delete a file locally and in the repository'

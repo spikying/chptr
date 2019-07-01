@@ -1,12 +1,12 @@
 import { flags } from '@oclif/command'
-import * as d from 'debug';
+// import * as d from 'debug';
 import * as fs from 'fs';
-import * as path from "path";
+// import * as path from "path";
 import { promisify } from "util";
 
 import { filterNumbers } from '../helpers';
 
-import Command from "./base";
+import Command, { d } from "./base";
 
 const debug = d('command:edit-save-base')
 
@@ -20,7 +20,8 @@ export default abstract class extends Command {
   }
 
   // https://unicode.org/reports/tr29/#Sentence_Boundaries
-  private readonly sentenceBreakChar = '\u200D'// '\u000D' // '\u2028'
+  public readonly sentenceBreakChar = '\u2028' // '\u000D'// '\u200D' // '\u2028'
+  public readonly paragraphBreakChar = '\u2029'
 
   public async processFile(filepath: string): Promise<void> {
     try {
@@ -34,7 +35,7 @@ export default abstract class extends Command {
           paraCounter++
           // return `$1\u2029\n\n$2{{${paraCounter}}}`
           debug(`full: ${full} one: ${one} two: ${two}`)
-          return `${one}\n\n\u2029{{${paraCounter}}}\n${two}`
+          return `${one}\n\n${this.paragraphBreakChar}{{${paraCounter}}}\n${two}`
         })
       debug(`Processed content: \n${replacedContent.substring(0, 250)}`)
       await writeFile(filepath, replacedContent, 'utf8')
@@ -50,8 +51,9 @@ export default abstract class extends Command {
       const buff = await readFile(filepath)
       const initialContent = await buff.toString('utf8', 0, buff.byteLength)
       const sentenceBreakRegex = new RegExp(this.sentenceBreakChar + '\n', 'gm')
+      const paragraphBreakRegex = new RegExp('\n\n' + this.paragraphBreakChar + '{{\d+}}\n', 'gm')
       const replacedContent = initialContent.replace(sentenceBreakRegex, '  ')
-        .replace(/\n\n\u2029{{\d+}}\n/gm, '\n\n')
+        .replace(paragraphBreakRegex, '\n\n')
       debug(`Processed back content: \n${replacedContent.substring(0, 250)}`)
       await writeFile(filepath, replacedContent, 'utf8')
     } catch (error) {

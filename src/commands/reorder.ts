@@ -1,15 +1,13 @@
 import { flags } from '@oclif/command'
-import * as d from 'debug'
+// import * as d from 'debug'
 import * as fs from 'fs'
 import * as path from 'path'
 
 import { getHighestNumberAndDigits, renumberedFilename, walk } from '../helpers'
 
-import Command from "./base"
+import Command, { d } from "./base"
 const debug = d('command:reorder')
 const debugEnabled = d.enabled('command:reorder')
-
-
 
 export default class Reorder extends Command {
   static description =

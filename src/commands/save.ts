@@ -1,16 +1,16 @@
 import { flags } from '@oclif/command'
-import { integer } from '@oclif/parser/lib/flags';
 import { cli } from "cli-ux";
-import * as d from 'debug';
+// import * as d from 'debug';
 // import * as glob from "glob";
 import * as minimatch from 'minimatch'
 import * as path from "path";
 import * as simplegit from 'simple-git/promise';
-import { promisify } from "util";
+// import { promisify } from "util";
 
 import { QueryBuilder } from '../common';
 import { filterNumbers, mapFilesToBeRelativeToRootPath, walk } from '../helpers';
 
+import { d } from './base';
 import Command from "./edit-save-base";
 
 const debug = d('command:save')
@@ -77,7 +77,7 @@ export default class Save extends Command {
       await this.processFileBack(fullPath)
       await this.processFile(fullPath)
     });
-    cli.action.stop()
+    cli.action.stop(`done ${toAddFiles.join(' ')}`)
 
     let message: any = args.message || queryResponses.message || 'Modified files:'
     message += '\n' + `${JSON.stringify(toAddFiles)}`
@@ -95,7 +95,7 @@ export default class Save extends Command {
     } catch (err) {
       this.error(err)
     } finally {
-      cli.action.stop()
+      cli.action.stop(`Commited and pushed ${message}`)
     }
 
     // cli.action.start('Processing back files')

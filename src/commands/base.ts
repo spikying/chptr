@@ -1,7 +1,23 @@
 import { Command, flags } from '@oclif/command'
+import * as deb from 'debug';
+import * as fs from 'fs';
+import * as glob from "glob";
 import * as path from "path";
+import { promisify } from "util";
 
 import { Config } from "../config";
+
+export const readFile = promisify(fs.readFile)
+export const writeFile = promisify(fs.writeFile)
+export const createFile = promisify(fs.writeFile);
+export const writeInFile = promisify(fs.write);
+export const copyFile = promisify(fs.copyFile)
+export const moveFile = promisify(fs.rename)
+export const listFiles = promisify(glob);
+export const createDir = promisify(fs.mkdir);
+export const d = deb
+
+const debug = d('command:base')
 
 export default abstract class extends Command {
   static flags = {
@@ -35,4 +51,6 @@ export default abstract class extends Command {
   async finally() { // parameter (err)
     // called after run and catch regardless of whether or not the command errored
   }
+
+
 }

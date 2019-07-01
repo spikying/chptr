@@ -2,7 +2,7 @@ import { flags } from '@oclif/command'
 import { exec } from 'child_process';
 import cli from 'cli-ux'
 // import {boolean} from '@oclif/parser/lib/flags'
-import * as d from 'debug';
+// import * as d from 'debug';
 import * as fs from 'fs'
 import * as glob from "glob";
 // import * as inquirer from 'inquirer'
@@ -11,14 +11,15 @@ import * as moment from 'moment';
 import * as notifier from 'node-notifier'
 import * as path from "path";
 import { file as tmpFile } from 'tmp-promise'
-import { promisify } from "util";
+// import { promisify } from "util";
 
 import { QueryBuilder } from '../common';
 
+import { d, writeInFile } from './base';
 import Command from "./edit-save-base"
 
 const debug = d('command:build')
-const writeInFile = promisify(fs.write);
+// const writeInFile = promisify(fs.write);
 
 export default class Build extends Command {
   static readonly exportableFileTypes = ['md', 'pdf', 'docx', 'html', 'epub', 'tex']

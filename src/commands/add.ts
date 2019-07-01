@@ -1,19 +1,18 @@
 import { cli } from "cli-ux";
-import * as d from 'debug';
-import * as fs from 'fs';
+// import * as d from 'debug';
+// import * as fs from 'fs';
 // import * as matter from 'gray-matter';
 import * as path from 'path';
 import * as simplegit from 'simple-git/promise';
-import { promisify } from "util";
+// import { promisify } from "util";
 
 import { getFilenameFromInput } from '../common';
 // import { config } from '../config'
 import { addDigitsToAll, getHighestNumberAndDigits, mapFilesToBeRelativeToRootPath, numDigits, stringifyNumber, walk } from '../helpers';
 
-import Command from "./base";
+import Command, { createFile, d } from "./base";
 
 const debug = d('command:add')
-const createFile = promisify(fs.writeFile);
 
 export default class Add extends Command {
   static description = 'Adds a file or set of files as a new chapter, locally and in repository'
