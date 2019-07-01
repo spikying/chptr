@@ -13,6 +13,7 @@ import Command from "./edit-save-base"
 import { cli } from 'cli-ux';
 import { interval } from 'rxjs';
 import { QueryBuilder } from '../common';
+import Save from './save';
 
 const debug = d('command:antidote')
 
@@ -96,6 +97,7 @@ export default class Antidote extends Command {
     await this.processFileBackFromAntidote(antidoteFilePath)
     await moveFile(antidoteFilePath, basicFilePath)
 
+    await Save.run([`--path=${flags.path}`, '-f', num.toString()])
     /*
         const buff = await readFile(basicFilePath)
         const initialContent = await buff.toString('utf8', 0, buff.byteLength)

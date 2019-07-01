@@ -37,6 +37,8 @@ export default class Save extends Command {
     default: ''
   }]
 
+  static aliases = ['commit']
+
   async run() {
     const { args, flags } = this.parse(Save)
 
