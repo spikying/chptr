@@ -30,8 +30,8 @@ export default abstract class extends Command {
       const initialContent = await buff.toString('utf8', 0, buff.byteLength)
       let paraCounter = 1
       // \u2028 = line sep  \u200D = zero width joiner
-      const replacedContent = initialContent.replace(/([.!?…"]) {2}([A-ZÀ-Ú])/gm, '$1' + this.sentenceBreakChar + '\n$2')
-        .replace(/([.!?…"])\n{2}([A-ZÀ-Ú])/gm, (full, one, two) => {
+      const replacedContent = initialContent.replace(/([.!?…}"]) {2}([{A-ZÀ-Ú])/gm, '$1' + this.sentenceBreakChar + '\n$2')
+        .replace(/([.!?…}"])\n{2}([{A-ZÀ-Ú])/gm, (full, one, two) => {
           paraCounter++
           // return `$1\u2029\n\n$2{{${paraCounter}}}`
           debug(`full: ${full} one: ${one} two: ${two}`)
@@ -55,7 +55,7 @@ export default abstract class extends Command {
       debug(`sentence RE = ${sentenceBreakRegex} paragraph RE = ${paragraphBreakRegex}`)
       const replacedContent = initialContent.replace(sentenceBreakRegex, '  ')
         .replace(paragraphBreakRegex, '\n\n')
-        .replace(/([.!?…"])\s+\n/g, '$1\n')
+        .replace(/([.!?…}"]) +\n/g, '$1\n')
       debug(`Processed back content: \n${replacedContent.substring(0, 250)}`)
       await writeFile(filepath, replacedContent, 'utf8')
     } catch (error) {

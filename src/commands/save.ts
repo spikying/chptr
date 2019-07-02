@@ -7,8 +7,8 @@ import * as path from "path";
 import * as simplegit from 'simple-git/promise';
 // import { promisify } from "util";
 
-import { QueryBuilder } from '../queries';
 import { filterNumbers, mapFilesToBeRelativeToRootPath, walk } from '../helpers';
+import { QueryBuilder } from '../queries';
 
 import { d } from './base';
 import Command from "./edit-save-base";
@@ -45,7 +45,6 @@ export default class Save extends Command {
     const numberFilter = flags.filter ? parseInt(flags.filter, 10) : undefined
 
     const queryBuilder = new QueryBuilder()
-    // debug(`args.message = ${args.message}`)
     if (!args.message) {
       queryBuilder.add('message', queryBuilder.textinput("Message to use in commit to repository?", ""))
     }

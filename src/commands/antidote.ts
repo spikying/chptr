@@ -145,7 +145,7 @@ export default class Antidote extends Command {
           .replace(/\r\n/gm, '\n\n')
           .replace(/^\uFEFF\n\n# /g, '\n# ') // un-BOM the file
           .replace(paragraphRE, '$1')
-          .replace(/([.!?…"])$/, '$1\n'))
+          .replace(/([.!?…}"])$/, '$1\n'))
       debug(`Processed back antidote content: \n${replacedContent.substring(0, 250)}`)
       debug(`replace2\n${paragraphRE}\n${paragraphRE.test(replacedContent)}`)
       await writeFile(filepath, replacedContent, 'utf8')

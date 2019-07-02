@@ -278,7 +278,7 @@ export default class Build extends Command {
       const paragraphBreakRegex = new RegExp(this.paragraphBreakChar + '{{(\\d+)}}\\n', 'g')
       let markupCounter = 1
 
-      const replacedContent = initialContent.replace(paragraphBreakRegex, '($1)\t')
+      const replacedContent = initialContent.replace(paragraphBreakRegex, '^_($1)_^\t')
         .replace(/ *{(.*)\s?:\s?(.*)} *(.*)$/gm, (full, one, two, three) => {
           markupCounter++
           debug(`full: ${full} one: ${one} two: ${two} three:${three}`)
