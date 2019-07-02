@@ -143,7 +143,7 @@ export default class Antidote extends Command {
         initialContent
           .replace(sentenceRE, this.sentenceBreakChar + '\n')
           .replace(/\r\n/gm, '\n\n')
-          .replace(/^\uFEFF\n\n# /g, '\n# ')
+          .replace(/^\uFEFF\n\n# /g, '\n# ') // un-BOM the file
           .replace(paragraphRE, '$1')
           .replace(/([.!?…"])$/, '$1\n'))
       debug(`Processed back antidote content: \n${replacedContent.substring(0, 250)}`)

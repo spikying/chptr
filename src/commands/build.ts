@@ -15,7 +15,7 @@ import { file as tmpFile } from 'tmp-promise'
 
 import { QueryBuilder } from '../queries';
 
-import { d, writeInFile } from './base';
+import { d, writeInFile, copyFile, readFile, writeFile, deleteFile } from './base';
 import Command from "./edit-save-base"
 
 const debug = d('command:build')
@@ -48,9 +48,9 @@ export default class Build extends Command {
       description: 'adds datetime stamp before output filename',
       default: false
     }),
-    clean: flags.boolean({
+    cleanmarkup: flags.boolean({
       char: 'c',
-      description: 'removes sentence, paragraph and other markup',
+      description: 'Remove paragraph numbers and other markup',
       default: false
     })
   }
@@ -66,7 +66,7 @@ export default class Build extends Command {
   async run() {
     const { args, flags } = this.parse(Build)
 
-    const clean = flags.clean
+    const clean = flags.cleanmarkup
 
     const outputFile = `${flags.datetimestamp ? moment().format('YYYYMMDD.HHmm ') : ''}${args.outputfile}`
 
@@ -81,38 +81,52 @@ export default class Build extends Command {
 
     cli.action.start('Compiling Markdown files')
 
-    const tmpResult = await tmpFile();
-    const tempFd = tmpResult.fd
-    const tempPath = tmpResult.path
-    const tempCleanup = tmpResult.cleanup
-    debug(`temp file = ${tempPath}`)
+    const tmpMetadataResult = await tmpFile();
+    const tempMetadataFd = tmpMetadataResult.fd
+    const tempMetadataPath = tmpMetadataResult.path
+    const tempMetadataCleanup = tmpMetadataResult.cleanup
+    debug(`temp file = ${tempMetadataPath}`)
 
     try {
       debug(`temp file content: ${this.configInstance.globalMetadataContent}`)
-      await writeInFile(tempFd, this.configInstance.globalMetadataContent)
+      await writeInFile(tempMetadataFd, this.configInstance.globalMetadataContent)
 
-      const chapterFilesArray = glob.sync(path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcard))
+      const originalChapterFilesArray = glob.sync(path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcard))
         .sort()
       // .filter(f => !minimatch(f, this.configInstance.metadataWildcard))
-
-      if (clean) {
-        const cleanupPromises: Promise<void>[] = []
-        chapterFilesArray.forEach(c => {
-          debug(`cleaning ${c}`)
-          cleanupPromises.push(this.processFileBack(c))
-        });
-
-        await Promise.all(cleanupPromises)
-        debug(`cleaned all files`)
-      }
-
-      const chapterFiles = '"' + tempPath + '" ' + chapterFilesArray.map(f => `"${path.normalize(f)}"`).join(' ')
-      debug(`chapterFiles= ${chapterFiles}`)
 
       const fullOutputDirectory = path.join(this.configInstance.projectRootPath, this.configInstance.buildDirectory)
       if (!fs.existsSync(fullOutputDirectory)) {
         fs.mkdirSync(fullOutputDirectory)
       }
+
+      const chapterFilesArray: string[] = []
+      const copyPromises: Promise<void>[] = []
+      for (const c of originalChapterFilesArray) {
+        const destChapterFile = path.join(this.configInstance.buildDirectory, path.relative(c, this.configInstance.buildDirectory), path.basename(c))
+        debug(`destChapterFile: ${destChapterFile}`)
+        chapterFilesArray.push(destChapterFile)
+        copyPromises.push(copyFile(c, destChapterFile))
+      }
+      await Promise.all(copyPromises)
+
+      const transformPromises: Promise<void>[] = []
+      chapterFilesArray.forEach(c => {
+        if (clean) {
+          transformPromises.push(this.cleanMarkup(c))
+        }
+        else {
+          transformPromises.push(this.transformMarkup(c))
+        }
+      });
+      await Promise.all(transformPromises)
+      debug(`transformed/cleanded all files`)
+
+      const chapterFiles = '"' + tempMetadataPath + '" ' + chapterFilesArray.map(f => `"${path.normalize(f)}"`).join(' ')
+      debug(`chapterFiles= ${chapterFiles}`)
+
+      // create an intermediary MD file that will be the input of future files?
+      // await this.runPandoc()
 
       const pandocRuns: Promise<void>[] = []
       const allOutputFilePath: string[] = []
@@ -188,16 +202,14 @@ export default class Build extends Command {
 
       await Promise.all(pandocRuns)
 
-      if (clean) {
-        const cleanupPromises: Promise<void>[] = []
-        chapterFilesArray.forEach(c => {
-          debug(`uncleaning ${c}`)
-          cleanupPromises.push(this.processFile(c))
-        });
-
-        await Promise.all(cleanupPromises)
-        debug(`uncleaned all files`)
-      }
+      // if (clean) {
+      const cleanupPromises: Promise<void>[] = []
+      chapterFilesArray.forEach(c => {
+        // debug(`uncleaning ${c}`)
+        cleanupPromises.push(deleteFile(c))
+      });
+      await Promise.all(cleanupPromises)
+      // debug(`uncleaned all files`)
 
       cli.action.stop()
 
@@ -212,7 +224,7 @@ export default class Build extends Command {
       this.error(err)
       this.exit(1)
     } finally {
-      await tempCleanup()
+      await tempMetadataCleanup()
     }
   }
 
@@ -237,6 +249,48 @@ export default class Build extends Command {
       })
 
     })
+  }
+
+  private async cleanMarkup(filepath: string): Promise<void> {
+    try {
+      const buff = await readFile(filepath)
+      const initialContent = await buff.toString('utf8', 0, buff.byteLength)
+
+      const paragraphBreakRegex = new RegExp(this.paragraphBreakChar + '{{\\d+}}\\n', 'g')
+      const sentenceBreakRegex = new RegExp(this.sentenceBreakChar + '\\s?', 'g')
+
+      const replacedContent = initialContent.replace(paragraphBreakRegex, '')
+        .replace(/{.*:.*} ?/gm, ' ')
+        .replace(sentenceBreakRegex, '  ')
+
+      await writeFile(filepath, replacedContent, 'utf8')
+    } catch (error) {
+      this.error(error)
+      this.exit(1)
+    }
+  }
+
+  private async transformMarkup(filepath: string): Promise<void> {
+    try {
+      const buff = await readFile(filepath)
+      const initialContent = await buff.toString('utf8', 0, buff.byteLength)
+
+      const paragraphBreakRegex = new RegExp(this.paragraphBreakChar + '{{(\\d+)}}\\n', 'g')
+      let markupCounter = 1
+
+      const replacedContent = initialContent.replace(paragraphBreakRegex, '($1)\t')
+        .replace(/ *{(.*)\s?:\s?(.*)} *(.*)$/gm, (full, one, two, three) => {
+          markupCounter++
+          debug(`full: ${full} one: ${one} two: ${two} three:${three}`)
+          return `  ~_${one}_~[^${markupCounter}]  ${three}\n\n[^${markupCounter}]: ${two}\n\n`
+        })
+
+      debug(`transformedMarkup: ${replacedContent}`)
+      await writeFile(filepath, replacedContent, 'utf8')
+    } catch (error) {
+      this.error(error)
+      this.exit(1)
+    }
   }
 
 }

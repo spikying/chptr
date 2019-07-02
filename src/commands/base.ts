@@ -15,6 +15,8 @@ export const copyFile = promisify(fs.copyFile)
 export const moveFile = promisify(fs.rename)
 export const listFiles = promisify(glob);
 export const createDir = promisify(fs.mkdir);
+export const deleteFile = promisify(fs.unlink)
+
 export const d = deb
 
 const debug = d('command:base')
