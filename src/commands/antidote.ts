@@ -41,13 +41,13 @@ export default class Antidote extends Command {
       const queryResponses: any = await queryBuilder.responses()
       filter = queryResponses.filter
     }
-    const num = parseInt(filter, 10)
-    const chapterFileName = glob.sync(path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcardWithNumber(num)))[0]
+    const chapterNumber = parseInt(filter, 10)
+    const chapterFileName = glob.sync(path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcardWithNumber(chapterNumber)))[0]
 
-    //TODO: get filename from args
     const basicFilePath = path.join(this.configInstance.projectRootPath, chapterFileName)
     //TODO: get antidote filename from config pattern
     const antidoteFilePath = path.join(this.configInstance.projectRootPath, chapterFileName.replace(/\.md$/, '.antidote'))
+    debug(`antidoteFilePath=${antidoteFilePath}`)
 
     cli.action.start(`Launching Antidote with ${antidoteFilePath}`)
     await copyFile(basicFilePath, antidoteFilePath)
@@ -60,19 +60,36 @@ export default class Antidote extends Command {
     const filePath = `"${path.resolve(antidoteFilePath)}"`
     debug(`filePath = ${filePath}`)
 
-    await this.runAntidote([filePath])
+    const pidLookup = function (arg: object): Promise<object[]> {
+      return new Promise((resolve, reject) => {
+        ps.lookup(arg, (err: any, result: object[]) => {
+          if (err) { reject(err) }
+          resolve(result)
+        })
+      })
+    }
 
-    // const timer = promisify(setTimeout)
-    // await timer(10000)
-    cli.action.stop('done')
-    await cli.anykey('Press any key when Antidote correction is done to continue.')
+    /*
+    const resultList = await pidLookup({
+      command: 'antidote'
+    })
 
-    // ps.lookup({
-    //   command: 'antidote',
-    //   arguments: filePath
-    // }, (err: any, resultList: any) => {
-    //   debug(`err=${err} resultList=${JSON.stringify(resultList, null, 4)}`)
-    // })
+    debug(`resultList=${JSON.stringify(resultList, null, 4)}`)
+*/
+
+    void this.runAntidote([filePath])
+
+    const timer = promisify(setTimeout)
+    // await timer(3000)
+
+    /*
+    const secondResult = await pidLookup({
+      command: 'antidote'
+      , arguments: chapterNumber
+    })
+
+    debug(`secondResultList=${JSON.stringify(secondResult, null, 4)}`)
+*/
 
     // const cp = spawn('antidote', [antidoteFilePath], { cwd: this.configInstance.projectRootPath })
     // cp.on("close", (code, signal) => { debug(`close=${code} signal=${signal}`) })
@@ -94,10 +111,26 @@ export default class Antidote extends Command {
     // const execContent = await cp.toString('utf8', 0, cp.byteLength)
     // debug(`execContent=${execContent}`)
 
+    cli.action.stop('done')
+    await cli.anykey('Press any key when Antidote correction is done to continue.')
+
+    const queryBuilder2 = new QueryBuilder()
+    queryBuilder2.add('message', queryBuilder2.textinput("Message to use in commit to repository? Type `cancel` to skip commit step.", ""))
+    const queryResponses2: any = await queryBuilder2.responses()
+    const message = (queryResponses2.message + '\nPost-Antidote').replace(/"/, '`')
+
     await this.processFileBackFromAntidote(antidoteFilePath)
+    // const tempFile = path.join(this.configInstance.projectRootPath, 'AFTER_ANTIDOTE.md')
+    // debug(`tempFile=${tempFile}`)
+    // await copyFile(antidoteFilePath, tempFile)
+    await this.processFileBack(antidoteFilePath)
+    await this.processFile(antidoteFilePath)
     await moveFile(antidoteFilePath, basicFilePath)
 
-    await Save.run([`--path=${flags.path}`, '-f', num.toString()])
+    if (message !== 'cancel') {
+      await Save.run([`--path=${flags.path}`, '-f', chapterNumber.toString(), message])
+    }
+
     /*
         const buff = await readFile(basicFilePath)
         const initialContent = await buff.toString('utf8', 0, buff.byteLength)
@@ -152,6 +185,15 @@ export default class Antidote extends Command {
     }
   }
 
+  private removeTripleEnters(str: string): string {
+    const tripleEnterRegEx = /\n\n\n/gm
+    if (tripleEnterRegEx.test(str)) {
+      return this.removeTripleEnters(str.replace(tripleEnterRegEx, '\n\n'))
+    } else {
+      return str
+    }
+  }
+
   private async processFileBackFromAntidote(filepath: string): Promise<void> {
     try {
       debug(`opening filepath: ${filepath}`)
@@ -160,11 +202,13 @@ export default class Antidote extends Command {
 
       const sentenceRE = new RegExp(this.sentenceBreakChar + '  ', 'gm')
       const paragraphRE = new RegExp('(' + this.paragraphBreakChar + "{{\\d+}}\\n)\\n", 'gm')
-      const replacedContent = initialContent.replace(sentenceRE, this.sentenceBreakChar + '\n')
-        .replace(/\r\n/gm, '\n\n')
-        .replace(/^\uFEFF\n\n# /g, '\n# ')
-        .replace(paragraphRE, '$1')
-        .replace(/([.!?…"])$/, '$1\n')
+      const replacedContent = this.removeTripleEnters(
+        initialContent
+          .replace(sentenceRE, this.sentenceBreakChar + '\n')
+          .replace(/\r\n/gm, '\n\n')
+          .replace(/^\uFEFF\n\n# /g, '\n# ')
+          .replace(paragraphRE, '$1')
+          .replace(/([.!?…"])$/, '$1\n'))
       debug(`Processed back antidote content: \n${replacedContent.substring(0, 250)}`)
       debug(`replace2\n${paragraphRE}\n${paragraphRE.test(replacedContent)}`)
       await writeFile(filepath, replacedContent, 'utf8')

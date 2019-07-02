@@ -53,18 +53,7 @@ export default class Add extends Command {
       }
 
       const filledTemplateData = this.configInstance.emptyFileString.toString().replace(/{TITLE}/gmi, name) //`# ${name}\n\n...`
-      //TODO: implement those in config
       const filledTemplateMeta = JSON.stringify(this.configInstance.config.metadataFields, undefined, 4).replace(/{TITLE}/gmi, name)
-      // {
-      //   name,
-      //   datetimeRange: '',
-      //   revisionStep: 0,
-      //   characters: [],
-      //   mainCharacter: '',
-      //   mainCharacterQuest: '',
-      //   otherQuest: '',
-      //   wordCount: 0
-      // }
 
       const fullPathMD = path.join(
         dir,
