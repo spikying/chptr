@@ -1,19 +1,18 @@
 
 // import { flags } from '@oclif/command'
-import { exec, spawn, spawnSync, execFileSync } from 'child_process';
+import { exec } from 'child_process';
+import { cli } from 'cli-ux';
 // import * as d from 'debug';
 // import * as fs from 'fs';
 import * as glob from "glob";
 import * as path from "path";
-import { promisify } from "util";
-import * as ps from 'ps-node'
 
-import { copyFile, d, readFile, writeFile, moveFile } from './base';
-import Command from "./edit-save-base"
-import { cli } from 'cli-ux';
-import { interval } from 'rxjs';
 import { QueryBuilder } from '../common';
+
+import { copyFile, d, moveFile, readFile, writeFile } from './base';
+import Command from "./edit-save-base"
 import Save from './save';
+// import { promisify } from "util";
 
 const debug = d('command:antidote')
 
@@ -60,56 +59,7 @@ export default class Antidote extends Command {
     const filePath = `"${path.resolve(antidoteFilePath)}"`
     debug(`filePath = ${filePath}`)
 
-    const pidLookup = function (arg: object): Promise<object[]> {
-      return new Promise((resolve, reject) => {
-        ps.lookup(arg, (err: any, result: object[]) => {
-          if (err) { reject(err) }
-          resolve(result)
-        })
-      })
-    }
-
-    /*
-    const resultList = await pidLookup({
-      command: 'antidote'
-    })
-
-    debug(`resultList=${JSON.stringify(resultList, null, 4)}`)
-*/
-
     void this.runAntidote([filePath])
-
-    const timer = promisify(setTimeout)
-    // await timer(3000)
-
-    /*
-    const secondResult = await pidLookup({
-      command: 'antidote'
-      , arguments: chapterNumber
-    })
-
-    debug(`secondResultList=${JSON.stringify(secondResult, null, 4)}`)
-*/
-
-    // const cp = spawn('antidote', [antidoteFilePath], { cwd: this.configInstance.projectRootPath })
-    // cp.on("close", (code, signal) => { debug(`close=${code} signal=${signal}`) })
-    // cp.on("disconnect", (...args) => { debug(`disconnect=${args}`) })
-    // cp.on("error", (...args) => { debug(`error=${args}`) })
-    // cp.on("exit", (code, signal) => { debug(`exit=${code} signal=${signal}`) })
-    // cp.on("message", (message, sendHandle) => { debug(`message=${message} handle=${sendHandle}`) })
-
-    // const cp = spawnSync('antidote', [antidoteFilePath], { cwd: this.configInstance.projectRootPath })
-    // debug(`cp.error:${cp.error}`)
-    // debug(`cp.output:${cp.output}`)
-    // debug(`cp.pid:${cp.pid}`)
-    // debug(`cp.signal:${cp.signal}`)
-    // debug(`cp.status:${cp.status}`)
-    // debug(`cp.stderr:${cp.stderr}`)
-    // debug(`cp.stdout:${cp.stdout}`)
-
-    // const cp = execFileSync('antidote', [antidoteFilePath], { cwd: this.configInstance.projectRootPath })
-    // const execContent = await cp.toString('utf8', 0, cp.byteLength)
-    // debug(`execContent=${execContent}`)
 
     cli.action.stop('done')
     await cli.anykey('Press any key when Antidote correction is done to continue.')
@@ -120,9 +70,6 @@ export default class Antidote extends Command {
     const message = (queryResponses2.message + '\nPost-Antidote').replace(/"/, '`')
 
     await this.processFileBackFromAntidote(antidoteFilePath)
-    // const tempFile = path.join(this.configInstance.projectRootPath, 'AFTER_ANTIDOTE.md')
-    // debug(`tempFile=${tempFile}`)
-    // await copyFile(antidoteFilePath, tempFile)
     await this.processFileBack(antidoteFilePath)
     await this.processFile(antidoteFilePath)
     await moveFile(antidoteFilePath, basicFilePath)
@@ -130,16 +77,6 @@ export default class Antidote extends Command {
     if (message !== 'cancel') {
       await Save.run([`--path=${flags.path}`, '-f', chapterNumber.toString(), message])
     }
-
-    /*
-        const buff = await readFile(basicFilePath)
-        const initialContent = await buff.toString('utf8', 0, buff.byteLength)
-        const cp = spawn('antidote', [`21 patate.md`], { cwd: this.configInstance.projectRootPath })
-        // const cp = spawn('touch', [`touched.txt`], { cwd: this.configInstance.projectRootPath })
-        cp.on("close", (code, signal) => {
-          debug(`code = ${code} signal = ${signal}`)
-        })
-        */
 
   }
 
@@ -235,21 +172,5 @@ export default class Antidote extends Command {
     }
   }
 
-  private async turnToUTF8NoBOM(filepath: string): Promise<void> {
-    try {
-      debug(`opening filepath: ${filepath}`)
-      const buff = await readFile(filepath)
-      const initialContent = await buff.toString('utf8', 0, buff.byteLength)
-
-      if (initialContent.charCodeAt(0) === 65279) {
-        const replacedContent = initialContent.substring(1)
-        debug(`No BOM: ${replacedContent.substring(0, 5)}`)
-        await writeFile(filepath, replacedContent, 'utf8')
-      }
-    } catch (error) {
-      this.error(error)
-      this.exit(1)
-    }
-  }
 
 }

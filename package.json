@@ -31,7 +31,6 @@
     "minimatch": "3.0.4",
     "moment": "2.24.0",
     "node-notifier": "5.4.0",
-    "ps-node": "0.1.6",
     "sanitize-filename": "1.6.1",
     "simple-git": "1.113.0",
     "tmp-promise": "2.0.1",
