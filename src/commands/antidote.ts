@@ -7,7 +7,7 @@ import { cli } from 'cli-ux';
 import * as glob from "glob";
 import * as path from "path";
 
-import { QueryBuilder } from '../common';
+import { QueryBuilder } from '../queries';
 
 import { copyFile, d, moveFile, readFile, writeFile } from './base';
 import Command from "./edit-save-base"

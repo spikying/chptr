@@ -13,7 +13,7 @@ import * as path from "path";
 import { file as tmpFile } from 'tmp-promise'
 // import { promisify } from "util";
 
-import { QueryBuilder } from '../common';
+import { QueryBuilder } from '../queries';
 
 import { d, writeInFile } from './base';
 import Command from "./edit-save-base"

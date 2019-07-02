@@ -6,7 +6,7 @@ import * as path from 'path';
 import * as simplegit from 'simple-git/promise';
 // import { promisify } from "util";
 
-import { getFilenameFromInput } from '../common';
+import { getFilenameFromInput } from '../queries';
 // import { config } from '../config'
 import { addDigitsToAll, getHighestNumberAndDigits, mapFilesToBeRelativeToRootPath, numDigits, stringifyNumber, walk } from '../helpers';
 

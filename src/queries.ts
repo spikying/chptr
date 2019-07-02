@@ -3,7 +3,7 @@ import inquirer = require('inquirer')
 
 import { sanitizeFileName, sanitizeUrl } from './helpers'
 
-const debug = d("common");
+const debug = d("queries");
 
 export const getFilenameFromInput = async (msg?: string, defaultValue?: string) => {
   const responses: any = await inquirer.prompt([

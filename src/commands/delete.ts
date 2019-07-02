@@ -7,7 +7,7 @@ import * as path from "path";
 import * as simplegit from 'simple-git/promise';
 // import { promisify } from "util";
 
-import { QueryBuilder } from '../common';
+import { QueryBuilder } from '../queries';
 import { mapFilesToBeRelativeToRootPath } from '../helpers';
 
 import Command, { d, listFiles } from "./base"

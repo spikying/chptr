@@ -7,7 +7,7 @@ import * as simplegit from 'simple-git/promise';
 // import { pathToFileURL } from 'url';
 // import { promisify } from "util";
 
-import { QueryBuilder } from "../common";
+import { QueryBuilder } from "../queries";
 import { sanitizeFileName } from '../helpers';
 
 import Command, { createDir, createFile, d } from "./base"
