@@ -68,43 +68,38 @@ export default class Save extends Command {
     debug(`toAddFiles: ${JSON.stringify(toAddFiles)}`)
 
     if (toAddFiles.length === 0) {
-      this.error('No files to save to repository')
-      this.exit(0)
+      this.warn('No files to save to repository')
+    } else {
+
+      cli.action.start('Reading and processing modified files')
+      await toAddFiles.forEach(async filename => {
+        const fullPath = path.join(this.configInstance.projectRootPath, filename)
+        await this.processFileBack(fullPath)
+        await this.processFile(fullPath)
+      });
+      cli.action.stop(`done ${toAddFiles.join(' ')}`)
+
+      let message: any = args.message || queryResponses.message || 'Modified files:'
+      message += '\n' + `${JSON.stringify(toAddFiles)}`
+      debug(`message: ${message}`)
+
+      try {
+        cli.action.start('Saving file(s) in repository')
+
+        debug(`Message= ${message}; toAddFiles=${JSON.stringify(toAddFiles)}`)
+
+        await git.commit(message, toAddFiles)
+        await git.push()
+        await git.pull()
+
+      } catch (err) {
+        this.error(err)
+      } finally {
+        cli.action.stop(`Commited and pushed ${message}`)
+      }
+
     }
 
-    cli.action.start('Reading and processing modified files')
-    await toAddFiles.forEach(async filename => {
-      const fullPath = path.join(this.configInstance.projectRootPath, filename)
-      await this.processFileBack(fullPath)
-      await this.processFile(fullPath)
-    });
-    cli.action.stop(`done ${toAddFiles.join(' ')}`)
-
-    let message: any = args.message || queryResponses.message || 'Modified files:'
-    message += '\n' + `${JSON.stringify(toAddFiles)}`
-    debug(`message: ${message}`)
-
-    try {
-      cli.action.start('Saving file(s) in repository')
-
-      debug(`Message= ${message}; toAddFiles=${JSON.stringify(toAddFiles)}`)
-
-      await git.commit(message, toAddFiles)
-      await git.push()
-      await git.pull()
-
-    } catch (err) {
-      this.error(err)
-    } finally {
-      cli.action.stop(`Commited and pushed ${message}`)
-    }
-
-    // cli.action.start('Processing back files')
-    // await toAddFiles.forEach(async filename => {
-    //   const fullPath = path.join(this.configInstance.projectRootPath, filename)
-    //   await this.processFileBack(fullPath)
-    // });
-    // cli.action.stop()
   }
 
 

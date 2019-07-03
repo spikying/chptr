@@ -11,12 +11,14 @@ import * as moment from 'moment';
 import * as notifier from 'node-notifier'
 import * as path from "path";
 import { file as tmpFile } from 'tmp-promise'
-// import { promisify } from "util";
 
 import { QueryBuilder } from '../queries';
 
-import { d, writeInFile, copyFile, readFile, writeFile, deleteFile } from './base';
+import { copyFile, d, deleteFile, readFile, writeFile, writeInFile } from './base';
 import Command from "./edit-save-base"
+import Save from './save';
+// import { promisify } from "util";
+
 
 const debug = d('command:build')
 // const writeInFile = promisify(fs.write);
@@ -63,6 +65,8 @@ export default class Build extends Command {
     }
   ]
 
+  static aliases = ['compile']
+
   async run() {
     const { args, flags } = this.parse(Build)
 
@@ -78,6 +82,8 @@ export default class Build extends Command {
       outputFiletype = queryResponses.type
     }
     debug(`outputFileTypes= ${JSON.stringify(outputFiletype)}`)
+
+    await Save.run([`--path=${flags.path}`, 'Autosave before build'])
 
     cli.action.start('Compiling Markdown files')
 
@@ -109,6 +115,39 @@ export default class Build extends Command {
         copyPromises.push(copyFile(c, destChapterFile))
       }
       await Promise.all(copyPromises)
+
+      const extractPromises: Promise<string[][] | undefined>[] = []
+      chapterFilesArray.forEach(c => {
+        extractPromises.push(this.extractMarkup(c))
+      })
+      await Promise.all(extractPromises).then(async fullMarkupArray => {
+        let markupByFile: any = {}
+        const markupByType: any = {}
+        fullMarkupArray.forEach(mkl => {
+          const markupLine = mkl || []
+          if (markupLine[0]) {
+            debug(`markupLine: ${JSON.stringify(markupLine)}; [0][0]: ${markupLine[0][0]}`)
+            markupLine.forEach(markup => {
+              debug(`markup: [0]=${markup[0]} [1]=${markup[1]} [2]=${markup[2]} [3]=${markup[3]}`)
+              const filename = markup[0]
+              const paragraph = parseInt(markup[1], 10)
+              const type = markup[2].toLowerCase()
+              const value = markup[3]
+              markupByFile[filename] = markupByFile[filename] || []
+              markupByFile[filename].push({ paragraph, type, value })
+
+              markupByType[type] = markupByType[type] || []
+              markupByType[type].push({ filename, paragraph, value })
+            })
+          }
+
+        })
+        debug(`fullMarkupArray:\n${JSON.stringify(fullMarkupArray, null, 4)}`)
+        if (JSON.stringify(markupByFile) !== '{}') {
+          await writeFile(path.join(this.configInstance.buildDirectory, `${outputFile}.markupByFile.json`), JSON.stringify(markupByFile, null, 4))
+          await writeFile(path.join(this.configInstance.buildDirectory, `${outputFile}.markupByType.json`), JSON.stringify(markupByType, null, 4))
+        }
+      })
 
       const transformPromises: Promise<void>[] = []
       chapterFilesArray.forEach(c => {
@@ -287,6 +326,25 @@ export default class Build extends Command {
 
       debug(`transformedMarkup: ${replacedContent}`)
       await writeFile(filepath, replacedContent, 'utf8')
+    } catch (error) {
+      this.error(error)
+      this.exit(1)
+    }
+  }
+
+  private async extractMarkup(filepath: string): Promise<string[][] | undefined> {
+    try {
+      const buff = await readFile(filepath)
+      const initialContent = await buff.toString('utf8', 0, buff.byteLength)
+      const resultArray: string[][] = []
+      const markupRegex = /(?:{{(\d+)}}\n)?.*{(.*)\s?:\s?(.*)}/gm
+      let regexArray: RegExpExecArray | null
+      while ((regexArray = markupRegex.exec(initialContent)) !== null) {
+        resultArray.push([path.basename(filepath), regexArray[1] || '1', regexArray[2], regexArray[3]])
+      }
+
+      return resultArray
+      // await writeFile(filepath, replacedContent, 'utf8')
     } catch (error) {
       this.error(error)
       this.exit(1)
