@@ -1,3 +1,4 @@
+import { flags } from '@oclif/command'
 import { cli } from "cli-ux";
 // import * as d from 'debug';
 // import * as fs from 'fs';
@@ -6,11 +7,10 @@ import * as path from 'path';
 import * as simplegit from 'simple-git/promise';
 // import { promisify } from "util";
 
+import { extractNumber, getAllNovelFilesFromDir, getHighestNumberAndDigits, mapFilesToBeRelativeToRootPath, numDigits, renumberedFilename, stringifyNumber } from '../helpers';
 import { getFilenameFromInput } from '../queries';
-// import { config } from '../config'
-import { addDigitsToAll, getHighestNumberAndDigits, mapFilesToBeRelativeToRootPath, numDigits, stringifyNumber, walk } from '../helpers';
 
-import Command, { createFile, d } from "./base";
+import Command, { createFile, d, moveFile } from "./base";
 
 const debug = d('command:add')
 
@@ -18,7 +18,12 @@ export default class Add extends Command {
   static description = 'Adds a file or set of files as a new chapter, locally and in repository'
 
   static flags = {
-    ...Command.flags
+    ...Command.flags,
+    atnumbered: flags.boolean({
+      char: 'a',
+      description: 'Add an @numbered chapter',
+      default: false
+    })
   }
 
   static args = [
@@ -30,71 +35,93 @@ export default class Add extends Command {
     }
   ]
 
+
   async run() {
     const { args, flags } = this.parse(Add)
 
     const name: string = args.name || await getFilenameFromInput()
+    const atNumbering = flags.atnumbered
 
     const dir = path.join(flags.path as string)
     this.log(`Walking directory ${JSON.stringify(dir)}`)
 
-    await walk(dir, false, 0, async (err, files) => {
-      if (err) {
-        this.error(err)
-        this.exit(1)
+    const files = await getAllNovelFilesFromDir(dir, this.configInstance)
+    debug(`files from glob: ${JSON.stringify(files)}`)
+
+    const filesStats = getHighestNumberAndDigits(files, this.configInstance.chapterRegex(atNumbering))
+    debug(`Highest number and digits: ${JSON.stringify(filesStats)}`)
+    const highestNumber = filesStats.highestNumber
+    const actualDigits = filesStats.digits
+    const newDigits = numDigits(highestNumber + 1)
+    debug(`New digits=${newDigits}`)
+    if (newDigits > actualDigits) {
+      await this.addDigitsToAll(dir, newDigits)
+    }
+
+    const filledTemplateData = this.configInstance.emptyFileString.toString().replace(/{TITLE}/gmi, name) //`# ${name}\n\n...`
+    const filledTemplateMeta = JSON.stringify(this.configInstance.config.metadataFields, undefined, 4).replace(/{TITLE}/gmi, name)
+
+    const fullPathMD = path.join(
+      dir,
+      this.configInstance.chapterFileNameFromParameters(stringifyNumber(highestNumber + 1, newDigits), name, atNumbering)
+    )
+
+    const fullPathMeta = path.join(
+      dir,
+      this.configInstance.metadataFileNameFromParameters(stringifyNumber(highestNumber + 1, newDigits), name, atNumbering)
+    )
+
+    const fullPathSummary = path.join(
+      dir,
+      this.configInstance.summaryFileNameFromParameters(stringifyNumber(highestNumber + 1, newDigits), name, atNumbering)
+    )
+
+    try {
+      cli.action.start('Adding file(s) locally and to repository')
+
+      const git = simplegit(this.configInstance.projectRootPath);
+      const isRepo = await git.checkIsRepo()
+      if (!isRepo) {
+        throw new Error("Directory is not a repository")
       }
 
-      const filesStats = getHighestNumberAndDigits(files)
-      const highestNumber = filesStats.highestNumber
-      const actualDigits = filesStats.digits
-      const newDigits = numDigits(highestNumber + 1)
-      if (newDigits > actualDigits) {
-        await addDigitsToAll(dir, newDigits)
-      }
+      // debug(JSON.stringify(templateMeta, null, 4))
+      const allPromises: Promise<void>[] = []
+      allPromises.push(createFile(fullPathMD, filledTemplateData, { encoding: 'utf8' }))
+      allPromises.push(createFile(fullPathMeta, filledTemplateMeta, { encoding: 'utf8' }))
+      allPromises.push(createFile(fullPathSummary, filledTemplateData, { encoding: 'utf8' }))
+      await Promise.all(allPromises)
 
-      const filledTemplateData = this.configInstance.emptyFileString.toString().replace(/{TITLE}/gmi, name) //`# ${name}\n\n...`
-      const filledTemplateMeta = JSON.stringify(this.configInstance.config.metadataFields, undefined, 4).replace(/{TITLE}/gmi, name)
+      await git.add(mapFilesToBeRelativeToRootPath([fullPathMD, fullPathMeta, fullPathSummary], this.configInstance.projectRootPath))
+      await git.commit(`added ${fullPathMD}, ${fullPathMeta} and ${fullPathSummary}`)
+      await git.push()
 
-      const fullPathMD = path.join(
-        dir,
-        this.configInstance.chapterFileNameFromParameters(stringifyNumber(highestNumber + 1, newDigits), name)
-      )
+    } catch (err) {
+      this.error(err)
+    } finally {
+      cli.action.stop(`Added ${fullPathMD}, ${fullPathSummary} and ${fullPathMeta}`)
+    }
 
-      const fullPathMeta = path.join(
-        dir,
-        this.configInstance.metadataFileNameFromParameters(stringifyNumber(highestNumber + 1, newDigits), name)
-      )
+  }
 
-      const fullPathSummary = path.join(
-        dir,
-        this.configInstance.summaryFileNameFromParameters(stringifyNumber(highestNumber + 1, newDigits), name)
-      )
+  private async addDigitsToAll(dir: string, digits: number): Promise<void[]> {
+    const files = await getAllNovelFilesFromDir(dir, this.configInstance)
+    debug(`files from glob: ${JSON.stringify(files, null, 2)}`)
 
-      try {
-        cli.action.start('Adding file(s) locally and to repository')
+    const promises: Promise<void>[] = []
+    for (const file of files) {
+      const filename = path.basename(file)
+      const atNumbering = this.configInstance.isAtNumbering(filename)
+      debug(`is AtNumbering?: ${atNumbering}`)
 
-        const git = simplegit(this.configInstance.projectRootPath);
-        const isRepo = await git.checkIsRepo()
-        if (!isRepo) {
-          throw new Error("Directory is not a repository")
-        }
-
-        // debug(JSON.stringify(templateMeta, null, 4))
-        const allPromises: Promise<void>[] = []
-        allPromises.push(createFile(fullPathMD, filledTemplateData, { encoding: 'utf8' }))
-        allPromises.push(createFile(fullPathMeta, filledTemplateMeta, { encoding: 'utf8' }))
-        allPromises.push(createFile(fullPathSummary, filledTemplateData, { encoding: 'utf8' }))
-        await Promise.all(allPromises)
-
-        await git.add(mapFilesToBeRelativeToRootPath([fullPathMD, fullPathMeta, fullPathSummary], this.configInstance.projectRootPath))
-        await git.commit(`added ${fullPathMD}, ${fullPathMeta} and ${fullPathSummary}`)
-        await git.push()
-
-      } catch (err) {
-        this.error(err)
-      } finally {
-        cli.action.stop(`Added ${fullPathMD}, ${fullPathSummary} and ${fullPathMeta}`)
-      }
-    })
+      const filenumber = extractNumber(file, this.configInstance)
+      const fromFilename = path.join(path.dirname(file), filename)
+      const toFilename = path.join(path.dirname(file), renumberedFilename(filename, filenumber, digits, atNumbering))
+      this.log(`renaming with new file number "${fromFilename}" to "${toFilename}"`)
+      promises.push(moveFile(fromFilename, toFilename))
+    }
+    return Promise.all(promises)
+    // })
   }
 }
+

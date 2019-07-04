@@ -1,9 +1,15 @@
-import { Command } from '@oclif/command'
 import * as d from 'debug'
-import * as fs from 'fs'
-import { url } from 'inspector';
+// import * as fs from 'fs'
+import * as glob from "glob";
+// import { url } from 'inspector';
 import * as path from 'path'
 import * as sanitize from 'sanitize-filename'
+import { promisify } from "util";
+
+// import uuid = require('uuid/v5');
+import { Config } from './config';
+
+const globPromise = promisify(glob)
 
 export interface FileWithPriority {
   filename: string
@@ -12,8 +18,40 @@ export interface FileWithPriority {
   number: number
 }
 
-const numberingRegex: RegExp = /^(\d+)(.*)/
+// const numberingRegex: RegExp = /^(\d+)(.*)/
 
+export const getAllNovelFilesFromDir = async function (dir: string, configInstance: Config): Promise<string[]> {
+  const debug = d('helpers:getAllNovelFilesFromDir')
+
+  const files: string[] = []
+  const wildcards = [
+    configInstance.chapterWildcard(true),
+    configInstance.metadataWildcard(true),
+    configInstance.summaryWildcard(true),
+    configInstance.chapterWildcard(false),
+    configInstance.metadataWildcard(false),
+    configInstance.summaryWildcard(false)
+  ]
+  for (const wildcard of wildcards) {
+    debug(`glob pattern = ${path.join(dir, wildcard)}`)
+    debug(glob.sync(path.join(dir, wildcard)))
+    files.push(...await globPromise(path.join(dir, wildcard)))
+  }
+  return files
+}
+
+export const extractNumber = (filename: string, configInstance: Config): number => {
+  const re = new RegExp(configInstance.numbersPattern(false))
+  const fileNumber = parseInt(
+    path.basename(filename).replace(re, '$1'),
+    10
+  )
+  if (isNaN(fileNumber)) {
+    return -1
+  }
+  return fileNumber
+}
+/*
 export const walk = async function (
   dir: string,
   deep: boolean,
@@ -34,16 +72,6 @@ export const walk = async function (
       return done(null, results)
     }
 
-    const extractNumber = (filename: string) => {
-      const fileNumber = parseInt(
-        path.basename(filename).replace(numberingRegex, '$1'),
-        10
-      )
-      if (isNaN(fileNumber)) {
-        return -1
-      }
-      return fileNumber
-    }
 
     list.forEach(function (file) {
       file = path.resolve(dir, file)
@@ -87,12 +115,17 @@ export const walk = async function (
     })
   })
 }
+*/
 
 export const numDigits = function (x: number, buffer = 2) {
-  return Math.min(5, Math.max(Math.floor(Math.log10(Math.abs(x + buffer))), 0) + 1)
+  return Math.min(1, Math.max(Math.floor(Math.log10(Math.abs(x + buffer))), 0) + 1)
 }
 
-export const stringifyNumber = function (x: number, digits: number): string {
+export const stringifyNumber = function (x: number, digits: number): string { //, unNumbered: boolean): string {
+  // if (unNumbered) {
+  //   return uuid().substring(0, 4)
+  // }
+  // else {
   const s = x.toString()
   const zeroes = Math.max(digits - s.length, 0)
   if (zeroes > 0) {
@@ -100,36 +133,11 @@ export const stringifyNumber = function (x: number, digits: number): string {
   } else {
     return s
   }
+  // }
 }
 
 export const filterNumbers = function (s: string): string {
   return s.replace(/.*?(\d+).*/, '$1')
-}
-
-export const addDigitsToAll = async function (dir: string, digits: number) {
-  await walk(dir, false, 0, (err, files) => {
-    if (err) {
-      Command.prototype.error(err)
-      Command.prototype.exit(1)
-    }
-
-    const numberedFiles = files.filter(value => {
-      return value.number >= 0
-    })
-
-    numberedFiles.forEach(file => {
-      const filename = path.basename(file.filename)
-      const fromFilename = path.join(path.dirname(file.filename), filename)
-      const toFilename = path.join(
-        path.dirname(file.filename),
-        renumberedFilename(filename, file.number, digits)
-      )
-      Command.prototype.log(
-        `renaming with new file number "${fromFilename}" to "${toFilename}"`
-      )
-      fs.renameSync(fromFilename, toFilename)
-    })
-  })
 }
 
 export const sanitizeFileName = function (original: string): string {
@@ -155,41 +163,37 @@ export const sanitizeUrl = function (original: string): string {
 export const renumberedFilename = function (
   filename: string,
   newFilenumber: number,
-  digits: number
+  digits: number,
+  atNumbering: boolean
 ): string {
-  // const fileNumberString: string = path
-  //   .basename(filename)
-  //   .replace(numberingRegex, '$1')
-  // digits = digits || fileNumberString.length
   return filename.replace(
-    numberingRegex,
+    Config.prototype.numbersPattern(atNumbering),
     stringifyNumber(newFilenumber, digits) + '$2'
   )
 }
 
 export const getHighestNumberAndDigits = function (
-  files: FileWithPriority[]
+  files: string[] //FileWithPriority[]
+  , fileRegex: RegExp
 ): { highestNumber: number; digits: number } {
   const debug = d('helpers:getHighestNumberAndDigits')
-  const numberedFiles = files
-    .filter(value => {
-      return value.number >= 0
-    })
-    .sort((a, b) => {
-      const aNum = a.number
-      const bNum = b.number
-      return bNum - aNum
-    })
 
-  const highestNumber = numberedFiles[0].number
-  const digits = numberedFiles
+  debug(`files searched: ${JSON.stringify(files)}`)
+  debug(`Regex used: ${fileRegex}`)
+  const highestNumber = files.map(value => {
+    debug(`Regex exec: ${JSON.stringify(fileRegex.exec(path.basename(value)))}`)
+    const matches = fileRegex.exec(path.basename(value))
+    return matches ? parseInt(matches[1], 10) : 0
+  }).reduce((previous, current) => {
+    return Math.max(previous, current)
+  })
+
+  const digits = files
     .map(value => {
-      debug(`map value=${JSON.stringify(value)} return ${numDigits(value.number)}`)
-      return path.basename(value.filename).replace(numberingRegex, '$1').length
-      // return numDigits(value.number)
+      const matches = fileRegex.exec(path.basename(value))
+      return matches ? matches[1].length : 0
     })
     .reduce((previous, current) => {
-      debug(`reduce previous=${previous} current=${current} return ${Math.max(previous, current)}`)
       return Math.max(previous, current)
     })
 

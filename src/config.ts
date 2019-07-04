@@ -8,14 +8,13 @@ import * as Convict from 'convict'
 import * as d from 'debug'
 import fs = require('fs');
 import * as json from 'json5'
+import moment = require('moment');
 import path = require('path');
-import { promisify } from "util";
+// import { promisify } from "util";
 
 import { sanitizeFileName } from './helpers'
-import { empty } from 'rxjs';
-import moment = require('moment');
 const debug = d('config')
-const loadFile = promisify(fs.readFile) as (path: string) => Promise<string>;
+// const loadFile = promisify(fs.readFile) as (path: string) => Promise<string>;
 const loadFileSync = fs.readFileSync as (path: string) => string;
 
 export interface ConfigObject {
@@ -75,13 +74,6 @@ export class Config {
     return path.join(this.rootPath, '.gitattributes')
   }
 
-  public get chapterWildcard(): string {
-    return this.config.chapterPattern.replace('NUM', '+(0|1|2|3|4|5|6|7|8|9)').replace('NAME', '*') + '.md'
-  }
-  public get metadataWildcard(): string {
-    return this.config.metadataPattern.replace('NUM', '+(0|1|2|3|4|5|6|7|8|9)').replace('NAME', '*') + '.md'
-  }
-
   public get buildDirectory(): string {
     return path.join(this.rootPath, this.config.buildDirectory)
   }
@@ -98,7 +90,7 @@ date: ${moment().format('D MMMM YYYY')}
 
 `
   }
-  public emptyFileString: string = `
+  public emptyFileString = `
 # {TITLE}
 
 `
@@ -236,25 +228,63 @@ date: ${moment().format('D MMMM YYYY')}
     debug(`configDefaultsString = ${configDefaultsString}`)
     return configDefaultsString
   }
-  public chapterWildcardWithNumber(num: number): string {
-    return this.config.chapterPattern.replace('NUM', '*(0)' + num.toString()).replace('NAME', '*') + '.md'
+
+  public chapterWildcard(atNumbering: boolean): string {
+    return this.config.chapterPattern.replace('NUM', this.numberWildcardPortion(atNumbering)).replace('NAME', '*') + '.md'
   }
-  public summaryWildcardWithNumber(num: number): string {
-    return this.config.summaryPattern.replace('NUM', '*(0)' + num.toString()).replace('NAME', '*') + '.md'
+  public metadataWildcard(atNumbering: boolean): string {
+    return this.config.metadataPattern.replace('NUM', this.numberWildcardPortion(atNumbering)).replace('NAME', '*') + '.json'
   }
-  public metadataWildcardWithNumber(num: number): string {
-    return this.config.metadataPattern.replace('NUM', '*(0)' + num.toString()).replace('NAME', '*') + '.json'
+  public summaryWildcard(atNumbering: boolean): string {
+    return this.config.summaryPattern.replace('NUM', this.numberWildcardPortion(atNumbering)).replace('NAME', '*') + '.md'
   }
 
-  public chapterFileNameFromParameters(num: string, name: string): string {
-    return this.config.chapterPattern.replace('NUM', num).replace('NAME', name) + '.md'
+  public chapterWildcardWithNumber(num: number, atNumbering: boolean): string {
+    return this.config.chapterPattern.replace('NUM', this.numberWildcardPortion(atNumbering, num)).replace('NAME', '*') + '.md'
+  }
+  public metadataWildcardWithNumber(num: number, atNumbering: boolean): string {
+    return this.config.metadataPattern.replace('NUM', this.numberWildcardPortion(atNumbering, num)).replace('NAME', '*') + '.json'
+  }
+  public summaryWildcardWithNumber(num: number, atNumbering: boolean): string {
+    return this.config.summaryPattern.replace('NUM', this.numberWildcardPortion(atNumbering, num)).replace('NAME', '*') + '.md'
   }
 
-  public metadataFileNameFromParameters(num: string, name: string): string {
-    return this.config.metadataPattern.replace('NUM', num).replace('NAME', name) + '.json'
+  public chapterFileNameFromParameters(num: string, name: string, atNumbering: boolean): string {
+    return this.config.chapterPattern.replace('NUM', (atNumbering ? '@' : '') + num).replace('NAME', name) + '.md'
   }
 
-  public summaryFileNameFromParameters(num: string, name: string): string {
-    return this.config.summaryPattern.replace('NUM', num).replace('NAME', name) + '.md'
+  public metadataFileNameFromParameters(num: string, name: string, atNumbering: boolean): string {
+    return this.config.metadataPattern.replace('NUM', (atNumbering ? '@' : '') + num).replace('NAME', name) + '.json'
   }
+
+  public summaryFileNameFromParameters(num: string, name: string, atNumbering: boolean): string {
+    return this.config.summaryPattern.replace('NUM', (atNumbering ? '@' : '') + num).replace('NAME', name) + '.md'
+  }
+
+  public chapterRegex(atNumber: boolean): RegExp {
+    return new RegExp('^' + this.config.chapterPattern.replace('NUM', this.numbersPattern(atNumber)).replace('NAME', '(.*)'))
+  }
+
+  public numbersPattern(atNumber: boolean): string {
+    return atNumber ? '@(\\d+)' : '(\\d+)'
+  }
+
+  public isAtNumbering(filename: string): boolean {
+    const re = new RegExp(this.numbersPattern(true))
+    return re.exec(filename) !== null
+  }
+
+  private numberWildcardPortion(atNumbering: boolean, num: number | null = null) {
+    let result = ''
+    if (atNumbering) {
+      result += '\\@'
+    }
+    if (num) {
+      result += '*(0)' + num.toString()
+    } else {
+      result += '+(0|1|2|3|4|5|6|7|8|9)'
+    }
+    return result
+  }
+
 }

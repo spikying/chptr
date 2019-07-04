@@ -40,8 +40,11 @@ export default class Antidote extends Command {
       const queryResponses: any = await queryBuilder.responses()
       filter = queryResponses.filter
     }
+    const atNumberingMatches = new RegExp(this.configInstance.numbersPattern(true)).exec(filter)
+    const atNumber: boolean = atNumberingMatches ? true : false
+
     const chapterNumber = parseInt(filter, 10)
-    const chapterFileName = glob.sync(path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcardWithNumber(chapterNumber)))[0]
+    const chapterFileName = glob.sync(path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcardWithNumber(chapterNumber, atNumber)))[0]
 
     const basicFilePath = path.join(this.configInstance.projectRootPath, chapterFileName)
     //TODO: get antidote filename from config pattern
@@ -74,7 +77,7 @@ export default class Antidote extends Command {
     await this.processFile(antidoteFilePath)
     await moveFile(antidoteFilePath, basicFilePath)
 
-    if (message !== 'cancel') {
+    if (queryResponses2.message !== 'cancel') {
       await Save.run([`--path=${flags.path}`, '-f', chapterNumber.toString(), message])
     }
 

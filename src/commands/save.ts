@@ -7,7 +7,7 @@ import * as path from "path";
 import * as simplegit from 'simple-git/promise';
 // import { promisify } from "util";
 
-import { filterNumbers, mapFilesToBeRelativeToRootPath, walk } from '../helpers';
+import { filterNumbers } from '../helpers';
 import { QueryBuilder } from '../queries';
 
 import { d } from './base';
@@ -63,7 +63,14 @@ export default class Save extends Command {
       .filter(val => val !== '')
       .filter(val => {
         // debug(`numberFilter=${numberFilter}; val=${val}; minimatch=${minimatch(val, this.configInstance.chapterWildcardWithNumber(numberFilter || 0))}`)
-        return numberFilter ? minimatch(val, this.configInstance.chapterWildcardWithNumber(numberFilter)) : true
+        return numberFilter ?
+          minimatch(val, this.configInstance.chapterWildcardWithNumber(numberFilter, true)) ||
+          minimatch(val, this.configInstance.metadataWildcardWithNumber(numberFilter, true)) ||
+          minimatch(val, this.configInstance.summaryWildcardWithNumber(numberFilter, true)) ||
+          minimatch(val, this.configInstance.chapterWildcardWithNumber(numberFilter, false)) ||
+          minimatch(val, this.configInstance.metadataWildcardWithNumber(numberFilter, false)) ||
+          minimatch(val, this.configInstance.summaryWildcardWithNumber(numberFilter, false))
+          : true
       }) // listFiles(pathName)
     debug(`toAddFiles: ${JSON.stringify(toAddFiles)}`)
 

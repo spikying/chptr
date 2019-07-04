@@ -97,7 +97,7 @@ export default class Build extends Command {
       debug(`temp file content: ${this.configInstance.globalMetadataContent}`)
       await writeInFile(tempMetadataFd, this.configInstance.globalMetadataContent)
 
-      const originalChapterFilesArray = glob.sync(path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcard))
+      const originalChapterFilesArray = glob.sync(path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcard(false)))
         .sort()
       // .filter(f => !minimatch(f, this.configInstance.metadataWildcard))
 

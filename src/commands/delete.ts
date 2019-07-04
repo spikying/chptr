@@ -7,8 +7,8 @@ import * as path from "path";
 import * as simplegit from 'simple-git/promise';
 // import { promisify } from "util";
 
-import { QueryBuilder } from '../queries';
 import { mapFilesToBeRelativeToRootPath } from '../helpers';
+import { QueryBuilder } from '../queries';
 
 import Command, { d, listFiles } from "./base"
 
@@ -61,7 +61,13 @@ export default class Delete extends Command {
 
     const toDeleteFiles: string[] = []
 
-    if (isNaN(nameOrNumber)) {
+    const numberRegexWithoutAtNumbering = new RegExp('^' + this.configInstance.numbersPattern(false) + '$')
+    const numberRegexWithAtNumbering = new RegExp('^' + this.configInstance.numbersPattern(true) + '$')
+
+    const isAtNumber = numberRegexWithAtNumbering.test(nameOrNumber)
+    const isNumberOnly = numberRegexWithoutAtNumbering.test(nameOrNumber)
+
+    if (!isAtNumber && !isNumberOnly) {
       // we will delete all files matching the name entered
       let filePattern = '*' + nameOrNumber + '*'
       if (glob.hasMagic(nameOrNumber)) { //nameOrNumber.toString().match(/.*[\*].*/)
@@ -73,13 +79,13 @@ export default class Delete extends Command {
       // we will delete all files matching the number patterns for chapters, metadata and summary
       const globPatterns: string[] = []
       if (deleteType === 'all' || deleteType === 'chapter') {
-        globPatterns.push(this.configInstance.chapterWildcardWithNumber(nameOrNumber))
+        globPatterns.push(this.configInstance.chapterWildcardWithNumber(nameOrNumber, isAtNumber))
       }
       if (deleteType === 'all' || deleteType === 'summary') {
-        globPatterns.push(this.configInstance.summaryWildcardWithNumber(nameOrNumber))
+        globPatterns.push(this.configInstance.summaryWildcardWithNumber(nameOrNumber, isAtNumber))
       }
       if (deleteType === 'all' || deleteType === 'metadata') {
-        globPatterns.push(this.configInstance.metadataWildcardWithNumber(nameOrNumber))
+        globPatterns.push(this.configInstance.metadataWildcardWithNumber(nameOrNumber, isAtNumber))
       }
 
       debug(`globPatterns=${JSON.stringify(globPatterns)}`)

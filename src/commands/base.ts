@@ -39,10 +39,12 @@ export default abstract class extends Command {
 
   async init() {
     // do some initialization
+    debug('Starting base init')
     const { flags } = this.parse(this.constructor as any)
     // this.flags = flags
     const dir = path.join(flags.path as string);
     this._configInstance = new Config(dir);
+    debug('Ended base init')
   }
 
   async catch(err: Error) {
