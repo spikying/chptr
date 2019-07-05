@@ -173,8 +173,8 @@ export default class Reorder extends Command {
     try {
       const moveTempPromises: Promise<MoveSummary>[] = []
       for (const file of toRenameFiles) {
-        const fromFilename = this.configInstance.mapFileToBeRelativeToRootPath(file)
-        const toFilename = this.configInstance.mapFileToBeRelativeToRootPath(path.join(tempDir, path.basename(file)))
+        const fromFilename = this.context.mapFileToBeRelativeToRootPath(file)
+        const toFilename = this.context.mapFileToBeRelativeToRootPath(path.join(tempDir, path.basename(file)))
         debug(`Original file: ${fromFilename} TEMP TO ${toFilename}`)
         moveTempPromises.push(this.git.mv(fromFilename, toFilename))
       }
@@ -220,8 +220,8 @@ export default class Reorder extends Command {
         }
         debug(`fileNumber = ${fileNumber}, newFileNumber=${newFileNumber}`)
 
-        const fromFilename = this.configInstance.mapFileToBeRelativeToRootPath(path.join(tempDir, filename))
-        const toFilename = this.configInstance.mapFileToBeRelativeToRootPath(path.join(path.dirname(file), this.configInstance.renumberedFilename(filename, newFileNumber, destDigits, fileOutputAtNumbering)))
+        const fromFilename = this.context.mapFileToBeRelativeToRootPath(path.join(tempDir, filename))
+        const toFilename = this.context.mapFileToBeRelativeToRootPath(path.join(path.dirname(file), this.configInstance.renumberedFilename(filename, newFileNumber, destDigits, fileOutputAtNumbering)))
 
         this.log(`Renaming with new file number "${path.basename(fromFilename)}" to "${toFilename}"`)
         moveBackPromises.push(this.git.mv(fromFilename, toFilename))

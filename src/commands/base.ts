@@ -8,6 +8,7 @@ import { MoveSummary } from 'simple-git/typings/response';
 import { promisify } from "util";
 
 import { Config } from "../config";
+import { Context } from '../context';
 import { getHighestNumberAndDigits } from '../helpers';
 
 export const readFile = promisify(fs.readFile)
@@ -63,6 +64,11 @@ export default abstract class extends Command {
     return this._git //as simplegit.SimpleGit // || simplegit()
   }
 
+  private _context: Context | undefined
+  public get context(): Context {
+    return this._context as Context
+  }
+
   async init() {
     // do some initialization
     debug('Starting base init')
@@ -70,6 +76,7 @@ export default abstract class extends Command {
     // this.flags = flags
     const dir = path.join(flags.path as string);
     this._configInstance = new Config(dir);
+    this._context = new Context(this.configInstance)
 
     debug('Ended base init')
   }
@@ -109,8 +116,8 @@ export default abstract class extends Command {
       if (atNumbering === atNumberingStack) {
 
         const filenumber = this.configInstance.extractNumber(file)
-        const fromFilename = this.configInstance.mapFileToBeRelativeToRootPath(path.join(path.dirname(file), filename))
-        const toFilename = this.configInstance.mapFileToBeRelativeToRootPath(path.join(path.dirname(file), this.configInstance.renumberedFilename(filename, filenumber, newDigitNumber, atNumbering)))
+        const fromFilename = this.context.mapFileToBeRelativeToRootPath(path.join(path.dirname(file), filename))
+        const toFilename = this.context.mapFileToBeRelativeToRootPath(path.join(path.dirname(file), this.configInstance.renumberedFilename(filename, filenumber, newDigitNumber, atNumbering)))
         if (fromFilename !== toFilename) {
           this.log(`renaming with new file number "${fromFilename}" to "${toFilename}"`)
           promises.push(this.git.mv(fromFilename, toFilename))

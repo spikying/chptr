@@ -9,7 +9,7 @@ import * as d from 'debug'
 import fs = require('fs');
 import * as json from 'json5'
 import moment = require('moment');
-import path = require('path');
+import * as path from "path";
 
 import { globPromise } from './commands/base';
 import { sanitizeFileName, stringifyNumber } from './helpers'
@@ -281,15 +281,6 @@ date: ${moment().format('D MMMM YYYY')}
     const re = new RegExp(/^(.*?)(@?\d+)(.*)$/)
     // debug(`re=${re}\nFct=`)
     return filename.replace(re, '$1' + (atNumbering ? '@' : '') + stringifyNumber(newFilenumber, digits) + '$3')
-  }
-
-  public mapFileToBeRelativeToRootPath(file: string): string {
-    return path.relative(this.rootPath, file)
-  }
-  public mapFilesToBeRelativeToRootPath(files: string[]): string[] {
-    return files.map<string>((filename) => {
-      return this.mapFileToBeRelativeToRootPath(filename)
-    });
   }
 
   public extractNumber(filename: string): number {

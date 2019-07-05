@@ -117,7 +117,7 @@ export default class Delete extends Command {
       if (!isRepo) {
         throw new Error("Directory is not a repository")
       }
-      await this.git.rm(this.configInstance.mapFilesToBeRelativeToRootPath(toDeleteFiles))
+      await this.git.rm(this.context.mapFilesToBeRelativeToRootPath(toDeleteFiles))
       await this.git.commit(`Removed files: ${JSON.stringify(toDeleteFiles)}`)
       await this.git.push()
 

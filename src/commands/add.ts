@@ -95,7 +95,7 @@ export default class Add extends Command {
 
       await this.addDigitsToNecessaryStacks()
 
-      await this.git.add(this.configInstance.mapFilesToBeRelativeToRootPath([fullPathMD, fullPathMeta, fullPathSummary]))
+      await this.git.add(this.context.mapFilesToBeRelativeToRootPath([fullPathMD, fullPathMeta, fullPathSummary]))
       await this.git.commit(`added ${fullPathMD}, ${fullPathMeta} and ${fullPathSummary}`)
       await this.git.push()
 
