@@ -4,11 +4,11 @@ import { cli } from "cli-ux";
 import * as glob from "glob";
 import * as path from "path";
 
+import { extractNumber } from '../helpers';
 import { QueryBuilder } from '../queries';
 
 import { d } from './base';
 import Command from "./edit-save-base";
-import { extractNumber } from '../helpers';
 
 const debug = d('command:edit')
 
@@ -53,13 +53,13 @@ export default class Edit extends Command {
       const queryBuilder = new QueryBuilder()
       queryBuilder.add('filter', queryBuilder.textinput("What chapters to put in edit mode? (comma-separated list)", ""))
       const queryResponses: any = await queryBuilder.responses()
-      chapterIds.concat(queryResponses.filter.split(',').map((v: string) => parseInt(v, 10)))
+      chapterIds.push(...queryResponses.filter.split(',').map((v: string) => parseInt(v, 10)))
     } else {
       //loop through all argv[i] to get all chapter numbers.  If first argument contains commas, it's a single argument to split at ','.
       if (argv[0].split(',').length > 1) {
-        chapterIds.concat(argv[0].split(','))
+        chapterIds.push(...argv[0].split(','))
       } else {
-        chapterIds.concat(argv)
+        chapterIds.push(...argv)
       }
     }
 
@@ -73,14 +73,14 @@ export default class Edit extends Command {
       const foundFiles: string[] = []
       if (editType === 'all' || editType === 'chapter') {
         debug(`adding chapter`)
-        foundFiles.concat(glob.sync(path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcardWithNumber(num, isAtNumbering))))
+        foundFiles.push(...glob.sync(path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcardWithNumber(num, isAtNumbering))))
       }
       if (editType === 'all' || editType === 'summary') {
         debug(`adding summary`)
-        foundFiles.concat(glob.sync(path.join(this.configInstance.projectRootPath, this.configInstance.summaryWildcardWithNumber(num, isAtNumbering))))
+        foundFiles.push(...glob.sync(path.join(this.configInstance.projectRootPath, this.configInstance.summaryWildcardWithNumber(num, isAtNumbering))))
       }
       debug(`foundFiles = ${foundFiles}`)
-      toEditFiles.concat(foundFiles)
+      toEditFiles.push(...foundFiles)
     })
 
     debug(`toEditFiles: ${JSON.stringify(toEditFiles)}`)
@@ -91,10 +91,10 @@ export default class Edit extends Command {
     }
 
     cli.action.start('Reading and processing modified files')
-    await toEditFiles.forEach(async filename => {
+    for (const filename of toEditFiles) {
       const fullPath = path.join(this.configInstance.projectRootPath, filename)
       await this.processFileBack(fullPath)
-    });
+    }
     cli.action.stop()
 
   }

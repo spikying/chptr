@@ -3,12 +3,11 @@ import { cli } from "cli-ux";
 // import * as d from "debug";
 import * as fs from "fs";
 import * as path from "path";
-import * as simplegit from 'simple-git/promise';
 // import { pathToFileURL } from 'url';
 // import { promisify } from "util";
 
-import { QueryBuilder } from "../queries";
 import { sanitizeFileName } from '../helpers';
+import { QueryBuilder } from "../queries";
 
 import Command, { createDir, createFile, d } from "./base"
 
@@ -145,30 +144,29 @@ eol=lf
     try {
       cli.action.start('Creating git repository')
 
-      const git = simplegit(this.configInstance.projectRootPath);
-      const isRepo = await git.checkIsRepo()
+      const isRepo = await this.git.checkIsRepo()
       if (!isRepo) {
-        await git.init()
+        await this.git.init()
       }
 
-      await git.add('./*')
-      await git.commit('Initial commit')
+      await this.git.add('./*')
+      await this.git.commit('Initial commit')
 
-      const hasRemote: boolean = await git.getRemotes(false).then(result => {
+      const hasRemote: boolean = await this.git.getRemotes(false).then(result => {
         return result.find(value => value.name === 'origin') !== undefined
       })
       if (!hasRemote && remoteRepo) {
 
         debug(`adding remote to ${remoteRepo}`)
-        await git.addRemote('origin', remoteRepo)
+        await this.git.addRemote('origin', remoteRepo)
       }
-      const hasRemote2: boolean = await git.getRemotes(false).then(result => {
+      const hasRemote2: boolean = await this.git.getRemotes(false).then(result => {
         return result.find(value => value.name === 'origin') !== undefined
       })
       if (hasRemote2) {
-        await git.pull('origin', 'master', { '--commit': null, '--allow-unrelated-histories': null })
-        await git.push('origin', 'master', { '-u': null })
-        await git.pull('origin', 'master')
+        await this.git.pull('origin', 'master', { '--commit': null, '--allow-unrelated-histories': null })
+        await this.git.push('origin', 'master', { '-u': null })
+        await this.git.pull('origin', 'master')
       }
 
     } catch (err) {

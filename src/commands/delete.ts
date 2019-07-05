@@ -4,10 +4,9 @@ import { cli } from "cli-ux";
 // import * as fs from "fs";
 import * as glob from "glob";
 import * as path from "path";
-import * as simplegit from 'simple-git/promise';
 // import { promisify } from "util";
 
-import { mapFilesToBeRelativeToRootPath } from '../helpers';
+// import { } from '../helpers';
 import { QueryBuilder } from '../queries';
 
 import Command, { d, listFiles } from "./base"
@@ -76,7 +75,7 @@ export default class Delete extends Command {
         filePattern = nameOrNumber
       }
       const pathName = path.join(this.configInstance.projectRootPath, filePattern)
-      toDeleteFiles.concat(await listFiles(pathName))
+      toDeleteFiles.push(...await listFiles(pathName))
     } else {
       // we will delete all files matching the number patterns for chapters, metadata and summary
       const globPatterns: string[] = []
@@ -96,7 +95,7 @@ export default class Delete extends Command {
         // const gp = globPatterns[index];
         const pathName = path.join(this.configInstance.projectRootPath, gp)
         debug(`pathName = ${pathName}`)
-        toDeleteFiles.concat(await listFiles(pathName))
+        toDeleteFiles.push(...await listFiles(pathName))
       }
     }
 
@@ -111,14 +110,14 @@ export default class Delete extends Command {
       cli.action.start('Deleting file(s) locally and from repository')
 
       debug(`ProjetRootPath = ${this.configInstance.projectRootPath}`)
-      const git = simplegit(this.configInstance.projectRootPath);
-      const isRepo = await git.checkIsRepo()
+      // const git = simplegit(this.configInstance.projectRootPath);
+      const isRepo = await this.git.checkIsRepo()
       if (!isRepo) {
         throw new Error("Directory is not a repository")
       }
-      await git.rm(mapFilesToBeRelativeToRootPath(toDeleteFiles, this.configInstance.projectRootPath))
-      await git.commit(`Removed files: ${JSON.stringify(toDeleteFiles)}`)
-      await git.push()
+      await this.git.rm(this.configInstance.mapFilesToBeRelativeToRootPath(toDeleteFiles))
+      await this.git.commit(`Removed files: ${JSON.stringify(toDeleteFiles)}`)
+      await this.git.push()
 
     } catch (err) {
       this.error(err)

@@ -60,8 +60,8 @@ export default class Build extends Command {
   static args = [
     {
       name: 'outputfile',
-      default: 'novel',
-      description: "output file concatenating all other files's contents"
+      default: '',
+      description: "output filename, without extension, concatenating all other files's contents"
     }
   ]
 
@@ -72,7 +72,8 @@ export default class Build extends Command {
 
     const clean = flags.cleanmarkup
 
-    const outputFile = `${flags.datetimestamp ? moment().format('YYYYMMDD.HHmm ') : ''}${args.outputfile}`
+    const outputFileBase = args.outputfile || this.configInstance.config.projectTitle
+    const outputFile = `${flags.datetimestamp ? moment().format('YYYYMMDD.HHmm ') : ''}${outputFileBase}`
 
     let outputFiletype = flags.filetype
     if (!outputFiletype) {

@@ -10,9 +10,11 @@ import fs = require('fs');
 import * as json from 'json5'
 import moment = require('moment');
 import path = require('path');
+
+import { globPromise } from './commands/base';
+import { sanitizeFileName, stringifyNumber } from './helpers'
 // import { promisify } from "util";
 
-import { sanitizeFileName } from './helpers'
 const debug = d('config')
 // const loadFile = promisify(fs.readFile) as (path: string) => Promise<string>;
 const loadFileSync = fs.readFileSync as (path: string) => string;
@@ -272,6 +274,52 @@ date: ${moment().format('D MMMM YYYY')}
   public isAtNumbering(filename: string): boolean {
     const re = new RegExp(this.numbersPattern(true))
     return re.exec(filename) !== null
+  }
+
+  public renumberedFilename(filename: string, newFilenumber: number, digits: number, atNumbering: boolean): string {
+    debug(`filename=${filename} newFileNumber=${newFilenumber} digits=${digits} @numbering = ${atNumbering}`)
+    const re = new RegExp(/^(.*?)(@?\d+)(.*)$/)
+    // debug(`re=${re}\nFct=`)
+    return filename.replace(re, '$1' + (atNumbering ? '@' : '') + stringifyNumber(newFilenumber, digits) + '$3')
+  }
+
+  public mapFileToBeRelativeToRootPath(file: string): string {
+    return path.relative(this.rootPath, file)
+  }
+  public mapFilesToBeRelativeToRootPath(files: string[]): string[] {
+    return files.map<string>((filename) => {
+      return this.mapFileToBeRelativeToRootPath(filename)
+    });
+  }
+
+  public extractNumber(filename: string): number {
+    const re = new RegExp(this.numbersPattern(false))
+    const match = re.exec(path.basename(filename))
+    const fileNumber = match ? parseInt(match[1], 10) : -1
+
+    debug(`filename = ${filename} filenumber = ${fileNumber}`)
+    if (isNaN(fileNumber)) {
+      return -1
+    }
+    return fileNumber
+  }
+
+  public async getAllNovelFilesFromDir(): Promise<string[]> {
+    const files: string[] = []
+    const wildcards = [
+      this.chapterWildcard(true),
+      this.metadataWildcard(true),
+      this.summaryWildcard(true),
+      this.chapterWildcard(false),
+      this.metadataWildcard(false),
+      this.summaryWildcard(false)
+    ]
+    for (const wildcard of wildcards) {
+      debug(`glob pattern = ${path.join(this.projectRootPath, wildcard)}`)
+      // debug(glob.sync(path.join(this.projectRootPath, wildcard)))
+      files.push(...await globPromise(path.join(this.projectRootPath, wildcard)))
+    }
+    return files
   }
 
   private numberWildcardPortion(atNumbering: boolean, num: number | null = null) {

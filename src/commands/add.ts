@@ -4,13 +4,14 @@ import { cli } from "cli-ux";
 // import * as fs from 'fs';
 // import * as matter from 'gray-matter';
 import * as path from 'path';
-import * as simplegit from 'simple-git/promise';
-// import { promisify } from "util";
+// import { MoveSummary } from 'simple-git/typings/response';
 
-import { extractNumber, getAllNovelFilesFromDir, getHighestNumberAndDigits, mapFilesToBeRelativeToRootPath, numDigits, renumberedFilename, stringifyNumber } from '../helpers';
+import { getHighestNumberAndDigits, numDigits, stringifyNumber } from '../helpers';
 import { getFilenameFromInput } from '../queries';
 
-import Command, { createFile, d, moveFile } from "./base";
+import Command, { createFile, d } from "./base";
+// import { promisify } from "util";
+
 
 const debug = d('command:add')
 
@@ -43,20 +44,19 @@ export default class Add extends Command {
     const atNumbering = flags.atnumbered
 
     const dir = path.join(flags.path as string)
-    this.log(`Walking directory ${JSON.stringify(dir)}`)
+    // this.log(`Walking directory ${JSON.stringify(dir)}`)
 
-    const files = await getAllNovelFilesFromDir(dir, this.configInstance)
+    //TODO: put files as config property, where getAllNovelFiles becomes a private function, and AddDigitsIfNecessary can become an encapsulated function in .base
+    const files = (await this.configInstance.getAllNovelFilesFromDir()).filter(value => {
+      const isAtNumber = this.configInstance.isAtNumbering(value)
+      return isAtNumber && atNumbering
+    })
     debug(`files from glob: ${JSON.stringify(files)}`)
 
     const filesStats = getHighestNumberAndDigits(files, this.configInstance.chapterRegex(atNumbering))
     debug(`Highest number and digits: ${JSON.stringify(filesStats)}`)
     const highestNumber = filesStats.highestNumber
-    const actualDigits = filesStats.digits
     const newDigits = numDigits(highestNumber + 1)
-    debug(`New digits=${newDigits}`)
-    if (newDigits > actualDigits) {
-      await this.addDigitsToAll(dir, newDigits)
-    }
 
     const filledTemplateData = this.configInstance.emptyFileString.toString().replace(/{TITLE}/gmi, name) //`# ${name}\n\n...`
     const filledTemplateMeta = JSON.stringify(this.configInstance.config.metadataFields, undefined, 4).replace(/{TITLE}/gmi, name)
@@ -79,8 +79,8 @@ export default class Add extends Command {
     try {
       cli.action.start('Adding file(s) locally and to repository')
 
-      const git = simplegit(this.configInstance.projectRootPath);
-      const isRepo = await git.checkIsRepo()
+      // const git = simplegit(this.configInstance.projectRootPath);
+      const isRepo = await this.git.checkIsRepo()
       if (!isRepo) {
         throw new Error("Directory is not a repository")
       }
@@ -92,9 +92,11 @@ export default class Add extends Command {
       allPromises.push(createFile(fullPathSummary, filledTemplateData, { encoding: 'utf8' }))
       await Promise.all(allPromises)
 
-      await git.add(mapFilesToBeRelativeToRootPath([fullPathMD, fullPathMeta, fullPathSummary], this.configInstance.projectRootPath))
-      await git.commit(`added ${fullPathMD}, ${fullPathMeta} and ${fullPathSummary}`)
-      await git.push()
+      await this.addDigitsToNecessaryStacks()
+
+      await this.git.add(this.configInstance.mapFilesToBeRelativeToRootPath([fullPathMD, fullPathMeta, fullPathSummary]))
+      await this.git.commit(`added ${fullPathMD}, ${fullPathMeta} and ${fullPathSummary}`)
+      await this.git.push()
 
     } catch (err) {
       this.error(err)
@@ -104,24 +106,5 @@ export default class Add extends Command {
 
   }
 
-  private async addDigitsToAll(dir: string, digits: number): Promise<void[]> {
-    const files = await getAllNovelFilesFromDir(dir, this.configInstance)
-    debug(`files from glob: ${JSON.stringify(files, null, 2)}`)
-
-    const promises: Promise<void>[] = []
-    for (const file of files) {
-      const filename = path.basename(file)
-      const atNumbering = this.configInstance.isAtNumbering(filename)
-      debug(`is AtNumbering?: ${atNumbering}`)
-
-      const filenumber = extractNumber(file, this.configInstance)
-      const fromFilename = path.join(path.dirname(file), filename)
-      const toFilename = path.join(path.dirname(file), renumberedFilename(filename, filenumber, digits, atNumbering))
-      this.log(`renaming with new file number "${fromFilename}" to "${toFilename}"`)
-      promises.push(moveFile(fromFilename, toFilename))
-    }
-    return Promise.all(promises)
-    // })
-  }
 }
 
