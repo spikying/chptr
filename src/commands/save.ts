@@ -4,14 +4,15 @@ import { cli } from "cli-ux";
 // import * as glob from "glob";
 import * as minimatch from 'minimatch'
 import * as path from "path";
-// import { promisify } from "util";
+import { CommitSummary } from 'simple-git/typings/response';
 
 import { filterNumbers } from '../helpers';
 import { QueryBuilder } from '../queries';
 
 import { d, fileExists } from './base';
 import Command from "./edit-save-base";
-import { CommitSummary } from 'simple-git/typings/response';
+// import { promisify } from "util";
+
 
 const debug = d('command:save')
 // const listFiles = promisify(glob);
@@ -38,6 +39,8 @@ export default class Save extends Command {
   }]
 
   static aliases = ['commit']
+
+  static hidden = false
 
   async run() {
     const { args, flags } = this.parse(Save)

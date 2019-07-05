@@ -30,6 +30,8 @@ export default class Antidote extends Command {
     default: ''
   }]
 
+  static hidden = false
+
   async run() {
     const { args, flags } = this.parse(Antidote)
 

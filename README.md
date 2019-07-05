@@ -30,11 +30,9 @@ USAGE
 <!-- commands -->
 * [`spixNovel add [NAME]`](#spixnovel-add-name)
 * [`spixNovel antidote [FILTER]`](#spixnovel-antidote-filter)
-* [`spixNovel base`](#spixnovel-base)
 * [`spixNovel build [OUTPUTFILE]`](#spixnovel-build-outputfile)
 * [`spixNovel delete [NAME]`](#spixnovel-delete-name)
 * [`spixNovel edit [FILTER]`](#spixnovel-edit-filter)
-* [`spixNovel edit-save-base`](#spixnovel-edit-save-base)
 * [`spixNovel help [COMMAND]`](#spixnovel-help-command)
 * [`spixNovel init [NAME]`](#spixnovel-init-name)
 * [`spixNovel reorder ORIGIN DESTINATION`](#spixnovel-reorder-origin-destination)
@@ -77,19 +75,6 @@ OPTIONS
 
 _See code: [src\commands\antidote.ts](https://github.com/spikying/spixNovel/blob/v0.0.0/src\commands\antidote.ts)_
 
-## `spixNovel base`
-
-```
-USAGE
-  $ spixNovel base
-
-OPTIONS
-  -h, --help       show CLI help
-  -p, --path=path  [default: .] Path where root of project files are
-```
-
-_See code: [src\commands\base.ts](https://github.com/spikying/spixNovel/blob/v0.0.0/src\commands\base.ts)_
-
 ## `spixNovel build [OUTPUTFILE]`
 
 Takes all original .MD files and outputs a single file without metadata and comments.  Handles these output formats: md, pdf, docx, html, epub, tex
@@ -99,7 +84,7 @@ USAGE
   $ spixNovel build [OUTPUTFILE]
 
 ARGUMENTS
-  OUTPUTFILE  [default: novel] output file concatenating all other files's contents
+  OUTPUTFILE  output filename, without extension, concatenating all other files's contents
 
 OPTIONS
   -c, --cleanmarkup                         Remove paragraph numbers and other markup
@@ -166,19 +151,6 @@ ALIASES
 
 _See code: [src\commands\edit.ts](https://github.com/spikying/spixNovel/blob/v0.0.0/src\commands\edit.ts)_
 
-## `spixNovel edit-save-base`
-
-```
-USAGE
-  $ spixNovel edit-save-base
-
-OPTIONS
-  -h, --help       show CLI help
-  -p, --path=path  [default: .] Path where root of project files are
-```
-
-_See code: [src\commands\edit-save-base.ts](https://github.com/spikying/spixNovel/blob/v0.0.0/src\commands\edit-save-base.ts)_
-
 ## `spixNovel help [COMMAND]`
 
 display help for spixNovel
@@ -234,19 +206,22 @@ USAGE
   $ spixNovel reorder ORIGIN DESTINATION
 
 ARGUMENTS
-  ORIGIN       chapter number to move
-  DESTINATION  number it will become
+  ORIGIN       Chapter number to move
+  DESTINATION  Number it will become (write `end` or `@end`to put at the end of each stack).
 
 OPTIONS
   -h, --help       show CLI help
   -p, --path=path  [default: .] Path where root of project files are
+
+ALIASES
+  $ spixNovel move
 ```
 
 _See code: [src\commands\reorder.ts](https://github.com/spikying/spixNovel/blob/v0.0.0/src\commands\reorder.ts)_
 
 ## `spixNovel save [MESSAGE]`
 
-Parse modified text files, adjust sentence and paragraph endings, commit files to repository and readjust endings.
+Parse modified text files, adjust sentence and paragraph endings, commit files to repository (remove deleted ones) and readjust endings.
 
 ```
 USAGE

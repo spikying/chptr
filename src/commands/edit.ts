@@ -4,7 +4,6 @@ import { cli } from "cli-ux";
 import * as glob from "glob";
 import * as path from "path";
 
-import { extractNumber } from '../helpers';
 import { QueryBuilder } from '../queries';
 
 import { d } from './base';
@@ -39,8 +38,10 @@ export default class Edit extends Command {
   // for variable length arguments (https://oclif.io/docs/args)
   static strict = false
 
+  static hidden = false
+
   async run() {
-    const { args, flags, argv } = this.parse(Edit)
+    const { flags, argv } = this.parse(Edit)
 
     const editType = flags.type
     debug(`edit type = ${editType}`)
@@ -66,7 +67,7 @@ export default class Edit extends Command {
     debug(`chapterNumbers: ${JSON.stringify(chapterIds)}`)
 
     chapterIds.forEach(async id => {
-      const num = extractNumber(id, this.configInstance)
+      const num = this.configInstance.extractNumber(id)
       const isAtNumbering = this.configInstance.isAtNumbering(id)
 
       debug(`glob fullpath: ${path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcardWithNumber(num, isAtNumbering))}`)

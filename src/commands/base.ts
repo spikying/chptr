@@ -48,6 +48,7 @@ export default abstract class extends Command {
         description: "Path where root of project files are"
       })
   }
+  static hidden = true
 
   private _configInstance: Config | undefined
   public get configInstance(): Config {

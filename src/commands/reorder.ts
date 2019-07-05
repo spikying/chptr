@@ -35,6 +35,10 @@ export default class Reorder extends Command {
     }
   ]
 
+  static aliases = ['move']
+
+  static hidden = false
+
   async run() {
     const { args, flags } = this.parse(Reorder)
 

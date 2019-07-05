@@ -63,6 +63,8 @@ export default class Init extends Command {
 
   static strict = false
 
+  static hidden = false
+
   private flagForce = 'false'
 
   async run() {

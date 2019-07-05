@@ -41,6 +41,8 @@ export default class Delete extends Command {
 
   static aliases = ['del']
 
+  static hidden = false
+
   async run() {
     const { args, flags } = this.parse(Delete)
 

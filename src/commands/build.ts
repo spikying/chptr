@@ -67,6 +67,8 @@ export default class Build extends Command {
 
   static aliases = ['compile']
 
+  static hidden = false
+
   async run() {
     const { args, flags } = this.parse(Build)
 

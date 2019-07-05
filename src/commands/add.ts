@@ -36,6 +36,7 @@ export default class Add extends Command {
     }
   ]
 
+  static hidden = false
 
   async run() {
     const { args, flags } = this.parse(Add)
