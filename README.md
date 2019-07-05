@@ -29,7 +29,7 @@ USAGE
 # Commands
 <!-- commands -->
 * [`spixNovel add [NAME]`](#spixnovel-add-name)
-* [`spixNovel antidote [FILE]`](#spixnovel-antidote-file)
+* [`spixNovel antidote [FILTER]`](#spixnovel-antidote-filter)
 * [`spixNovel base`](#spixnovel-base)
 * [`spixNovel build [OUTPUTFILE]`](#spixnovel-build-outputfile)
 * [`spixNovel delete [NAME]`](#spixnovel-delete-name)
@@ -52,24 +52,27 @@ ARGUMENTS
   NAME  name of chapter file(s) to add
 
 OPTIONS
-  -h, --help       show CLI help
-  -p, --path=path  [default: .] Path where root of project files are
+  -a, --atnumbered  Add an @numbered chapter
+  -h, --help        show CLI help
+  -p, --path=path   [default: .] Path where root of project files are
 ```
 
 _See code: [src\commands\add.ts](https://github.com/spikying/spixNovel/blob/v0.0.0/src\commands\add.ts)_
 
-## `spixNovel antidote [FILE]`
+## `spixNovel antidote [FILTER]`
 
-describe the command here
+Launch Antidote spell-checker
 
 ```
 USAGE
-  $ spixNovel antidote [FILE]
+  $ spixNovel antidote [FILTER]
+
+ARGUMENTS
+  FILTER  Chapter number to Antidote.
 
 OPTIONS
-  -f, --force
   -h, --help       show CLI help
-  -n, --name=name  name to print
+  -p, --path=path  [default: .] Path where root of project files are
 ```
 
 _See code: [src\commands\antidote.ts](https://github.com/spikying/spixNovel/blob/v0.0.0/src\commands\antidote.ts)_
@@ -99,7 +102,7 @@ ARGUMENTS
   OUTPUTFILE  [default: novel] output file concatenating all other files's contents
 
 OPTIONS
-  -c, --clean                               removes sentence, paragraph and other markup
+  -c, --cleanmarkup                         Remove paragraph numbers and other markup
   -d, --datetimestamp                       adds datetime stamp before output filename
   -h, --help                                show CLI help
 
@@ -109,6 +112,9 @@ OPTIONS
   -p, --path=path                           [default: .] Path where root of project files are
 
   -t, --filetype=md|pdf|docx|html|epub|tex  filetype to export in.  Can be set multiple times.
+
+ALIASES
+  $ spixNovel compile
 ```
 
 _See code: [src\commands\build.ts](https://github.com/spikying/spixNovel/blob/v0.0.0/src\commands\build.ts)_
@@ -130,6 +136,9 @@ OPTIONS
 
   -t, --type=all|summary|chapter|metadata  [default: all] Delete either chapter file, summary file, metadata file or
                                            all.
+
+ALIASES
+  $ spixNovel del
 ```
 
 _See code: [src\commands\delete.ts](https://github.com/spikying/spixNovel/blob/v0.0.0/src\commands\delete.ts)_
@@ -250,6 +259,9 @@ OPTIONS
   -f, --filter=filter  Chapter number to filter which files to stage before saving to repository
   -h, --help           show CLI help
   -p, --path=path      [default: .] Path where root of project files are
+
+ALIASES
+  $ spixNovel commit
 ```
 
 _See code: [src\commands\save.ts](https://github.com/spikying/spixNovel/blob/v0.0.0/src\commands\save.ts)_

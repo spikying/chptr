@@ -35,7 +35,7 @@ export const getAllNovelFilesFromDir = async function (dir: string, configInstan
   for (const wildcard of wildcards) {
     debug(`glob pattern = ${path.join(dir, wildcard)}`)
     debug(glob.sync(path.join(dir, wildcard)))
-    files.push(...await globPromise(path.join(dir, wildcard)))
+    files.concat(await globPromise(path.join(dir, wildcard)))
   }
   return files
 }

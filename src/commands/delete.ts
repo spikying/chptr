@@ -40,6 +40,8 @@ export default class Delete extends Command {
     }
   ]
 
+  static aliases = ['del']
+
   async run() {
     const { args, flags } = this.parse(Delete)
 
@@ -74,7 +76,7 @@ export default class Delete extends Command {
         filePattern = nameOrNumber
       }
       const pathName = path.join(this.configInstance.projectRootPath, filePattern)
-      toDeleteFiles.push(...await listFiles(pathName))
+      toDeleteFiles.concat(await listFiles(pathName))
     } else {
       // we will delete all files matching the number patterns for chapters, metadata and summary
       const globPatterns: string[] = []
@@ -94,7 +96,7 @@ export default class Delete extends Command {
         // const gp = globPatterns[index];
         const pathName = path.join(this.configInstance.projectRootPath, gp)
         debug(`pathName = ${pathName}`)
-        toDeleteFiles.push(...await listFiles(pathName))
+        toDeleteFiles.concat(await listFiles(pathName))
       }
     }
 
