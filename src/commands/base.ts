@@ -8,7 +8,7 @@ import { MoveSummary } from 'simple-git/typings/response';
 import { promisify } from "util";
 
 import { Config } from "../config";
-import { getHighestNumberAndDigits, numDigits } from '../helpers';
+import { getHighestNumberAndDigits } from '../helpers';
 
 export const readFile = promisify(fs.readFile)
 export const writeFile = promisify(fs.writeFile)
@@ -91,16 +91,15 @@ export default abstract class extends Command {
     const bothStacks = [{ atNumbering: true, highest: atHighest }, { atNumbering: false, highest: normalHighest }]
 
     for (const stack of bothStacks) {
-      const actualDigits = stack.highest.digits
-      const newDigits = numDigits(stack.highest.highestNumber)
-      if (newDigits > actualDigits) {
-        debug('Adding digits to stack')
-        await this.addDigitsToFiles(files.filter(file => this.configInstance.isAtNumbering(file) === stack.atNumbering), newDigits, stack.atNumbering)
+      const maxDigits = stack.highest.maxNecessaryDigits
+      const minDigits = stack.highest.minDigits // numDigits(stack.highest.highestNumber)
+      if (minDigits < maxDigits) {
+        await this.addDigitsToFiles(files.filter(file => this.configInstance.isAtNumbering(file) === stack.atNumbering), maxDigits, stack.atNumbering)
       }
     }
   }
 
-  private async addDigitsToFiles(files: string[], digits: number, atNumberingStack: boolean): Promise<MoveSummary[]> {
+  private async addDigitsToFiles(files: string[], newDigitNumber: number, atNumberingStack: boolean): Promise<MoveSummary[]> {
     const promises: Promise<MoveSummary>[] = []
     for (const file of files) {
       const filename = path.basename(file)
@@ -111,7 +110,7 @@ export default abstract class extends Command {
 
         const filenumber = this.configInstance.extractNumber(file)
         const fromFilename = this.configInstance.mapFileToBeRelativeToRootPath(path.join(path.dirname(file), filename))
-        const toFilename = this.configInstance.mapFileToBeRelativeToRootPath(path.join(path.dirname(file), this.configInstance.renumberedFilename(filename, filenumber, digits, atNumbering)))
+        const toFilename = this.configInstance.mapFileToBeRelativeToRootPath(path.join(path.dirname(file), this.configInstance.renumberedFilename(filename, filenumber, newDigitNumber, atNumbering)))
         if (fromFilename !== toFilename) {
           this.log(`renaming with new file number "${fromFilename}" to "${toFilename}"`)
           promises.push(this.git.mv(fromFilename, toFilename))

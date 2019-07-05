@@ -55,7 +55,7 @@ export default class Reorder extends Command {
 
     const highestNumberAndDigitsOrigin = getHighestNumberAndDigits(files, this.configInstance.chapterRegex(originIsAtNumbering))
     const highestNumberAndDigitsDestination = getHighestNumberAndDigits(files, this.configInstance.chapterRegex(destIsAtNumbering))
-    const destDigits = highestNumberAndDigitsDestination.digits
+    const destDigits = highestNumberAndDigitsDestination.maxNecessaryDigits
     debug(`Dest digits: ${destDigits}`)
 
     const origin: number = this.isEndOfStack(args.origin) ? highestNumberAndDigitsOrigin.highestNumber : this.configInstance.extractNumber(args.origin)
@@ -160,70 +160,85 @@ export default class Reorder extends Command {
     cli.action.stop()
     cli.action.start('Moving files to temp directory')
 
-    const tempPrefix = 'temp'
-    const tempDir = fs.mkdtempSync(path.join(dir, tempPrefix))
-    debug(`Created temp dir: ${tempDir}`)
-
-    const moveTempPromises: Promise<MoveSummary>[] = []
-    for (const file of toRenameFiles) {
-      const fromFilename = this.configInstance.mapFileToBeRelativeToRootPath(file)
-      const toFilename = this.configInstance.mapFileToBeRelativeToRootPath(path.join(tempDir, path.basename(file)))
-      debug(`Original file: ${fromFilename} TEMP TO ${toFilename}`)
-      moveTempPromises.push(this.git.mv(fromFilename, toFilename))
+    let tempDir = ''
+    try {
+      const tempPrefix = 'temp'
+      tempDir = fs.mkdtempSync(path.join(dir, tempPrefix))
+      debug(`Created temp dir: ${tempDir}`)
+    } catch (err) {
+      cli.error(err)
+      cli.exit(1)
     }
-    await Promise.all(moveTempPromises)
 
-    cli.action.stop()
-    cli.action.start('Moving files to their final state')
+    try {
+      const moveTempPromises: Promise<MoveSummary>[] = []
+      for (const file of toRenameFiles) {
+        const fromFilename = this.configInstance.mapFileToBeRelativeToRootPath(file)
+        const toFilename = this.configInstance.mapFileToBeRelativeToRootPath(path.join(tempDir, path.basename(file)))
+        debug(`Original file: ${fromFilename} TEMP TO ${toFilename}`)
+        moveTempPromises.push(this.git.mv(fromFilename, toFilename))
+      }
+      await Promise.all(moveTempPromises)
 
-    const moveBackPromises: Promise<MoveSummary>[] = []
-    for (const file of toRenameFiles) {
-      const filename = path.basename(file)
+      cli.action.stop()
+      cli.action.start('Moving files to their final state')
 
-      const fileNumber: number = this.configInstance.extractNumber(file)
-      let newFileNumber: number
-      let fileOutputAtNumbering = false
+      const moveBackPromises: Promise<MoveSummary>[] = []
+      for (const file of toRenameFiles) {
+        const filename = path.basename(file)
 
-      if (sameAtNumbering) {
-        fileOutputAtNumbering = originIsAtNumbering
+        const fileNumber: number = this.configInstance.extractNumber(file)
+        let newFileNumber: number
+        let fileOutputAtNumbering = false
 
-        if (fileNumber === origin) {
-          newFileNumber = dest
-        } else {
-          if (forwardBump) {
-            newFileNumber = fileNumber + 1
-          } else {
-            newFileNumber = fileNumber - 1
-          }
-        }
-      } else {
-        const fileIsAtNumbering = this.configInstance.isAtNumbering(file)
-        if (fileIsAtNumbering === originIsAtNumbering) {
+        if (sameAtNumbering) {
+          fileOutputAtNumbering = originIsAtNumbering
+
           if (fileNumber === origin) {
-            fileOutputAtNumbering = destIsAtNumbering
             newFileNumber = dest
           } else {
-            fileOutputAtNumbering = originIsAtNumbering
-            newFileNumber = fileNumber - 1
+            if (forwardBump) {
+              newFileNumber = fileNumber + 1
+            } else {
+              newFileNumber = fileNumber - 1
+            }
           }
         } else {
-          fileOutputAtNumbering = destIsAtNumbering
-          newFileNumber = fileNumber + 1
+          const fileIsAtNumbering = this.configInstance.isAtNumbering(file)
+          if (fileIsAtNumbering === originIsAtNumbering) {
+            if (fileNumber === origin) {
+              fileOutputAtNumbering = destIsAtNumbering
+              newFileNumber = dest
+            } else {
+              fileOutputAtNumbering = originIsAtNumbering
+              newFileNumber = fileNumber - 1
+            }
+          } else {
+            fileOutputAtNumbering = destIsAtNumbering
+            newFileNumber = fileNumber + 1
+          }
         }
+        debug(`fileNumber = ${fileNumber}, newFileNumber=${newFileNumber}`)
+
+        const fromFilename = this.configInstance.mapFileToBeRelativeToRootPath(path.join(tempDir, filename))
+        const toFilename = this.configInstance.mapFileToBeRelativeToRootPath(path.join(path.dirname(file), this.configInstance.renumberedFilename(filename, newFileNumber, destDigits, fileOutputAtNumbering)))
+
+        this.log(`Renaming with new file number "${path.basename(fromFilename)}" to "${toFilename}"`)
+        moveBackPromises.push(this.git.mv(fromFilename, toFilename))
       }
-      debug(`fileNumber = ${fileNumber}, newFileNumber=${newFileNumber}`)
-
-      const fromFilename = this.configInstance.mapFileToBeRelativeToRootPath(path.join(tempDir, filename))
-      const toFilename = this.configInstance.mapFileToBeRelativeToRootPath(path.join(path.dirname(file), this.configInstance.renumberedFilename(filename, newFileNumber, destDigits, fileOutputAtNumbering)))
-
-      this.log(`Renaming with new file number "${path.basename(fromFilename)}" to "${toFilename}"`)
-      moveBackPromises.push(this.git.mv(fromFilename, toFilename))
+      await Promise.all(moveBackPromises)
+    } catch (err) {
+      cli.error(err)
+      cli.exit(1)
     }
-    await Promise.all(moveBackPromises)
 
-    debug(`Deleting temp dir: ${tempDir}`)
-    fs.rmdirSync(tempDir)
-
+    try {
+      debug(`Deleting temp dir: ${tempDir}`)
+      fs.rmdirSync(tempDir)
+    } catch (err) {
+      cli.error(err)
+      cli.exit(1)
+    }
     await this.addDigitsToNecessaryStacks()
 
     cli.action.stop()

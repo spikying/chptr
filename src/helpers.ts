@@ -62,25 +62,35 @@ export const sanitizeUrl = function (original: string): string {
   return sanitized
 }
 
-export const getHighestNumberAndDigits = function (files: string[], fileRegex: RegExp): { highestNumber: number; digits: number } {
+export const getHighestNumberAndDigits = function (files: string[], fileRegex: RegExp): {
+  highestNumber: number,
+  // maxDigits: number,
+  minDigits: number,
+  maxNecessaryDigits: number
+} {
   const debug = d('helpers:getHighestNumberAndDigits')
 
   debug(`files: length=${files.length} full=${JSON.stringify(files)}`)
   if (files.length === 0) {
-    return { highestNumber: 0, digits: 1 }
+    return {
+      highestNumber: 0,
+      // maxDigits: 1,
+      minDigits: 1, maxNecessaryDigits: 1
+    }
   }
 
   debug(`files searched: ${JSON.stringify(files)}`)
   debug(`Regex used: ${fileRegex}`)
+
   const highestNumber = files.map(value => {
-    debug(`Regex exec: ${JSON.stringify(fileRegex.exec(path.basename(value)))}`)
+    // debug(`Regex exec: ${JSON.stringify(fileRegex.exec(path.basename(value)))}`)
     const matches = fileRegex.exec(path.basename(value))
     return matches ? parseInt(matches[1], 10) : 0
   }).reduce((previous, current) => {
     return Math.max(previous, current)
   })
 
-  const digits = files
+  const maxDigits = files
     .map(value => {
       const matches = fileRegex.exec(path.basename(value))
       return matches ? matches[1].length : 0
@@ -89,9 +99,31 @@ export const getHighestNumberAndDigits = function (files: string[], fileRegex: R
       return Math.max(previous, current)
     })
 
+  const minDigits = files
+    .map(value => {
+      const matches = fileRegex.exec(path.basename(value))
+      return matches ? matches[1].length : 0
+    })
+    .reduce((previous, current) => {
+      return Math.min(previous, current)
+    })
+
+  const maxNecessaryDigits = files
+    .map(value => {
+      const matches = fileRegex.exec(path.basename(value))
+      return matches ? numDigits(parseInt(matches[1], 10)) : 0
+    })
+    .reduce((previous, current) => {
+      return Math.max(previous, current)
+    })
+
   debug(`highest number = ${highestNumber}`)
-  debug(`digits = ${digits}`)
-  return { highestNumber, digits }
+  debug(`digits = ${maxDigits}`)
+  return {
+    highestNumber,
+    // maxDigits,
+    minDigits, maxNecessaryDigits
+  }
 }
 
 
