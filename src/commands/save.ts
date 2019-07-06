@@ -72,11 +72,11 @@ export default class Save extends Command {
     }
 
     const unfilteredFileList = (await this.git.diff(['--name-only'])).split('\n')
-      .concat((await this.git.status()).not_added.map(unQuote))
-      .concat((await this.git.status()).deleted.map(unQuote))
-      .concat((await this.git.status()).modified.map(unQuote))
-      .concat((await this.git.status()).created.map(unQuote))
-      .concat((await this.git.status()).renamed.map(unQuote))
+      .concat(gitStatus.not_added.map(unQuote))
+      .concat(gitStatus.deleted.map(unQuote))
+      .concat(gitStatus.modified.map(unQuote))
+      .concat(gitStatus.created.map(unQuote))
+      .concat(gitStatus.renamed.map(unQuote))
       .filter(onlyUnique)
 
     const toAddFiles = unfilteredFileList
@@ -92,10 +92,8 @@ export default class Save extends Command {
           minimatch(val, this.configInstance.metadataWildcardWithNumber(numberFilter, false)) ||
           minimatch(val, this.configInstance.summaryWildcardWithNumber(numberFilter, false))
           : true
-      }) // listFiles(pathName)
-    // const allNovelFiles = await this.configInstance.getAllNovelFilesFromDir()
-    // toAddFiles.push(...allNovelFiles.map(value => this.configInstance.mapFileToBeRelativeToRootPath(value)).filter(value => toAddFiles.indexOf(value) === 0))
-    debug(`toAddFiles: ${JSON.stringify(toAddFiles)}`)
+      })
+    // debug(`toAddFiles: ${JSON.stringify(toAddFiles)}`)
 
     if (toAddFiles.length === 0) {
       this.warn('No files to save to repository')

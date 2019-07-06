@@ -91,7 +91,7 @@ export default abstract class extends Command {
   }
 
   public async addDigitsToNecessaryStacks(): Promise<void> {
-    const files = await this.context.getAllNovelFiles()
+    const files = await this.context.getAllNovelFiles(true)
 
     for (const b of [true, false]) {
       const maxDigits = this.context.getMaxNecessaryDigits(b)
