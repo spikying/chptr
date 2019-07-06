@@ -6,7 +6,7 @@ import { cli } from "cli-ux";
 import * as path from 'path';
 // import { MoveSummary } from 'simple-git/typings/response';
 
-import { getHighestNumberAndDigits, numDigits, stringifyNumber } from '../helpers';
+import { numDigits, stringifyNumber } from '../helpers';
 import { getFilenameFromInput } from '../queries';
 
 import Command, { createFile, d } from "./base";
@@ -48,15 +48,15 @@ export default class Add extends Command {
     // this.log(`Walking directory ${JSON.stringify(dir)}`)
 
     //TODO: put files as config property, where getAllNovelFiles becomes a private function, and AddDigitsIfNecessary can become an encapsulated function in .base
-    const files = (await this.configInstance.getAllNovelFilesFromDir()).filter(value => {
+    const files = (await this.context.getAllNovelFiles()).filter(value => {
       const isAtNumber = this.configInstance.isAtNumbering(value)
       return isAtNumber && atNumbering
     })
     debug(`files from glob: ${JSON.stringify(files)}`)
 
-    const filesStats = getHighestNumberAndDigits(files, this.configInstance.chapterRegex(atNumbering))
-    debug(`Highest number and digits: ${JSON.stringify(filesStats)}`)
-    const highestNumber = filesStats.highestNumber
+    // const filesStats = getHighestNumberAndDigits(files, this.configInstance.chapterRegex(atNumbering))
+    // debug(`Highest number and digits: ${JSON.stringify(filesStats)}`)
+    const highestNumber = this.context.getHighestNumber(atNumbering) // filesStats.highestNumber
     const newDigits = numDigits(highestNumber + 1)
 
     const filledTemplateData = this.configInstance.emptyFileString.toString().replace(/{TITLE}/gmi, name) //`# ${name}\n\n...`

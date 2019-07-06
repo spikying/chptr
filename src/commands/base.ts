@@ -9,7 +9,7 @@ import { promisify } from "util";
 
 import { Config } from "../config";
 import { Context } from '../context';
-import { getHighestNumberAndDigits } from '../helpers';
+// import { } from '../helpers';
 
 export const readFile = promisify(fs.readFile)
 export const writeFile = promisify(fs.writeFile)
@@ -91,17 +91,13 @@ export default abstract class extends Command {
   }
 
   public async addDigitsToNecessaryStacks(): Promise<void> {
-    const files = await this.configInstance.getAllNovelFilesFromDir()
-    const normalHighest = getHighestNumberAndDigits(files, this.configInstance.chapterRegex(false))
-    const atHighest = getHighestNumberAndDigits(files, this.configInstance.chapterRegex(true))
+    const files = await this.context.getAllNovelFiles()
 
-    const bothStacks = [{ atNumbering: true, highest: atHighest }, { atNumbering: false, highest: normalHighest }]
-
-    for (const stack of bothStacks) {
-      const maxDigits = stack.highest.maxNecessaryDigits
-      const minDigits = stack.highest.minDigits // numDigits(stack.highest.highestNumber)
+    for (const b of [true, false]) {
+      const maxDigits = this.context.getMaxNecessaryDigits(b)
+      const minDigits = this.context.getMinDigits(b) // numDigits(stack.highest.highestNumber)
       if (minDigits < maxDigits) {
-        await this.addDigitsToFiles(files.filter(file => this.configInstance.isAtNumbering(file) === stack.atNumbering), maxDigits, stack.atNumbering)
+        await this.addDigitsToFiles(files.filter(file => this.configInstance.isAtNumbering(file) === b), maxDigits, b)
       }
     }
   }

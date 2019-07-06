@@ -11,7 +11,6 @@ import * as json from 'json5'
 import moment = require('moment');
 import * as path from "path";
 
-import { globPromise } from './commands/base';
 import { sanitizeFileName, stringifyNumber } from './helpers'
 // import { promisify } from "util";
 
@@ -295,23 +294,7 @@ date: ${moment().format('D MMMM YYYY')}
     return fileNumber
   }
 
-  public async getAllNovelFilesFromDir(): Promise<string[]> {
-    const files: string[] = []
-    const wildcards = [
-      this.chapterWildcard(true),
-      this.metadataWildcard(true),
-      this.summaryWildcard(true),
-      this.chapterWildcard(false),
-      this.metadataWildcard(false),
-      this.summaryWildcard(false)
-    ]
-    for (const wildcard of wildcards) {
-      debug(`glob pattern = ${path.join(this.projectRootPath, wildcard)}`)
-      // debug(glob.sync(path.join(this.projectRootPath, wildcard)))
-      files.push(...await globPromise(path.join(this.projectRootPath, wildcard)))
-    }
-    return files
-  }
+
 
   private numberWildcardPortion(atNumbering: boolean, num: number | null = null) {
     let result = ''

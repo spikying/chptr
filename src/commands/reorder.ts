@@ -6,7 +6,7 @@ import * as fs from 'fs'
 import * as path from 'path'
 import { MoveSummary } from 'simple-git/typings/response';
 
-import { getHighestNumberAndDigits } from '../helpers'
+// import {  } from '../helpers'
 
 import Command, { d } from "./base"
 
@@ -49,17 +49,20 @@ export default class Reorder extends Command {
     const destIsAtNumbering = args.destination.toString().substring(0, 1) === '@'
     debug(`origin @ = ${originIsAtNumbering} dest @ = ${destIsAtNumbering}`)
 
-
-    const files = await this.configInstance.getAllNovelFilesFromDir()
+    const files = await this.context.getAllNovelFiles()
     debug(`files from glob: ${JSON.stringify(files, null, 2)}`)
 
-    const highestNumberAndDigitsOrigin = getHighestNumberAndDigits(files, this.configInstance.chapterRegex(originIsAtNumbering))
-    const highestNumberAndDigitsDestination = getHighestNumberAndDigits(files, this.configInstance.chapterRegex(destIsAtNumbering))
-    const destDigits = highestNumberAndDigitsDestination.maxNecessaryDigits
-    debug(`Dest digits: ${destDigits}`)
+    // const highestNumberAndDigitsOrigin = getHighestNumberAndDigits(files, this.configInstance.chapterRegex(originIsAtNumbering))
+    // const highestNumberAndDigitsDestination = getHighestNumberAndDigits(files, this.configInstance.chapterRegex(destIsAtNumbering))
+    // const destDigits = highestNumberAndDigitsDestination.maxNecessaryDigits
+    // debug(`Dest digits: ${destDigits}`)
 
-    const origin: number = this.isEndOfStack(args.origin) ? highestNumberAndDigitsOrigin.highestNumber : this.configInstance.extractNumber(args.origin)
-    const dest: number = this.isEndOfStack(args.destination) ? highestNumberAndDigitsDestination.highestNumber + 1 : this.configInstance.extractNumber(args.destination)
+    const origin: number = this.isEndOfStack(args.origin) ?
+      this.context.getHighestNumber(originIsAtNumbering) :
+      this.configInstance.extractNumber(args.origin)
+    const dest: number = this.isEndOfStack(args.destination) ?
+      this.context.getHighestNumber(destIsAtNumbering) + 1 :
+      this.configInstance.extractNumber(args.destination)
     debug(`origin = ${origin} dest = ${dest}`)
 
     const originExists: boolean = files.map(value => {
@@ -219,6 +222,7 @@ export default class Reorder extends Command {
           }
         }
         debug(`fileNumber = ${fileNumber}, newFileNumber=${newFileNumber}`)
+        const destDigits = this.context.getMaxNecessaryDigits(destIsAtNumbering)
 
         const fromFilename = this.context.mapFileToBeRelativeToRootPath(path.join(tempDir, filename))
         const toFilename = this.context.mapFileToBeRelativeToRootPath(path.join(path.dirname(file), this.configInstance.renumberedFilename(filename, newFileNumber, destDigits, fileOutputAtNumbering)))
