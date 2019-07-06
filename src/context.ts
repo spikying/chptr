@@ -25,7 +25,9 @@ const nullStackStats: StackStatistics = {
 export class Context {
   private readonly configInstance: Config;
 
-  private _allNovelFiles: string[] | null = null
+  // private _allNovelFiles: string[] | null = null
+  private _allNormalFiles: string[] | null = null
+  private _allAtNumberedFiles: string[] | null = null
 
   private readonly _allNovelStatistics: NovelStatistics = { atNumberStack: nullStackStats, normalStack: nullStackStats }
 
@@ -44,28 +46,97 @@ export class Context {
     });
   }
 
-  public async getAllNovelFiles(refresh = false): Promise<string[]> {
-    if (this._allNovelFiles === null || refresh) {
+  // public async getAllNormalFiles(refresh = false): Promise<string[]> {
+  //   if (this._allNormalFiles === null || refresh) {
+  //     const files: string[] = []
+  //     const wildcards = [
+  //       this.configInstance.chapterWildcard(false),
+  //       this.configInstance.metadataWildcard(false),
+  //       this.configInstance.summaryWildcard(false)
+  //     ]
+  //     for (const wildcard of wildcards) {
+  //       debug(`glob pattern = ${path.join(this.configInstance.projectRootPath, wildcard)}`)
+  //       files.push(...await globPromise(path.join(this.configInstance.projectRootPath, wildcard)))
+  //     }
+
+  //     this._allNormalFiles = files
+  //     this.updateStackStatistics(false)
+  //   }
+
+  //   return this._allNormalFiles
+  // }
+  // public async getAllAtNumberedFiles(refresh = false): Promise<string[]> {
+  //   if (this._allAtNumberedFiles === null || refresh) {
+  //     const files: string[] = []
+  //     const wildcards = [
+  //       this.configInstance.chapterWildcard(true),
+  //       this.configInstance.metadataWildcard(true),
+  //       this.configInstance.summaryWildcard(true)
+  //     ]
+  //     for (const wildcard of wildcards) {
+  //       debug(`glob pattern = ${path.join(this.configInstance.projectRootPath, wildcard)}`)
+  //       files.push(...await globPromise(path.join(this.configInstance.projectRootPath, wildcard)))
+  //     }
+
+  //     this._allAtNumberedFiles = files
+  //     this.updateStackStatistics(true)
+  //   }
+
+  //   return this._allAtNumberedFiles
+  // }
+
+  public async getAllFilesForOneType(isAtNumbered: boolean, refresh = false): Promise<string[]> {
+    const existingFiles = isAtNumbered ? this._allAtNumberedFiles : this._allNormalFiles
+
+    if (existingFiles === null || refresh) {
       const files: string[] = []
       const wildcards = [
-        this.configInstance.chapterWildcard(true),
-        this.configInstance.metadataWildcard(true),
-        this.configInstance.summaryWildcard(true),
-        this.configInstance.chapterWildcard(false),
-        this.configInstance.metadataWildcard(false),
-        this.configInstance.summaryWildcard(false)
+        this.configInstance.chapterWildcard(isAtNumbered),
+        this.configInstance.metadataWildcard(isAtNumbered),
+        this.configInstance.summaryWildcard(isAtNumbered)
       ]
       for (const wildcard of wildcards) {
         debug(`glob pattern = ${path.join(this.configInstance.projectRootPath, wildcard)}`)
         files.push(...await globPromise(path.join(this.configInstance.projectRootPath, wildcard)))
       }
-      this._allNovelFiles = files
 
-      this.updateStackStatistics(true)
-      this.updateStackStatistics(false)
+      if (isAtNumbered) {
+        this._allAtNumberedFiles = files
+      } else {
+        this._allNormalFiles = files
+      }
+
+      await this.updateStackStatistics(isAtNumbered)
     }
 
-    return this._allNovelFiles
+    return (isAtNumbered ? this._allAtNumberedFiles : this._allNormalFiles) as string[]
+  }
+
+  public async getAllNovelFiles(refresh = false): Promise<string[]> {
+    return (await this.getAllFilesForOneType(true, refresh)).concat(
+      (await this.getAllFilesForOneType(false, refresh)))
+
+    // if (this._allNovelFiles === null || refresh) {
+    //   const files: string[] = []
+    //   const wildcards = [
+    //     this.configInstance.chapterWildcard(true),
+    //     this.configInstance.metadataWildcard(true),
+    //     this.configInstance.summaryWildcard(true),
+    //     this.configInstance.chapterWildcard(false),
+    //     this.configInstance.metadataWildcard(false),
+    //     this.configInstance.summaryWildcard(false)
+    //   ]
+    //   for (const wildcard of wildcards) {
+    //     debug(`glob pattern = ${path.join(this.configInstance.projectRootPath, wildcard)}`)
+    //     files.push(...await globPromise(path.join(this.configInstance.projectRootPath, wildcard)))
+    //   }
+    //   this._allNovelFiles = files
+
+    //   this.updateStackStatistics(true)
+    //   this.updateStackStatistics(false)
+    // }
+
+    // return this._allNovelFiles
   }
 
   public getHighestNumber(atNumberStack: boolean): number {
@@ -110,8 +181,8 @@ export class Context {
     return fileNumber
   }
 
-  private updateStackStatistics(atNumbers: boolean): void {
-    const files = this._allNovelFiles || []
+  private async updateStackStatistics(atNumbers: boolean): Promise<void> {
+    const files = await this.getAllNovelFiles()
     const fileRegex: RegExp = this.configInstance.chapterRegex(atNumbers)
     const index = atNumbers ? 'atNumberStack' : 'normalStack'
 

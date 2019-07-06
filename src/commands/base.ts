@@ -91,15 +91,54 @@ export default abstract class extends Command {
   }
 
   public async addDigitsToNecessaryStacks(): Promise<void> {
-    const files = await this.context.getAllNovelFiles(true)
+    // const files = await this.context.getAllNovelFiles(true)
 
     for (const b of [true, false]) {
       const maxDigits = this.context.getMaxNecessaryDigits(b)
       const minDigits = this.context.getMinDigits(b) // numDigits(stack.highest.highestNumber)
       if (minDigits < maxDigits) {
-        await this.addDigitsToFiles(files.filter(file => this.configInstance.isAtNumbering(file) === b), maxDigits, b)
+        // await this.addDigitsToFiles(files.filter(file => this.configInstance.isAtNumbering(file) === b), maxDigits, b)
+        await this.addDigitsToFiles((await this.context.getAllFilesForOneType(b, true)), maxDigits, b)
       }
     }
+  }
+
+  public async compactFileNumbers(): Promise<void> {
+    const movePromises: Promise<MoveSummary>[] = []
+
+    for (const b of [true, false]) {
+      const wildcards = [
+        this.configInstance.chapterWildcard(b),
+        this.configInstance.metadataWildcard(b),
+        this.configInstance.summaryWildcard(b)
+      ]
+      for (const wildcard of wildcards) {
+        const files = await globPromise(path.join(this.configInstance.projectRootPath, wildcard))
+
+        const organizedFiles: any[] = []
+        for (const file of files) {
+          organizedFiles.push({ number: this.context.extractNumber(file), filename: file })
+        }
+        debug(`organizedFiles = ${JSON.stringify(organizedFiles, null, 4)}`)
+
+        const destDigits = this.context.getMaxNecessaryDigits(b)
+        let index = 1
+
+        for (const file of organizedFiles.sort((a, b) => a.number - b.number)) {
+          const fromFilename = this.context.mapFileToBeRelativeToRootPath(file.filename)
+          const toFilename = this.context.mapFileToBeRelativeToRootPath(path.join(path.dirname(file.filename), this.context.renumberedFilename(file.filename, index, destDigits, b)))
+
+          if (fromFilename !== toFilename) {
+            debug(`Compacting from ${fromFilename} to ${toFilename}`)
+            movePromises.push(this.git.mv(fromFilename, toFilename))
+          }
+          index++
+        }
+
+      }
+    }
+
+    await Promise.all(movePromises)
   }
 
   private async addDigitsToFiles(files: string[], newDigitNumber: number, atNumberingStack: boolean): Promise<MoveSummary[]> {

@@ -47,11 +47,11 @@ export default class Add extends Command {
     const dir = path.join(flags.path as string)
     // this.log(`Walking directory ${JSON.stringify(dir)}`)
 
-    //TODO: put files as config property, where getAllNovelFiles becomes a private function, and AddDigitsIfNecessary can become an encapsulated function in .base
-    const files = (await this.context.getAllNovelFiles()).filter(value => {
-      const isAtNumber = this.configInstance.isAtNumbering(value)
-      return isAtNumber && atNumbering
-    })
+    // const files = (await this.context.getAllNovelFiles()).filter(value => {
+    //   const isAtNumber = this.configInstance.isAtNumbering(value)
+    //   return isAtNumber && atNumbering
+    // })
+    const files = await this.context.getAllFilesForOneType(atNumbering)
     debug(`files from glob: ${JSON.stringify(files)}`)
 
     // const filesStats = getHighestNumberAndDigits(files, this.configInstance.chapterRegex(atNumbering))

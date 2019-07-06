@@ -50,9 +50,14 @@ export default class Build extends Command {
       description: 'adds datetime stamp before output filename',
       default: false
     }),
-    cleanmarkup: flags.boolean({
-      char: 'c',
+    removemarkup: flags.boolean({
+      char: 'r',
       description: 'Remove paragraph numbers and other markup',
+      default: false
+    }),
+    compact: flags.boolean({
+      char: 'c',
+      description: 'Compact chapter numbers at the same time',
       default: false
     })
   }
@@ -72,7 +77,8 @@ export default class Build extends Command {
   async run() {
     const { args, flags } = this.parse(Build)
 
-    const clean = flags.cleanmarkup
+    const removeMarkup = flags.removemarkup
+    const compact = flags.compact
 
     const outputFileBase = args.outputfile || this.configInstance.config.projectTitle
     const outputFile = `${flags.datetimestamp ? moment().format('YYYYMMDD.HHmm ') : ''}${outputFileBase}`
@@ -154,7 +160,7 @@ export default class Build extends Command {
 
       const transformPromises: Promise<void>[] = []
       chapterFilesArray.forEach(c => {
-        if (clean) {
+        if (removeMarkup) {
           transformPromises.push(this.cleanMarkup(c))
         }
         else {
@@ -254,6 +260,12 @@ export default class Build extends Command {
       // debug(`uncleaned all files`)
 
       cli.action.stop()
+
+      if (compact) {
+        cli.action.start('Compacting file numbers')
+        await this.compactFileNumbers()
+        cli.action.stop()
+      }
 
       if (flags.notify) {
         notifier.notify({
