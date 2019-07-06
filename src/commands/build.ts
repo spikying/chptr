@@ -264,6 +264,7 @@ export default class Build extends Command {
       if (compact) {
         cli.action.start('Compacting file numbers')
         await this.compactFileNumbers()
+        await Save.run([`--path=${flags.path}`, 'Compacted file numbers'])
         cli.action.stop()
       }
 

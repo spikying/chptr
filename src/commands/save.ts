@@ -65,6 +65,7 @@ export default class Save extends Command {
     debug(`git status\n${JSON.stringify(gitStatus, null, 4)}`)
 
     const unQuote = function (value: string) {
+      if (!value) { return value }
       return value.replace(/"(.*)"/, '$1')
     }
 
@@ -77,8 +78,10 @@ export default class Save extends Command {
       .concat(gitStatus.deleted.map(unQuote))
       .concat(gitStatus.modified.map(unQuote))
       .concat(gitStatus.created.map(unQuote))
-      .concat(gitStatus.renamed.map(unQuote))
+      .concat(gitStatus.renamed.map((value: any) => value.to as string).map(unQuote))
       .filter(onlyUnique)
+
+    debug(`unfilteredFileList=\n${JSON.stringify(unfilteredFileList, null, 4)}`)
 
     const toAddFiles = unfilteredFileList
       .filter(val => val !== '')
