@@ -10,12 +10,12 @@ import * as sanitize from 'sanitize-filename'
 
 
 
-export interface FileWithPriority {
-  filename: string
-  directory: string
-  priority: number
-  number: number
-}
+// export interface FileWithPriority {
+//   filename: string
+//   directory: string
+//   priority: number
+//   number: number
+// }
 
 // const numberingRegex: RegExp = /^(\d+)(.*)/
 
@@ -38,9 +38,9 @@ export const stringifyNumber = function (x: number, digits: number): string { //
   // }
 }
 
-export const filterNumbers = function (s: string): string {
-  return s.replace(/.*?(\d+).*/, '$1')
-}
+// export const filterNumbers = function (s: string): string {
+//   return s.replace(/.*?(\d+).*/, '$1')
+// }
 
 export const sanitizeFileName = function (original: string): string {
   const debug = d('helpers:sanitizeFileName')
@@ -61,6 +61,3 @@ export const sanitizeUrl = function (original: string): string {
   debug(`Sanitized url = ${sanitized}`)
   return sanitized
 }
-
-
-

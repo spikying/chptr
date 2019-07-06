@@ -67,7 +67,7 @@ export default class Edit extends Command {
     debug(`chapterNumbers: ${JSON.stringify(chapterIds)}`)
 
     chapterIds.forEach(async id => {
-      const num = this.configInstance.extractNumber(id)
+      const num = this.context.extractNumber(id)
       const isAtNumbering = this.configInstance.isAtNumbering(id)
 
       debug(`glob fullpath: ${path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcardWithNumber(num, isAtNumbering))}`)

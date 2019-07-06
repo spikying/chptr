@@ -59,10 +59,10 @@ export default class Reorder extends Command {
 
     const origin: number = this.isEndOfStack(args.origin) ?
       this.context.getHighestNumber(originIsAtNumbering) :
-      this.configInstance.extractNumber(args.origin)
+      this.context.extractNumber(args.origin)
     const dest: number = this.isEndOfStack(args.destination) ?
       this.context.getHighestNumber(destIsAtNumbering) + 1 :
-      this.configInstance.extractNumber(args.destination)
+      this.context.extractNumber(args.destination)
     debug(`origin = ${origin} dest = ${dest}`)
 
     const originExists: boolean = files.map(value => {
@@ -71,7 +71,7 @@ export default class Reorder extends Command {
       // is@numbering=${this.configInstance.isAtNumbering(value)}
       // origin is@numbering=${originIsAtNumbering}
       // return=${(this.configInstance.extractNumber(value) === origin) && (this.configInstance.isAtNumbering(value) === originIsAtNumbering)}`)
-      return (this.configInstance.extractNumber(value) === origin) && (this.configInstance.isAtNumbering(value) === originIsAtNumbering)
+      return (this.context.extractNumber(value) === origin) && (this.configInstance.isAtNumbering(value) === originIsAtNumbering)
     }).reduce((previous, current) => {
       debug(`previous=${previous} current=${current}`)
       return previous || current
@@ -113,7 +113,7 @@ export default class Reorder extends Command {
             return false
           }
 
-          const fileNumber = this.configInstance.extractNumber(value)
+          const fileNumber = this.context.extractNumber(value)
           if (
             fileNumber < Math.min(origin, dest) ||
             fileNumber > Math.max(origin, dest)
@@ -130,7 +130,7 @@ export default class Reorder extends Command {
       toRenameFiles.push(...files
         .filter(value => {
           const fileIsAtNumbering = this.configInstance.isAtNumbering(value)
-          const fileNumber = this.configInstance.extractNumber(value)
+          const fileNumber = this.context.extractNumber(value)
           if (fileIsAtNumbering === originIsAtNumbering) {
             if (
               fileNumber < origin
@@ -190,7 +190,7 @@ export default class Reorder extends Command {
       for (const file of toRenameFiles) {
         const filename = path.basename(file)
 
-        const fileNumber: number = this.configInstance.extractNumber(file)
+        const fileNumber: number = this.context.extractNumber(file)
         let newFileNumber: number
         let fileOutputAtNumbering = false
 
@@ -225,7 +225,7 @@ export default class Reorder extends Command {
         const destDigits = this.context.getMaxNecessaryDigits(destIsAtNumbering)
 
         const fromFilename = this.context.mapFileToBeRelativeToRootPath(path.join(tempDir, filename))
-        const toFilename = this.context.mapFileToBeRelativeToRootPath(path.join(path.dirname(file), this.configInstance.renumberedFilename(filename, newFileNumber, destDigits, fileOutputAtNumbering)))
+        const toFilename = this.context.mapFileToBeRelativeToRootPath(path.join(path.dirname(file), this.context.renumberedFilename(filename, newFileNumber, destDigits, fileOutputAtNumbering)))
 
         this.log(`Renaming with new file number "${path.basename(fromFilename)}" to "${toFilename}"`)
         moveBackPromises.push(this.git.mv(fromFilename, toFilename))

@@ -35,18 +35,23 @@ export default class Antidote extends Command {
   async run() {
     const { args, flags } = this.parse(Antidote)
 
-    let filter = args.filter
+    let filter: string = args.filter
     if (filter === '') {
       const queryBuilder = new QueryBuilder()
       queryBuilder.add('filter', queryBuilder.textinput("What chapter to Antidote?", ""))
       const queryResponses: any = await queryBuilder.responses()
       filter = queryResponses.filter
     }
-    const atNumberingMatches = new RegExp(this.configInstance.numbersPattern(true)).exec(filter)
-    const atNumber: boolean = atNumberingMatches ? true : false
+    // const atNumberingMatches = new RegExp(this.configInstance.numbersPattern(true)).exec(filter)
+    const isAtNumber: boolean = filter.substring(0, 1) === '@' // atNumberingMatches ? true : false
 
-    const chapterNumber = parseInt(filter, 10)
-    const chapterFileName = glob.sync(path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcardWithNumber(chapterNumber, atNumber)))[0]
+    const chapterNumber = this.context.extractNumber(filter)
+    const chapterFileName = glob.sync(path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcardWithNumber(chapterNumber, isAtNumber)))[0]
+
+    if (!chapterFileName) {
+      this.error(`No chapter was found with input ${filter}`)
+      this.exit(1)
+    }
 
     const basicFilePath = path.join(this.configInstance.projectRootPath, chapterFileName)
     //TODO: get antidote filename from config pattern

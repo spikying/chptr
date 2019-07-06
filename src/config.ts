@@ -11,7 +11,7 @@ import * as json from 'json5'
 import moment = require('moment');
 import * as path from "path";
 
-import { sanitizeFileName, stringifyNumber } from './helpers'
+import { sanitizeFileName } from './helpers'
 // import { promisify } from "util";
 
 const debug = d('config')
@@ -273,25 +273,6 @@ date: ${moment().format('D MMMM YYYY')}
   public isAtNumbering(filename: string): boolean {
     const re = new RegExp(this.numbersPattern(true))
     return re.exec(filename) !== null
-  }
-
-  public renumberedFilename(filename: string, newFilenumber: number, digits: number, atNumbering: boolean): string {
-    debug(`filename=${filename} newFileNumber=${newFilenumber} digits=${digits} @numbering = ${atNumbering}`)
-    const re = new RegExp(/^(.*?)(@?\d+)(.*)$/)
-    // debug(`re=${re}\nFct=`)
-    return filename.replace(re, '$1' + (atNumbering ? '@' : '') + stringifyNumber(newFilenumber, digits) + '$3')
-  }
-
-  public extractNumber(filename: string): number {
-    const re = new RegExp(this.numbersPattern(false))
-    const match = re.exec(path.basename(filename))
-    const fileNumber = match ? parseInt(match[1], 10) : -1
-
-    debug(`filename = ${filename} filenumber = ${fileNumber}`)
-    if (isNaN(fileNumber)) {
-      return -1
-    }
-    return fileNumber
   }
 
 

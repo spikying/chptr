@@ -6,7 +6,7 @@ import * as minimatch from 'minimatch'
 import * as path from "path";
 import { CommitSummary } from 'simple-git/typings/response';
 
-import { filterNumbers } from '../helpers';
+// import { filterNumbers } from '../helpers';
 import { QueryBuilder } from '../queries';
 
 import { d, fileExists } from './base';
@@ -26,7 +26,7 @@ export default class Save extends Command {
       char: 'f',
       required: false,
       default: '',
-      parse: filterNumbers,
+      // parse: filterNumbers,
       description: 'Chapter number to filter which files to stage before saving to repository'
     })
   }
@@ -45,7 +45,8 @@ export default class Save extends Command {
   async run() {
     const { args, flags } = this.parse(Save)
 
-    const numberFilter = flags.filter ? parseInt(flags.filter, 10) : undefined
+    const atFilter = flags.filter ? flags.filter.substring(0, 1) === '@' : false
+    const numberFilter = flags.filter ? this.context.extractNumber(flags.filter) : null
 
     const queryBuilder = new QueryBuilder()
     if (!args.message) {
@@ -80,20 +81,14 @@ export default class Save extends Command {
       .filter(onlyUnique)
 
     const toAddFiles = unfilteredFileList
-
       .filter(val => val !== '')
       .filter(val => {
-        // debug(`numberFilter=${numberFilter}; val=${val}; minimatch=${minimatch(val, this.configInstance.chapterWildcardWithNumber(numberFilter || 0))}`)
         return numberFilter ?
-          minimatch(val, this.configInstance.chapterWildcardWithNumber(numberFilter, true)) ||
-          minimatch(val, this.configInstance.metadataWildcardWithNumber(numberFilter, true)) ||
-          minimatch(val, this.configInstance.summaryWildcardWithNumber(numberFilter, true)) ||
-          minimatch(val, this.configInstance.chapterWildcardWithNumber(numberFilter, false)) ||
-          minimatch(val, this.configInstance.metadataWildcardWithNumber(numberFilter, false)) ||
-          minimatch(val, this.configInstance.summaryWildcardWithNumber(numberFilter, false))
+          minimatch(val, this.configInstance.chapterWildcardWithNumber(numberFilter, atFilter)) ||
+          minimatch(val, this.configInstance.metadataWildcardWithNumber(numberFilter, atFilter)) ||
+          minimatch(val, this.configInstance.summaryWildcardWithNumber(numberFilter, atFilter))
           : true
       })
-    // debug(`toAddFiles: ${JSON.stringify(toAddFiles)}`)
 
     if (toAddFiles.length === 0) {
       this.warn('No files to save to repository')

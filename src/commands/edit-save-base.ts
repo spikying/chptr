@@ -1,17 +1,10 @@
-import { flags } from '@oclif/command'
-// import * as d from 'debug';
-import * as fs from 'fs';
-// import * as path from "path";
-import { promisify } from "util";
+// import { flags } from '@oclif/command'
 
-import { filterNumbers } from '../helpers';
+// import { filterNumbers } from '../helpers';
 
-import Command, { d } from "./base";
+import Command, { d, readFile, writeFile } from "./base";
 
 const debug = d('command:edit-save-base')
-
-const readFile = promisify(fs.readFile)
-const writeFile = promisify(fs.writeFile)
 
 export default abstract class extends Command {
 
@@ -52,10 +45,12 @@ export default abstract class extends Command {
       const initialContent = await buff.toString('utf8', 0, buff.byteLength)
       const sentenceBreakRegex = new RegExp(this.sentenceBreakChar + '\\n', 'g')
       const paragraphBreakRegex = new RegExp('\\n\\n' + this.paragraphBreakChar + '{{\\d+}}\\n', 'g')
+
       debug(`sentence RE = ${sentenceBreakRegex} paragraph RE = ${paragraphBreakRegex}`)
       const replacedContent = initialContent.replace(sentenceBreakRegex, '  ')
         .replace(paragraphBreakRegex, '\n\n')
         .replace(/([.!?…}"]) +\n/g, '$1\n')
+        .replace(/\n*$/, '\n')
       debug(`Processed back content: \n${replacedContent.substring(0, 250)}`)
       await writeFile(filepath, replacedContent, 'utf8')
     } catch (error) {

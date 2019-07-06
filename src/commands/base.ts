@@ -111,9 +111,9 @@ export default abstract class extends Command {
 
       if (atNumbering === atNumberingStack) {
 
-        const filenumber = this.configInstance.extractNumber(file)
+        const filenumber = this.context.extractNumber(file)
         const fromFilename = this.context.mapFileToBeRelativeToRootPath(path.join(path.dirname(file), filename))
-        const toFilename = this.context.mapFileToBeRelativeToRootPath(path.join(path.dirname(file), this.configInstance.renumberedFilename(filename, filenumber, newDigitNumber, atNumbering)))
+        const toFilename = this.context.mapFileToBeRelativeToRootPath(path.join(path.dirname(file), this.context.renumberedFilename(filename, filenumber, newDigitNumber, atNumbering)))
         if (fromFilename !== toFilename) {
           this.log(`renaming with new file number "${fromFilename}" to "${toFilename}"`)
           promises.push(this.git.mv(fromFilename, toFilename))

@@ -3,7 +3,7 @@ import * as path from "path";
 
 import { globPromise } from './commands/base';
 import { Config } from './config';
-import { numDigits } from './helpers';
+import { numDigits, stringifyNumber } from './helpers';
 
 const debug = d('context')
 
@@ -92,8 +92,25 @@ export class Context {
     }
   }
 
+  public renumberedFilename(filename: string, newFilenumber: number, digits: number, atNumbering: boolean): string {
+    debug(`filename=${filename} newFileNumber=${newFilenumber} digits=${digits} @numbering = ${atNumbering}`)
+    const re = new RegExp(/^(.*?)(@?\d+)(.*)$/)
+    return filename.replace(re, '$1' + (atNumbering ? '@' : '') + stringifyNumber(newFilenumber, digits) + '$3')
+  }
+
+  public extractNumber(filename: string): number {
+    const re = new RegExp(this.configInstance.numbersPattern(false))
+    const match = re.exec(path.basename(filename))
+    const fileNumber = match ? parseInt(match[1], 10) : -1
+
+    debug(`filename = ${filename} filenumber = ${fileNumber}`)
+    if (isNaN(fileNumber)) {
+      return -1
+    }
+    return fileNumber
+  }
+
   private updateStackStatistics(atNumbers: boolean): void {
-    const debug = d('helpers:getHighestNumberAndDigits')
     const files = this._allNovelFiles || []
     const fileRegex: RegExp = this.configInstance.chapterRegex(atNumbers)
     const index = atNumbers ? 'atNumberStack' : 'normalStack'
