@@ -46,45 +46,6 @@ export class Context {
     });
   }
 
-  // public async getAllNormalFiles(refresh = false): Promise<string[]> {
-  //   if (this._allNormalFiles === null || refresh) {
-  //     const files: string[] = []
-  //     const wildcards = [
-  //       this.configInstance.chapterWildcard(false),
-  //       this.configInstance.metadataWildcard(false),
-  //       this.configInstance.summaryWildcard(false)
-  //     ]
-  //     for (const wildcard of wildcards) {
-  //       debug(`glob pattern = ${path.join(this.configInstance.projectRootPath, wildcard)}`)
-  //       files.push(...await globPromise(path.join(this.configInstance.projectRootPath, wildcard)))
-  //     }
-
-  //     this._allNormalFiles = files
-  //     this.updateStackStatistics(false)
-  //   }
-
-  //   return this._allNormalFiles
-  // }
-  // public async getAllAtNumberedFiles(refresh = false): Promise<string[]> {
-  //   if (this._allAtNumberedFiles === null || refresh) {
-  //     const files: string[] = []
-  //     const wildcards = [
-  //       this.configInstance.chapterWildcard(true),
-  //       this.configInstance.metadataWildcard(true),
-  //       this.configInstance.summaryWildcard(true)
-  //     ]
-  //     for (const wildcard of wildcards) {
-  //       debug(`glob pattern = ${path.join(this.configInstance.projectRootPath, wildcard)}`)
-  //       files.push(...await globPromise(path.join(this.configInstance.projectRootPath, wildcard)))
-  //     }
-
-  //     this._allAtNumberedFiles = files
-  //     this.updateStackStatistics(true)
-  //   }
-
-  //   return this._allAtNumberedFiles
-  // }
-
   public async getAllFilesForOneType(isAtNumbered: boolean, refresh = false): Promise<string[]> {
     const existingFiles = isAtNumbered ? this._allAtNumberedFiles : this._allNormalFiles
 
@@ -115,28 +76,6 @@ export class Context {
   public async getAllNovelFiles(refresh = false): Promise<string[]> {
     return (await this.getAllFilesForOneType(true, refresh)).concat(
       (await this.getAllFilesForOneType(false, refresh)))
-
-    // if (this._allNovelFiles === null || refresh) {
-    //   const files: string[] = []
-    //   const wildcards = [
-    //     this.configInstance.chapterWildcard(true),
-    //     this.configInstance.metadataWildcard(true),
-    //     this.configInstance.summaryWildcard(true),
-    //     this.configInstance.chapterWildcard(false),
-    //     this.configInstance.metadataWildcard(false),
-    //     this.configInstance.summaryWildcard(false)
-    //   ]
-    //   for (const wildcard of wildcards) {
-    //     debug(`glob pattern = ${path.join(this.configInstance.projectRootPath, wildcard)}`)
-    //     files.push(...await globPromise(path.join(this.configInstance.projectRootPath, wildcard)))
-    //   }
-    //   this._allNovelFiles = files
-
-    //   this.updateStackStatistics(true)
-    //   this.updateStackStatistics(false)
-    // }
-
-    // return this._allNovelFiles
   }
 
   public getHighestNumber(atNumberStack: boolean): number {
@@ -160,6 +99,15 @@ export class Context {
       return this._allNovelStatistics.atNumberStack.minDigits
     } else {
       return this._allNovelStatistics.normalStack.minDigits
+    }
+  }
+
+  public getNextFilenumber(previousNumber: number): number {
+    if (!previousNumber) {
+      return this.configInstance.config.numberingInitial
+    }
+    else {
+      return previousNumber + this.configInstance.config.numberingStep
     }
   }
 
@@ -189,6 +137,7 @@ export class Context {
     debug(`files: length=${files.length} full=${JSON.stringify(files)}`)
     if (files.length === 0) {
       this._allNovelStatistics[index] = nullStackStats
+      return
     }
 
     debug(`files searched: ${JSON.stringify(files)}`)

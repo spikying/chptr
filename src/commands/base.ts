@@ -122,17 +122,17 @@ export default abstract class extends Command {
         debug(`organizedFiles = ${JSON.stringify(organizedFiles, null, 4)}`)
 
         const destDigits = this.context.getMaxNecessaryDigits(b)
-        let index = 1
+        let currentNumber = this.configInstance.config.numberingInitial
 
         for (const file of organizedFiles.sort((a, b) => a.number - b.number)) {
           const fromFilename = this.context.mapFileToBeRelativeToRootPath(file.filename)
-          const toFilename = this.context.mapFileToBeRelativeToRootPath(path.join(path.dirname(file.filename), this.context.renumberedFilename(file.filename, index, destDigits, b)))
+          const toFilename = this.context.mapFileToBeRelativeToRootPath(path.join(path.dirname(file.filename), this.context.renumberedFilename(file.filename, currentNumber, destDigits, b)))
 
           if (fromFilename !== toFilename) {
             debug(`Compacting from ${fromFilename} to ${toFilename}`)
             movePromises.push(this.git.mv(fromFilename, toFilename))
           }
-          index++
+          currentNumber += this.configInstance.config.numberingStep
         }
 
       }

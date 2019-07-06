@@ -57,24 +57,25 @@ export default class Add extends Command {
     // const filesStats = getHighestNumberAndDigits(files, this.configInstance.chapterRegex(atNumbering))
     // debug(`Highest number and digits: ${JSON.stringify(filesStats)}`)
     const highestNumber = this.context.getHighestNumber(atNumbering) // filesStats.highestNumber
-    const newDigits = numDigits(highestNumber + 1)
+    const nextNumber = highestNumber === 0 ? this.configInstance.config.numberingInitial : highestNumber + this.configInstance.config.numberingStep
+    const newDigits = numDigits(nextNumber)
 
     const filledTemplateData = this.configInstance.emptyFileString.toString().replace(/{TITLE}/gmi, name) //`# ${name}\n\n...`
     const filledTemplateMeta = JSON.stringify(this.configInstance.config.metadataFields, undefined, 4).replace(/{TITLE}/gmi, name)
 
     const fullPathMD = path.join(
       dir,
-      this.configInstance.chapterFileNameFromParameters(stringifyNumber(highestNumber + 1, newDigits), name, atNumbering)
+      this.configInstance.chapterFileNameFromParameters(stringifyNumber(nextNumber, newDigits), name, atNumbering)
     )
 
     const fullPathMeta = path.join(
       dir,
-      this.configInstance.metadataFileNameFromParameters(stringifyNumber(highestNumber + 1, newDigits), name, atNumbering)
+      this.configInstance.metadataFileNameFromParameters(stringifyNumber(nextNumber, newDigits), name, atNumbering)
     )
 
     const fullPathSummary = path.join(
       dir,
-      this.configInstance.summaryFileNameFromParameters(stringifyNumber(highestNumber + 1, newDigits), name, atNumbering)
+      this.configInstance.summaryFileNameFromParameters(stringifyNumber(nextNumber, newDigits), name, atNumbering)
     )
 
     try {

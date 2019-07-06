@@ -28,6 +28,8 @@ export interface ConfigObject {
   projectLang: string // | ConfigProperty
   fontName: string // | ConfigProperty
   fontSize: string // | ConfigProperty
+  numberingStep: number
+  numberingInitial: number
   metadataFields: object
 }
 
@@ -147,6 +149,14 @@ date: ${moment().format('D MMMM YYYY')}
     fontSize: {
       doc: 'Font size for the rendering engines that use it',
       default: '12pt'
+    },
+    numberingStep: {
+      doc: 'Increment step when numbering files',
+      default: 1
+    },
+    numberingInitial: {
+      doc: 'Initial file number',
+      default: 1
     },
     metadataFields: {
       doc: 'All fields to be added in each Metadata file',

@@ -1,4 +1,4 @@
-// import { flags } from '@oclif/command'
+import { flags } from '@oclif/command'
 // import * as d from 'debug'
 // import Save from './save';
 import { cli } from 'cli-ux';
@@ -9,6 +9,7 @@ import { MoveSummary } from 'simple-git/typings/response';
 // import {  } from '../helpers'
 
 import Command, { d } from "./base"
+// import Save from './save';
 
 const debug = d('command:reorder')
 // const debugEnabled = d.enabled('command:reorder')
@@ -18,7 +19,12 @@ export default class Reorder extends Command {
     'Takes a chapter and modifies its index number to fit another ordering place'
 
   static flags = {
-    ...Command.flags
+    ...Command.flags,
+    compact: flags.boolean({
+      char: 'c',
+      description: 'Compact chapter numbers at the same time',
+      default: false
+    })
     // ,
     // deep: flags.boolean({
     //   char: 'd',
@@ -42,6 +48,8 @@ export default class Reorder extends Command {
   async run() {
     const { args, flags } = this.parse(Reorder)
 
+    const compact = flags.compact
+
     cli.action.start('Processing files')
 
     const dir = path.join(flags.path as string)
@@ -61,7 +69,7 @@ export default class Reorder extends Command {
       this.context.getHighestNumber(originIsAtNumbering) :
       this.context.extractNumber(args.origin)
     const dest: number = this.isEndOfStack(args.destination) ?
-      this.context.getHighestNumber(destIsAtNumbering) + 1 :
+      this.context.getHighestNumber(destIsAtNumbering) + this.configInstance.config.numberingStep :
       this.context.extractNumber(args.destination)
     debug(`origin = ${origin} dest = ${dest}`)
 
@@ -192,6 +200,7 @@ export default class Reorder extends Command {
 
         const fileNumber: number = this.context.extractNumber(file)
         let newFileNumber: number
+        const step = this.configInstance.config.numberingStep
         let fileOutputAtNumbering = false
 
         if (sameAtNumbering) {
@@ -201,9 +210,9 @@ export default class Reorder extends Command {
             newFileNumber = dest
           } else {
             if (forwardBump) {
-              newFileNumber = fileNumber + 1
+              newFileNumber = fileNumber + step
             } else {
-              newFileNumber = fileNumber - 1
+              newFileNumber = fileNumber - step
             }
           }
         } else {
@@ -214,11 +223,11 @@ export default class Reorder extends Command {
               newFileNumber = dest
             } else {
               fileOutputAtNumbering = originIsAtNumbering
-              newFileNumber = fileNumber - 1
+              newFileNumber = fileNumber - step
             }
           } else {
             fileOutputAtNumbering = destIsAtNumbering
-            newFileNumber = fileNumber + 1
+            newFileNumber = fileNumber + step
           }
         }
         debug(`fileNumber = ${fileNumber}, newFileNumber=${newFileNumber}`)
@@ -246,13 +255,27 @@ export default class Reorder extends Command {
     await this.addDigitsToNecessaryStacks()
 
     cli.action.stop()
+
+    let commitMessage = `Reordered files from ${(originIsAtNumbering ? '@' : '') + origin} to ${(destIsAtNumbering ? '@' : '') + dest}`
+    if (compact) {
+      commitMessage += '\nCompacted file numbers'
+      cli.action.start('Compacting file numbers')
+      await this.compactFileNumbers()
+      cli.action.stop()
+    }
     cli.action.start('Commit and push to remote repository')
 
-    await this.git.commit(`Reordered files from ${(originIsAtNumbering ? '@' : '') + origin} to ${(destIsAtNumbering ? '@' : '') + dest}`)
+    await this.git.commit(commitMessage)
     await this.git.push()
     await this.git.pull()
     // Save.run([`--path=${flags.path}`, `Reordered files from ${(originIsAtNumbering ? '@' : '') + origin} to ${(destIsAtNumbering ? '@' : '') + dest}`])
     cli.action.stop()
+    // } else {
+    //   cli.action.start('Compacting file numbers')
+    //   await this.compactFileNumbers()
+    //   await Save.run([`--path=${flags.path}`, commitMessage + '\nCompacted file numbers'])
+    //   cli.action.stop()
+    // }
   }
 
   private readonly isEndOfStack = function (value: string): boolean {

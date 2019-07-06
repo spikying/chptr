@@ -10,6 +10,7 @@ import * as path from "path";
 import { QueryBuilder } from '../queries';
 
 import Command, { d, listFiles } from "./base"
+// import Save from './save';
 
 const debug = d("command:delete");
 // const listFiles = promisify(fs.readdir);
@@ -27,7 +28,12 @@ export default class Delete extends Command {
         default: 'all',
         options: ['all', 'summary', 'chapter', 'metadata']
       }
-    )
+    ),
+    compact: flags.boolean({
+      char: 'c',
+      description: 'Compact chapter numbers at the same time',
+      default: false
+    })
   }
 
   static args = [
@@ -47,6 +53,7 @@ export default class Delete extends Command {
     const { args, flags } = this.parse(Delete)
 
     const deleteType = flags.type
+    const compact = flags.compact
 
     const queryBuilder = new QueryBuilder()
     debug(`args.name = ${args.name}`)
@@ -67,10 +74,12 @@ export default class Delete extends Command {
     const numberRegexWithoutAtNumbering = new RegExp('^' + this.configInstance.numbersPattern(false) + '$')
     const numberRegexWithAtNumbering = new RegExp('^' + this.configInstance.numbersPattern(true) + '$')
 
-    const isAtNumber = numberRegexWithAtNumbering.test(nameOrNumber)
-    const isNumberOnly = numberRegexWithoutAtNumbering.test(nameOrNumber)
+    const isAtNumber = nameOrNumber.substring(0, 1) === '@'
+    const isChapterNumberOnly = numberRegexWithoutAtNumbering.test(nameOrNumber) || numberRegexWithAtNumbering.test(nameOrNumber)
 
-    if (!isAtNumber && !isNumberOnly) {
+    debug(`nameOrNumber=${nameOrNumber} isAtNumber=${isAtNumber} isChapterNumberOnly=${isChapterNumberOnly}`)
+
+    if (!isChapterNumberOnly) {
       // we will delete all files matching the name entered
       let filePattern = '*' + nameOrNumber + '*'
       if (glob.hasMagic(nameOrNumber)) { //nameOrNumber.toString().match(/.*[\*].*/)
@@ -80,15 +89,16 @@ export default class Delete extends Command {
       toDeleteFiles.push(...await listFiles(pathName))
     } else {
       // we will delete all files matching the number patterns for chapters, metadata and summary
+      const filterNumber = this.context.extractNumber(nameOrNumber)
       const globPatterns: string[] = []
       if (deleteType === 'all' || deleteType === 'chapter') {
-        globPatterns.push(this.configInstance.chapterWildcardWithNumber(nameOrNumber, isAtNumber))
+        globPatterns.push(this.configInstance.chapterWildcardWithNumber(filterNumber, isAtNumber))
       }
       if (deleteType === 'all' || deleteType === 'summary') {
-        globPatterns.push(this.configInstance.summaryWildcardWithNumber(nameOrNumber, isAtNumber))
+        globPatterns.push(this.configInstance.summaryWildcardWithNumber(filterNumber, isAtNumber))
       }
       if (deleteType === 'all' || deleteType === 'metadata') {
-        globPatterns.push(this.configInstance.metadataWildcardWithNumber(nameOrNumber, isAtNumber))
+        globPatterns.push(this.configInstance.metadataWildcardWithNumber(filterNumber, isAtNumber))
       }
 
       debug(`globPatterns=${JSON.stringify(globPatterns)}`)
@@ -118,8 +128,8 @@ export default class Delete extends Command {
         throw new Error("Directory is not a repository")
       }
       await this.git.rm(this.context.mapFilesToBeRelativeToRootPath(toDeleteFiles))
-      await this.git.commit(`Removed files: ${JSON.stringify(toDeleteFiles)}`)
-      await this.git.push()
+      // await this.git.commit(`Removed files: ${JSON.stringify(toDeleteFiles)}`)
+      // await this.git.push()
 
     } catch (err) {
       this.error(err)
@@ -127,5 +137,21 @@ export default class Delete extends Command {
       cli.action.stop()
     }
 
+    if (compact) {
+      cli.action.start('Compacting file numbers')
+      await this.compactFileNumbers()
+      // await Save.run([`--path=${flags.path}`, 'Compacted file numbers'])
+      cli.action.stop()
+    }
+
+    try {
+      cli.action.start('Pushing to repository')
+      await this.git.commit(`Removed files: ${JSON.stringify(toDeleteFiles)}${compact ? '\nCompacted file numbers' : ''}`)
+      await this.git.push()
+    } catch (err) {
+      this.error(err)
+    } finally {
+      cli.action.stop()
+    }
   }
 }
