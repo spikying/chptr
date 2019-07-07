@@ -86,13 +86,9 @@ export default abstract class extends Command {
     this.error(err)
     this.exit(1)
   }
-  async finally() { // parameter (err)
-    // called after run and catch regardless of whether or not the command errored
-  }
 
   public async addDigitsToNecessaryStacks(): Promise<void> {
-    // const files = await this.context.getAllNovelFiles(true)
-
+    await this.context.getAllNovelFiles(true)
     for (const b of [true, false]) {
       const maxDigits = this.context.getMaxNecessaryDigits(b)
       const minDigits = this.context.getMinDigits(b) // numDigits(stack.highest.highestNumber)

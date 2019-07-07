@@ -45,17 +45,9 @@ export default class Add extends Command {
     const atNumbering = flags.atnumbered
 
     const dir = path.join(flags.path as string)
-    // this.log(`Walking directory ${JSON.stringify(dir)}`)
-
-    // const files = (await this.context.getAllNovelFiles()).filter(value => {
-    //   const isAtNumber = this.configInstance.isAtNumbering(value)
-    //   return isAtNumber && atNumbering
-    // })
     const files = await this.context.getAllFilesForOneType(atNumbering)
     debug(`files from glob: ${JSON.stringify(files)}`)
 
-    // const filesStats = getHighestNumberAndDigits(files, this.configInstance.chapterRegex(atNumbering))
-    // debug(`Highest number and digits: ${JSON.stringify(filesStats)}`)
     const highestNumber = this.context.getHighestNumber(atNumbering) // filesStats.highestNumber
     const nextNumber = highestNumber === 0 ? this.configInstance.config.numberingInitial : highestNumber + this.configInstance.config.numberingStep
     const newDigits = numDigits(nextNumber)
@@ -81,13 +73,11 @@ export default class Add extends Command {
     try {
       cli.action.start('Adding file(s) locally and to repository')
 
-      // const git = simplegit(this.configInstance.projectRootPath);
       const isRepo = await this.git.checkIsRepo()
       if (!isRepo) {
         throw new Error("Directory is not a repository")
       }
 
-      // debug(JSON.stringify(templateMeta, null, 4))
       const allPromises: Promise<void>[] = []
       allPromises.push(createFile(fullPathMD, filledTemplateData, { encoding: 'utf8' }))
       allPromises.push(createFile(fullPathMeta, filledTemplateMeta, { encoding: 'utf8' }))
