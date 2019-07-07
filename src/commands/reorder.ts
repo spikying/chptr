@@ -25,11 +25,6 @@ export default class Reorder extends Command {
       description: 'Compact chapter numbers at the same time',
       default: false
     })
-    // ,
-    // deep: flags.boolean({
-    //   char: 'd',
-    //   description: 'Makes a recursive subfolder search'
-    // })
   }
 
   static args = [
@@ -55,33 +50,26 @@ export default class Reorder extends Command {
     const dir = path.join(flags.path as string)
     const originIsAtNumbering = args.origin.toString().substring(0, 1) === '@'
     const destIsAtNumbering = args.destination.toString().substring(0, 1) === '@'
-    debug(`origin @ = ${originIsAtNumbering} dest @ = ${destIsAtNumbering}`)
+    // debug(`origin @ = ${originIsAtNumbering} dest @ = ${destIsAtNumbering}`)
 
     const files = await this.context.getAllNovelFiles()
-    debug(`files from glob: ${JSON.stringify(files, null, 2)}`)
+    // debug(`files from glob: ${JSON.stringify(files, null, 2)}`)
 
-    // const highestNumberAndDigitsOrigin = getHighestNumberAndDigits(files, this.configInstance.chapterRegex(originIsAtNumbering))
-    // const highestNumberAndDigitsDestination = getHighestNumberAndDigits(files, this.configInstance.chapterRegex(destIsAtNumbering))
-    // const destDigits = highestNumberAndDigitsDestination.maxNecessaryDigits
-    // debug(`Dest digits: ${destDigits}`)
-
-    const origin: number = this.isEndOfStack(args.origin) ?
+    const originNumber: number = this.isEndOfStack(args.origin) ?
       this.context.getHighestNumber(originIsAtNumbering) :
       this.context.extractNumber(args.origin)
-    const dest: number = this.isEndOfStack(args.destination) ?
-      this.context.getHighestNumber(destIsAtNumbering) + this.configInstance.config.numberingStep :
+    const destNumber: number = this.isEndOfStack(args.destination) ?
+      (this.context.getHighestNumber(destIsAtNumbering) === 0 ?
+        this.configInstance.config.numberingInitial :
+        (this.context.getHighestNumber(destIsAtNumbering) + this.configInstance.config.numberingStep)
+      ) :
       this.context.extractNumber(args.destination)
-    debug(`origin = ${origin} dest = ${dest}`)
+    // debug(`origin = ${originNumber} dest = ${destNumber}`)
 
     const originExists: boolean = files.map(value => {
-      // debug(`extractednumber = ${this.configInstance.extractNumber(value)}
-      // origin=${origin}
-      // is@numbering=${this.configInstance.isAtNumbering(value)}
-      // origin is@numbering=${originIsAtNumbering}
-      // return=${(this.configInstance.extractNumber(value) === origin) && (this.configInstance.isAtNumbering(value) === originIsAtNumbering)}`)
-      return (this.context.extractNumber(value) === origin) && (this.configInstance.isAtNumbering(value) === originIsAtNumbering)
+      return (this.context.extractNumber(value) === originNumber) && (this.configInstance.isAtNumbering(value) === originIsAtNumbering)
     }).reduce((previous, current) => {
-      debug(`previous=${previous} current=${current}`)
+      // debug(`previous=${previous} current=${current}`)
       return previous || current
     })
     if (!originExists) {
@@ -89,85 +77,157 @@ export default class Reorder extends Command {
       this.exit(1)
     }
 
-    if (origin === -1) {
+    if (originNumber === -1) {
       this.error('Origin argument is not a number or `end` or `@end`')
       this.exit(1)
     }
-    if (dest === -1) {
+    if (destNumber === -1) {
       this.error('Destination argument is not a number or `end` or `@end`')
       this.exit(1)
     }
-    if (dest === origin && originIsAtNumbering === destIsAtNumbering) {
+    if (destNumber === originNumber && originIsAtNumbering === destIsAtNumbering) {
       this.error('Origin must be different than Destination')
       this.exit(1)
     }
 
-    // const actualDigits = highestNumberAndDigitsDestination.digits
-    // const newDigits = numDigits(dest)
-    // if (newDigits > actualDigits) {
-    //   debug('Adding digits to all')
-    //   await this.addDigitsToAll(newDigits, destIsAtNumbering)
-    // }
-
     const sameAtNumbering = originIsAtNumbering === destIsAtNumbering
-    const forwardBump: boolean = dest < origin
+    const forwardBump: boolean = sameAtNumbering ? destNumber < originNumber : true
 
-    const toRenameFiles: string[] = []
-    if (sameAtNumbering) {
-      toRenameFiles.push(...files
-        .filter(value => {
-          const fileIsAtNumbering = this.configInstance.isAtNumbering(value)
-          if (fileIsAtNumbering !== originIsAtNumbering) {
-            return false
-          }
-
-          const fileNumber = this.context.extractNumber(value)
+    const fileInfoArray = [... new Set((await this.context.getAllFilesForOneType(destIsAtNumbering)).map(file => {
+      return this.context.extractNumber(file)
+    }))] //to make unique
+      .filter(fileNumber => {
+        if (sameAtNumbering) {
           if (
-            fileNumber < Math.min(origin, dest) ||
-            fileNumber > Math.max(origin, dest)
+            fileNumber < Math.min(originNumber, destNumber) ||
+            fileNumber > Math.max(originNumber, destNumber) ||
+            fileNumber < 0
           ) {
             return false
-          }
-          if (fileNumber < 0) {
-            return false
-          }
-          return true
-        })
-      )
-    } else {
-      toRenameFiles.push(...files
-        .filter(value => {
-          const fileIsAtNumbering = this.configInstance.isAtNumbering(value)
-          const fileNumber = this.context.extractNumber(value)
-          if (fileIsAtNumbering === originIsAtNumbering) {
-            if (
-              fileNumber < origin
-            ) {
-              return false
-            }
-            if (fileNumber < 0) {
-              return false
-            }
-            return true
           } else {
-            if (
-              fileNumber < dest
-            ) {
-              return false
-            }
-            if (fileNumber < 0) {
-              return false
-            }
             return true
           }
-        })
-      )
+        } else {
+          debug(`filtering: ${fileNumber} vs ${destNumber}`)
+          return fileNumber >= destNumber
+        }
+      }).map(fileNumber => {
+        let newFileNumber: number
+        let mandatory = false
+        if (fileNumber === originNumber && sameAtNumbering) {
+          newFileNumber = destNumber
+          mandatory = true
+        } else {
+          if (forwardBump) {
+            debug(`forward bump`)
+            newFileNumber = fileNumber + 1
+          } else {
+            debug(`NOT forward bump`)
+            newFileNumber = fileNumber - 1
+          }
+        }
+        return { fileNumber, newFileNumber, mandatory }
+      })
+
+    debug(`FileInfoArray: \n${JSON.stringify(fileInfoArray, null, 4)}`)
+
+    let currentMandatory = sameAtNumbering ? fileInfoArray.filter(f => f.mandatory)[0] : { fileNumber: null, newFileNumber: destNumber, mandatory: true }
+    const allMandatories = [currentMandatory]
+    while (currentMandatory) {
+      let nextMandatory = fileInfoArray.filter(f => !f.mandatory && f.fileNumber === currentMandatory.newFileNumber)[0]
+      if (nextMandatory) {
+        allMandatories.push(nextMandatory)
+      }
+      currentMandatory = nextMandatory
     }
-    if (toRenameFiles.length === 0) {
-      this.warn('No file to rename')
-      this.exit(0)
+    debug(`allMandatories=${JSON.stringify(allMandatories)}`)
+
+    const toMoveFiles = fileInfoArray.filter(info => {
+      return allMandatories.map(m => m.fileNumber).includes(info.fileNumber)
+    })
+
+    debug(`toMoveFiles=${JSON.stringify(toMoveFiles, null, 4)}`)
+
+    const toRenameFiles = (await this.context.getAllFilesForOneType(destIsAtNumbering)).filter(file => {
+      const fileNumber = this.context.extractNumber(file)
+      return toMoveFiles.map(m => m.fileNumber).includes(fileNumber)
+    }).map(file => {
+      const fileNumber = this.context.extractNumber(file)
+      const mf = toMoveFiles.filter(m => m.fileNumber === fileNumber)[0]
+      return { file, newFileNumber: mf.newFileNumber }
+    })
+
+    if (!sameAtNumbering) {
+      const originFiles = (await this.context.getAllFilesForOneType(originIsAtNumbering)).filter(file => {
+        debug(`Filtering file ${file} with ${this.context.extractNumber(file)} and ${originNumber}`)
+        return this.context.extractNumber(file) === originNumber
+      })
+
+      for (const f of originFiles) {
+        toRenameFiles.push({ file: f, newFileNumber: destNumber })
+      }
     }
 
+    debug(`toRenameFiles=${JSON.stringify(toRenameFiles, null, 2)}`)
+    await cli.anykey()
+
+    /*
+        const toRenameFiles: string[] = []
+        if (sameAtNumbering) {
+          toRenameFiles.push(...files
+            .filter(file => {
+              const fileIsAtNumbering = this.configInstance.isAtNumbering(file)
+              if (fileIsAtNumbering !== originIsAtNumbering) {
+                return false
+              }
+
+              const fileNumber = this.context.extractNumber(file)
+              if (
+                fileNumber < Math.min(originNumber, destNumber) ||
+                fileNumber > Math.max(originNumber, destNumber)
+              ) {
+                return false
+              }
+              if (fileNumber < 0) {
+                return false
+              }
+              return true
+            })
+          )
+        } else {
+          toRenameFiles.push(...files
+            .filter(file => {
+              const fileIsAtNumbering = this.configInstance.isAtNumbering(file)
+              const fileNumber = this.context.extractNumber(file)
+              if (fileIsAtNumbering === originIsAtNumbering) {
+                if (
+                  fileNumber < originNumber
+                ) {
+                  return false
+                }
+                if (fileNumber < 0) {
+                  return false
+                }
+                return true
+              } else {
+                if (
+                  fileNumber < destNumber
+                ) {
+                  return false
+                }
+                if (fileNumber < 0) {
+                  return false
+                }
+                return true
+              }
+            })
+          )
+        }
+        if (toRenameFiles.length === 0) {
+          this.warn('No file to rename')
+          this.exit(0)
+        }
+    */
     cli.action.stop()
     cli.action.start('Moving files to temp directory')
 
@@ -183,7 +243,7 @@ export default class Reorder extends Command {
 
     try {
       const moveTempPromises: Promise<MoveSummary>[] = []
-      for (const file of toRenameFiles) {
+      for (const file of toRenameFiles.map(f => f.file)) {
         const fromFilename = this.context.mapFileToBeRelativeToRootPath(file)
         const toFilename = this.context.mapFileToBeRelativeToRootPath(path.join(tempDir, path.basename(file)))
         debug(`Original file: ${fromFilename} TEMP TO ${toFilename}`)
@@ -195,19 +255,17 @@ export default class Reorder extends Command {
       cli.action.start('Moving files to their final state')
 
       const moveBackPromises: Promise<MoveSummary>[] = []
-      for (const file of toRenameFiles) {
-        const filename = path.basename(file)
+      for (const moveItem of toRenameFiles) {
+        const filename = path.basename(moveItem.file)
+        // const fileNumber: number = this.context.extractNumber(moveItem.file)
+        const newFileNumber: number = moveItem.newFileNumber
 
-        const fileNumber: number = this.context.extractNumber(file)
-        let newFileNumber: number
-        const step = this.configInstance.config.numberingStep
-        let fileOutputAtNumbering = false
-
+        /*
         if (sameAtNumbering) {
           fileOutputAtNumbering = originIsAtNumbering
 
-          if (fileNumber === origin) {
-            newFileNumber = dest
+          if (fileNumber === originNumber) {
+            newFileNumber = destNumber
           } else {
             if (forwardBump) {
               newFileNumber = fileNumber + step
@@ -216,11 +274,11 @@ export default class Reorder extends Command {
             }
           }
         } else {
-          const fileIsAtNumbering = this.configInstance.isAtNumbering(file)
+          const fileIsAtNumbering = this.configInstance.isAtNumbering(moveItem)
           if (fileIsAtNumbering === originIsAtNumbering) {
-            if (fileNumber === origin) {
+            if (fileNumber === originNumber) {
               fileOutputAtNumbering = destIsAtNumbering
-              newFileNumber = dest
+              newFileNumber = destNumber
             } else {
               fileOutputAtNumbering = originIsAtNumbering
               newFileNumber = fileNumber - step
@@ -231,10 +289,11 @@ export default class Reorder extends Command {
           }
         }
         debug(`fileNumber = ${fileNumber}, newFileNumber=${newFileNumber}`)
+        */
         const destDigits = this.context.getMaxNecessaryDigits(destIsAtNumbering)
 
         const fromFilename = this.context.mapFileToBeRelativeToRootPath(path.join(tempDir, filename))
-        const toFilename = this.context.mapFileToBeRelativeToRootPath(path.join(path.dirname(file), this.context.renumberedFilename(filename, newFileNumber, destDigits, fileOutputAtNumbering)))
+        const toFilename = this.context.mapFileToBeRelativeToRootPath(path.join(path.dirname(moveItem.file), this.context.renumberedFilename(filename, newFileNumber, destDigits, destIsAtNumbering)))
 
         this.log(`Renaming with new file number "${path.basename(fromFilename)}" to "${toFilename}"`)
         moveBackPromises.push(this.git.mv(fromFilename, toFilename))
@@ -256,7 +315,7 @@ export default class Reorder extends Command {
 
     cli.action.stop()
 
-    let commitMessage = `Reordered files from ${(originIsAtNumbering ? '@' : '') + origin} to ${(destIsAtNumbering ? '@' : '') + dest}`
+    let commitMessage = `Reordered files from ${(originIsAtNumbering ? '@' : '') + originNumber} to ${(destIsAtNumbering ? '@' : '') + destNumber}`
     if (compact) {
       commitMessage += '\nCompacted file numbers'
       cli.action.start('Compacting file numbers')
@@ -268,14 +327,8 @@ export default class Reorder extends Command {
     await this.git.commit(commitMessage)
     await this.git.push()
     await this.git.pull()
-    // Save.run([`--path=${flags.path}`, `Reordered files from ${(originIsAtNumbering ? '@' : '') + origin} to ${(destIsAtNumbering ? '@' : '') + dest}`])
+
     cli.action.stop()
-    // } else {
-    //   cli.action.start('Compacting file numbers')
-    //   await this.compactFileNumbers()
-    //   await Save.run([`--path=${flags.path}`, commitMessage + '\nCompacted file numbers'])
-    //   cli.action.stop()
-    // }
   }
 
   private readonly isEndOfStack = function (value: string): boolean {
