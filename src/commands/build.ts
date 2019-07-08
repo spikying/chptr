@@ -11,7 +11,6 @@ import { QueryBuilder } from '../queries';
 
 import { d, readFile, writeFile, writeInFile } from './base';
 import Command from "./edit-save-base"
-import Save from './save';
 
 const debug = d('command:build')
 
@@ -76,7 +75,9 @@ export default class Build extends Command {
     }
     debug(`outputFileTypes= ${JSON.stringify(outputFiletype)}`)
 
-    await Save.run([`--path=${flags.path}`, '--no-warning', 'Autosave before build'])
+    // await Save.run([`--path=${flags.path}`, '--no-warning', 'Autosave before build'])
+    const toStageFiles = await this.GetGitListOfStageableFiles(null, false)
+    await this.CommitToGit('Autosave before build', toStageFiles)
 
     cli.action.start('Compiling and generating Markdown files')
 
@@ -106,6 +107,10 @@ export default class Build extends Command {
 
         await this.writeMetadataInEachFile(markupByFile)
       })
+
+      // await Save.run([`--path=${flags.path}`, '--no-warning', 'Autosave markup updates'])
+      const toStageFiles = await this.GetGitListOfStageableFiles(null, false)
+      await this.CommitToGit('Autosave markup updates', toStageFiles)
 
 
       let fullOriginalContent = this.configInstance.globalMetadataContent
@@ -196,7 +201,9 @@ export default class Build extends Command {
       if (compact) {
         cli.action.start('Compacting file numbers')
         await this.compactFileNumbers()
-        await Save.run([`--path=${flags.path}`, 'Compacted file numbers'])
+        // await Save.run([`--path=${flags.path}`, 'Compacted file numbers'])
+        const toStageFiles = await this.GetGitListOfStageableFiles(null, false)
+        await this.CommitToGit('Compacted file numbers', toStageFiles)
         cli.action.stop()
       }
 
@@ -304,7 +311,7 @@ export default class Build extends Command {
     const resultArray: MarkupObj[] = []
     try {
       const initialContent = await this.readFileContent(filepath)
-      const markupRegex = /(?:{{(\d+)}}\n)?.*{(.*)\s?:\s?(.*)}/gm
+      const markupRegex = /(?:{{(\d+)}}\n)?.*?{(.*?)\s?:\s?(.*?)}/gm //  /(?:{{(\d+)}}\n)?.*{(.*)\s?:\s?(.*)}/gm
       let regexArray: RegExpExecArray | null
       while ((regexArray = markupRegex.exec(initialContent)) !== null) {
         resultArray.push(
@@ -364,7 +371,10 @@ export default class Build extends Command {
           computedMarkup[markup.type] = markup.value
         } else {
           if (extractedMarkup[markup.type]) {
-            extractedMarkup[markup.type] = [...extractedMarkup[markup.type], markup.value]
+            if (!Array.isArray(extractedMarkup[markup.type])) {
+              extractedMarkup[markup.type] = [extractedMarkup[markup.type]]
+            }
+            extractedMarkup[markup.type].push(markup.value)
           } else {
             extractedMarkup[markup.type] = markup.value
           }

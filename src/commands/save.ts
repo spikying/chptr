@@ -2,9 +2,7 @@ import { flags } from '@oclif/command'
 import { cli } from "cli-ux";
 // import * as d from 'debug';
 // import * as glob from "glob";
-import * as minimatch from 'minimatch'
 import * as path from "path";
-import { CommitSummary } from 'simple-git/typings/response';
 
 // import { filterNumbers } from '../helpers';
 import { QueryBuilder } from '../queries';
@@ -62,52 +60,48 @@ export default class Save extends Command {
 
     const queryResponses: any = await queryBuilder.responses()
 
-    const isRepo = await this.git.checkIsRepo()
-    if (!isRepo) {
-      throw new Error("Directory is not a repository")
-    }
+    const toStageFiles = await this.GetGitListOfStageableFiles(numberFilter, atFilter)
 
-    // const pathName = path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcardWithNumber())
-    const gitStatus = await this.git.status()
-    debug(`git status\n${JSON.stringify(gitStatus, null, 4)}`)
+    // const gitStatus = await this.git.status()
+    // debug(`git status\n${JSON.stringify(gitStatus, null, 4)}`)
 
-    const unQuote = function (value: string) {
-      if (!value) { return value }
-      return value.replace(/"(.*)"/, '$1')
-    }
+    // const unQuote = function (value: string) {
+    //   if (!value) { return value }
+    //   return value.replace(/"(.*)"/, '$1')
+    // }
 
-    const onlyUnique = function (value: any, index: number, self: any) {
-      return self.indexOf(value) === index;
-    }
+    // const onlyUnique = function (value: any, index: number, self: any) {
+    //   return self.indexOf(value) === index;
+    // }
 
-    const unfilteredFileList = (await this.git.diff(['--name-only'])).split('\n')
-      .concat(gitStatus.not_added.map(unQuote))
-      .concat(gitStatus.deleted.map(unQuote))
-      .concat(gitStatus.modified.map(unQuote))
-      .concat(gitStatus.created.map(unQuote))
-      .concat(gitStatus.renamed.map((value: any) => value.to as string).map(unQuote))
-      .filter(onlyUnique)
+    // const unfilteredFileList = (await this.git.diff(['--name-only'])).split('\n')
+    //   .concat(gitStatus.not_added.map(unQuote))
+    //   .concat(gitStatus.deleted.map(unQuote))
+    //   .concat(gitStatus.modified.map(unQuote))
+    //   .concat(gitStatus.created.map(unQuote))
+    //   .concat(gitStatus.renamed.map((value: any) => value.to as string).map(unQuote))
+    //   .filter(onlyUnique)
 
-    debug(`unfilteredFileList=\n${JSON.stringify(unfilteredFileList, null, 4)}`)
+    // debug(`unfilteredFileList=\n${JSON.stringify(unfilteredFileList, null, 4)}`)
 
-    const toAddFiles = unfilteredFileList
-      .filter(val => val !== '')
-      .filter(val => {
-        return numberFilter ?
-          minimatch(val, this.configInstance.chapterWildcardWithNumber(numberFilter, atFilter)) ||
-          minimatch(val, this.configInstance.metadataWildcardWithNumber(numberFilter, atFilter)) ||
-          minimatch(val, this.configInstance.summaryWildcardWithNumber(numberFilter, atFilter))
-          : true
-      })
+    // const toStageFiles = unfilteredFileList
+    //   .filter(val => val !== '')
+    //   .filter(val => {
+    //     return numberFilter ?
+    //       minimatch(val, this.configInstance.chapterWildcardWithNumber(numberFilter, atFilter)) ||
+    //       minimatch(val, this.configInstance.metadataWildcardWithNumber(numberFilter, atFilter)) ||
+    //       minimatch(val, this.configInstance.summaryWildcardWithNumber(numberFilter, atFilter))
+    //       : true
+    //   })
 
-    if (toAddFiles.length === 0) {
+    if (toStageFiles.length === 0) {
       if (warn) {
         this.warn('No files to save to repository')
       }
     } else {
 
       cli.action.start('Reading and processing modified files')
-      for (const filename of toAddFiles) {
+      for (const filename of toStageFiles) {
         const fullPath = path.join(this.configInstance.projectRootPath, filename)
         const exists = await fileExists(fullPath)
         if (
@@ -121,31 +115,34 @@ export default class Save extends Command {
           await this.processFile(fullPath)
         }
       }
-      cli.action.stop(`done ${toAddFiles.join(' ')}`)
+      cli.action.stop(`done ${toStageFiles.join(' ')}`)
 
-      let message: any = args.message || queryResponses.message || 'Modified files:'
-      message += '\n' + `${JSON.stringify(toAddFiles)}`
+      let message: string = args.message || queryResponses.message || 'Modified files:'
+      message += '\n' + `${JSON.stringify(toStageFiles)}`
       debug(`message: ${message}`)
 
-      let commitSummary: CommitSummary | undefined //= {author: null,branch:'', commit: '', summary: {changes: 0, }}
-      try {
-        cli.action.start('Saving file(s) in repository')
+      await this.CommitToGit(message, toStageFiles)
+      // let commitSummary: CommitSummary | undefined //= {author: null,branch:'', commit: '', summary: {changes: 0, }}
+      // try {
+      //   cli.action.start('Saving file(s) in repository')
 
-        debug(`Message= ${message}; toAddFiles=${JSON.stringify(toAddFiles)}`)
+      //   debug(`Message= ${message}; toAddFiles=${JSON.stringify(toStageFiles)}`)
 
-        await this.git.add(toAddFiles)
-        commitSummary = await this.git.commit(message)
-        await this.git.push()
-        await this.git.pull()
+      //   await this.git.add(toStageFiles)
+      //   await this.git.addConfig('user.name', this.configInstance.config.projectAuthor.name)
+      //   await this.git.addConfig('user.email', this.configInstance.config.projectAuthor.email)
+      //   debug(`name: ${this.configInstance.config.projectAuthor.name} email: ${this.configInstance.config.projectAuthor.email}`)
+      //   commitSummary = await this.git.commit(message)
+      //   await this.git.push()
+      //   await this.git.pull()
 
-      } catch (err) {
-        this.error(err)
-      } finally {
-        cli.action.stop(`Commited and pushed\n${JSON.stringify(commitSummary, null, 2)}`)
-      }
+      // } catch (err) {
+      //   this.error(err)
+      // } finally {
+      //   cli.action.stop(`Commited and pushed\n${JSON.stringify(commitSummary, null, 2)}`)
+      // }
 
     }
-
   }
 
 

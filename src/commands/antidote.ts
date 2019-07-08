@@ -1,9 +1,5 @@
-
-// import { flags } from '@oclif/command'
 import { exec } from 'child_process';
 import { cli } from 'cli-ux';
-// import * as d from 'debug';
-// import * as fs from 'fs';
 import * as glob from "glob";
 import * as path from "path";
 
@@ -11,8 +7,6 @@ import { QueryBuilder } from '../queries';
 
 import { copyFile, d, moveFile, readFile, writeFile } from './base';
 import Command from "./edit-save-base"
-import Save from './save';
-// import { promisify } from "util";
 
 const debug = d('command:antidote')
 
@@ -33,7 +27,7 @@ export default class Antidote extends Command {
   static hidden = false
 
   async run() {
-    const { args, flags } = this.parse(Antidote)
+    const { args } = this.parse(Antidote)
 
     let filter: string = args.filter
     if (filter === '') {
@@ -85,7 +79,8 @@ export default class Antidote extends Command {
     await moveFile(antidoteFilePath, basicFilePath)
 
     if (queryResponses2.message !== 'cancel') {
-      await Save.run([`--path=${flags.path}`, '-f', chapterNumber.toString(), message])
+      const toStageFiles = await this.GetGitListOfStageableFiles(chapterNumber, isAtNumber)
+      await this.CommitToGit(message, toStageFiles)
     }
 
   }

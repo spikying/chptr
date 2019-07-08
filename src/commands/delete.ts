@@ -122,14 +122,7 @@ export default class Delete extends Command {
       cli.action.start('Deleting file(s) locally and from repository')
 
       debug(`ProjetRootPath = ${this.configInstance.projectRootPath}`)
-      // const git = simplegit(this.configInstance.projectRootPath);
-      const isRepo = await this.git.checkIsRepo()
-      if (!isRepo) {
-        throw new Error("Directory is not a repository")
-      }
       await this.git.rm(this.context.mapFilesToBeRelativeToRootPath(toDeleteFiles))
-      // await this.git.commit(`Removed files: ${JSON.stringify(toDeleteFiles)}`)
-      // await this.git.push()
 
     } catch (err) {
       this.error(err)
@@ -140,7 +133,6 @@ export default class Delete extends Command {
     if (compact) {
       cli.action.start('Compacting file numbers')
       await this.compactFileNumbers()
-      // await Save.run([`--path=${flags.path}`, 'Compacted file numbers'])
       cli.action.stop()
     }
 

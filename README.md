@@ -194,8 +194,9 @@ ARGUMENTS
   NAME  Name of project
 
 OPTIONS
-  -a, --author=author        Author of project
+  -a, --author=author        Name of author of project
   -d, --digits=digits        [default: 2] Number of digits to use in file numbering initially.  Defaults to `2`.
+  -e, --email=email          Email of author of project
 
   -f, --force=force          [default: false] Overwrite config files if they exist.  Specify a filename to overwrite
                              only one; write `true` to overwrite all.
@@ -253,6 +254,7 @@ OPTIONS
   -h, --help           show CLI help
   -n, --[no-]notify    show a notification box when build is completed.  Use --no-notify to suppress notification
   -p, --path=path      [default: .] Path where root of project files are
+  --[no-]warning       Use --no-warning to suppress warning when there is no files to save
 
 ALIASES
   $ spixNovel commit

@@ -73,11 +73,6 @@ export default class Add extends Command {
     try {
       cli.action.start('Adding file(s) locally and to repository')
 
-      const isRepo = await this.git.checkIsRepo()
-      if (!isRepo) {
-        throw new Error("Directory is not a repository")
-      }
-
       const allPromises: Promise<void>[] = []
       allPromises.push(createFile(fullPathMD, filledTemplateData, { encoding: 'utf8' }))
       allPromises.push(createFile(fullPathMeta, filledTemplateMeta, { encoding: 'utf8' }))

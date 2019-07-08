@@ -18,19 +18,24 @@ const debug = d('config')
 // const loadFile = promisify(fs.readFile) as (path: string) => Promise<string>;
 const loadFileSync = fs.readFileSync as (path: string) => string;
 
-export interface ConfigObject {
+interface ConfigObject {
   chapterPattern: string // | ConfigProperty
   metadataPattern: string // | ConfigProperty
   summaryPattern: string
   buildDirectory: string // | ConfigProperty
   projectTitle: string // | ConfigProperty
-  projectAuthor: string // | ConfigProperty
+  projectAuthor: Author // | ConfigProperty
   projectLang: string // | ConfigProperty
   fontName: string // | ConfigProperty
   fontSize: string // | ConfigProperty
   numberingStep: number
   numberingInitial: number
   metadataFields: object
+}
+
+export interface Author {
+  name: string
+  email: string
 }
 
 // interface ConfigProperty {
@@ -90,7 +95,7 @@ export class Config {
     debug(`config=${JSON.stringify(this.config)}`)
     return `---
 title: ${this.config.projectTitle}
-author: ${this.config.projectAuthor}
+author: ${this.config.projectAuthor.name}
 lang: ${this.config.projectLang}
 fontsize: ${this.config.fontSize}
 date: ${moment().format('D MMMM YYYY')}
@@ -140,8 +145,14 @@ date: ${moment().format('D MMMM YYYY')}
       default: 'MyNovel'
     },
     projectAuthor: {
-      doc: 'Author for the project.',
-      default: '---'
+      name: {
+        doc: 'Author for the project.',
+        default: '---'
+      }, email: {
+        doc: 'Author for the project.',
+        default: '---',
+        format: 'email'
+      }
     },
     projectLang: {
       doc: 'Project language',

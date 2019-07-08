@@ -3,13 +3,15 @@ import { cli } from "cli-ux";
 // import * as d from "debug";
 import * as fs from "fs";
 import * as path from "path";
-// import { pathToFileURL } from 'url';
-// import { promisify } from "util";
 
+import { Author } from '../config';
 import { sanitizeFileName } from '../helpers';
 import { QueryBuilder } from "../queries";
 
 import Command, { createDir, createFile, d } from "./base"
+// import { pathToFileURL } from 'url';
+// import { promisify } from "util";
+
 
 const debug = d("command:init");
 // const createDir = promisify(fs.mkdir);
@@ -43,7 +45,11 @@ export default class Init extends Command {
     ),
     author: flags.string({
       char: "a",
-      description: "Author of project"
+      description: "Name of author of project"
+    }),
+    email: flags.string({
+      char: "e",
+      description: "Email of author of project"
     }),
     language: flags.string({
       char: "l",
@@ -81,6 +87,9 @@ export default class Init extends Command {
     if (!flags.author) {
       queryBuilder.add('author', queryBuilder.textinput('What is the name of the author?'))
     }
+    if (!flags.email) {
+      queryBuilder.add('email', queryBuilder.textinput('What is the email of the author?'))
+    }
     if (!flags.language) {
       queryBuilder.add('language', queryBuilder.textinput('What language code do you use? (ex. en, fr, es...)'))
     }
@@ -90,7 +99,8 @@ export default class Init extends Command {
     debug(`queryResponses = ${queryResponses}`)
     const name = args.name || queryResponses.name
     const remoteRepo = flags.gitRemote || queryResponses.gitRemote || ''
-    const author = flags.author || queryResponses.author || ''
+    const authorName = flags.author || queryResponses.author || ''
+    const authorEmail = flags.email || queryResponses.email || ''
     const language = flags.language || queryResponses.language || 'en'
 
     // Create folder structure, with /config /chapters /characters /places /props /timeline
@@ -110,7 +120,7 @@ export default class Init extends Command {
     const allConfigFiles = [
       {
         fullPathName: this.configInstance.configFilePath,
-        content: this.configInstance.configDefaultsWithMetaString({ projectTitle: name, projectAuthor: author, projectLang: language })
+        content: this.configInstance.configDefaultsWithMetaString({ projectTitle: name, projectAuthor: { name: authorName, email: authorEmail } as Author, projectLang: language })
       },
       {
         fullPathName: this.configInstance.emptyFilePath,
