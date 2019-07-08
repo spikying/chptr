@@ -113,24 +113,27 @@ export default abstract class extends Command {
   }
 
   public async CommitToGit(message: string, toStageFiles: string[]) {
-    let commitSummary: CommitSummary | undefined //= {author: null,branch:'', commit: '', summary: {changes: 0, }}
-    try {
-      cli.action.start('Saving file(s) in repository')
+    if (toStageFiles.length > 0) {
+      let commitSummary: CommitSummary | undefined
+      try {
+        cli.action.start('Saving file(s) in repository')
 
-      debug(`Message= ${message}; toAddFiles=${JSON.stringify(toStageFiles)}`)
+        debug(`Message= ${message}; toAddFiles=${JSON.stringify(toStageFiles)}`)
 
-      await this.git.add(toStageFiles)
-      await this.git.addConfig('user.name', this.configInstance.config.projectAuthor.name)
-      await this.git.addConfig('user.email', this.configInstance.config.projectAuthor.email)
-      debug(`name: ${this.configInstance.config.projectAuthor.name} email: ${this.configInstance.config.projectAuthor.email}`)
-      commitSummary = await this.git.commit(message)
-      await this.git.push()
-      await this.git.pull()
+        await this.git.add(toStageFiles)
+        await this.git.addConfig('user.name', this.configInstance.config.projectAuthor.name)
+        await this.git.addConfig('user.email', this.configInstance.config.projectAuthor.email)
+        debug(`name: ${this.configInstance.config.projectAuthor.name} email: ${this.configInstance.config.projectAuthor.email}`)
+        commitSummary = await this.git.commit(message)
+        await this.git.push()
+        await this.git.pull()
 
-    } catch (err) {
-      this.error(err)
-    } finally {
-      cli.action.stop(`Commited and pushed ${commitSummary ? commitSummary.commit : '<empty>'}`)
+      } catch (err) {
+        this.error(err)
+      } finally {
+        debug(`commitSummary:\n${JSON.stringify(commitSummary)}`)
+        cli.action.stop(`Commited and pushed ${commitSummary ? commitSummary.commit : '<empty>'}`)
+      }
     }
   }
 

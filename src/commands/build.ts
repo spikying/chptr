@@ -6,6 +6,7 @@ import * as moment from 'moment';
 import * as path from "path";
 import { file as tmpFile } from 'tmp-promise'
 
+import { sanitizeFileName } from '../helpers';
 import { QueryBuilder } from '../queries';
 
 import { d, globPromise, readFile, writeFile, writeInFile } from './base';
@@ -44,25 +45,25 @@ export default class Build extends Command {
     })
   }
 
-  static args = [
-    {
-      name: 'outputfile',
-      default: '',
-      description: "output filename, without extension, concatenating all other files's contents"
-    }
-  ]
+  // static args = [
+  //   {
+  //     name: 'outputfile',
+  //     default: '',
+  //     description: "output filename, without extension, concatenating all other files's contents"
+  //   }
+  // ]
 
   static aliases = ['compile']
 
   static hidden = false
 
   async run() {
-    const { args, flags } = this.parse(Build)
+    const { flags } = this.parse(Build)
 
     const removeMarkup = flags.removemarkup
     const compact = flags.compact
 
-    const outputFileBase = args.outputfile || this.configInstance.config.projectTitle
+    const outputFileBase = sanitizeFileName(this.configInstance.config.projectTitle)
     const outputFile = `${flags.datetimestamp ? moment().format('YYYYMMDD.HHmm ') : ''}${outputFileBase}`
 
     let outputFiletype = flags.filetype
@@ -347,6 +348,7 @@ export default class Build extends Command {
     const match = cleanedText.match(wordRegex())
     return match ? match.length : 0
   }
+
   private objectifyMarkupArray(flattenedMarkupArray: MarkupObj[]): { markupByFile: MarkupByFile, markupByType: any } {
     const markupByFile: MarkupByFile = {}
     const markupByType: any = {}
@@ -363,6 +365,11 @@ export default class Build extends Command {
       if (!markup.computed) {
         markupByType[markup.type] = markupByType[markup.type] || []
         markupByType[markup.type].push({ filename: markup.filename, paragraph: markup.paragraph, value: markup.value })
+      } else {
+        if (markup.type === 'wordCount') {
+          markupByType.totalWordCount = markupByType.totalWordCount || 0
+          markupByType.totalWordCount += markup.value
+        }
       }
 
     })
