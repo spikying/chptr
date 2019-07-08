@@ -28,6 +28,12 @@ export default class Save extends Command {
       default: '',
       // parse: filterNumbers,
       description: 'Chapter number to filter which files to stage before saving to repository'
+    }),
+    warning: flags.boolean({
+      required: false,
+      default: true,
+      description: 'Use --no-warning to suppress warning when there is no files to save',
+      allowNo: true
     })
   }
 
@@ -47,6 +53,7 @@ export default class Save extends Command {
 
     const atFilter = flags.filter ? flags.filter.substring(0, 1) === '@' : false
     const numberFilter = flags.filter ? this.context.extractNumber(flags.filter) : null
+    const warn = flags.warning
 
     const queryBuilder = new QueryBuilder()
     if (!args.message) {
@@ -94,7 +101,9 @@ export default class Save extends Command {
       })
 
     if (toAddFiles.length === 0) {
-      this.warn('No files to save to repository')
+      if (warn) {
+        this.warn('No files to save to repository')
+      }
     } else {
 
       cli.action.start('Reading and processing modified files')

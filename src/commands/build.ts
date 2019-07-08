@@ -1,12 +1,8 @@
 import { flags } from '@oclif/command'
 import { exec } from 'child_process';
 import cli from 'cli-ux'
-// import {boolean} from '@oclif/parser/lib/flags'
-// import * as d from 'debug';
 import * as fs from 'fs'
 import * as glob from "glob";
-// import * as inquirer from 'inquirer'
-// import * as minimatch from 'minimatch'
 import * as moment from 'moment';
 import * as path from "path";
 import { file as tmpFile } from 'tmp-promise'
@@ -16,17 +12,13 @@ import { QueryBuilder } from '../queries';
 import { d, readFile, writeFile, writeInFile } from './base';
 import Command from "./edit-save-base"
 import Save from './save';
-// import { promisify } from "util";
-
 
 const debug = d('command:build')
-// const writeInFile = promisify(fs.write);
 
 export default class Build extends Command {
   static readonly exportableFileTypes = ['md', 'pdf', 'docx', 'html', 'epub', 'tex']
 
   static description = `Takes all original .MD files and outputs a single file without metadata and comments.  Handles these output formats: ${Build.exportableFileTypes.join(', ')}`
-
 
   static flags = {
     ...Command.flags,
@@ -84,7 +76,7 @@ export default class Build extends Command {
     }
     debug(`outputFileTypes= ${JSON.stringify(outputFiletype)}`)
 
-    await Save.run([`--path=${flags.path}`, 'Autosave before build'])
+    await Save.run([`--path=${flags.path}`, '--no-warning', 'Autosave before build'])
 
     cli.action.start('Compiling and generating Markdown files')
 
@@ -95,24 +87,10 @@ export default class Build extends Command {
     debug(`temp file = ${tempMetadataPath}`)
 
     try {
-      // debug(`temp file content: ${this.configInstance.globalMetadataContent}`)
-      // await writeInFile(tempMetadataFd, this.configInstance.globalMetadataContent)
-
       const originalChapterFilesArray = glob.sync(path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcard(false)))
         .sort()
 
       const buildDirectory = this.context.getBuildDirectory()
-
-      // const chapterFilesArray: string[] = []
-      // const copyPromises: Promise<void>[] = []
-      // for (const c of originalChapterFilesArray) {
-      //   const destChapterFile = path.join(this.configInstance.buildDirectory, path.relative(c, this.configInstance.buildDirectory), path.basename(c))
-      //   debug(`destChapterFile: ${destChapterFile}`)
-      //   chapterFilesArray.push(destChapterFile)
-      //   copyPromises.push(copyFile(c, destChapterFile))
-      // }
-      // await Promise.all(copyPromises)
-
 
       const extractPromises: Promise<MarkupObj[]>[] = []
       originalChapterFilesArray.forEach(c => {
@@ -123,45 +101,10 @@ export default class Build extends Command {
 
         const { markupByFile, markupByType } = this.objectifyMarkupArray(flattenedMarkupArray)
 
-        // debug(`fullMarkupArray:\n${JSON.stringify(fullMarkupArray, null, 4)}`)
         await writeFile(path.join(this.configInstance.buildDirectory, `${outputFile}.markupByFile.json`), JSON.stringify(markupByFile, null, 4))
         await writeFile(path.join(this.configInstance.buildDirectory, `${outputFile}.markupByType.json`), JSON.stringify(markupByType, null, 4))
 
         await this.writeMetadataInEachFile(markupByFile)
-
-        // debug(`markupByFile\n${JSON.stringify(markupByFile, null, 2)}`)
-        // for (const file of Object.keys(markupByFile)) {
-        //   const extractedMarkup: any = {}
-        //   const computedMarkup: any = {}
-        //   const markupArray = markupByFile[file]
-        //   debug(`file: ${file} markup: ${JSON.stringify(markupArray)}`)
-        //   markupArray.forEach((markup: MarkupObj) => {
-        //     if (markup.computed) {
-        //       computedMarkup[markup.type] = markup.value
-        //     } else {
-        //       if (extractedMarkup[markup.type]) {
-        //         extractedMarkup[markup.type] = [...extractedMarkup[markup.type], markup.value]
-        //       } else {
-        //         extractedMarkup[markup.type] = markup.value
-        //       }
-        //     }
-        //   });
-
-        //   debug(`markupForFile: ${JSON.stringify(extractedMarkup, null, 2)}`)
-        //   const num = this.context.extractNumber(file)
-        //   const isAt = this.configInstance.isAtNumbering(file)
-        //   const metadataFilename = await this.context.getMetadataFilenameFromParameters(num, isAt)
-        //   const buff = await readFile(path.join(this.configInstance.projectRootPath, metadataFilename))
-        //   const initialContent = await buff.toString('utf8', 0, buff.byteLength)
-        //   const obj = JSON.parse(initialContent)
-        //   obj.extracted = extractedMarkup
-        //   obj.computed = computedMarkup
-
-        //   debug(`metadataFilename: ${metadataFilename} obj: \n${JSON.stringify(obj, null, 2)}`)
-        //   await writeFile(path.join(this.configInstance.projectRootPath, metadataFilename), JSON.stringify(obj, null, 4))
-        // }
-
-
       })
 
 
@@ -172,26 +115,8 @@ export default class Build extends Command {
       debug(`fullOriginalContent=\n${fullOriginalContent}`)
       const fullCleanedOrTransformedContent = removeMarkup ? this.cleanMarkupContent(fullOriginalContent) : this.transformMarkupContent(fullOriginalContent)
       await writeInFile(tempMetadataFd, fullCleanedOrTransformedContent)
-      await cli.anykey()
 
-
-      // const transformPromises: Promise<void>[] = []
-      // chapterFilesArray.forEach(c => {
-      //   if (removeMarkup) {
-      //     transformPromises.push(this.cleanMarkup(c))
-      //   }
-      //   else {
-      //     transformPromises.push(this.transformMarkup(c))
-      //   }
-      // });
-      // await Promise.all(transformPromises)
-      // debug(`transformed/cleanded all files`)
-
-      const chapterFiles = '"' + tempMetadataPath + '" '  //+ chapterFilesArray.map(f => `"${path.normalize(f)}"`).join(' ')
-      // debug(`chapterFiles= ${chapterFiles}`)
-
-      // create an intermediary MD file that will be the input of future files?
-      // await this.runPandoc()
+      const chapterFiles = '"' + tempMetadataPath + '" '
 
       const pandocRuns: Promise<void>[] = []
       const allOutputFilePath: string[] = []
@@ -266,15 +191,6 @@ export default class Build extends Command {
 
       await Promise.all(pandocRuns)
 
-      // // if (clean) {
-      // const cleanupPromises: Promise<void>[] = []
-      // chapterFilesArray.forEach(c => {
-      //   // debug(`uncleaning ${c}`)
-      //   cleanupPromises.push(deleteFile(c))
-      // });
-      // await Promise.all(cleanupPromises)
-      // // debug(`uncleaned all files`)
-
       cli.action.stop(JSON.stringify(allOutputFilePath))
 
       if (compact) {
@@ -284,7 +200,6 @@ export default class Build extends Command {
         cli.action.stop()
       }
 
-      // cli.info(`Build complete for all files`)
     } catch (err) {
       cli.action.status = "error"
       this.error(err)
