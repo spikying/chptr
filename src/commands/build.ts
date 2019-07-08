@@ -2,14 +2,13 @@ import { flags } from '@oclif/command'
 import { exec } from 'child_process';
 import cli from 'cli-ux'
 import * as fs from 'fs'
-import * as glob from "glob";
 import * as moment from 'moment';
 import * as path from "path";
 import { file as tmpFile } from 'tmp-promise'
 
 import { QueryBuilder } from '../queries';
 
-import { d, readFile, writeFile, writeInFile } from './base';
+import { d, globPromise, readFile, writeFile, writeInFile } from './base';
 import Command from "./edit-save-base"
 
 const debug = d('command:build')
@@ -88,13 +87,16 @@ export default class Build extends Command {
     debug(`temp file = ${tempMetadataPath}`)
 
     try {
-      const originalChapterFilesArray = glob.sync(path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcard(false)))
+      const originalChapterFilesArray = (await globPromise(path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcard(false))))
         .sort()
 
-      const buildDirectory = this.context.getBuildDirectory()
+      const allChapterFilesArray = originalChapterFilesArray.concat(await globPromise(path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcard(true))))
+
+      debug(`originalChapterFilesArray: \n${originalChapterFilesArray}`)
+      debug(`allChapterFilesArray: \n${allChapterFilesArray}`)
 
       const extractPromises: Promise<MarkupObj[]>[] = []
-      originalChapterFilesArray.forEach(c => {
+      allChapterFilesArray.forEach(c => {
         extractPromises.push(this.extractMarkup(c))
       })
       await Promise.all(extractPromises).then(async fullMarkupArray => {
@@ -108,7 +110,6 @@ export default class Build extends Command {
         await this.writeMetadataInEachFile(markupByFile)
       })
 
-      // await Save.run([`--path=${flags.path}`, '--no-warning', 'Autosave markup updates'])
       const toStageFiles = await this.GetGitListOfStageableFiles(null, false)
       await this.CommitToGit('Autosave markup updates', toStageFiles)
 
@@ -125,6 +126,7 @@ export default class Build extends Command {
 
       const pandocRuns: Promise<void>[] = []
       const allOutputFilePath: string[] = []
+      const buildDirectory = this.context.getBuildDirectory()
 
       outputFiletype.forEach(filetype => {
         const fullOutputFilePath = path.join(buildDirectory, outputFile + '.' + filetype)
@@ -324,10 +326,11 @@ export default class Build extends Command {
           }
         )
       }
+      const wordCount = this.GetWordCount(initialContent)
       resultArray.push({
         filename: path.basename(filepath),
         type: 'wordCount',
-        value: 12,
+        value: wordCount,
         computed: true
       })
     } catch (error) {
@@ -338,6 +341,12 @@ export default class Build extends Command {
     return resultArray
   }
 
+  private GetWordCount(text: string): number {
+    const wordRegex = require('word-regex')
+    const cleanedText = this.cleanMarkupContent(text)
+    const match = cleanedText.match(wordRegex())
+    return match ? match.length : 0
+  }
   private objectifyMarkupArray(flattenedMarkupArray: MarkupObj[]): { markupByFile: MarkupByFile, markupByType: any } {
     const markupByFile: MarkupByFile = {}
     const markupByType: any = {}

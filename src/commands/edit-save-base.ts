@@ -21,6 +21,7 @@ export default abstract class extends Command {
   public readonly paragraphBreakChar = '\u2029'
 
   async init() {
+    await super.init()
     const isRepo = await this.git.checkIsRepo()
     if (!isRepo) {
       throw new Error("Directory is not a repository")
@@ -129,7 +130,7 @@ export default abstract class extends Command {
     } catch (err) {
       this.error(err)
     } finally {
-      cli.action.stop(`Commited and pushed\n${JSON.stringify(commitSummary, null, 2)}`)
+      cli.action.stop(`Commited and pushed ${commitSummary ? commitSummary.commit : '<empty>'}`)
     }
   }
 

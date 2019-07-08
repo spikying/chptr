@@ -67,9 +67,11 @@ export default abstract class extends Command {
   private _git: simplegit.SimpleGit | undefined
   public get git(): simplegit.SimpleGit {
     if (!this._git) {
+      // const { flags } = this.parse(this.constructor as any)
+      // this._git = simplegit(this.configInstance ? this.configInstance.projectRootPath : path.join(flags.path as string));
       this._git = simplegit(this.configInstance.projectRootPath);
     }
-    return this._git //as simplegit.SimpleGit // || simplegit()
+    return this._git
   }
 
   private _context: Context | undefined
