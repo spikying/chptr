@@ -8,13 +8,12 @@ import * as glob from "glob";
 // import * as inquirer from 'inquirer'
 // import * as minimatch from 'minimatch'
 import * as moment from 'moment';
-import * as notifier from 'node-notifier'
 import * as path from "path";
 import { file as tmpFile } from 'tmp-promise'
 
 import { QueryBuilder } from '../queries';
 
-import { copyFile, d, deleteFile, readFile, writeFile, writeInFile } from './base';
+import { d, readFile, writeFile, writeInFile } from './base';
 import Command from "./edit-save-base"
 import Save from './save';
 // import { promisify } from "util";
@@ -37,13 +36,6 @@ export default class Build extends Command {
       options: Build.exportableFileTypes,
       default: '',
       multiple: true
-    }),
-    notify: flags.boolean({
-      char: 'n',
-      description:
-        'show a notification box when build is completed.  Use --no-notify to suppress notification',
-      default: false,
-      allowNo: true
     }),
     datetimestamp: flags.boolean({
       char: 'd',
@@ -94,7 +86,7 @@ export default class Build extends Command {
 
     await Save.run([`--path=${flags.path}`, 'Autosave before build'])
 
-    cli.action.start('Compiling Markdown files')
+    cli.action.start('Compiling and generating Markdown files')
 
     const tmpMetadataResult = await tmpFile();
     const tempMetadataFd = tmpMetadataResult.fd
@@ -103,75 +95,100 @@ export default class Build extends Command {
     debug(`temp file = ${tempMetadataPath}`)
 
     try {
-      debug(`temp file content: ${this.configInstance.globalMetadataContent}`)
-      await writeInFile(tempMetadataFd, this.configInstance.globalMetadataContent)
+      // debug(`temp file content: ${this.configInstance.globalMetadataContent}`)
+      // await writeInFile(tempMetadataFd, this.configInstance.globalMetadataContent)
 
       const originalChapterFilesArray = glob.sync(path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcard(false)))
         .sort()
-      // .filter(f => !minimatch(f, this.configInstance.metadataWildcard))
 
-      const fullOutputDirectory = path.join(this.configInstance.projectRootPath, this.configInstance.buildDirectory)
-      if (!fs.existsSync(fullOutputDirectory)) {
-        fs.mkdirSync(fullOutputDirectory)
-      }
+      const buildDirectory = this.context.getBuildDirectory()
 
-      const chapterFilesArray: string[] = []
-      const copyPromises: Promise<void>[] = []
-      for (const c of originalChapterFilesArray) {
-        const destChapterFile = path.join(this.configInstance.buildDirectory, path.relative(c, this.configInstance.buildDirectory), path.basename(c))
-        debug(`destChapterFile: ${destChapterFile}`)
-        chapterFilesArray.push(destChapterFile)
-        copyPromises.push(copyFile(c, destChapterFile))
-      }
-      await Promise.all(copyPromises)
+      // const chapterFilesArray: string[] = []
+      // const copyPromises: Promise<void>[] = []
+      // for (const c of originalChapterFilesArray) {
+      //   const destChapterFile = path.join(this.configInstance.buildDirectory, path.relative(c, this.configInstance.buildDirectory), path.basename(c))
+      //   debug(`destChapterFile: ${destChapterFile}`)
+      //   chapterFilesArray.push(destChapterFile)
+      //   copyPromises.push(copyFile(c, destChapterFile))
+      // }
+      // await Promise.all(copyPromises)
 
-      const extractPromises: Promise<string[][] | undefined>[] = []
-      chapterFilesArray.forEach(c => {
+
+      const extractPromises: Promise<MarkupObj[]>[] = []
+      originalChapterFilesArray.forEach(c => {
         extractPromises.push(this.extractMarkup(c))
       })
       await Promise.all(extractPromises).then(async fullMarkupArray => {
-        let markupByFile: any = {}
-        const markupByType: any = {}
-        fullMarkupArray.forEach(mkl => {
-          const markupLine = mkl || []
-          if (markupLine[0]) {
-            debug(`markupLine: ${JSON.stringify(markupLine)}; [0][0]: ${markupLine[0][0]}`)
-            markupLine.forEach(markup => {
-              debug(`markup: [0]=${markup[0]} [1]=${markup[1]} [2]=${markup[2]} [3]=${markup[3]}`)
-              const filename = markup[0]
-              const paragraph = parseInt(markup[1], 10)
-              const type = markup[2].toLowerCase()
-              const value = markup[3]
-              markupByFile[filename] = markupByFile[filename] || []
-              markupByFile[filename].push({ paragraph, type, value })
+        const flattenedMarkupArray: MarkupObj[] = ([] as MarkupObj[]).concat(...fullMarkupArray)
 
-              markupByType[type] = markupByType[type] || []
-              markupByType[type].push({ filename, paragraph, value })
-            })
-          }
+        const { markupByFile, markupByType } = this.objectifyMarkupArray(flattenedMarkupArray)
 
-        })
-        debug(`fullMarkupArray:\n${JSON.stringify(fullMarkupArray, null, 4)}`)
-        if (JSON.stringify(markupByFile) !== '{}') {
-          await writeFile(path.join(this.configInstance.buildDirectory, `${outputFile}.markupByFile.json`), JSON.stringify(markupByFile, null, 4))
-          await writeFile(path.join(this.configInstance.buildDirectory, `${outputFile}.markupByType.json`), JSON.stringify(markupByType, null, 4))
-        }
+        // debug(`fullMarkupArray:\n${JSON.stringify(fullMarkupArray, null, 4)}`)
+        await writeFile(path.join(this.configInstance.buildDirectory, `${outputFile}.markupByFile.json`), JSON.stringify(markupByFile, null, 4))
+        await writeFile(path.join(this.configInstance.buildDirectory, `${outputFile}.markupByType.json`), JSON.stringify(markupByType, null, 4))
+
+        await this.writeMetadataInEachFile(markupByFile)
+
+        // debug(`markupByFile\n${JSON.stringify(markupByFile, null, 2)}`)
+        // for (const file of Object.keys(markupByFile)) {
+        //   const extractedMarkup: any = {}
+        //   const computedMarkup: any = {}
+        //   const markupArray = markupByFile[file]
+        //   debug(`file: ${file} markup: ${JSON.stringify(markupArray)}`)
+        //   markupArray.forEach((markup: MarkupObj) => {
+        //     if (markup.computed) {
+        //       computedMarkup[markup.type] = markup.value
+        //     } else {
+        //       if (extractedMarkup[markup.type]) {
+        //         extractedMarkup[markup.type] = [...extractedMarkup[markup.type], markup.value]
+        //       } else {
+        //         extractedMarkup[markup.type] = markup.value
+        //       }
+        //     }
+        //   });
+
+        //   debug(`markupForFile: ${JSON.stringify(extractedMarkup, null, 2)}`)
+        //   const num = this.context.extractNumber(file)
+        //   const isAt = this.configInstance.isAtNumbering(file)
+        //   const metadataFilename = await this.context.getMetadataFilenameFromParameters(num, isAt)
+        //   const buff = await readFile(path.join(this.configInstance.projectRootPath, metadataFilename))
+        //   const initialContent = await buff.toString('utf8', 0, buff.byteLength)
+        //   const obj = JSON.parse(initialContent)
+        //   obj.extracted = extractedMarkup
+        //   obj.computed = computedMarkup
+
+        //   debug(`metadataFilename: ${metadataFilename} obj: \n${JSON.stringify(obj, null, 2)}`)
+        //   await writeFile(path.join(this.configInstance.projectRootPath, metadataFilename), JSON.stringify(obj, null, 4))
+        // }
+
+
       })
 
-      const transformPromises: Promise<void>[] = []
-      chapterFilesArray.forEach(c => {
-        if (removeMarkup) {
-          transformPromises.push(this.cleanMarkup(c))
-        }
-        else {
-          transformPromises.push(this.transformMarkup(c))
-        }
-      });
-      await Promise.all(transformPromises)
-      debug(`transformed/cleanded all files`)
 
-      const chapterFiles = '"' + tempMetadataPath + '" ' + chapterFilesArray.map(f => `"${path.normalize(f)}"`).join(' ')
-      debug(`chapterFiles= ${chapterFiles}`)
+      let fullOriginalContent = this.configInstance.globalMetadataContent
+      for (const file of originalChapterFilesArray) {
+        fullOriginalContent += '\n' + await this.readFileContent(file)
+      }
+      debug(`fullOriginalContent=\n${fullOriginalContent}`)
+      const fullCleanedOrTransformedContent = removeMarkup ? this.cleanMarkupContent(fullOriginalContent) : this.transformMarkupContent(fullOriginalContent)
+      await writeInFile(tempMetadataFd, fullCleanedOrTransformedContent)
+      await cli.anykey()
+
+
+      // const transformPromises: Promise<void>[] = []
+      // chapterFilesArray.forEach(c => {
+      //   if (removeMarkup) {
+      //     transformPromises.push(this.cleanMarkup(c))
+      //   }
+      //   else {
+      //     transformPromises.push(this.transformMarkup(c))
+      //   }
+      // });
+      // await Promise.all(transformPromises)
+      // debug(`transformed/cleanded all files`)
+
+      const chapterFiles = '"' + tempMetadataPath + '" '  //+ chapterFilesArray.map(f => `"${path.normalize(f)}"`).join(' ')
+      // debug(`chapterFiles= ${chapterFiles}`)
 
       // create an intermediary MD file that will be the input of future files?
       // await this.runPandoc()
@@ -180,7 +197,7 @@ export default class Build extends Command {
       const allOutputFilePath: string[] = []
 
       outputFiletype.forEach(filetype => {
-        const fullOutputFilePath = path.join(fullOutputDirectory, outputFile + '.' + filetype)
+        const fullOutputFilePath = path.join(buildDirectory, outputFile + '.' + filetype)
         allOutputFilePath.push(fullOutputFilePath)
         debug(`fullOutputFilePath= ${fullOutputFilePath}`)
 
@@ -245,21 +262,20 @@ export default class Build extends Command {
           this.exit(1)
         }
 
-        cli.info(`Generating ${fullOutputFilePath}`)
       })
 
       await Promise.all(pandocRuns)
 
-      // if (clean) {
-      const cleanupPromises: Promise<void>[] = []
-      chapterFilesArray.forEach(c => {
-        // debug(`uncleaning ${c}`)
-        cleanupPromises.push(deleteFile(c))
-      });
-      await Promise.all(cleanupPromises)
-      // debug(`uncleaned all files`)
+      // // if (clean) {
+      // const cleanupPromises: Promise<void>[] = []
+      // chapterFilesArray.forEach(c => {
+      //   // debug(`uncleaning ${c}`)
+      //   cleanupPromises.push(deleteFile(c))
+      // });
+      // await Promise.all(cleanupPromises)
+      // // debug(`uncleaned all files`)
 
-      cli.action.stop()
+      cli.action.stop(JSON.stringify(allOutputFilePath))
 
       if (compact) {
         cli.action.start('Compacting file numbers')
@@ -268,14 +284,9 @@ export default class Build extends Command {
         cli.action.stop()
       }
 
-      if (flags.notify) {
-        notifier.notify({
-          title: 'Spix Novel Builder',
-          message: `Build complete for ${allOutputFilePath.join(', ')}`
-        })
-      }
-      cli.info(`Build complete for all files`)
+      // cli.info(`Build complete for all files`)
     } catch (err) {
+      cli.action.status = "error"
       this.error(err)
       this.exit(1)
     } finally {
@@ -306,65 +317,176 @@ export default class Build extends Command {
     })
   }
 
-  private async cleanMarkup(filepath: string): Promise<void> {
-    try {
-      const buff = await readFile(filepath)
-      const initialContent = await buff.toString('utf8', 0, buff.byteLength)
+  // private async cleanMarkup(filepath: string): Promise<void> {
+  //   try {
+  //     const initialContent = await this.readFileContent(filepath)
+  //     const replacedContent = this.cleanMarkupContent(initialContent)
 
-      const paragraphBreakRegex = new RegExp(this.paragraphBreakChar + '{{\\d+}}\\n', 'g')
-      const sentenceBreakRegex = new RegExp(this.sentenceBreakChar + '\\s?', 'g')
+  //     await writeFile(filepath, replacedContent, 'utf8')
+  //   } catch (error) {
+  //     this.error(error)
+  //     this.exit(1)
+  //   }
+  // }
 
-      const replacedContent = initialContent.replace(paragraphBreakRegex, '')
-        .replace(/{.*:.*} ?/gm, ' ')
-        .replace(sentenceBreakRegex, '  ')
+  private cleanMarkupContent(initialContent: string): string {
+    const paragraphBreakRegex = new RegExp(this.paragraphBreakChar + '{{\\d+}}\\n', 'g')
+    const sentenceBreakRegex = new RegExp(this.sentenceBreakChar + '\\s?', 'g')
 
-      await writeFile(filepath, replacedContent, 'utf8')
-    } catch (error) {
-      this.error(error)
-      this.exit(1)
-    }
+    const replacedContent = initialContent.replace(paragraphBreakRegex, '')
+      .replace(/{.*?:.*?} ?/gm, ' ')
+      .replace(sentenceBreakRegex, '  ')
+
+    return replacedContent
   }
 
-  private async transformMarkup(filepath: string): Promise<void> {
-    try {
-      const buff = await readFile(filepath)
-      const initialContent = await buff.toString('utf8', 0, buff.byteLength)
+  // private async transformMarkup(filepath: string): Promise<void> {
+  //   try {
+  //     const initialContent = await this.readFileContent(filepath)
+  //     const replacedContent = this.transformMarkupContent(initialContent)
 
-      const paragraphBreakRegex = new RegExp(this.paragraphBreakChar + '{{(\\d+)}}\\n', 'g')
-      let markupCounter = 1
+  //     await writeFile(filepath, replacedContent, 'utf8')
+  //   } catch (error) {
+  //     this.error(error)
+  //     this.exit(1)
+  //   }
+  // }
 
-      const replacedContent = initialContent.replace(paragraphBreakRegex, '^_($1)_^\t')
-        .replace(/ *{(.*)\s?:\s?(.*)} *(.*)$/gm, (full, one, two, three) => {
-          markupCounter++
-          debug(`full: ${full} one: ${one} two: ${two} three:${three}`)
-          return `  ~_${one}_~[^${markupCounter}]  ${three}\n\n[^${markupCounter}]: ${two}\n\n`
-        })
+  private transformMarkupContent(initialContent: string): string {
+    const paragraphBreakRegex = new RegExp(this.paragraphBreakChar + '{{(\\d+)}}\\n', 'g')
+    let markupCounter = 0 // markupCounter || 1
 
-      debug(`transformedMarkup: ${replacedContent}`)
-      await writeFile(filepath, replacedContent, 'utf8')
-    } catch (error) {
-      this.error(error)
-      this.exit(1)
+    const transformInFootnote = function (initial: string): { replaced: string, didReplacement: boolean } {
+      let didReplacement = false
+      const replaced = initial.replace(/(.*){(.*?)\s?:\s?(.*?)} *(.*)$/m, (full, one, two, three, four) => {
+        markupCounter++
+        debug(`full: ${full} one: ${one} two: ${two} three:${three} four:${four}`)
+        didReplacement = didReplacement || (two && three)
+        return `${one} ~_${two}_~[^${markupCounter}]  ${four}\n\n[^${markupCounter}]: ${three}\n\n`
+      })
+      return { replaced, didReplacement }
     }
+
+    let replacedContent = initialContent.replace(paragraphBreakRegex, '^_($1)_^\t')
+
+    let continueReplacing = true
+    while (continueReplacing) {
+      const { replaced, didReplacement } = transformInFootnote(replacedContent)
+      replacedContent = replaced
+      continueReplacing = didReplacement
+    }
+    //   .replace(/(.*){(.*?)\s?:\s?(.*?)} *(.*)$/m, (full, one, two, three, four) => {
+    //   markupCounter++
+    //   debug(`full: ${full} one: ${one} two: ${two} three:${three} four:${four}`)
+    //   return `${one} ~_${two}_~[^${markupCounter}]  ${four}\n\n[^${markupCounter}]: ${three}\n\n`
+    // })
+
+    debug(`transformedMarkup: ${replacedContent}`)
+    return replacedContent
   }
 
-  private async extractMarkup(filepath: string): Promise<string[][] | undefined> {
+  private async extractMarkup(filepath: string): Promise<MarkupObj[]> {
+    const resultArray: MarkupObj[] = []
     try {
-      const buff = await readFile(filepath)
-      const initialContent = await buff.toString('utf8', 0, buff.byteLength)
-      const resultArray: string[][] = []
+      const initialContent = await this.readFileContent(filepath)
       const markupRegex = /(?:{{(\d+)}}\n)?.*{(.*)\s?:\s?(.*)}/gm
       let regexArray: RegExpExecArray | null
       while ((regexArray = markupRegex.exec(initialContent)) !== null) {
-        resultArray.push([path.basename(filepath), regexArray[1] || '1', regexArray[2], regexArray[3]])
+        resultArray.push(
+          {
+            filename: path.basename(filepath),
+            paragraph: parseInt((regexArray[1] || '1'), 10),
+            type: regexArray[2].toLowerCase(),
+            value: regexArray[3],
+            computed: false
+          }
+        )
       }
-
-      return resultArray
-      // await writeFile(filepath, replacedContent, 'utf8')
+      resultArray.push({
+        filename: path.basename(filepath),
+        type: 'wordCount',
+        value: 12,
+        computed: true
+      })
     } catch (error) {
       this.error(error)
       this.exit(1)
     }
+
+    return resultArray
   }
 
+  private objectifyMarkupArray(flattenedMarkupArray: MarkupObj[]): { markupByFile: MarkupByFile, markupByType: any } {
+    const markupByFile: MarkupByFile = {}
+    const markupByType: any = {}
+
+    flattenedMarkupArray.forEach(markup => {
+      debug(`***Markup: ${JSON.stringify(markup, null, 2)}`)
+      markupByFile[markup.filename] = markupByFile[markup.filename] || []
+      if (markup.computed) {
+        markupByFile[markup.filename].push({ computed: true, type: markup.type, value: markup.value })
+      } else {
+        markupByFile[markup.filename].push({ computed: false, paragraph: markup.paragraph, type: markup.type, value: markup.value })
+      }
+
+      if (!markup.computed) {
+        markupByType[markup.type] = markupByType[markup.type] || []
+        markupByType[markup.type].push({ filename: markup.filename, paragraph: markup.paragraph, value: markup.value })
+      }
+
+    })
+    return { markupByFile, markupByType }
+  }
+
+  private async writeMetadataInEachFile(markupByFile: any) {
+    for (const file of Object.keys(markupByFile)) {
+      const extractedMarkup: any = {}
+      const computedMarkup: any = {}
+      const markupArray = markupByFile[file]
+      debug(`file: ${file} markup: ${JSON.stringify(markupArray)}`)
+      markupArray.forEach((markup: MarkupObj) => {
+        if (markup.computed) {
+          computedMarkup[markup.type] = markup.value
+        } else {
+          if (extractedMarkup[markup.type]) {
+            extractedMarkup[markup.type] = [...extractedMarkup[markup.type], markup.value]
+          } else {
+            extractedMarkup[markup.type] = markup.value
+          }
+        }
+      });
+
+      debug(`markupForFile: ${JSON.stringify(extractedMarkup, null, 2)}`)
+      const num = this.context.extractNumber(file)
+      const isAt = this.configInstance.isAtNumbering(file)
+      const metadataFilename = await this.context.getMetadataFilenameFromParameters(num, isAt)
+      const buff = await readFile(path.join(this.configInstance.projectRootPath, metadataFilename))
+      const initialContent = await buff.toString('utf8', 0, buff.byteLength)
+      const obj = JSON.parse(initialContent)
+      obj.extracted = extractedMarkup
+      obj.computed = computedMarkup
+
+      debug(`metadataFilename: ${metadataFilename} obj: \n${JSON.stringify(obj, null, 2)}`)
+      await writeFile(path.join(this.configInstance.projectRootPath, metadataFilename), JSON.stringify(obj, null, 4))
+    }
+
+  }
+
+}
+
+interface MarkupObj {
+  filename: string
+  paragraph?: number
+  type: string
+  value: string | number
+  computed: boolean
+}
+
+interface MarkupByFile {
+  [filename: string]: [{
+    paragraph?: number
+    type: string
+    value: string | number
+    computed: boolean
+  }]
 }

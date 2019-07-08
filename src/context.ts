@@ -1,4 +1,5 @@
 import * as d from 'debug'
+import * as fs from 'fs'
 import * as path from "path";
 
 import { globPromise } from './commands/base';
@@ -127,6 +128,19 @@ export class Context {
       return -1
     }
     return fileNumber
+  }
+
+  public async getMetadataFilenameFromParameters(num: number, atNumbering: boolean) {
+    const files = await globPromise(path.join(this.configInstance.projectRootPath, this.configInstance.metadataWildcardWithNumber(num, atNumbering)))
+    return files[0]
+  }
+
+  public getBuildDirectory(): string {
+    const buildDirectory = path.join(this.configInstance.projectRootPath, this.configInstance.buildDirectory)
+    if (!fs.existsSync(buildDirectory)) {
+      fs.mkdirSync(buildDirectory)
+    }
+    return buildDirectory
   }
 
   private async updateStackStatistics(atNumbers: boolean): Promise<void> {

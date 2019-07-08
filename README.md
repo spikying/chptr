@@ -50,9 +50,10 @@ ARGUMENTS
   NAME  name of chapter file(s) to add
 
 OPTIONS
-  -a, --atnumbered  Add an @numbered chapter
-  -h, --help        show CLI help
-  -p, --path=path   [default: .] Path where root of project files are
+  -a, --atnumbered   Add an @numbered chapter
+  -h, --help         show CLI help
+  -n, --[no-]notify  show a notification box when build is completed.  Use --no-notify to suppress notification
+  -p, --path=path    [default: .] Path where root of project files are
 ```
 
 _See code: [src\commands\add.ts](https://github.com/spikying/spixNovel/blob/v0.0.0/src\commands\add.ts)_
@@ -69,8 +70,9 @@ ARGUMENTS
   FILTER  Chapter number to Antidote.
 
 OPTIONS
-  -h, --help       show CLI help
-  -p, --path=path  [default: .] Path where root of project files are
+  -h, --help         show CLI help
+  -n, --[no-]notify  show a notification box when build is completed.  Use --no-notify to suppress notification
+  -p, --path=path    [default: .] Path where root of project files are
 ```
 
 _See code: [src\commands\antidote.ts](https://github.com/spikying/spixNovel/blob/v0.0.0/src\commands\antidote.ts)_
@@ -87,7 +89,7 @@ ARGUMENTS
   OUTPUTFILE  output filename, without extension, concatenating all other files's contents
 
 OPTIONS
-  -c, --cleanmarkup                         Remove paragraph numbers and other markup
+  -c, --compact                             Compact chapter numbers at the same time
   -d, --datetimestamp                       adds datetime stamp before output filename
   -h, --help                                show CLI help
 
@@ -95,6 +97,8 @@ OPTIONS
                                             suppress notification
 
   -p, --path=path                           [default: .] Path where root of project files are
+
+  -r, --removemarkup                        Remove paragraph numbers and other markup
 
   -t, --filetype=md|pdf|docx|html|epub|tex  filetype to export in.  Can be set multiple times.
 
@@ -116,7 +120,12 @@ ARGUMENTS
   NAME  filename pattern or chapter number to delete
 
 OPTIONS
+  -c, --compact                            Compact chapter numbers at the same time
   -h, --help                               show CLI help
+
+  -n, --[no-]notify                        show a notification box when build is completed.  Use --no-notify to suppress
+                                           notification
+
   -p, --path=path                          [default: .] Path where root of project files are
 
   -t, --type=all|summary|chapter|metadata  [default: all] Delete either chapter file, summary file, metadata file or
@@ -141,7 +150,12 @@ ARGUMENTS
 
 OPTIONS
   -h, --help                      show CLI help
+
+  -n, --[no-]notify               show a notification box when build is completed.  Use --no-notify to suppress
+                                  notification
+
   -p, --path=path                 [default: .] Path where root of project files are
+
   -t, --type=all|summary|chapter  [default: all] Edit either chapter file, summary file or all.
 
 ALIASES
@@ -190,6 +204,8 @@ OPTIONS
 
   -l, --language=language    Language of project
 
+  -n, --[no-]notify          show a notification box when build is completed.  Use --no-notify to suppress notification
+
   -p, --path=path            [default: .] Path where root of project files are
 
   -r, --gitRemote=gitRemote  Git address of remote repository.
@@ -210,8 +226,10 @@ ARGUMENTS
   DESTINATION  Number it will become (write `end` or `@end`to put at the end of each stack).
 
 OPTIONS
-  -h, --help       show CLI help
-  -p, --path=path  [default: .] Path where root of project files are
+  -c, --compact      Compact chapter numbers at the same time
+  -h, --help         show CLI help
+  -n, --[no-]notify  show a notification box when build is completed.  Use --no-notify to suppress notification
+  -p, --path=path    [default: .] Path where root of project files are
 
 ALIASES
   $ spixNovel move
@@ -233,6 +251,7 @@ ARGUMENTS
 OPTIONS
   -f, --filter=filter  Chapter number to filter which files to stage before saving to repository
   -h, --help           show CLI help
+  -n, --[no-]notify    show a notification box when build is completed.  Use --no-notify to suppress notification
   -p, --path=path      [default: .] Path where root of project files are
 
 ALIASES

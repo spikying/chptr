@@ -46,6 +46,11 @@ export class Config {
 
     jsonConfig.chapterPattern = sanitizeFileName(jsonConfig.chapterPattern)
     jsonConfig.metadataPattern = sanitizeFileName(jsonConfig.metadataPattern)
+    jsonConfig.metadataFields = {
+      manual: jsonConfig.metadataFields,
+      computed: { title: '###', wordCount: 0 },
+      extracted: {}
+    }
 
     debug(`Config Object: ${json.stringify(jsonConfig)}`)
     return jsonConfig as ConfigObject
@@ -161,14 +166,12 @@ date: ${moment().format('D MMMM YYYY')}
     metadataFields: {
       doc: 'All fields to be added in each Metadata file',
       default: {
-        name: '{TITLE}',
         datetimeRange: '',
         revisionStep: 0,
         characters: [],
         mainCharacter: '',
         mainCharacterQuest: '',
-        otherQuest: '',
-        wordCount: 0
+        otherQuest: ''
       }
     }
   }
@@ -261,15 +264,15 @@ date: ${moment().format('D MMMM YYYY')}
   }
 
   public chapterFileNameFromParameters(num: string, name: string, atNumbering: boolean): string {
-    return this.config.chapterPattern.replace('NUM', (atNumbering ? '@' : '') + num).replace('NAME', name) + '.md'
+    return this.config.chapterPattern.replace('NUM', (atNumbering ? '@' : '') + num).replace('NAME', sanitizeFileName(name)) + '.md'
   }
 
   public metadataFileNameFromParameters(num: string, name: string, atNumbering: boolean): string {
-    return this.config.metadataPattern.replace('NUM', (atNumbering ? '@' : '') + num).replace('NAME', name) + '.json'
+    return this.config.metadataPattern.replace('NUM', (atNumbering ? '@' : '') + num).replace('NAME', sanitizeFileName(name)) + '.json'
   }
 
   public summaryFileNameFromParameters(num: string, name: string, atNumbering: boolean): string {
-    return this.config.summaryPattern.replace('NUM', (atNumbering ? '@' : '') + num).replace('NAME', name) + '.md'
+    return this.config.summaryPattern.replace('NUM', (atNumbering ? '@' : '') + num).replace('NAME', sanitizeFileName(name)) + '.md'
   }
 
   public chapterRegex(atNumber: boolean): RegExp {

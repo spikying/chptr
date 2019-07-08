@@ -2,6 +2,7 @@ import { Command, flags } from '@oclif/command'
 import * as deb from 'debug';
 import * as fs from 'fs';
 import * as glob from "glob";
+import * as notifier from 'node-notifier'
 import * as path from "path";
 import * as simplegit from 'simple-git/promise';
 import { MoveSummary } from 'simple-git/typings/response';
@@ -42,6 +43,13 @@ export default abstract class extends Command {
 
   static flags = {
     help: flags.help({ char: "h" }),
+    notify: flags.boolean({
+      char: 'n',
+      description:
+        'show a notification box when build is completed.  Use --no-notify to suppress notification',
+      default: false,
+      allowNo: true
+    }),
     path: flags.string(
       {
         char: "p",
@@ -87,6 +95,17 @@ export default abstract class extends Command {
     this.exit(1)
   }
 
+  async finally() {
+    const { flags } = this.parse(this.constructor as any)
+    if (flags.notify) {
+      notifier.notify({
+        title: 'Spix Novel Builder',
+        message: `Task completed for ${this.configInstance.config.projectTitle}`
+      })
+    }
+
+  }
+
   public async addDigitsToNecessaryStacks(): Promise<void> {
     await this.context.getAllNovelFiles(true)
     for (const b of [true, false]) {
@@ -130,7 +149,6 @@ export default abstract class extends Command {
           }
           currentNumber += this.configInstance.config.numberingStep
         }
-
       }
     }
 
