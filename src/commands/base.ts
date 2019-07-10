@@ -35,8 +35,32 @@ export const fileExists = async function(path: fs.PathLike): Promise<boolean> {
 }
 
 export const globPromise = promisify(glob)
-
 export const d = deb
+const chalk: any = require('chalk')
+String.prototype.color = function(colorName: string) {
+  return chalk[colorName](this)
+}
+String.prototype.actionStartColor = function() {
+  return chalk.blue(this)
+}
+String.prototype.actionStopColor = function() {
+  return chalk.cyan(this)
+}
+String.prototype.resultHighlighColor = function() {
+  return chalk.yellow(this)
+}
+String.prototype.resultSecondaryColor = function() {
+  return chalk.magenta(this)
+}
+String.prototype.resultNormalColor = function() {
+  return chalk.whiteBright(this)
+}
+String.prototype.infoColor = function() {
+  return chalk.gray(this)
+}
+String.prototype.errorColor = function () {
+  return chalk.redBright(this)
+}
 
 const debug = d('command:base')
 
@@ -84,7 +108,7 @@ export default abstract class extends Command {
   }
 
   async catch(err: Error) {
-    this.error(err)
+    this.error(err.errorColor())
     this.exit(1)
   }
 
@@ -110,7 +134,7 @@ export default abstract class extends Command {
   }
 
   public async compactFileNumbers(): Promise<void> {
-    cli.action.start('Compacting file numbers')
+    cli.action.start('Compacting file numbers'.actionStartColor())
     const renumberingDone: string[] = []
     const movePromises: Promise<MoveSummary>[] = []
 
@@ -143,7 +167,7 @@ export default abstract class extends Command {
     }
 
     await Promise.all(movePromises)
-    cli.action.stop(`\n${JSON.stringify(renumberingDone)}`)
+    cli.action.stop(`\n${JSON.stringify(renumberingDone)}`.actionStopColor())
   }
 
   private async addDigitsToFiles(files: string[], newDigitNumber: number, atNumberingStack: boolean): Promise<MoveSummary[]> {
@@ -168,11 +192,12 @@ export default abstract class extends Command {
   }
 }
 
-export const numDigits = function (x: number, buffer = 2) {
+export const numDigits = function(x: number, buffer = 2) {
   return Math.max(Math.floor(Math.log10(Math.abs(x + buffer))), 0) + 1
 }
 
-export const stringifyNumber = function (x: number, digits: number): string { //, unNumbered: boolean): string {
+export const stringifyNumber = function(x: number, digits: number): string {
+  //, unNumbered: boolean): string {
   const s = x.toString()
   const zeroes = Math.max(digits - s.length, 0)
   if (zeroes > 0) {
@@ -182,13 +207,13 @@ export const stringifyNumber = function (x: number, digits: number): string { //
   }
 }
 
-export const sanitizeFileName = function (original: string): string {
+export const sanitizeFileName = function(original: string): string {
   const sanitized = sanitize(original)
   return sanitized
 }
 
 const sanitize_url = require('@braintree/sanitize-url').sanitizeUrl
-export const sanitizeUrl = function (original: string): string {
+export const sanitizeUrl = function(original: string): string {
   const sanitized = sanitize_url(original)
   if (sanitized === 'about:blank') {
     return ''

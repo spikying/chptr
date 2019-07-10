@@ -5,7 +5,8 @@ import * as path from 'path'
 
 import { QueryBuilder } from '../queries'
 
-import Command, { d, listFiles } from './base'
+import { d, listFiles } from './base'
+import Command from './edit-save-base'
 
 const debug = d('command:delete')
 
@@ -98,31 +99,23 @@ export default class Delete extends Command {
     }
 
     if (toDeleteFiles.length === 0) {
-      cli.warn('No files to delete.')
+      cli.warn('No files to delete.'.errorColor())
       cli.exit(0)
     }
 
     try {
-      cli.action.start('Deleting file(s) locally and from repository')
+      cli.action.start('Deleting file(s) locally and from repository'.actionStartColor())
       await this.git.rm(this.context.mapFilesToBeRelativeToRootPath(toDeleteFiles))
       const toDeletePretty = toDeleteFiles.map(f => `\n    ${f}`)
-      cli.action.stop(`${toDeletePretty}\nwere deleted`)
+      cli.action.stop(`${toDeletePretty}\nwere deleted`.actionStopColor())
     } catch (err) {
-      this.error(err)
+      this.error(err.errorColor())
     }
 
     if (compact) {
       await this.compactFileNumbers()
     }
 
-    try {
-      cli.action.start('Pushing to repository')
-      await this.git.commit(`Removed files: ${JSON.stringify(toDeleteFiles)}${compact ? '\nCompacted file numbers' : ''}`)
-      await this.git.push()
-    } catch (err) {
-      this.error(err)
-    } finally {
-      cli.action.stop()
-    }
+    await this.CommitToGit(`Removed files: ${JSON.stringify(toDeleteFiles)}${compact ? '\nCompacted file numbers' : ''}`)
   }
 }

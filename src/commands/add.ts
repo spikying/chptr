@@ -88,7 +88,7 @@ export default class Add extends Command {
     )
 
     try {
-      cli.action.start('Adding file(s) locally and to repository')
+      cli.action.start('Adding file(s) locally and to repository'.actionStartColor())
 
       const allPromises: Promise<void>[] = []
       allPromises.push(createFile(fullPathMD, filledTemplateData, { encoding: 'utf8' }))
@@ -101,9 +101,9 @@ export default class Add extends Command {
       await this.git.add(this.context.mapFilesToBeRelativeToRootPath([fullPathMD, fullPathMeta, fullPathSummary]))
       await this.git.commit(`added ${fullPathMD}, ${fullPathMeta} and ${fullPathSummary}`)
       await this.git.push()
-      cli.action.stop(`Added\n    ${fullPathMD}\n    ${fullPathSummary}\n    ${fullPathMeta}`)
+      cli.action.stop(`Added\n    ${fullPathMD}\n    ${fullPathSummary}\n    ${fullPathMeta}`.actionStopColor())
     } catch (err) {
-      this.error(err)
+      this.error(err.errorColor())
     }
   }
 }

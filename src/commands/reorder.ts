@@ -40,7 +40,7 @@ export default class Reorder extends Command {
 
     const compact = flags.compact
 
-    cli.action.start('Analyzing files')
+    cli.action.start('Analyzing files'.actionStartColor())
 
     const dir = path.join(flags.path as string)
     const originIsAtNumbering = args.origin.toString().substring(0, 1) === '@'
@@ -156,8 +156,8 @@ export default class Reorder extends Command {
 
     debug(`toRenameFiles=${JSON.stringify(toRenameFiles, null, 2)}`)
 
-    cli.action.stop()
-    cli.action.start('Moving files to temp directory')
+    cli.action.stop('done'.actionStopColor())
+    cli.action.start('Moving files to temp directory'.actionStartColor())
 
     let tempDir = ''
     try {
@@ -165,7 +165,7 @@ export default class Reorder extends Command {
       tempDir = fs.mkdtempSync(path.join(dir, tempPrefix))
       debug(`Created temp dir: ${tempDir}`)
     } catch (err) {
-      cli.error(err)
+      cli.error(err.errorColor())
       cli.exit(1)
     }
 
@@ -179,13 +179,13 @@ export default class Reorder extends Command {
       }
       await Promise.all(moveTempPromises)
 
-      cli.action.stop(tempDir)
+      cli.action.stop(tempDir.actionStopColor())
     } catch (err) {
-      cli.error(err)
+      cli.error(err.errorColor())
       cli.exit(1)
     }
 
-    cli.action.start('Moving files to their final states')
+    cli.action.start('Moving files to their final states'.actionStartColor())
     let fileMovesPretty = ''
 
     try {
@@ -205,7 +205,7 @@ export default class Reorder extends Command {
       }
       await Promise.all(moveBackPromises)
     } catch (err) {
-      cli.error(err)
+      cli.error(err.errorColor())
       cli.exit(1)
     }
 
@@ -213,11 +213,11 @@ export default class Reorder extends Command {
       debug(`Deleting temp dir: ${tempDir}`)
       fs.rmdirSync(tempDir)
     } catch (err) {
-      cli.error(err)
+      cli.error(err.errorColor())
       cli.exit(1)
     }
 
-    cli.action.stop(`Moved files${fileMovesPretty}\nDeleted temp folder ${tempDir}`)
+    cli.action.stop(`Moved files${fileMovesPretty}\nDeleted temp folder ${tempDir}`.actionStopColor())
 
     await this.addDigitsToNecessaryStacks()
 
@@ -228,7 +228,7 @@ export default class Reorder extends Command {
     }
 
     // cli.action.start('Commit and push to remote repository')
-    await this.CommitToGit(commitMessage, await this.GetGitListOfStageableFiles())
+    await this.CommitToGit(commitMessage)
     // await this.git.commit(commitMessage)
     // await this.git.push()
     // await this.git.pull()

@@ -1,7 +1,7 @@
 import * as d from 'debug'
 import inquirer = require('inquirer')
 
-import { sanitizeFileName, sanitizeUrl } from './helpers'
+import { sanitizeFileName, sanitizeUrl } from './commands/base'
 
 const debug = d('queries')
 

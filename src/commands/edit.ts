@@ -81,12 +81,12 @@ export default class Edit extends Command {
       this.exit(0)
     }
 
-    cli.action.start('Reading and processing files')
+    cli.action.start('Reading and processing files'.actionStartColor())
     for (const filename of toEditFiles) {
       const fullPath = path.join(this.configInstance.projectRootPath, filename)
       await this.processFileBack(fullPath)
     }
     const toEditPretty = toEditFiles.map(f => `\n    ${f}`)
-    cli.action.stop(`modified file${toEditFiles.length > 1 ? 's' : ''}:${toEditPretty}`)
+    cli.action.stop(`modified file${toEditFiles.length > 1 ? 's' : ''}:${toEditPretty}`.actionStopColor())
   }
 }

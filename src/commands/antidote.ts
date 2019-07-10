@@ -53,7 +53,7 @@ export default class Antidote extends Command {
     const basicFilePath = path.join(this.configInstance.projectRootPath, chapterFileName)
     const antidoteFilePath = this.configInstance.antidotePathName(chapterFileName)
 
-    cli.action.start(`Launching Antidote with ${antidoteFilePath}`)
+    cli.action.start(`Launching Antidote with ${antidoteFilePath}`.actionStartColor())
     await copyFile(basicFilePath, antidoteFilePath)
     await this.turnToUTF8BOM(antidoteFilePath)
     await this.processFileBack(antidoteFilePath)
@@ -64,8 +64,8 @@ export default class Antidote extends Command {
 
     void this.runAntidote([filePath])
 
-    cli.action.stop('done')
-    await cli.anykey('Press any key when Antidote correction is done to continue.')
+    cli.action.stop('done'.actionStopColor())
+    await cli.anykey('Press any key when Antidote correction is done to continue.'.resultHighlighColor())
 
     const queryBuilder2 = new QueryBuilder()
     queryBuilder2.add('message', queryBuilder2.textinput('Message to use in commit to repository? Type `cancel` to skip commit step.', ''))
@@ -90,7 +90,7 @@ export default class Antidote extends Command {
       // const cp =
       exec(command, (err, pout, perr) => {
         if (err) {
-          this.error(err)
+          this.error(err.errorColor())
           reject(err)
         }
         if (perr) {

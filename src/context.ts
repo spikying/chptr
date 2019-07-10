@@ -123,7 +123,7 @@ export class Context {
     return fileNumber
   }
 
-  public async getMetadataFilenameFromParameters(num: number, atNumbering: boolean) {
+  public async getMetadataFilenameFromParameters(num: number, atNumbering: boolean): Promise<string> {
     const files = await globPromise(path.join(this.configInstance.projectRootPath, this.configInstance.metadataWildcardWithNumber(num, atNumbering)))
     return files[0]
   }

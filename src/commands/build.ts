@@ -1,23 +1,24 @@
 import { flags } from '@oclif/command'
-import { exec } from 'child_process';
+import { exec } from 'child_process'
 import cli from 'cli-ux'
 import * as fs from 'fs'
-import * as moment from 'moment';
-import * as path from "path";
+import * as moment from 'moment'
+import * as path from 'path'
 import { file as tmpFile } from 'tmp-promise'
 
-import { QueryBuilder } from '../queries';
+import { QueryBuilder } from '../queries'
 
-import { d, globPromise, readFile, sanitizeFileName, writeFile, writeInFile} from './base';
-import Command from "./edit-save-base"
-const chalk: any = require('chalk')
+import { d, globPromise, sanitizeFileName, writeFile, writeInFile } from './base'
+import Command from './edit-save-base'
 
 const debug = d('command:build')
 
 export default class Build extends Command {
   static readonly exportableFileTypes = ['md', 'pdf', 'docx', 'html', 'epub', 'tex']
 
-  static description = `Takes all original .MD files and outputs a single file without metadata and comments.  Handles these output formats: ${Build.exportableFileTypes.join(', ')}`
+  static description = `Takes all original .MD files and outputs a single file without metadata and comments.  Handles these output formats: ${Build.exportableFileTypes.join(
+    ', '
+  )}`
 
   static flags = {
     ...Command.flags,
@@ -26,29 +27,29 @@ export default class Build extends Command {
       description: 'filetype to export to.  Can be set multiple times.',
       options: Build.exportableFileTypes,
       default: '',
-      multiple: true
+      multiple: true,
     }),
     datetimestamp: flags.boolean({
       char: 'd',
       description: 'adds datetime stamp before output filename',
-      default: false
+      default: false,
     }),
     removemarkup: flags.boolean({
       char: 'r',
       description: 'Remove paragraph numbers and other markup',
-      default: false
+      default: false,
     }),
     compact: flags.boolean({
       char: 'c',
       description: 'Compact chapter numbers at the same time',
-      default: false
+      default: false,
     }),
     showWritingRate: flags.string({
       char: 's',
       description: 'Show word count per day in varying details',
       options: ['all', 'short', 'none', 'export'],
-      default: 'short'
-    })
+      default: 'short',
+    }),
   }
 
   static aliases = ['compile']
@@ -72,27 +73,28 @@ export default class Build extends Command {
     let outputFiletype = flags.filetype
     if (!outputFiletype) {
       const queryBuilder = new QueryBuilder()
-      queryBuilder.add('type', queryBuilder.checkboxinput(Build.exportableFileTypes, "Which filetype(s) to output?", ["md"]))
+      queryBuilder.add('type', queryBuilder.checkboxinput(Build.exportableFileTypes, 'Which filetype(s) to output?', ['md']))
       const queryResponses: any = await queryBuilder.responses()
       outputFiletype = queryResponses.type
     }
 
     await this.CommitToGit('Autosave before build')
 
-    cli.action.start('Compiling and generating Markdown files')
-
-    const tmpMetadataResult = await tmpFile();
+    const tmpMetadataResult = await tmpFile()
     const tempMetadataFd = tmpMetadataResult.fd
     const tempMetadataPath = tmpMetadataResult.path
     const tempMetadataCleanup = tmpMetadataResult.cleanup
     debug(`temp file = ${tempMetadataPath}`)
 
     try {
-      const originalChapterFilesArray = (await globPromise(path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcard(false))))
-        .sort()
+      cli.action.start('Extracting global metadata'.actionStartColor())
+      const originalChapterFilesArray = (await globPromise(path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcard(false)))).sort()
 
-      const allChapterFilesArray = originalChapterFilesArray.concat(await globPromise(path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcard(true))))
+      const allChapterFilesArray = originalChapterFilesArray.concat(
+        await globPromise(path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcard(true)))
+      )
 
+      let markupFilenamesPretty = ''
       const extractPromises: Promise<MarkupObj[]>[] = []
       allChapterFilesArray.forEach(c => {
         extractPromises.push(this.extractMarkup(c))
@@ -105,12 +107,23 @@ export default class Build extends Command {
         await writeFile(path.join(this.configInstance.buildDirectory, `${outputFile}.markupByFile.json`), JSON.stringify(markupByFile, null, 4))
         await writeFile(path.join(this.configInstance.buildDirectory, `${outputFile}.markupByType.json`), JSON.stringify(markupByType, null, 4))
 
-        await this.writeMetadataInEachFile(markupByFile)
+        const modifiedMetadataFiles = await this.writeMetadataInEachFile(markupByFile)
+
+        // for (const file of Object.keys(markupByFile)) {
+          
+        markupFilenamesPretty = modifiedMetadataFiles.reduce((previous, current) => `${previous}\n    ${current}`,'')
+        // }
       })
+
+      cli.action.stop(`updated these files:\n    ${outputFile}.markupByFile.json\n    ${outputFile}.markupByType.json${markupFilenamesPretty}`.actionStopColor())
 
       await this.CommitToGit('Autosave markup updates')
 
-      const allMetadataFilesArray = (await globPromise(path.join(this.configInstance.projectRootPath, this.configInstance.metadataWildcard(false)))).concat(await globPromise(path.join(this.configInstance.projectRootPath, this.configInstance.metadataWildcard(true))))
+      cli.info('Extracting metadata for all chapters files'.infoColor())
+
+      const allMetadataFilesArray = (await globPromise(path.join(this.configInstance.projectRootPath, this.configInstance.metadataWildcard(false)))).concat(
+        await globPromise(path.join(this.configInstance.projectRootPath, this.configInstance.metadataWildcard(true)))
+      )
 
       const metaExtractPromises: Promise<MetaObj[]>[] = []
       allMetadataFilesArray.forEach(m => {
@@ -123,10 +136,10 @@ export default class Build extends Command {
         const mappedDiffArray = flattenedMetaArray.map(m => ({ file: m.log.file, date: m.log.date.format('YYYY-MM-DD'), diff: m.wordCountDiff }))
 
         if (exportWritingRate) {
-          cli.action.start('Writing rate CSV file')
+          cli.action.start('Writing rate CSV file'.actionStartColor())
           let csvContent = 'Date;Chapter Number;Word Count Diff\n'
 
-          mappedDiffArray.forEach((m: { date: any; file: any; diff: any; }) => {
+          mappedDiffArray.forEach((m: { date: any; file: any; diff: any }) => {
             const isAtNumbering = this.configInstance.isAtNumbering(m.file)
             const chapterNumberMatch = this.configInstance.metadataRegex(isAtNumbering).exec(m.file)
             const chapterNumber = chapterNumberMatch ? (isAtNumbering ? '@' : '') + chapterNumberMatch[1] : '?'
@@ -134,10 +147,10 @@ export default class Build extends Command {
           })
           const writingRateFilePath = path.join(this.configInstance.buildDirectory, 'writingRate.csv')
           await writeFile(writingRateFilePath, csvContent)
-          cli.action.stop(`Created ${writingRateFilePath}`)
+          cli.action.stop(`Created ${writingRateFilePath}`.actionStopColor())
         }
 
-        mappedDiffArray.forEach((m: { date: any; file: any; diff: any; }) => {
+        mappedDiffArray.forEach((m: { date: any; file: any; diff: any }) => {
           if (!diffByDate[m.date]) {
             diffByDate[m.date] = { total: 0 }
           }
@@ -150,13 +163,14 @@ export default class Build extends Command {
         })
 
         if (showWritingRate) {
-          cli.info(`Writing rate:`)
-          for (const date of Object.keys(diffByDate)) {
+          cli.info(`Writing rate:`.infoColor())
+          for (const date of Object.keys(diffByDate).sort()) {
             const table: any[] = []
+            const total: string = diffByDate[date].total.toString()
             const output = {
-              summary: chalk`{whiteBright ${date}} ->\t{redBright ${(diffByDate[date].total)}}`,
+              summary: `${date.resultNormalColor()} ->\t${total.resultHighlighColor()}`,
               details: '',
-              table
+              table,
             }
             cli.info(output.summary)
 
@@ -165,37 +179,39 @@ export default class Build extends Command {
                 if (metafile !== 'total') {
                   const isAtNumbering = this.configInstance.isAtNumbering(metafile)
                   const chapterNumberMatch = this.configInstance.metadataRegex(isAtNumbering).exec(metafile)
-                  let chapterNumber = chapterNumberMatch ? (isAtNumbering ? '@' : '') + chapterNumberMatch[1] : '?'
-                  chapterNumber = chalk.gray(' '.repeat(14 - chapterNumber.length) + chapterNumber)
-                  const wordDiff = chalk.magenta(diffByDate[date][metafile])
 
-                  output.details += chalk`    {gray chapter file #} {blue ${(chapterNumber)}} ->\t{red ${(diffByDate[date][metafile])}}\n`
+                  let chapterNumber = chapterNumberMatch ? (isAtNumbering ? '@' : '') + chapterNumberMatch[1] : '?'
+                  chapterNumber = (' '.repeat(14 - chapterNumber.length) + chapterNumber).infoColor()
+
+                  let wordDiff: string = diffByDate[date][metafile].toString()
+                  wordDiff = wordDiff.resultSecondaryColor()
+
                   output.table.push({ chapterNumber, wordDiff })
                 }
               }
 
               cli.table(output.table, {
                 chapterNumber: {
-                  header: chalk`{gray Chapter file #}`,
-                  minWidth: 15
+                  header: `${'Chapter file #'.infoColor()}`,
+                  minWidth: 15,
                 },
                 ' ->': {
-                  get: () => ''
+                  get: () => '',
                 },
                 wordDiff: {
-                  header: chalk`{gray Word diff}`
-                }
+                  header: `${'Word diff'.infoColor()}`,
+                },
               })
             }
           }
         }
-
       })
 
+      cli.action.start('Compiling and generating Markdown files'.actionStartColor())
 
       let fullOriginalContent = this.configInstance.globalMetadataContent
       for (const file of originalChapterFilesArray) {
-        fullOriginalContent += '\n' + await this.readFileContent(file)
+        fullOriginalContent += '\n' + (await this.readFileContent(file))
       }
       const fullCleanedOrTransformedContent = removeMarkup ? this.cleanMarkupContent(fullOriginalContent) : this.transformMarkupContent(fullOriginalContent)
       await writeInFile(tempMetadataFd, fullCleanedOrTransformedContent)
@@ -220,8 +236,7 @@ export default class Build extends Command {
           const referenceDocFullPath = path.join(this.configInstance.configPath, 'reference.docx')
           if (fs.existsSync(referenceDocFullPath)) {
             pandocArgs = pandocArgs.concat([`--reference-docx="${referenceDocFullPath}"`])
-          }
-          else {
+          } else {
             this.warn(`For a better output, create an empty styled Word doc at ${referenceDocFullPath}`)
           }
           pandocArgs = pandocArgs.concat(['--toc', '--toc-depth', '2', '--top-level-division=chapter', '--number-sections'])
@@ -231,28 +246,34 @@ export default class Build extends Command {
           const templateFullPath = path.join(this.configInstance.configPath, 'template.html')
           if (fs.existsSync(templateFullPath)) {
             pandocArgs = pandocArgs.concat([`--template`, `"${templateFullPath}"`])
-          }
-          else {
+          } else {
             this.warn(`For a better output, create an html template at ${templateFullPath}`)
           }
 
           const cssFullPath = path.join(this.configInstance.configPath, 'template.css')
           if (fs.existsSync(cssFullPath)) {
             pandocArgs = pandocArgs.concat([`--css`, `"${cssFullPath}"`])
-          }
-          else {
+          } else {
             this.warn(`For a better output, create a css template at ${cssFullPath}`)
           }
 
-          pandocArgs = pandocArgs.concat(['--to', 'html5', '--toc', '--toc-depth', '2', '--top-level-division=chapter', '--number-sections', '--self-contained'])
+          pandocArgs = pandocArgs.concat([
+            '--to',
+            'html5',
+            '--toc',
+            '--toc-depth',
+            '2',
+            '--top-level-division=chapter',
+            '--number-sections',
+            '--self-contained',
+          ])
         }
 
         if (filetype === 'pdf' || filetype === 'tex') {
           const templateFullPath = path.join(this.configInstance.configPath, 'template.latex')
           if (fs.existsSync(templateFullPath)) {
             pandocArgs = pandocArgs.concat([`--template`, `"${templateFullPath}"`])
-          }
-          else {
+          } else {
             this.warn(`For a better output, create a latex template at ${templateFullPath}`)
           }
 
@@ -266,25 +287,24 @@ export default class Build extends Command {
         try {
           pandocRuns.push(this.runPandoc(pandocArgs))
         } catch (err) {
-          this.error(err)
-          cli.action.status = "error"
+          this.error(err.errorColor())
+          cli.action.status = 'error'.errorColor()
           this.exit(1)
         }
-
       })
 
       await Promise.all(pandocRuns)
 
-      cli.action.stop(JSON.stringify(allOutputFilePath))
+      const allOutputFilePathPretty = allOutputFilePath.reduce((previous, current) => `${previous}\n    ${current}`, '')
+      cli.action.stop(allOutputFilePathPretty.actionStopColor())
 
       if (compact) {
         await this.compactFileNumbers()
         await this.CommitToGit('Compacted file numbers')
       }
-
     } catch (err) {
-      cli.action.status = "error"
-      this.error(err)
+      cli.action.status = 'error'.errorColor()
+      this.error(err.errorColor())
       this.exit(1)
     } finally {
       await tempMetadataCleanup()
@@ -297,7 +317,7 @@ export default class Build extends Command {
       debug(`Executing child process with command ${command}`)
       exec(command, (err, pout, perr) => {
         if (err) {
-          this.error(err)
+          this.error(err.errorColor())
           reject(err)
         }
         if (perr) {
@@ -309,7 +329,6 @@ export default class Build extends Command {
         }
         resolve()
       })
-
     })
   }
 
@@ -317,7 +336,8 @@ export default class Build extends Command {
     const paragraphBreakRegex = new RegExp(this.paragraphBreakChar + '{{\\d+}}\\n', 'g')
     const sentenceBreakRegex = new RegExp(this.sentenceBreakChar + '\\s?', 'g')
 
-    const replacedContent = initialContent.replace(paragraphBreakRegex, '')
+    const replacedContent = initialContent
+      .replace(paragraphBreakRegex, '')
       .replace(/{.*?:.*?} ?/gm, ' ')
       .replace(sentenceBreakRegex, '  ')
 
@@ -328,7 +348,7 @@ export default class Build extends Command {
     const paragraphBreakRegex = new RegExp(this.paragraphBreakChar + '{{(\\d+)}}\\n', 'g')
     let markupCounter = 0
 
-    const transformInFootnote = function (initial: string): { replaced: string, didReplacement: boolean } {
+    const transformInFootnote = function(initial: string): { replaced: string; didReplacement: boolean } {
       let didReplacement = false
       const replaced = initial.replace(/(.*){(.*?)\s?:\s?(.*?)} *(.*)$/m, (_full, one, two, three, four) => {
         markupCounter++
@@ -357,22 +377,20 @@ export default class Build extends Command {
       const markupRegex = /(?:{{(\d+)}}\n)?.*?{(.*?)\s?:\s?(.*?)}/gm
       let regexArray: RegExpExecArray | null
       while ((regexArray = markupRegex.exec(initialContent)) !== null) {
-        resultArray.push(
-          {
-            filename: path.basename(filepath),
-            paragraph: parseInt((regexArray[1] || '1'), 10),
-            type: regexArray[2].toLowerCase(),
-            value: regexArray[3],
-            computed: false
-          }
-        )
+        resultArray.push({
+          filename: path.basename(filepath),
+          paragraph: parseInt(regexArray[1] || '1', 10),
+          type: regexArray[2].toLowerCase(),
+          value: regexArray[3],
+          computed: false,
+        })
       }
       const wordCount = this.GetWordCount(initialContent)
       resultArray.push({
         filename: path.basename(filepath),
         type: 'wordCount',
         value: wordCount,
-        computed: true
+        computed: true,
       })
     } catch (error) {
       this.error(error)
@@ -389,7 +407,7 @@ export default class Build extends Command {
     return match ? match.length : 0
   }
 
-  private objectifyMarkupArray(flattenedMarkupArray: MarkupObj[]): { markupByFile: MarkupByFile, markupByType: any } {
+  private objectifyMarkupArray(flattenedMarkupArray: MarkupObj[]): { markupByFile: MarkupByFile; markupByType: any } {
     const markupByFile: MarkupByFile = {}
     const markupByType: any = {}
 
@@ -410,12 +428,13 @@ export default class Build extends Command {
           markupByType.totalWordCount += markup.value
         }
       }
-
     })
     return { markupByFile, markupByType }
   }
 
-  private async writeMetadataInEachFile(markupByFile: any) {
+  private async writeMetadataInEachFile(markupByFile: any): Promise<string[]> {
+    const modifiedFiles: string[] = []
+    
     for (const file of Object.keys(markupByFile)) {
       const extractedMarkup: any = {}
       const computedMarkup: any = {}
@@ -433,29 +452,36 @@ export default class Build extends Command {
             extractedMarkup[markup.type] = markup.value
           }
         }
-      });
+      })
 
       const num = this.context.extractNumber(file)
       const isAt = this.configInstance.isAtNumbering(file)
+
       const metadataFilename = await this.context.getMetadataFilenameFromParameters(num, isAt)
-      const buff = await readFile(path.join(this.configInstance.projectRootPath, metadataFilename))
-      const initialContent = await buff.toString('utf8', 0, buff.byteLength)
+      const metadataFilePath = path.join(this.configInstance.projectRootPath, metadataFilename)
+      // const buff = await readFile(path.join(this.configInstance.projectRootPath, metadataFilename))
+      // const initialContent = await buff.toString('utf8', 0, buff.byteLength)
+      const initialContent = await this.readFileContent(metadataFilePath)
       const obj = JSON.parse(initialContent)
       obj.extracted = extractedMarkup
       obj.computed = computedMarkup
 
-      await writeFile(path.join(this.configInstance.projectRootPath, metadataFilename), JSON.stringify(obj, null, 4))
+      const updatedContent = JSON.stringify(obj, null, 4)
+      if (initialContent !== updatedContent) {
+        await writeFile(metadataFilePath, updatedContent)
+        modifiedFiles.push( metadataFilePath)
+      } 
     }
-
+    return modifiedFiles
   }
 
   private async extractMeta(filepath: string, extractAll: boolean): Promise<MetaObj[]> {
     const file = path.basename(filepath)
     const beginBlock = '########'
-    const endFormattedBlock = '------------------------ >8 ------------------------';
+    const endFormattedBlock = '------------------------ >8 ------------------------'
     const gitLogArgs = ['log', '-c', '--follow', `--pretty=format:"${beginBlock}%H;%aI;%s${endFormattedBlock}"`]
     if (!extractAll) {
-      gitLogArgs.push(`--since="${moment().add(-1, "week")}"`)
+      gitLogArgs.push(`--since="${moment().add(-1, 'week')}"`)
     }
     const logListString = (await this.git.raw([...gitLogArgs, file])) || ''
     const logList = logListString
@@ -469,12 +495,14 @@ export default class Build extends Command {
         const wcRegex = /^([+-])\s*\"wordCount\": (\d+)/
         const diffArray = s.length === 2 ? s[1].split('\n').filter(n => n !== '' && wcRegex.test(n)) : []
 
-        const wordCountDiff = diffArray.map(d => {
-          const match = wcRegex.exec(d)
-          return match ? parseInt(`${match[1]}${match[2]}`, 10) : 0
-        }).reduce((previous, current) => {
-          return previous + current
-        }, 0)
+        const wordCountDiff = diffArray
+          .map(d => {
+            const match = wcRegex.exec(d)
+            return match ? parseInt(`${match[1]}${match[2]}`, 10) : 0
+          })
+          .reduce((previous, current) => {
+            return previous + current
+          }, 0)
 
         return { log, wordCountDiff }
       })
@@ -502,10 +530,12 @@ interface MarkupObj {
 }
 
 interface MarkupByFile {
-  [filename: string]: [{
-    paragraph?: number
-    type: string
-    value: string | number
-    computed: boolean
-  }]
+  [filename: string]: [
+    {
+      paragraph?: number
+      type: string
+      value: string | number
+      computed: boolean
+    }
+  ]
 }

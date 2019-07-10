@@ -84,7 +84,7 @@ export default abstract class extends Command {
     toStageFiles = toStageFiles || (await this.GetGitListOfStageableFiles())
     if (toStageFiles.length > 0) {
       try {
-        cli.action.start('Saving file(s) in repository')
+        cli.action.start('Saving file(s) in repository'.actionStartColor())
 
         await this.processChapterFilesBeforeSaving(toStageFiles)
 
@@ -98,9 +98,11 @@ export default abstract class extends Command {
 
         debug(`commitSummary:\n${JSON.stringify(commitSummary)}`)
         const toStagePretty = toStageFiles.map(f => `\n    ${f}`)
-        cli.action.stop(`Commited and pushed ${commitSummary.commit}:\n${message}\nFile${toStageFiles.length > 1 ? 's' : ''}:${toStagePretty}`)
+        cli.action.stop(
+          `Commited and pushed ${commitSummary.commit}:\n${message}\nFile${toStageFiles.length > 1 ? 's' : ''}:${toStagePretty}`.actionStopColor()
+        )
       } catch (err) {
-        this.error(err)
+        this.error(err.errorColor())
       }
     }
   }

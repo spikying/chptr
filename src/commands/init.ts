@@ -97,7 +97,7 @@ export default class Init extends Command {
     // Create folder structure, with /config
     try {
       await createDir(this.configInstance.configPath)
-      cli.info(`Created directory ${this.configInstance.configPath}`)
+      cli.info(`Created directory ${this.configInstance.configPath}`.infoColor())
     } catch {
       // If directory already exists, silently swallow the error
     }
@@ -146,7 +146,7 @@ eol=lf
 
     // Create git repo
     try {
-      cli.action.start('Creating git repository')
+      cli.action.start('Creating git repository'.actionStartColor())
 
       const isRepo = await this.git.checkIsRepo()
       if (!isRepo) {
@@ -171,12 +171,12 @@ eol=lf
         await this.git.pull('origin', 'master')
       }
     } catch (err) {
-      this.warn(err)
+      this.warn(err.errorColor())
     } finally {
-      cli.action.stop()
+      cli.action.stop('done'.actionStopColor())
     }
 
-    cli.info('End of initialization')
+    cli.info('End of initialization'.infoColor())
   }
 
   private async createFile(fullPathName: string, content: string) {
@@ -192,10 +192,10 @@ eol=lf
         // cli.action.start(`Creating ${baseName}`)
         await createFile(fullPathName, content)
       } catch (err) {
-        this.error(err)
+        this.error(err.errorColor())
         this.exit(1)
       } finally {
-        cli.info(`Created ${fullPathName}`)
+        cli.info(`Created ${fullPathName}`.infoColor())
       }
     }
   }
