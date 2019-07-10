@@ -290,6 +290,10 @@ date: ${moment().format('D MMMM YYYY')}
     return new RegExp('^' + this.config.chapterPattern.replace('NUM', this.numbersPattern(atNumber)).replace('NAME', '(.*)'))
   }
 
+  public metadataRegex(atNumber: boolean): RegExp {
+    return new RegExp('^' + this.config.metadataPattern.replace('NUM', this.numbersPattern(atNumber)).replace('NAME', '(.*)'))
+  }
+
   public numbersPattern(atNumber: boolean): string {
     return atNumber ? '@(\\d+)' : '(\\d+)'
   }

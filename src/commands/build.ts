@@ -11,6 +11,7 @@ import { QueryBuilder } from '../queries';
 
 import { d, globPromise, readFile, writeFile, writeInFile } from './base';
 import Command from "./edit-save-base"
+const chalk: any = require('chalk')
 
 const debug = d('command:build')
 
@@ -23,7 +24,7 @@ export default class Build extends Command {
     ...Command.flags,
     filetype: flags.string({
       char: 't',
-      description: 'filetype to export in.  Can be set multiple times.',
+      description: 'filetype to export to.  Can be set multiple times.',
       options: Build.exportableFileTypes,
       default: '',
       multiple: true
@@ -42,16 +43,14 @@ export default class Build extends Command {
       char: 'c',
       description: 'Compact chapter numbers at the same time',
       default: false
+    }),
+    showWritingRate: flags.string({
+      char: 's',
+      description: 'Show word count per day in varying details',
+      options: ['all', 'short', 'none', 'export'],
+      default: 'short'
     })
   }
-
-  // static args = [
-  //   {
-  //     name: 'outputfile',
-  //     default: '',
-  //     description: "output filename, without extension, concatenating all other files's contents"
-  //   }
-  // ]
 
   static aliases = ['compile']
 
@@ -63,6 +62,11 @@ export default class Build extends Command {
     const removeMarkup = flags.removemarkup
     const compact = flags.compact
 
+    const wrOption = flags.showWritingRate
+    const showWritingRate = wrOption === 'all' || wrOption === 'short' || wrOption === 'export'
+    const showWritingRateDetails = wrOption === 'all' || wrOption === 'export'
+    const exportWritingRate = wrOption === 'export'
+
     const outputFileBase = sanitizeFileName(this.configInstance.config.projectTitle)
     const outputFile = `${flags.datetimestamp ? moment().format('YYYYMMDD.HHmm ') : ''}${outputFileBase}`
 
@@ -73,9 +77,8 @@ export default class Build extends Command {
       const queryResponses: any = await queryBuilder.responses()
       outputFiletype = queryResponses.type
     }
-    debug(`outputFileTypes= ${JSON.stringify(outputFiletype)}`)
+    // debug(`outputFileTypes= ${JSON.stringify(outputFiletype)}`)
 
-    // await Save.run([`--path=${flags.path}`, '--no-warning', 'Autosave before build'])
     const toStageFiles = await this.GetGitListOfStageableFiles(null, false)
     await this.CommitToGit('Autosave before build', toStageFiles)
 
@@ -93,8 +96,8 @@ export default class Build extends Command {
 
       const allChapterFilesArray = originalChapterFilesArray.concat(await globPromise(path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcard(true))))
 
-      debug(`originalChapterFilesArray: \n${originalChapterFilesArray}`)
-      debug(`allChapterFilesArray: \n${allChapterFilesArray}`)
+      // debug(`originalChapterFilesArray: \n${originalChapterFilesArray}`)
+      // debug(`allChapterFilesArray: \n${allChapterFilesArray}`)
 
       const extractPromises: Promise<MarkupObj[]>[] = []
       allChapterFilesArray.forEach(c => {
@@ -114,12 +117,121 @@ export default class Build extends Command {
       const toStageFiles = await this.GetGitListOfStageableFiles(null, false)
       await this.CommitToGit('Autosave markup updates', toStageFiles)
 
+      const allMetadataFilesArray = (await globPromise(path.join(this.configInstance.projectRootPath, this.configInstance.metadataWildcard(false)))).concat(await globPromise(path.join(this.configInstance.projectRootPath, this.configInstance.metadataWildcard(true))))
+      // debug(`allMetadataFilesArray ${JSON.stringify(allMetadataFilesArray)}`)
+      const metaExtractPromises: Promise<MetaObj[]>[] = []
+      allMetadataFilesArray.forEach(m => {
+        metaExtractPromises.push(this.extractMeta(m, exportWritingRate))
+      })
+      await Promise.all(metaExtractPromises).then(async fullMetaArray => {
+        const flattenedMetaArray: MetaObj[] = ([] as MetaObj[]).concat(...fullMetaArray).filter(m => m.wordCountDiff !== 0)
+        // debug(`flattenedMetaArray: ${JSON.stringify(flattenedMetaArray, null, 2)}`)
+
+        // const diffByFile: any = {}
+        const diffByDate: any = {}
+
+        const mappedDiffArray = flattenedMetaArray.map(m => ({ file: m.log.file, date: m.log.date.format('YYYY-MM-DD'), diff: m.wordCountDiff }))
+
+        if (exportWritingRate) {
+          cli.action.start('Writing rate CSV file')
+          let csvContent = 'Date;Chapter Number;Word Count Diff\n'
+
+          mappedDiffArray.forEach((m: { date: any; file: any; diff: any; }) => {
+            const isAtNumbering = this.configInstance.isAtNumbering(m.file)
+            const chapterNumberMatch = this.configInstance.metadataRegex(isAtNumbering).exec(m.file)
+            const chapterNumber = chapterNumberMatch ? (isAtNumbering ? '@' : '') + chapterNumberMatch[1] : '?'
+            csvContent += `${m.date};${chapterNumber};${m.diff}\n`
+          })
+          // debug(`csvContent=\n${csvContent}`)
+          const writingRateFilePath = path.join(this.configInstance.buildDirectory, 'writingRate.csv')
+          await writeFile(writingRateFilePath, csvContent)
+          cli.action.stop(`Created ${writingRateFilePath}`)
+        }
+
+        mappedDiffArray.forEach((m: { date: any; file: any; diff: any; }) => {
+          // if (!diffByFile[m.file]) {
+          //   diffByFile[m.file] = {}
+          // }
+
+          // if (!diffByFile[m.file][m.date]) {
+          //   diffByFile[m.file][m.date] = m.diff
+          // } else {
+          //   diffByFile[m.file][m.date] += m.diff
+          // }
+          debug(`line m: ${JSON.stringify(m)}`)
+          if (!diffByDate[m.date]) {
+            diffByDate[m.date] = { total: 0 }
+          }
+          if (!diffByDate[m.date][m.file]) {
+            diffByDate[m.date][m.file] = m.diff
+          } else {
+            diffByDate[m.date][m.file] += m.diff
+          }
+          diffByDate[m.date].total += m.diff
+        })
+
+        debug(`diffByDate: ${JSON.stringify(diffByDate, null, 2)}`)
+
+        debug(`wrOption: ${wrOption}, show: ${showWritingRate}, details: ${showWritingRateDetails}`)
+
+        if (showWritingRate) {
+          cli.info(`Writing rate:`)
+          for (const date of Object.keys(diffByDate)) {
+            const table: any[] = []
+            const output = {
+              summary: chalk`{whiteBright ${date}} ->\t{redBright ${(diffByDate[date].total)}}`,
+              details: '',
+              table
+            }
+            // cli.info(`${date}\t->\t${diffByDate[date].total}`)
+            cli.info(output.summary)
+
+            if (showWritingRateDetails) {
+              for (const metafile of Object.keys(diffByDate[date])) {
+                if (metafile !== 'total') {
+                  // const chapterNumber = this.configInstance.metadataRegex(false).test(metafile) ? metafile.replace(this.configInstance.metadataRegex(false), '$1') :
+                  //   (this.configInstance.metadataRegex(true).test(metafile) ? metafile.replace(this.configInstance.metadataRegex(true), '$1') : '?')
+
+                  const isAtNumbering = this.configInstance.isAtNumbering(metafile)
+                  const chapterNumberMatch = this.configInstance.metadataRegex(isAtNumbering).exec(metafile)
+                  let chapterNumber = chapterNumberMatch ? (isAtNumbering ? '@' : '') + chapterNumberMatch[1] : '?'
+                  chapterNumber = chalk.gray(' '.repeat(14 - chapterNumber.length) + chapterNumber)
+                  const wordDiff = chalk.magenta(diffByDate[date][metafile])
+
+                  output.details += chalk`    {gray chapter file #} {blue ${(chapterNumber)}} ->\t{red ${(diffByDate[date][metafile])}}\n`
+                  // cli.info(`    chapter file# ${chapterNumber}\t->\t${diffByDate[date][metafile]}`)
+                  output.table.push({ chapterNumber, wordDiff })
+                }
+              }
+
+              // cli.annotation(output.summary, output.details)
+              // cli.info(output.details)
+              cli.table(output.table, {
+                chapterNumber: {
+                  header: chalk`{gray Chapter file #}`,
+                  minWidth: 15
+                },
+                ' ->': {
+                  get: () => ''
+                },
+                wordDiff: {
+                  header: chalk`{gray Word diff}`
+                }
+              })
+            }
+
+          }
+        }
+
+
+      })
+
 
       let fullOriginalContent = this.configInstance.globalMetadataContent
       for (const file of originalChapterFilesArray) {
         fullOriginalContent += '\n' + await this.readFileContent(file)
       }
-      debug(`fullOriginalContent=\n${fullOriginalContent}`)
+      // debug(`fullOriginalContent=\n${fullOriginalContent}`)
       const fullCleanedOrTransformedContent = removeMarkup ? this.cleanMarkupContent(fullOriginalContent) : this.transformMarkupContent(fullOriginalContent)
       await writeInFile(tempMetadataFd, fullCleanedOrTransformedContent)
 
@@ -132,7 +244,7 @@ export default class Build extends Command {
       outputFiletype.forEach(filetype => {
         const fullOutputFilePath = path.join(buildDirectory, outputFile + '.' + filetype)
         allOutputFilePath.push(fullOutputFilePath)
-        debug(`fullOutputFilePath= ${fullOutputFilePath}`)
+        // debug(`fullOutputFilePath= ${fullOutputFilePath}`)
 
         let pandocArgs = [chapterFiles, '--smart', '--standalone', '-o', `"${fullOutputFilePath}"`] //
 
@@ -204,7 +316,6 @@ export default class Build extends Command {
       if (compact) {
         cli.action.start('Compacting file numbers')
         await this.compactFileNumbers()
-        // await Save.run([`--path=${flags.path}`, 'Compacted file numbers'])
         const toStageFiles = await this.GetGitListOfStageableFiles(null, false)
         await this.CommitToGit('Compacted file numbers', toStageFiles)
         cli.action.stop()
@@ -242,18 +353,6 @@ export default class Build extends Command {
     })
   }
 
-  // private async cleanMarkup(filepath: string): Promise<void> {
-  //   try {
-  //     const initialContent = await this.readFileContent(filepath)
-  //     const replacedContent = this.cleanMarkupContent(initialContent)
-
-  //     await writeFile(filepath, replacedContent, 'utf8')
-  //   } catch (error) {
-  //     this.error(error)
-  //     this.exit(1)
-  //   }
-  // }
-
   private cleanMarkupContent(initialContent: string): string {
     const paragraphBreakRegex = new RegExp(this.paragraphBreakChar + '{{\\d+}}\\n', 'g')
     const sentenceBreakRegex = new RegExp(this.sentenceBreakChar + '\\s?', 'g')
@@ -265,27 +364,15 @@ export default class Build extends Command {
     return replacedContent
   }
 
-  // private async transformMarkup(filepath: string): Promise<void> {
-  //   try {
-  //     const initialContent = await this.readFileContent(filepath)
-  //     const replacedContent = this.transformMarkupContent(initialContent)
-
-  //     await writeFile(filepath, replacedContent, 'utf8')
-  //   } catch (error) {
-  //     this.error(error)
-  //     this.exit(1)
-  //   }
-  // }
-
   private transformMarkupContent(initialContent: string): string {
     const paragraphBreakRegex = new RegExp(this.paragraphBreakChar + '{{(\\d+)}}\\n', 'g')
-    let markupCounter = 0 // markupCounter || 1
+    let markupCounter = 0
 
     const transformInFootnote = function (initial: string): { replaced: string, didReplacement: boolean } {
       let didReplacement = false
-      const replaced = initial.replace(/(.*){(.*?)\s?:\s?(.*?)} *(.*)$/m, (full, one, two, three, four) => {
+      const replaced = initial.replace(/(.*){(.*?)\s?:\s?(.*?)} *(.*)$/m, (_full, one, two, three, four) => {
         markupCounter++
-        debug(`full: ${full} one: ${one} two: ${two} three:${three} four:${four}`)
+        // debug(`full: ${full} one: ${one} two: ${two} three:${three} four:${four}`)
         didReplacement = didReplacement || (two && three)
         return `${one} ~_${two}_~[^${markupCounter}]  ${four}\n\n[^${markupCounter}]: ${three}\n\n`
       })
@@ -300,13 +387,8 @@ export default class Build extends Command {
       replacedContent = replaced
       continueReplacing = didReplacement
     }
-    //   .replace(/(.*){(.*?)\s?:\s?(.*?)} *(.*)$/m, (full, one, two, three, four) => {
-    //   markupCounter++
-    //   debug(`full: ${full} one: ${one} two: ${two} three:${three} four:${four}`)
-    //   return `${one} ~_${two}_~[^${markupCounter}]  ${four}\n\n[^${markupCounter}]: ${three}\n\n`
-    // })
 
-    debug(`transformedMarkup: ${replacedContent}`)
+    // debug(`transformedMarkup: ${replacedContent}`)
     return replacedContent
   }
 
@@ -314,7 +396,7 @@ export default class Build extends Command {
     const resultArray: MarkupObj[] = []
     try {
       const initialContent = await this.readFileContent(filepath)
-      const markupRegex = /(?:{{(\d+)}}\n)?.*?{(.*?)\s?:\s?(.*?)}/gm //  /(?:{{(\d+)}}\n)?.*{(.*)\s?:\s?(.*)}/gm
+      const markupRegex = /(?:{{(\d+)}}\n)?.*?{(.*?)\s?:\s?(.*?)}/gm
       let regexArray: RegExpExecArray | null
       while ((regexArray = markupRegex.exec(initialContent)) !== null) {
         resultArray.push(
@@ -354,7 +436,7 @@ export default class Build extends Command {
     const markupByType: any = {}
 
     flattenedMarkupArray.forEach(markup => {
-      debug(`***Markup: ${JSON.stringify(markup, null, 2)}`)
+      // debug(`***Markup: ${JSON.stringify(markup, null, 2)}`)
       markupByFile[markup.filename] = markupByFile[markup.filename] || []
       if (markup.computed) {
         markupByFile[markup.filename].push({ computed: true, type: markup.type, value: markup.value })
@@ -381,7 +463,7 @@ export default class Build extends Command {
       const extractedMarkup: any = {}
       const computedMarkup: any = {}
       const markupArray = markupByFile[file]
-      debug(`file: ${file} markup: ${JSON.stringify(markupArray)}`)
+      // debug(`file: ${file} markup: ${JSON.stringify(markupArray)}`)
       markupArray.forEach((markup: MarkupObj) => {
         if (markup.computed) {
           computedMarkup[markup.type] = markup.value
@@ -397,7 +479,7 @@ export default class Build extends Command {
         }
       });
 
-      debug(`markupForFile: ${JSON.stringify(extractedMarkup, null, 2)}`)
+      // debug(`markupForFile: ${JSON.stringify(extractedMarkup, null, 2)}`)
       const num = this.context.extractNumber(file)
       const isAt = this.configInstance.isAtNumbering(file)
       const metadataFilename = await this.context.getMetadataFilenameFromParameters(num, isAt)
@@ -407,12 +489,128 @@ export default class Build extends Command {
       obj.extracted = extractedMarkup
       obj.computed = computedMarkup
 
-      debug(`metadataFilename: ${metadataFilename} obj: \n${JSON.stringify(obj, null, 2)}`)
+      // debug(`metadataFilename: ${metadataFilename} obj: \n${JSON.stringify(obj, null, 2)}`)
       await writeFile(path.join(this.configInstance.projectRootPath, metadataFilename), JSON.stringify(obj, null, 4))
     }
 
   }
 
+  private async extractMeta(filepath: string, extractAll: boolean): Promise<MetaObj[]> {
+    const versions: MetaObj[] = []
+    const file = path.basename(filepath)
+    // debug(`file ${file}`)
+    const beginBlock = '########'
+    const endFormattedBlock = '------------------------ >8 ------------------------';
+    const gitLogArgs = ['log', '-c', '--follow', `--pretty=format:"${beginBlock}%H;%aI;%s${endFormattedBlock}"`]
+    if (!extractAll) {
+      gitLogArgs.push(`--since="${moment().add(-1, "week")}"`)
+    }
+    const logListString = (await this.git.raw([...gitLogArgs, file])) || ''
+    const logList = logListString
+      .split(beginBlock)
+      .filter(l => l !== '')
+      .map(l => {
+        const s = l.split(endFormattedBlock)
+        const logArray = s[0].split(';')
+        const log = { file, hash: logArray[0], date: moment(logArray[1]), subject: logArray[2] }
+
+        const wcRegex = /^([+-])\s*\"wordCount\": (\d+)/
+        const diffArray = s.length === 2 ? s[1].split('\n').filter(n => n !== '' && wcRegex.test(n)) : []
+
+        // const diffs = diffArray.map(d => {
+        //   const match = wcRegex.exec(d)
+        //   return match ? { sign: match[1], quantity: parseInt(match[2], 10) } : { sign: '', quantity: 0 }
+        // })
+
+        const wordCountDiff = diffArray.map(d => {
+          const match = wcRegex.exec(d)
+          return match ? parseInt(`${match[1]}${match[2]}`, 10) : 0
+        }).reduce((previous, current) => {
+          return previous + current
+        }, 0)
+
+        return { log, wordCountDiff }
+      })
+    // debug(`logList ${JSON.stringify(logList, null, 2)}`)
+
+    return logList
+
+    /* const revList = (await this.git.raw(['rev-list', '--all', '--objects', '--', file])).split('\n')
+    // debug(`logList ${revList}`)
+    for (const rev of revList.filter(r => r !== '')) {
+      // debug(`rev ${JSON.stringify(rev)}`)
+      try {
+        // :000000 100644 0000000 67e79c9 A\t@2.metadata.json\n\n9c4ec1331bef24c34b994491654560437706b8ef
+        // const hashArray = rev.hash.match(/^:.*\t(.*?)(?:\n)*(.*)$/)
+        const hash = rev.replace(/^(.*) (.*)$/, '$1').trim()
+        debug(`hash ${JSON.stringify(hash)}`)
+        const catFileType = await this.git.catFile([
+          '-t',
+          `${hash}`
+        ])
+        let catHash = ''
+        let catFile = ''
+        if (catFileType.trim() === 'blob') {
+          catHash = hash
+
+          catFile = await this.git.catFile([
+            '-p',
+            `${catHash}`
+          ])
+        } else if (catFileType.trim() === 'tree') {
+          catHash = `${hash}:${file}`
+
+          catFile = await this.git.catFile([
+            '-p',
+            `${catHash}`
+          ])
+        }
+        else {
+          const catFileOtherType = await this.git.catFile([
+            '-p',
+            `${hash}`
+          ])
+          const tree = catFileOtherType.replace(/tree (.*)\s/m, '$1')
+          const commitDate = catFileOtherType.replace(/ (d{10} [+-]d{4})\s/m, '$1')
+          debug(`CatFileType not a blob or a tree: ${catFileType}\n${catFileOtherType}`)
+          debug(`tree=${tree} commit date=${commitDate}`)
+        }
+        // const catFile = await this.git.catFile([
+        //   '-p',
+        //   `${catHash}`
+        // ])
+        debug(`catFile=${catFile}`)
+        //Mon Jul 8 12:22:14 2019 -0400
+        const catObj = JSON.parse(catFile)
+        const date = moment() // TODO: get real commit date moment(rev.date, "ddd MMM M HH:mm:ss YYYY ZZ")
+        // const date = moment(rev.date)
+        const wordCount = catObj && catObj.computed ? catObj.computed.wordCount : 0
+        versions.push({ hash, date, wordCount })
+      } catch (err) {
+        debug(err)
+      }
+    }
+*/
+    // debug(`versions:${JSON.stringify(versions)}`)
+
+    return versions
+  }
+}
+
+interface MetaObj {
+  log: {
+    file: string
+    hash: string
+    date: moment.Moment
+    subject: string
+  }
+  // diffs: [
+  //   {
+  //     sign: string
+  //     quantity: number
+  //   }
+  // ]
+  wordCountDiff: number
 }
 
 interface MarkupObj {
