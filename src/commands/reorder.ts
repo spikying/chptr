@@ -1,19 +1,14 @@
 import { flags } from '@oclif/command'
-// import * as d from 'debug'
-// import Save from './save';
 import { cli } from 'cli-ux'
 import * as fs from 'fs'
 import * as path from 'path'
 import { MoveSummary } from 'simple-git/typings/response'
 
-// import {  } from '../helpers'
 
 import { d } from './base'
 import Command from './edit-save-base'
-// import Save from './save';
 
 const debug = d('command:reorder')
-// const debugEnabled = d.enabled('command:reorder')
 
 export default class Reorder extends Command {
   static description = 'Takes a chapter and modifies its index number to fit another ordering place'

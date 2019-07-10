@@ -155,14 +155,14 @@ export class Context {
         return Math.max(previous, current)
       })
 
-    const maxDigits = files
-      .map(value => {
-        const matches = fileRegex.exec(path.basename(value))
-        return matches ? matches[1].length : 0
-      })
-      .reduce((previous, current) => {
-        return Math.max(previous, current)
-      })
+    // const maxDigits = files
+    //   .map(value => {
+    //     const matches = fileRegex.exec(path.basename(value))
+    //     return matches ? matches[1].length : 0
+    //   })
+    //   .reduce((previous, current) => {
+    //     return Math.max(previous, current)
+    //   })
 
     const minDigits = files
       .map(value => {
