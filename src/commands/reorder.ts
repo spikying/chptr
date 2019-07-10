@@ -1,30 +1,30 @@
 import { flags } from '@oclif/command'
 // import * as d from 'debug'
 // import Save from './save';
-import { cli } from 'cli-ux';
+import { cli } from 'cli-ux'
 import * as fs from 'fs'
 import * as path from 'path'
-import { MoveSummary } from 'simple-git/typings/response';
+import { MoveSummary } from 'simple-git/typings/response'
 
 // import {  } from '../helpers'
 
-import Command, { d } from "./base"
+import { d } from './base'
+import Command from './edit-save-base'
 // import Save from './save';
 
 const debug = d('command:reorder')
 // const debugEnabled = d.enabled('command:reorder')
 
 export default class Reorder extends Command {
-  static description =
-    'Takes a chapter and modifies its index number to fit another ordering place'
+  static description = 'Takes a chapter and modifies its index number to fit another ordering place'
 
   static flags = {
     ...Command.flags,
     compact: flags.boolean({
       char: 'c',
       description: 'Compact chapter numbers at the same time',
-      default: false
-    })
+      default: false,
+    }),
   }
 
   static args = [
@@ -32,8 +32,8 @@ export default class Reorder extends Command {
     {
       name: 'destination',
       description: 'Number it will become (write `end` or `@end`to put at the end of each stack).',
-      required: true
-    }
+      required: true,
+    },
   ]
 
   static aliases = ['move']
@@ -45,7 +45,7 @@ export default class Reorder extends Command {
 
     const compact = flags.compact
 
-    cli.action.start('Processing files')
+    cli.action.start('Analyzing files')
 
     const dir = path.join(flags.path as string)
     const originIsAtNumbering = args.origin.toString().substring(0, 1) === '@'
@@ -53,21 +53,20 @@ export default class Reorder extends Command {
 
     const files = await this.context.getAllNovelFiles()
 
-    const originNumber: number = this.isEndOfStack(args.origin) ?
-      this.context.getHighestNumber(originIsAtNumbering) :
-      this.context.extractNumber(args.origin)
-    const destNumber: number = this.isEndOfStack(args.destination) ?
-      (this.context.getHighestNumber(destIsAtNumbering) === 0 ?
-        this.configInstance.config.numberingInitial :
-        (this.context.getHighestNumber(destIsAtNumbering) + this.configInstance.config.numberingStep)
-      ) :
-      this.context.extractNumber(args.destination)
+    const originNumber: number = this.isEndOfStack(args.origin) ? this.context.getHighestNumber(originIsAtNumbering) : this.context.extractNumber(args.origin)
+    const destNumber: number = this.isEndOfStack(args.destination)
+      ? this.context.getHighestNumber(destIsAtNumbering) === 0
+        ? this.configInstance.config.numberingInitial
+        : this.context.getHighestNumber(destIsAtNumbering) + this.configInstance.config.numberingStep
+      : this.context.extractNumber(args.destination)
 
-    const originExists: boolean = files.map(value => {
-      return (this.context.extractNumber(value) === originNumber) && (this.configInstance.isAtNumbering(value) === originIsAtNumbering)
-    }).reduce((previous, current) => {
-      return previous || current
-    })
+    const originExists: boolean = files
+      .map(value => {
+        return this.context.extractNumber(value) === originNumber && this.configInstance.isAtNumbering(value) === originIsAtNumbering
+      })
+      .reduce((previous, current) => {
+        return previous || current
+      })
     if (!originExists) {
       this.error('Origin does not exist')
       this.exit(1)
@@ -89,25 +88,25 @@ export default class Reorder extends Command {
     const sameAtNumbering = originIsAtNumbering === destIsAtNumbering
     const forwardBump: boolean = sameAtNumbering ? destNumber < originNumber : true
 
-    const fileInfoArray = [... new Set((await this.context.getAllFilesForOneType(destIsAtNumbering)).map(file => {
-      return this.context.extractNumber(file)
-    }))] //to make unique
+    const fileInfoArray = [
+      ...new Set(
+        (await this.context.getAllFilesForOneType(destIsAtNumbering)).map(file => {
+          return this.context.extractNumber(file)
+        })
+      ),
+    ] //to make unique
       .filter(fileNumber => {
         if (sameAtNumbering) {
-          if (
-            fileNumber < Math.min(originNumber, destNumber) ||
-            fileNumber > Math.max(originNumber, destNumber) ||
-            fileNumber < 0
-          ) {
+          if (fileNumber < Math.min(originNumber, destNumber) || fileNumber > Math.max(originNumber, destNumber) || fileNumber < 0) {
             return false
           } else {
             return true
           }
         } else {
-          debug(`filtering: ${fileNumber} vs ${destNumber}`)
           return fileNumber >= destNumber
         }
-      }).map(fileNumber => {
+      })
+      .map(fileNumber => {
         let newFileNumber: number
         let mandatory = false
         if (fileNumber === originNumber && sameAtNumbering) {
@@ -115,17 +114,13 @@ export default class Reorder extends Command {
           mandatory = true
         } else {
           if (forwardBump) {
-            debug(`forward bump`)
             newFileNumber = fileNumber + 1
           } else {
-            debug(`NOT forward bump`)
             newFileNumber = fileNumber - 1
           }
         }
         return { fileNumber, newFileNumber, mandatory }
       })
-
-    debug(`FileInfoArray: \n${JSON.stringify(fileInfoArray, null, 4)}`)
 
     let currentMandatory = sameAtNumbering ? fileInfoArray.filter(f => f.mandatory)[0] : { fileNumber: null, newFileNumber: destNumber, mandatory: true }
     const allMandatories = [currentMandatory]
@@ -136,7 +131,6 @@ export default class Reorder extends Command {
       }
       currentMandatory = nextMandatory
     }
-    debug(`allMandatories=${JSON.stringify(allMandatories)}`)
 
     const toMoveFiles = fileInfoArray.filter(info => {
       return allMandatories.map(m => m.fileNumber).includes(info.fileNumber)
@@ -144,18 +138,19 @@ export default class Reorder extends Command {
 
     debug(`toMoveFiles=${JSON.stringify(toMoveFiles, null, 4)}`)
 
-    const toRenameFiles = (await this.context.getAllFilesForOneType(destIsAtNumbering)).filter(file => {
-      const fileNumber = this.context.extractNumber(file)
-      return toMoveFiles.map(m => m.fileNumber).includes(fileNumber)
-    }).map(file => {
-      const fileNumber = this.context.extractNumber(file)
-      const mf = toMoveFiles.filter(m => m.fileNumber === fileNumber)[0]
-      return { file, newFileNumber: mf.newFileNumber }
-    })
+    const toRenameFiles = (await this.context.getAllFilesForOneType(destIsAtNumbering))
+      .filter(file => {
+        const fileNumber = this.context.extractNumber(file)
+        return toMoveFiles.map(m => m.fileNumber).includes(fileNumber)
+      })
+      .map(file => {
+        const fileNumber = this.context.extractNumber(file)
+        const mf = toMoveFiles.filter(m => m.fileNumber === fileNumber)[0]
+        return { file, newFileNumber: mf.newFileNumber }
+      })
 
     if (!sameAtNumbering) {
       const originFiles = (await this.context.getAllFilesForOneType(originIsAtNumbering)).filter(file => {
-        debug(`Filtering file ${file} with ${this.context.extractNumber(file)} and ${originNumber}`)
         return this.context.extractNumber(file) === originNumber
       })
 
@@ -189,9 +184,16 @@ export default class Reorder extends Command {
       }
       await Promise.all(moveTempPromises)
 
-      cli.action.stop()
-      cli.action.start('Moving files to their final state')
+      cli.action.stop(tempDir)
+    } catch (err) {
+      cli.error(err)
+      cli.exit(1)
+    }
 
+    cli.action.start('Moving files to their final states')
+    let fileMovesPretty = ''
+
+    try {
       const moveBackPromises: Promise<MoveSummary>[] = []
       for (const moveItem of toRenameFiles) {
         const filename = path.basename(moveItem.file)
@@ -199,9 +201,11 @@ export default class Reorder extends Command {
         const destDigits = this.context.getMaxNecessaryDigits(destIsAtNumbering)
 
         const fromFilename = this.context.mapFileToBeRelativeToRootPath(path.join(tempDir, filename))
-        const toFilename = this.context.mapFileToBeRelativeToRootPath(path.join(path.dirname(moveItem.file), this.context.renumberedFilename(filename, newFileNumber, destDigits, destIsAtNumbering)))
+        const toFilename = this.context.mapFileToBeRelativeToRootPath(
+          path.join(path.dirname(moveItem.file), this.context.renumberedFilename(filename, newFileNumber, destDigits, destIsAtNumbering))
+        )
 
-        this.log(`Renaming with new file number "${path.basename(fromFilename)}" to "${toFilename}"`)
+        fileMovesPretty.concat(`\n    renaming from "${path.basename(fromFilename)}" to "${toFilename}"`)
         moveBackPromises.push(this.git.mv(fromFilename, toFilename))
       }
       await Promise.all(moveBackPromises)
@@ -218,27 +222,25 @@ export default class Reorder extends Command {
       cli.exit(1)
     }
 
-    await this.addDigitsToNecessaryStacks()
+    cli.action.stop(`Moved files${fileMovesPretty}\nDeleted temp folder ${tempDir}`)
 
-    cli.action.stop()
+    await this.addDigitsToNecessaryStacks()
 
     let commitMessage = `Reordered files from ${(originIsAtNumbering ? '@' : '') + originNumber} to ${(destIsAtNumbering ? '@' : '') + destNumber}`
     if (compact) {
       commitMessage += '\nCompacted file numbers'
-      cli.action.start('Compacting file numbers')
       await this.compactFileNumbers()
-      cli.action.stop()
     }
-    cli.action.start('Commit and push to remote repository')
 
-    await this.git.commit(commitMessage)
-    await this.git.push()
-    await this.git.pull()
-
-    cli.action.stop()
+    // cli.action.start('Commit and push to remote repository')
+    await this.CommitToGit(commitMessage, await this.GetGitListOfStageableFiles())
+    // await this.git.commit(commitMessage)
+    // await this.git.push()
+    // await this.git.pull()
+    // cli.action.stop()
   }
 
-  private readonly isEndOfStack = function (value: string): boolean {
+  private readonly isEndOfStack = function(value: string): boolean {
     const re = new RegExp(/^@?end$/)
     return re.test(value)
   }

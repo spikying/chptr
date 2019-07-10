@@ -1,39 +1,30 @@
 import { flags } from '@oclif/command'
-import { cli } from "cli-ux";
-// import * as d from "debug";
-// import * as fs from "fs";
-import * as glob from "glob";
-import * as path from "path";
-// import { promisify } from "util";
+import { cli } from 'cli-ux'
+import * as glob from 'glob'
+import * as path from 'path'
 
-// import { } from '../helpers';
-import { QueryBuilder } from '../queries';
+import { QueryBuilder } from '../queries'
 
-import Command, { d, listFiles } from "./base"
-// import Save from './save';
+import Command, { d, listFiles } from './base'
 
-const debug = d("command:delete");
-// const listFiles = promisify(fs.readdir);
-// const listFiles = promisify(glob);
+const debug = d('command:delete')
 
 export default class Delete extends Command {
   static description = 'Delete a file locally and in the repository'
 
   static flags = {
     ...Command.flags,
-    type: flags.string(
-      {
-        char: 't',
-        description: 'Delete either chapter file, summary file, metadata file or all.',
-        default: 'all',
-        options: ['all', 'summary', 'chapter', 'metadata']
-      }
-    ),
+    type: flags.string({
+      char: 't',
+      description: 'Delete either chapter file, summary file, metadata file or all.',
+      default: 'all',
+      options: ['all', 'summary', 'chapter', 'metadata'],
+    }),
     compact: flags.boolean({
       char: 'c',
       description: 'Compact chapter numbers at the same time',
-      default: false
-    })
+      default: false,
+    }),
   }
 
   static args = [
@@ -41,8 +32,8 @@ export default class Delete extends Command {
       name: 'name',
       description: 'filename pattern or chapter number to delete',
       required: false,
-      default: ''
-    }
+      default: '',
+    },
   ]
 
   static aliases = ['del']
@@ -50,22 +41,23 @@ export default class Delete extends Command {
   static hidden = false
 
   async run() {
+    debug('Running Delete command')
     const { args, flags } = this.parse(Delete)
 
     const deleteType = flags.type
     const compact = flags.compact
 
     const queryBuilder = new QueryBuilder()
-    debug(`args.name = ${args.name}`)
+
     if (!args.name) {
-      queryBuilder.add('name', queryBuilder.textinput("Filename part or chapter number to delete?"))
+      queryBuilder.add('name', queryBuilder.textinput('Filename part or chapter number to delete?'))
     }
 
     const queryResponses: any = await queryBuilder.responses()
     const nameOrNumber: any = args.name || queryResponses.name
 
     if (!nameOrNumber) {
-      this.error("Name or number input empty")
+      this.error('Name or number input empty')
       this.exit(1)
     }
 
@@ -77,16 +69,14 @@ export default class Delete extends Command {
     const isAtNumber = nameOrNumber.substring(0, 1) === '@'
     const isChapterNumberOnly = numberRegexWithoutAtNumbering.test(nameOrNumber) || numberRegexWithAtNumbering.test(nameOrNumber)
 
-    debug(`nameOrNumber=${nameOrNumber} isAtNumber=${isAtNumber} isChapterNumberOnly=${isChapterNumberOnly}`)
-
     if (!isChapterNumberOnly) {
       // we will delete all files matching the name entered
       let filePattern = '*' + nameOrNumber + '*'
-      if (glob.hasMagic(nameOrNumber)) { //nameOrNumber.toString().match(/.*[\*].*/)
+      if (glob.hasMagic(nameOrNumber)) {
         filePattern = nameOrNumber
       }
       const pathName = path.join(this.configInstance.projectRootPath, filePattern)
-      toDeleteFiles.push(...await listFiles(pathName))
+      toDeleteFiles.push(...(await listFiles(pathName)))
     } else {
       // we will delete all files matching the number patterns for chapters, metadata and summary
       const filterNumber = this.context.extractNumber(nameOrNumber)
@@ -101,17 +91,11 @@ export default class Delete extends Command {
         globPatterns.push(this.configInstance.metadataWildcardWithNumber(filterNumber, isAtNumber))
       }
 
-      debug(`globPatterns=${JSON.stringify(globPatterns)}`)
-
       for (const gp of globPatterns) {
-        // const gp = globPatterns[index];
         const pathName = path.join(this.configInstance.projectRootPath, gp)
-        debug(`pathName = ${pathName}`)
-        toDeleteFiles.push(...await listFiles(pathName))
+        toDeleteFiles.push(...(await listFiles(pathName)))
       }
     }
-
-    debug(`toDeleteFiles = ${JSON.stringify(toDeleteFiles)} toDeleteFiles.length = ${toDeleteFiles.length}`)
 
     if (toDeleteFiles.length === 0) {
       cli.warn('No files to delete.')
@@ -120,20 +104,15 @@ export default class Delete extends Command {
 
     try {
       cli.action.start('Deleting file(s) locally and from repository')
-
-      debug(`ProjetRootPath = ${this.configInstance.projectRootPath}`)
       await this.git.rm(this.context.mapFilesToBeRelativeToRootPath(toDeleteFiles))
-
+      const toDeletePretty = toDeleteFiles.map(f => `\n    ${f}`)
+      cli.action.stop(`${toDeletePretty}\nwere deleted`)
     } catch (err) {
       this.error(err)
-    } finally {
-      cli.action.stop()
     }
 
     if (compact) {
-      cli.action.start('Compacting file numbers')
       await this.compactFileNumbers()
-      cli.action.stop()
     }
 
     try {

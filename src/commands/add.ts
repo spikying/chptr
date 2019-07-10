@@ -1,17 +1,10 @@
 import { flags } from '@oclif/command'
-import { cli } from "cli-ux";
-// import * as d from 'debug';
-// import * as fs from 'fs';
-// import * as matter from 'gray-matter';
-import * as path from 'path';
-// import { MoveSummary } from 'simple-git/typings/response';
+import { cli } from 'cli-ux'
+import * as path from 'path'
 
-import { numDigits, stringifyNumber } from '../helpers';
-import { getFilenameFromInput } from '../queries';
+import { getFilenameFromInput } from '../queries'
 
-import Command, { createFile, d } from "./base";
-// import { promisify } from "util";
-
+import Command, { createFile, d, listFiles, numDigits, stringifyNumber } from './base'
 
 const debug = d('command:add')
 
@@ -23,8 +16,8 @@ export default class Add extends Command {
     atnumbered: flags.boolean({
       char: 'a',
       description: 'Add an @numbered chapter',
-      default: false
-    })
+      default: false,
+    }),
   }
 
   static args = [
@@ -32,41 +25,65 @@ export default class Add extends Command {
       name: 'name',
       description: 'name of chapter file(s) to add',
       required: false,
-      default: ''
-    }
+      default: '',
+    },
+    {
+      name: 'number',
+      description:
+        'force this number to be used, if available.  If this argument is given, the `atnumbered` flag is ignored.  AtNumbering will be determined by the presence or absence of @ sign.',
+      required: false,
+    },
   ]
 
   static hidden = false
 
   async run() {
+    debug(`Running Add command`)
     const { args, flags } = this.parse(Add)
 
-    const name: string = args.name || await getFilenameFromInput()
-    const atNumbering = flags.atnumbered
+    const name: string = args.name || (await getFilenameFromInput())
 
-    const dir = path.join(flags.path as string)
-    const files = await this.context.getAllFilesForOneType(atNumbering)
-    debug(`files from glob: ${JSON.stringify(files)}`)
+    let atNumbering: boolean
+    let nextNumber: number
 
-    const highestNumber = this.context.getHighestNumber(atNumbering) // filesStats.highestNumber
-    const nextNumber = highestNumber === 0 ? this.configInstance.config.numberingInitial : highestNumber + this.configInstance.config.numberingStep
+    if (args.number) {
+      atNumbering = args.number.substring(0, 1) === '@'
+      nextNumber = this.context.extractNumber(args.number)
+
+      const existingFile = await listFiles(
+        path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcardWithNumber(nextNumber, atNumbering))
+      )
+
+      if (existingFile.length > 0) {
+        this.error(`File ${existingFile[0]} already exists`)
+        this.exit(1)
+      }
+    } else {
+      atNumbering = flags.atnumbered
+
+      // const files = await this.context.getAllFilesForOneType(atNumbering)
+      await this.context.updateStackStatistics(atNumbering)
+
+      const highestNumber = this.context.getHighestNumber(atNumbering)
+      nextNumber = highestNumber === 0 ? this.configInstance.config.numberingInitial : highestNumber + this.configInstance.config.numberingStep
+    }
     const newDigits = numDigits(nextNumber)
 
-    const filledTemplateData = this.configInstance.emptyFileString.toString().replace(/{TITLE}/gmi, name) //`# ${name}\n\n...`
-    const filledTemplateMeta = JSON.stringify(this.configInstance.config.metadataFields, undefined, 4).replace(/{TITLE}/gmi, name)
+    const filledTemplateData = this.configInstance.emptyFileString.toString().replace(/{TITLE}/gim, name) //`# ${name}\n\n...`
+    const filledTemplateMeta = JSON.stringify(this.configInstance.config.metadataFields, undefined, 4).replace(/{TITLE}/gim, name)
 
     const fullPathMD = path.join(
-      dir,
+      this.configInstance.projectRootPath,
       this.configInstance.chapterFileNameFromParameters(stringifyNumber(nextNumber, newDigits), name, atNumbering)
     )
 
     const fullPathMeta = path.join(
-      dir,
+      this.configInstance.projectRootPath,
       this.configInstance.metadataFileNameFromParameters(stringifyNumber(nextNumber, newDigits), name, atNumbering)
     )
 
     const fullPathSummary = path.join(
-      dir,
+      this.configInstance.projectRootPath,
       this.configInstance.summaryFileNameFromParameters(stringifyNumber(nextNumber, newDigits), name, atNumbering)
     )
 
@@ -84,14 +101,9 @@ export default class Add extends Command {
       await this.git.add(this.context.mapFilesToBeRelativeToRootPath([fullPathMD, fullPathMeta, fullPathSummary]))
       await this.git.commit(`added ${fullPathMD}, ${fullPathMeta} and ${fullPathSummary}`)
       await this.git.push()
-
+      cli.action.stop(`Added\n    ${fullPathMD}\n    ${fullPathSummary}\n    ${fullPathMeta}`)
     } catch (err) {
       this.error(err)
-    } finally {
-      cli.action.stop(`Added ${fullPathMD}, ${fullPathSummary} and ${fullPathMeta}`)
     }
-
   }
-
 }
-

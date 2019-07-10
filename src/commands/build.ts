@@ -6,10 +6,9 @@ import * as moment from 'moment';
 import * as path from "path";
 import { file as tmpFile } from 'tmp-promise'
 
-import { sanitizeFileName } from '../helpers';
 import { QueryBuilder } from '../queries';
 
-import { d, globPromise, readFile, writeFile, writeInFile } from './base';
+import { d, globPromise, readFile, sanitizeFileName, writeFile, writeInFile} from './base';
 import Command from "./edit-save-base"
 const chalk: any = require('chalk')
 
@@ -78,8 +77,7 @@ export default class Build extends Command {
       outputFiletype = queryResponses.type
     }
 
-    const toStageFiles = await this.GetGitListOfStageableFiles(null, false)
-    await this.CommitToGit('Autosave before build', toStageFiles)
+    await this.CommitToGit('Autosave before build')
 
     cli.action.start('Compiling and generating Markdown files')
 
@@ -110,8 +108,7 @@ export default class Build extends Command {
         await this.writeMetadataInEachFile(markupByFile)
       })
 
-      const toStageFiles = await this.GetGitListOfStageableFiles(null, false)
-      await this.CommitToGit('Autosave markup updates', toStageFiles)
+      await this.CommitToGit('Autosave markup updates')
 
       const allMetadataFilesArray = (await globPromise(path.join(this.configInstance.projectRootPath, this.configInstance.metadataWildcard(false)))).concat(await globPromise(path.join(this.configInstance.projectRootPath, this.configInstance.metadataWildcard(true))))
 
@@ -151,8 +148,6 @@ export default class Build extends Command {
           }
           diffByDate[m.date].total += m.diff
         })
-
-        //debug(`diffByDate: ${JSON.stringify(diffByDate, null, 2)}`)
 
         if (showWritingRate) {
           cli.info(`Writing rate:`)
@@ -283,11 +278,8 @@ export default class Build extends Command {
       cli.action.stop(JSON.stringify(allOutputFilePath))
 
       if (compact) {
-        cli.action.start('Compacting file numbers')
         await this.compactFileNumbers()
-        const toStageFiles = await this.GetGitListOfStageableFiles(null, false)
-        await this.CommitToGit('Compacted file numbers', toStageFiles)
-        cli.action.stop()
+        await this.CommitToGit('Compacted file numbers')
       }
 
     } catch (err) {
@@ -302,9 +294,8 @@ export default class Build extends Command {
   private async runPandoc(options: string[]): Promise<void> {
     return new Promise((resolve, reject) => {
       const command = 'pandoc ' + options.join(' ')
-      debug(`before executing child process with command ${command}`)
+      debug(`Executing child process with command ${command}`)
       exec(command, (err, pout, perr) => {
-        debug('finished child process')
         if (err) {
           this.error(err)
           reject(err)
@@ -459,7 +450,6 @@ export default class Build extends Command {
   }
 
   private async extractMeta(filepath: string, extractAll: boolean): Promise<MetaObj[]> {
-    const versions: MetaObj[] = []
     const file = path.basename(filepath)
     const beginBlock = '########'
     const endFormattedBlock = '------------------------ >8 ------------------------';

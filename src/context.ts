@@ -1,10 +1,9 @@
 import * as d from 'debug'
 import * as fs from 'fs'
-import * as path from "path";
+import * as path from 'path'
 
-import { globPromise } from './commands/base';
-import { Config } from './config';
-import { numDigits, stringifyNumber } from './helpers';
+import { globPromise, numDigits, stringifyNumber } from './commands/base'
+import { Config } from './config'
 
 const debug = d('context')
 
@@ -20,11 +19,11 @@ interface StackStatistics {
 const nullStackStats: StackStatistics = {
   highestNumber: 0,
   minDigits: 1,
-  maxNecessaryDigits: 1
+  maxNecessaryDigits: 1,
 }
 
 export class Context {
-  private readonly configInstance: Config;
+  private readonly configInstance: Config
 
   // private _allNovelFiles: string[] | null = null
   private _allNormalFiles: string[] | null = null
@@ -33,18 +32,17 @@ export class Context {
   private readonly _allNovelStatistics: NovelStatistics = { atNumberStack: nullStackStats, normalStack: nullStackStats }
 
   constructor(configInstance: Config) {
-    // this.dirname = dirname
+    debug(`New Context instance`)
     this.configInstance = configInstance
-
   }
 
   public mapFileToBeRelativeToRootPath(file: string): string {
     return path.relative(this.configInstance.projectRootPath, file)
   }
   public mapFilesToBeRelativeToRootPath(files: string[]): string[] {
-    return files.map<string>((filename) => {
+    return files.map<string>(filename => {
       return this.mapFileToBeRelativeToRootPath(filename)
-    });
+    })
   }
 
   public async getAllFilesForOneType(isAtNumbered: boolean, refresh = false): Promise<string[]> {
@@ -55,11 +53,10 @@ export class Context {
       const wildcards = [
         this.configInstance.chapterWildcard(isAtNumbered),
         this.configInstance.metadataWildcard(isAtNumbered),
-        this.configInstance.summaryWildcard(isAtNumbered)
+        this.configInstance.summaryWildcard(isAtNumbered),
       ]
       for (const wildcard of wildcards) {
-        debug(`glob pattern = ${path.join(this.configInstance.projectRootPath, wildcard)}`)
-        files.push(...await globPromise(path.join(this.configInstance.projectRootPath, wildcard)))
+        files.push(...(await globPromise(path.join(this.configInstance.projectRootPath, wildcard))))
       }
 
       if (isAtNumbered) {
@@ -75,8 +72,7 @@ export class Context {
   }
 
   public async getAllNovelFiles(refresh = false): Promise<string[]> {
-    return (await this.getAllFilesForOneType(true, refresh)).concat(
-      (await this.getAllFilesForOneType(false, refresh)))
+    return (await this.getAllFilesForOneType(true, refresh)).concat(await this.getAllFilesForOneType(false, refresh))
   }
 
   public getHighestNumber(atNumberStack: boolean): number {
@@ -106,14 +102,12 @@ export class Context {
   public getNextFilenumber(previousNumber: number): number {
     if (!previousNumber) {
       return this.configInstance.config.numberingInitial
-    }
-    else {
+    } else {
       return previousNumber + this.configInstance.config.numberingStep
     }
   }
 
   public renumberedFilename(filename: string, newFilenumber: number, digits: number, atNumbering: boolean): string {
-    debug(`filename=${filename} newFileNumber=${newFilenumber} digits=${digits} @numbering = ${atNumbering}`)
     const re = new RegExp(/^(.*?)(@?\d+)(.*)$/)
     return filename.replace(re, '$1' + (atNumbering ? '@' : '') + stringifyNumber(newFilenumber, digits) + '$3')
   }
@@ -123,7 +117,6 @@ export class Context {
     const match = re.exec(path.basename(filename))
     const fileNumber = match ? parseInt(match[1], 10) : -1
 
-    debug(`filename = ${filename} filenumber = ${fileNumber}`)
     if (isNaN(fileNumber)) {
       return -1
     }
@@ -143,27 +136,24 @@ export class Context {
     return buildDirectory
   }
 
-  private async updateStackStatistics(atNumbers: boolean): Promise<void> {
+  public async updateStackStatistics(atNumbers: boolean): Promise<void> {
     const files = await this.getAllNovelFiles()
     const fileRegex: RegExp = this.configInstance.chapterRegex(atNumbers)
     const index = atNumbers ? 'atNumberStack' : 'normalStack'
 
-    debug(`files: length=${files.length} full=${JSON.stringify(files)}`)
     if (files.length === 0) {
       this._allNovelStatistics[index] = nullStackStats
       return
     }
 
-    debug(`files searched: ${JSON.stringify(files)}`)
-    debug(`Regex used: ${fileRegex}`)
-
-    const highestNumber = files.map(value => {
-      // debug(`Regex exec: ${JSON.stringify(fileRegex.exec(path.basename(value)))}`)
-      const matches = fileRegex.exec(path.basename(value))
-      return matches ? parseInt(matches[1], 10) : 0
-    }).reduce((previous, current) => {
-      return Math.max(previous, current)
-    })
+    const highestNumber = files
+      .map(value => {
+        const matches = fileRegex.exec(path.basename(value))
+        return matches ? parseInt(matches[1], 10) : 0
+      })
+      .reduce((previous, current) => {
+        return Math.max(previous, current)
+      })
 
     const maxDigits = files
       .map(value => {
@@ -192,15 +182,10 @@ export class Context {
         return Math.max(previous, current)
       })
 
-    debug(`highest number = ${highestNumber}`)
-    debug(`digits = ${maxDigits}`)
-
     this._allNovelStatistics[index] = {
       highestNumber,
       minDigits,
-      maxNecessaryDigits
+      maxNecessaryDigits,
     }
   }
-
-
 }

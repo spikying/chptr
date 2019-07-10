@@ -1,12 +1,12 @@
-import { exec } from 'child_process';
-import { cli } from 'cli-ux';
-import * as glob from "glob";
-import * as path from "path";
+import { exec } from 'child_process'
+import { cli } from 'cli-ux'
+import * as glob from 'glob'
+import * as path from 'path'
 
-import { QueryBuilder } from '../queries';
+import { QueryBuilder } from '../queries'
 
-import { copyFile, d, moveFile, readFile, writeFile } from './base';
-import Command from "./edit-save-base"
+import { copyFile, d, moveFile, writeFile } from './base'
+import Command from './edit-save-base'
 
 const debug = d('command:antidote')
 
@@ -14,15 +14,17 @@ export default class Antidote extends Command {
   static description = 'Launch Antidote spell-checker'
 
   static flags = {
-    ...Command.flags
+    ...Command.flags,
   }
 
-  static args = [{
-    name: 'filter',
-    description: 'Chapter number to Antidote.',
-    required: false,
-    default: ''
-  }]
+  static args = [
+    {
+      name: 'filter',
+      description: 'Chapter number to Antidote.',
+      required: false,
+      default: '',
+    },
+  ]
 
   static hidden = false
 
@@ -32,15 +34,16 @@ export default class Antidote extends Command {
     let filter: string = args.filter
     if (filter === '') {
       const queryBuilder = new QueryBuilder()
-      queryBuilder.add('filter', queryBuilder.textinput("What chapter to Antidote?", ""))
+      queryBuilder.add('filter', queryBuilder.textinput('What chapter to Antidote?', ''))
       const queryResponses: any = await queryBuilder.responses()
       filter = queryResponses.filter
     }
-    // const atNumberingMatches = new RegExp(this.configInstance.numbersPattern(true)).exec(filter)
-    const isAtNumber: boolean = filter.substring(0, 1) === '@' // atNumberingMatches ? true : false
+    const isAtNumber: boolean = filter.substring(0, 1) === '@'
 
     const chapterNumber = this.context.extractNumber(filter)
-    const chapterFileName = glob.sync(path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcardWithNumber(chapterNumber, isAtNumber)))[0]
+    const chapterFileName = glob.sync(
+      path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcardWithNumber(chapterNumber, isAtNumber))
+    )[0]
 
     if (!chapterFileName) {
       this.error(`No chapter was found with input ${filter}`)
@@ -48,9 +51,7 @@ export default class Antidote extends Command {
     }
 
     const basicFilePath = path.join(this.configInstance.projectRootPath, chapterFileName)
-    //TODO: get antidote filename from config pattern
-    const antidoteFilePath = path.join(this.configInstance.projectRootPath, chapterFileName.replace(/\.md$/, '.antidote'))
-    debug(`antidoteFilePath=${antidoteFilePath}`)
+    const antidoteFilePath = this.configInstance.antidotePathName(chapterFileName)
 
     cli.action.start(`Launching Antidote with ${antidoteFilePath}`)
     await copyFile(basicFilePath, antidoteFilePath)
@@ -59,9 +60,7 @@ export default class Antidote extends Command {
     await this.processFile(antidoteFilePath)
     await this.processFileForAntidote(antidoteFilePath)
 
-
     const filePath = `"${path.resolve(antidoteFilePath)}"`
-    debug(`filePath = ${filePath}`)
 
     void this.runAntidote([filePath])
 
@@ -69,7 +68,7 @@ export default class Antidote extends Command {
     await cli.anykey('Press any key when Antidote correction is done to continue.')
 
     const queryBuilder2 = new QueryBuilder()
-    queryBuilder2.add('message', queryBuilder2.textinput("Message to use in commit to repository? Type `cancel` to skip commit step.", ""))
+    queryBuilder2.add('message', queryBuilder2.textinput('Message to use in commit to repository? Type `cancel` to skip commit step.', ''))
     const queryResponses2: any = await queryBuilder2.responses()
     const message = (queryResponses2.message + '\nPost-Antidote').replace(/"/, '`')
 
@@ -82,15 +81,14 @@ export default class Antidote extends Command {
       const toStageFiles = await this.GetGitListOfStageableFiles(chapterNumber, isAtNumber)
       await this.CommitToGit(message, toStageFiles)
     }
-
   }
 
   private async runAntidote(options: string[]): Promise<void> {
     return new Promise((resolve, reject) => {
       const command = 'antidote ' + options.join(' ')
-      debug(`before executing child process with command ${command} `)
-      const cp = exec(command, (err, pout, perr) => {
-        debug('finished child process')
+      debug(`Executing child process with command ${command} `)
+      // const cp =
+      exec(command, (err, pout, perr) => {
         if (err) {
           this.error(err)
           reject(err)
@@ -104,21 +102,18 @@ export default class Antidote extends Command {
         }
         resolve()
       })
-      cp.on("close", (code, signal) => {
-        debug(`code = ${code} signal = ${signal} `)
-      })
+      // cp.on('close', (code, signal) => {
+      //   debug(`code = ${code} signal = ${signal} `)
+      // })
     })
   }
 
   private async processFileForAntidote(filepath: string): Promise<void> {
     try {
-      debug(`opening filepath: ${filepath}`)
-      const buff = await readFile(filepath)
-      const initialContent = await buff.toString('utf8', 0, buff.byteLength)
+      const initialContent = await this.readFileContent(filepath)
 
       const re = new RegExp(this.sentenceBreakChar + '\r?\n', 'gm')
-      const replacedContent = initialContent.replace(re, this.sentenceBreakChar + '  ')
-        .replace(/\n/gm, '\r\n')
+      const replacedContent = initialContent.replace(re, this.sentenceBreakChar + '  ').replace(/\n/gm, '\r\n')
       debug(`Processed antidote content: \n${replacedContent.substring(0, 250)}`)
       await writeFile(filepath, replacedContent, 'utf8')
     } catch (error) {
@@ -138,21 +133,19 @@ export default class Antidote extends Command {
 
   private async processFileBackFromAntidote(filepath: string): Promise<void> {
     try {
-      debug(`opening filepath: ${filepath}`)
-      const buff = await readFile(filepath)
-      const initialContent = await buff.toString('utf8', 0, buff.byteLength)
+      const initialContent = await this.readFileContent(filepath)
 
       const sentenceRE = new RegExp(this.sentenceBreakChar + '  ', 'gm')
-      const paragraphRE = new RegExp('(' + this.paragraphBreakChar + "{{\\d+}}\\n)\\n", 'gm')
+      const paragraphRE = new RegExp('(' + this.paragraphBreakChar + '{{\\d+}}\\n)\\n', 'gm')
       const replacedContent = this.removeTripleEnters(
         initialContent
           .replace(sentenceRE, this.sentenceBreakChar + '\n')
           .replace(/\r\n/gm, '\n\n')
           .replace(/^\uFEFF\n\n# /g, '\n# ') // un-BOM the file
           .replace(paragraphRE, '$1')
-          .replace(/([.!?…}"])$/, '$1\n'))
+          .replace(/([.!?…}"])$/, '$1\n')
+      )
       debug(`Processed back antidote content: \n${replacedContent.substring(0, 250)}`)
-      debug(`replace2\n${paragraphRE}\n${paragraphRE.test(replacedContent)}`)
       await writeFile(filepath, replacedContent, 'utf8')
     } catch (error) {
       this.error(error)
@@ -162,13 +155,10 @@ export default class Antidote extends Command {
 
   private async turnToUTF8BOM(filepath: string): Promise<void> {
     try {
-      debug(`opening filepath: ${filepath}`)
-      const buff = await readFile(filepath)
-      const initialContent = await buff.toString('utf8', 0, buff.byteLength)
+      const initialContent = await this.readFileContent(filepath)
 
       if (initialContent.charCodeAt(0) !== 65279) {
         const replacedContent = String.fromCharCode(65279) + initialContent
-        debug(`To BOM: ${replacedContent.substring(0, 5)}`)
         await writeFile(filepath, replacedContent, 'utf8')
       }
     } catch (error) {
@@ -176,6 +166,4 @@ export default class Antidote extends Command {
       this.exit(1)
     }
   }
-
-
 }

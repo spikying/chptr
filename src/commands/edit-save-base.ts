@@ -1,19 +1,14 @@
-// import { flags } from '@oclif/command'
-
-// import { filterNumbers } from '../helpers';
-
-import { cli } from "cli-ux";
+import { cli } from 'cli-ux'
 import * as minimatch from 'minimatch'
-import { CommitSummary } from 'simple-git/typings/response';
+import * as path from 'path'
 
-import Command, { d, readFile, writeFile } from "./base";
+import Command, { d, fileExists, readFile, writeFile } from './base'
 
 const debug = d('command:edit-save-base')
 
 export default abstract class extends Command {
-
   static flags = {
-    ...Command.flags
+    ...Command.flags,
   }
 
   // https://unicode.org/reports/tr29/#Sentence_Boundaries
@@ -24,28 +19,14 @@ export default abstract class extends Command {
     await super.init()
     const isRepo = await this.git.checkIsRepo()
     if (!isRepo) {
-      throw new Error("Directory is not a repository")
+      throw new Error('Directory is not a repository')
     }
   }
 
   public async processFile(filepath: string): Promise<void> {
     try {
-      // debug(`opening filepath: ${filepath}`)
-      // const buff = await readFile(filepath)
-      // const initialContent = await buff.toString('utf8', 0, buff.byteLength)
-
       const initialContent = await this.readFileContent(filepath)
 
-      // let paraCounter = 1
-      // // \u2028 = line sep  \u200D = zero width joiner
-      // const replacedContent = initialContent.replace(/([.!?…}"]) {2}([{A-ZÀ-Ú])/gm, '$1' + this.sentenceBreakChar + '\n$2')
-      //   .replace(/([.!?…}"])\n{2}([{A-ZÀ-Ú])/gm, (full, one, two) => {
-      //     paraCounter++
-      //     // return `$1\u2029\n\n$2{{${paraCounter}}}`
-      //     debug(`full: ${full} one: ${one} two: ${two}`)
-      //     return `${one}\n\n${this.paragraphBreakChar}{{${paraCounter}}}\n${two}`
-      //   })
-      // debug(`Processed content: \n${replacedContent.substring(0, 250)}`)
       const replacedContent = this.processContent(initialContent)
       await writeFile(filepath, replacedContent, 'utf8')
     } catch (error) {
@@ -56,20 +37,8 @@ export default abstract class extends Command {
 
   public async processFileBack(filepath: string): Promise<void> {
     try {
-      // const buff = await readFile(filepath)
-      // const initialContent = await buff.toString('utf8', 0, buff.byteLength)
-
       const initialContent = await this.readFileContent(filepath)
 
-      // const sentenceBreakRegex = new RegExp(this.sentenceBreakChar + '\\n', 'g')
-      // const paragraphBreakRegex = new RegExp('\\n\\n' + this.paragraphBreakChar + '{{\\d+}}\\n', 'g')
-
-      // debug(`sentence RE = ${sentenceBreakRegex} paragraph RE = ${paragraphBreakRegex}`)
-      // const replacedContent = initialContent.replace(sentenceBreakRegex, '  ')
-      //   .replace(paragraphBreakRegex, '\n\n')
-      //   .replace(/([.!?…}"]) +\n/g, '$1\n')
-      //   .replace(/\n*$/, '\n')
-      // debug(`Processed back content: \n${replacedContent.substring(0, 250)}`)
       const replacedContent = this.processContentBack(initialContent)
       await writeFile(filepath, replacedContent, 'utf8')
     } catch (error) {
@@ -88,11 +57,10 @@ export default abstract class extends Command {
   public processContent(initialContent: string): string {
     let paraCounter = 1
     // \u2028 = line sep  \u200D = zero width joiner
-    const replacedContent = initialContent.replace(/([.!?…}"]) {2}([{A-ZÀ-Ú])/gm, '$1' + this.sentenceBreakChar + '\n$2')
-      .replace(/([.!?…}"])\n{2}([{A-ZÀ-Ú])/gm, (full, one, two) => {
+    const replacedContent = initialContent
+      .replace(/([.!?…}"]) {2}([{A-ZÀ-Ú])/gm, '$1' + this.sentenceBreakChar + '\n$2')
+      .replace(/([.!?…}"])\n{2}([{A-ZÀ-Ú])/gm, (_full, one, two) => {
         paraCounter++
-        // return `$1\u2029\n\n$2{{${paraCounter}}}`
-        debug(`full: ${full} one: ${one} two: ${two}`)
         return `${one}\n\n${this.paragraphBreakChar}{{${paraCounter}}}\n${two}`
       })
     debug(`Processed content: \n${replacedContent.substring(0, 250)}`)
@@ -103,8 +71,8 @@ export default abstract class extends Command {
     const sentenceBreakRegex = new RegExp(this.sentenceBreakChar + '\\n', 'g')
     const paragraphBreakRegex = new RegExp('\\n\\n' + this.paragraphBreakChar + '{{\\d+}}\\n', 'g')
 
-    debug(`sentence RE = ${sentenceBreakRegex} paragraph RE = ${paragraphBreakRegex}`)
-    const replacedContent = initialContent.replace(sentenceBreakRegex, '  ')
+    const replacedContent = initialContent
+      .replace(sentenceBreakRegex, '  ')
       .replace(paragraphBreakRegex, '\n\n')
       .replace(/([.!?…}"]) +\n/g, '$1\n')
       .replace(/\n*$/, '\n')
@@ -112,45 +80,48 @@ export default abstract class extends Command {
     return replacedContent
   }
 
-  public async CommitToGit(message: string, toStageFiles: string[]) {
+  public async CommitToGit(message: string, toStageFiles?: string[]) {
+    toStageFiles = toStageFiles || (await this.GetGitListOfStageableFiles())
     if (toStageFiles.length > 0) {
-      let commitSummary: CommitSummary | undefined
       try {
         cli.action.start('Saving file(s) in repository')
 
-        debug(`Message= ${message}; toAddFiles=${JSON.stringify(toStageFiles)}`)
+        await this.processChapterFilesBeforeSaving(toStageFiles)
 
         await this.git.add(toStageFiles)
         await this.git.addConfig('user.name', this.configInstance.config.projectAuthor.name)
         await this.git.addConfig('user.email', this.configInstance.config.projectAuthor.email)
-        debug(`name: ${this.configInstance.config.projectAuthor.name} email: ${this.configInstance.config.projectAuthor.email}`)
-        commitSummary = await this.git.commit(message)
+
+        const commitSummary = await this.git.commit(message)
         await this.git.push()
         await this.git.pull()
 
+        debug(`commitSummary:\n${JSON.stringify(commitSummary)}`)
+        const toStagePretty = toStageFiles.map(f => `\n    ${f}`)
+        cli.action.stop(`Commited and pushed ${commitSummary.commit}:\n${message}\nFile${toStageFiles.length > 1 ? 's' : ''}:${toStagePretty}`)
       } catch (err) {
         this.error(err)
-      } finally {
-        debug(`commitSummary:\n${JSON.stringify(commitSummary)}`)
-        cli.action.stop(`Commited and pushed ${commitSummary ? commitSummary.commit : '<empty>'}`)
       }
     }
   }
 
-  public async GetGitListOfStageableFiles(numberFilter: number | null, atFilter: boolean): Promise<string[]> {
+  public async GetGitListOfStageableFiles(numberFilter?: number, atFilter?: boolean): Promise<string[]> {
     const gitStatus = await this.git.status()
     debug(`git status\n${JSON.stringify(gitStatus, null, 4)}`)
 
-    const unQuote = function (value: string) {
-      if (!value) { return value }
+    const unQuote = function(value: string) {
+      if (!value) {
+        return value
+      }
       return value.replace(/"(.*)"/, '$1')
     }
 
-    const onlyUnique = function (value: any, index: number, self: any) {
-      return self.indexOf(value) === index;
+    const onlyUnique = function(value: any, index: number, self: any) {
+      return self.indexOf(value) === index
     }
 
-    const unfilteredFileList = (await this.git.diff(['--name-only'])).split('\n')
+    const unfilteredFileList = (await this.git.diff(['--name-only']))
+      .split('\n')
       .concat(gitStatus.not_added.map(unQuote))
       .concat(gitStatus.deleted.map(unQuote))
       .concat(gitStatus.modified.map(unQuote))
@@ -158,19 +129,30 @@ export default abstract class extends Command {
       .concat(gitStatus.renamed.map((value: any) => value.to as string).map(unQuote))
       .filter(onlyUnique)
 
-    debug(`unfilteredFileList=\n${JSON.stringify(unfilteredFileList, null, 4)}`)
-
     return unfilteredFileList
       .filter(val => val !== '')
       .filter(val => {
-        return numberFilter ?
-          minimatch(val, this.configInstance.chapterWildcardWithNumber(numberFilter, atFilter)) ||
-          minimatch(val, this.configInstance.metadataWildcardWithNumber(numberFilter, atFilter)) ||
-          minimatch(val, this.configInstance.summaryWildcardWithNumber(numberFilter, atFilter))
+        return numberFilter
+          ? minimatch(val, this.configInstance.chapterWildcardWithNumber(numberFilter, atFilter || false)) ||
+              minimatch(val, this.configInstance.metadataWildcardWithNumber(numberFilter, atFilter || false)) ||
+              minimatch(val, this.configInstance.summaryWildcardWithNumber(numberFilter, atFilter || false))
           : true
       })
-
   }
 
-
+  async processChapterFilesBeforeSaving(toStageFiles: string[]): Promise<void> {
+    // cli.action.start('Reading and processing modified files')
+    for (const filename of toStageFiles) {
+      const fullPath = path.join(this.configInstance.projectRootPath, filename)
+      const exists = await fileExists(fullPath)
+      if (
+        exists &&
+        (this.configInstance.chapterRegex(false).test(path.basename(fullPath)) || this.configInstance.chapterRegex(true).test(path.basename(fullPath)))
+      ) {
+        await this.processFileBack(fullPath)
+        await this.processFile(fullPath)
+      }
+    }
+    // cli.action.stop(`done ${toStageFiles.join(' ')}`)
+  }
 }
