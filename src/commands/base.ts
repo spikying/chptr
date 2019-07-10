@@ -108,7 +108,7 @@ export default abstract class extends Command {
   }
 
   async catch(err: Error) {
-    this.error(err.errorColor())
+    this.error(err.toString().errorColor())
     this.exit(1)
   }
 

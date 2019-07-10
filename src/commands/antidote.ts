@@ -46,7 +46,7 @@ export default class Antidote extends Command {
     )[0]
 
     if (!chapterFileName) {
-      this.error(`No chapter was found with input ${filter}`)
+      this.error(`No chapter was found with input ${filter}`.errorColor())
       this.exit(1)
     }
 
@@ -90,11 +90,11 @@ export default class Antidote extends Command {
       // const cp =
       exec(command, (err, pout, perr) => {
         if (err) {
-          this.error(err.errorColor())
+          this.error(err.toString().errorColor())
           reject(err)
         }
         if (perr) {
-          this.error(perr)
+          this.error(perr.toString().errorColor())
           reject(perr)
         }
         if (pout) {
@@ -116,8 +116,8 @@ export default class Antidote extends Command {
       const replacedContent = initialContent.replace(re, this.sentenceBreakChar + '  ').replace(/\n/gm, '\r\n')
       debug(`Processed antidote content: \n${replacedContent.substring(0, 250)}`)
       await writeFile(filepath, replacedContent, 'utf8')
-    } catch (error) {
-      this.error(error)
+    } catch (err) {
+      this.error(err.toString().errorColor())
       this.exit(1)
     }
   }
@@ -147,8 +147,8 @@ export default class Antidote extends Command {
       )
       debug(`Processed back antidote content: \n${replacedContent.substring(0, 250)}`)
       await writeFile(filepath, replacedContent, 'utf8')
-    } catch (error) {
-      this.error(error)
+    } catch (err) {
+      this.error(err.toString().errorColor())
       this.exit(1)
     }
   }
@@ -161,8 +161,8 @@ export default class Antidote extends Command {
         const replacedContent = String.fromCharCode(65279) + initialContent
         await writeFile(filepath, replacedContent, 'utf8')
       }
-    } catch (error) {
-      this.error(error)
+    } catch (err) {
+      this.error(err.toString().errorColor())
       this.exit(1)
     }
   }

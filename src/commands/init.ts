@@ -192,7 +192,7 @@ eol=lf
         // cli.action.start(`Creating ${baseName}`)
         await createFile(fullPathName, content)
       } catch (err) {
-        this.error(err.errorColor())
+        this.error(err.toString().errorColor())
         this.exit(1)
       } finally {
         cli.info(`Created ${fullPathName}`.infoColor())

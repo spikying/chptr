@@ -29,8 +29,8 @@ export default abstract class extends Command {
 
       const replacedContent = this.processContent(initialContent)
       await writeFile(filepath, replacedContent, 'utf8')
-    } catch (error) {
-      this.error(error)
+    } catch (err) {
+      this.error(err.toString().errorColor())
       this.exit(1)
     }
   }
@@ -41,8 +41,8 @@ export default abstract class extends Command {
 
       const replacedContent = this.processContentBack(initialContent)
       await writeFile(filepath, replacedContent, 'utf8')
-    } catch (error) {
-      this.error(error)
+    } catch (err) {
+      this.error(err.toString().errorColor())
       this.exit(1)
     }
   }
@@ -102,7 +102,7 @@ export default abstract class extends Command {
           `Commited and pushed ${commitSummary.commit}:\n${message}\nFile${toStageFiles.length > 1 ? 's' : ''}:${toStagePretty}`.actionStopColor()
         )
       } catch (err) {
-        this.error(err.errorColor())
+        this.error(err.toString().errorColor())
       }
     }
   }

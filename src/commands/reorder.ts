@@ -63,20 +63,20 @@ export default class Reorder extends Command {
         return previous || current
       })
     if (!originExists) {
-      this.error('Origin does not exist')
+      this.error('Origin does not exist'.errorColor())
       this.exit(1)
     }
 
     if (originNumber === -1) {
-      this.error('Origin argument is not a number or `end` or `@end`')
+      this.error('Origin argument is not a number or `end` or `@end`'.errorColor())
       this.exit(1)
     }
     if (destNumber === -1) {
-      this.error('Destination argument is not a number or `end` or `@end`')
+      this.error('Destination argument is not a number or `end` or `@end`'.errorColor())
       this.exit(1)
     }
     if (destNumber === originNumber && originIsAtNumbering === destIsAtNumbering) {
-      this.error('Origin must be different than Destination')
+      this.error('Origin must be different than Destination'.errorColor())
       this.exit(1)
     }
 

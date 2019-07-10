@@ -287,7 +287,7 @@ export default class Build extends Command {
         try {
           pandocRuns.push(this.runPandoc(pandocArgs))
         } catch (err) {
-          this.error(err.errorColor())
+          this.error(err.toString().errorColor())
           cli.action.status = 'error'.errorColor()
           this.exit(1)
         }
@@ -304,7 +304,7 @@ export default class Build extends Command {
       }
     } catch (err) {
       cli.action.status = 'error'.errorColor()
-      this.error(err.errorColor())
+      this.error(err.toString().errorColor())
       this.exit(1)
     } finally {
       await tempMetadataCleanup()
@@ -317,11 +317,11 @@ export default class Build extends Command {
       debug(`Executing child process with command ${command}`)
       exec(command, (err, pout, perr) => {
         if (err) {
-          this.error(err.errorColor())
+          this.error(err.toString().errorColor())
           reject(err)
         }
         if (perr) {
-          this.error(perr)
+          this.error(perr.toString().errorColor())
           reject(perr)
         }
         if (pout) {
@@ -392,8 +392,8 @@ export default class Build extends Command {
         value: wordCount,
         computed: true,
       })
-    } catch (error) {
-      this.error(error)
+    } catch (err) {
+      this.error(err.toString().errorColor())
       this.exit(1)
     }
 

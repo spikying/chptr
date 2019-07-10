@@ -55,7 +55,7 @@ export default class Add extends Command {
       )
 
       if (existingFile.length > 0) {
-        this.error(`File ${existingFile[0]} already exists`)
+        this.error(`File ${existingFile[0]} already exists`.errorColor())
         this.exit(1)
       }
     } else {
@@ -103,7 +103,7 @@ export default class Add extends Command {
       await this.git.push()
       cli.action.stop(`Added\n    ${fullPathMD}\n    ${fullPathSummary}\n    ${fullPathMeta}`.actionStopColor())
     } catch (err) {
-      this.error(err.errorColor())
+      this.error(err.toString().errorColor())
     }
   }
 }

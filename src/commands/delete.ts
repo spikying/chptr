@@ -58,7 +58,7 @@ export default class Delete extends Command {
     const nameOrNumber: any = args.name || queryResponses.name
 
     if (!nameOrNumber) {
-      this.error('Name or number input empty')
+      this.error('Name or number input empty'.errorColor())
       this.exit(1)
     }
 

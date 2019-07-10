@@ -77,7 +77,7 @@ export default class Edit extends Command {
     })
 
     if (toEditFiles.length === 0) {
-      this.error('No files matching input')
+      this.error('No files matching input'.errorColor())
       this.exit(0)
     }
 
