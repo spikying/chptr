@@ -12,8 +12,8 @@ export const getFilenameFromInput = async (msg?: string, defaultValue?: string) 
       message: msg || 'What name do you want as a filename?',
       type: 'input',
       default: defaultValue || 'chapter',
-      filter: sanitizeFileName,
-    },
+      filter: sanitizeFileName
+    }
   ])
   return responses.name
 }
@@ -21,8 +21,11 @@ export const getFilenameFromInput = async (msg?: string, defaultValue?: string) 
 export class QueryBuilder {
   private readonly allQueries: object[] = []
 
-  constructor() {
+  constructor(withFuzzyPath = false) {
     debug(`New QueryBuilder instance`)
+    if (withFuzzyPath) {
+      inquirer.registerPrompt('fuzzypath', require('inquirer-fuzzy-path'))
+    }
   }
 
   public add(name: string, params: object) {
@@ -44,7 +47,7 @@ export class QueryBuilder {
       message: msg || 'What name do you want as a filename?',
       type: 'input',
       default: defaultValue || 'chapter',
-      filter: sanitizeFileName,
+      filter: sanitizeFileName
     }
     return obj
   }
@@ -53,7 +56,7 @@ export class QueryBuilder {
     const obj = {
       message: 'What is the git remote address?',
       type: 'input',
-      filter: sanitizeUrl,
+      filter: sanitizeUrl
     }
     return obj
   }
@@ -62,7 +65,7 @@ export class QueryBuilder {
     const obj = {
       message: msg || 'Enter a value',
       type: 'input',
-      default: defaultValue,
+      default: defaultValue
     }
     return obj
   }
@@ -72,8 +75,34 @@ export class QueryBuilder {
       message: msg || 'Choose a value',
       type: 'checkbox',
       default: defaultValue,
-      choices,
+      choices
     }
+    return obj
+  }
+
+  public fuzzyFilename(rootPath: string, excludePath: (file: string) => boolean, msg?: string): object {
+    // debug(`fuzzy: ${excludePath.toString()}`)
+    const obj = {
+      type: 'fuzzypath',
+      // name: 'path',
+      excludePath, //nodePath => nodePath.startsWith('node_modules'),
+      // excludePath :: (String) -> Bool
+      // excludePath to exclude some paths from the file-system scan
+      itemType: 'file',
+      // itemType :: 'any' | 'directory' | 'file'
+      // specify the type of nodes to display
+      // default value: 'any'
+      // example: itemType: 'file' - hides directories from the item list
+      rootPath,
+      // rootPath :: String
+      // Root search directory
+      message: msg || 'Select a file',
+      default: '',
+      suggestOnly: true
+      // suggestOnly :: Bool
+      // Restrict prompt answer to available choices or use them as suggestions
+    }
+
     return obj
   }
 }
