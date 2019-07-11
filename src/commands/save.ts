@@ -10,16 +10,15 @@ const debug = d('command:save')
 
 export default class Save extends Command {
   static description =
-    'Parse modified text files, adjust sentence and paragraph endings, commit files to repository (remove deleted ones) and readjust endings.'
+    'Parse modified text files, adjust sentence and paragraph endings, and commit files to repository.'
 
   static flags = {
     ...Command.flags,
     filter: flags.string({
       char: 'f',
       required: false,
-      default: '',
-      // parse: filterNumbers,
-      description: 'Chapter number to filter which files to stage before saving to repository',
+      default: '',      
+      description: 'Chapter number or tracked filename to filter which files to stage before saving to repository',
     })
   }
 
@@ -40,6 +39,7 @@ export default class Save extends Command {
     debug('Running Save command')
     const { args, flags } = this.parse(Save)
 
+    // TODO: check for tracked filename
     const atFilter = flags.filter ? flags.filter.substring(0, 1) === '@' : false
     const numberFilter = flags.filter ? this.context.extractNumber(flags.filter) : undefined
 

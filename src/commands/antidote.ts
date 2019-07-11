@@ -11,10 +11,10 @@ import Command from './edit-save-base'
 const debug = d('command:antidote')
 
 export default class Antidote extends Command {
-  static description = 'Launch Antidote spell-checker'
+  static description = 'Launch Antidote spell-checker for given chapter'
 
   static flags = {
-    ...Command.flags,
+    ...Command.flags
   }
 
   static args = [
@@ -22,8 +22,8 @@ export default class Antidote extends Command {
       name: 'filter',
       description: 'Chapter number to Antidote.',
       required: false,
-      default: '',
-    },
+      default: ''
+    }
   ]
 
   static hidden = false
@@ -87,7 +87,7 @@ export default class Antidote extends Command {
     return new Promise((resolve, reject) => {
       const command = 'antidote ' + options.join(' ')
       debug(`Executing child process with command ${command} `)
-      // const cp =
+
       exec(command, (err, pout, perr) => {
         if (err) {
           this.error(err.toString().errorColor())
@@ -102,9 +102,7 @@ export default class Antidote extends Command {
         }
         resolve()
       })
-      // cp.on('close', (code, signal) => {
-      //   debug(`code = ${code} signal = ${signal} `)
-      // })
+
     })
   }
 

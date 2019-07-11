@@ -4,7 +4,8 @@ import * as path from 'path'
 
 import { getFilenameFromInput } from '../queries'
 
-import Command, { createFile, d, listFiles, numDigits, stringifyNumber } from './base'
+import { createFile, d, listFiles, numDigits, stringifyNumber } from './base'
+import Command from './edit-save-base'
 
 const debug = d('command:add')
 
@@ -16,8 +17,8 @@ export default class Add extends Command {
     atnumbered: flags.boolean({
       char: 'a',
       description: 'Add an @numbered chapter',
-      default: false,
-    }),
+      default: false
+    })
   }
 
   static args = [
@@ -25,14 +26,14 @@ export default class Add extends Command {
       name: 'name',
       description: 'name of chapter file(s) to add',
       required: false,
-      default: '',
+      default: ''
     },
     {
       name: 'number',
       description:
         'force this number to be used, if available.  If this argument is given, the `atnumbered` flag is ignored.  AtNumbering will be determined by the presence or absence of @ sign.',
-      required: false,
-    },
+      required: false
+    }
   ]
 
   static hidden = false
@@ -88,20 +89,21 @@ export default class Add extends Command {
     )
 
     try {
-      cli.action.start('Adding file(s) locally and to repository'.actionStartColor())
+      cli.action.start('Creating file(s) locally and to repository'.actionStartColor())
 
       const allPromises: Promise<void>[] = []
       allPromises.push(createFile(fullPathMD, filledTemplateData, { encoding: 'utf8' }))
       allPromises.push(createFile(fullPathMeta, filledTemplateMeta, { encoding: 'utf8' }))
       allPromises.push(createFile(fullPathSummary, filledTemplateData, { encoding: 'utf8' }))
       await Promise.all(allPromises)
+      cli.action.stop(`Added\n    ${fullPathMD}\n    ${fullPathSummary}\n    ${fullPathMeta}`.actionStopColor())
+
+      const toStageFiles = this.context.mapFilesToBeRelativeToRootPath([fullPathMD, fullPathMeta, fullPathSummary])
+      const commitMessage = `added ${fullPathMD}, ${fullPathMeta} and ${fullPathSummary}`
+
+      await this.CommitToGit(commitMessage, toStageFiles)
 
       await this.addDigitsToNecessaryStacks()
-
-      await this.git.add(this.context.mapFilesToBeRelativeToRootPath([fullPathMD, fullPathMeta, fullPathSummary]))
-      await this.git.commit(`added ${fullPathMD}, ${fullPathMeta} and ${fullPathSummary}`)
-      await this.git.push()
-      cli.action.stop(`Added\n    ${fullPathMD}\n    ${fullPathSummary}\n    ${fullPathMeta}`.actionStopColor())
     } catch (err) {
       this.error(err.toString().errorColor())
     }

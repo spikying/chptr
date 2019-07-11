@@ -18,7 +18,7 @@ export default class Build extends Command {
 
   static description = `Takes all original .MD files and outputs a single file without metadata and comments.  Handles these output formats: ${Build.exportableFileTypes.join(
     ', '
-  )}`
+  )}.  Gives some insight into writing rate.`
 
   static flags = {
     ...Command.flags,
@@ -36,7 +36,7 @@ export default class Build extends Command {
     }),
     removemarkup: flags.boolean({
       char: 'r',
-      description: 'Remove paragraph numbers and other markup',
+      description: 'Remove paragraph numbers and other markup in output',
       default: false,
     }),
     compact: flags.boolean({

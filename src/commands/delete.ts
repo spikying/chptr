@@ -11,16 +11,16 @@ import Command from './edit-save-base'
 const debug = d('command:delete')
 
 export default class Delete extends Command {
-  static description = 'Delete a file locally and in the repository'
+  static description = 'Delete a chapter or tracked file locally and in the repository'
 
   static flags = {
     ...Command.flags,
-    type: flags.string({
-      char: 't',
-      description: 'Delete either chapter file, summary file, metadata file or all.',
-      default: 'all',
-      options: ['all', 'summary', 'chapter', 'metadata'],
-    }),
+    // type: flags.string({
+    //   char: 't',
+    //   description: 'Delete either chapter file, summary file, metadata file or all.',
+    //   default: 'all',
+    //   options: ['all', 'summary', 'chapter', 'metadata'],
+    // }),
     compact: flags.boolean({
       char: 'c',
       description: 'Compact chapter numbers at the same time',
@@ -31,7 +31,7 @@ export default class Delete extends Command {
   static args = [
     {
       name: 'name',
-      description: 'filename pattern or chapter number to delete',
+      description: 'chapter number or filename to delete',
       required: false,
       default: '',
     },
@@ -45,13 +45,14 @@ export default class Delete extends Command {
     debug('Running Delete command')
     const { args, flags } = this.parse(Delete)
 
-    const deleteType = flags.type
+    // const deleteType = flags.type
     const compact = flags.compact
 
     const queryBuilder = new QueryBuilder()
 
     if (!args.name) {
-      queryBuilder.add('name', queryBuilder.textinput('Filename part or chapter number to delete?'))
+      //TODO: ask 1st if it's by chapter number or tracked file, then allow for tracked file scrolling
+      queryBuilder.add('name', queryBuilder.textinput('Chapter number or filename to delete?'))
     }
 
     const queryResponses: any = await queryBuilder.responses()
@@ -82,15 +83,15 @@ export default class Delete extends Command {
       // we will delete all files matching the number patterns for chapters, metadata and summary
       const filterNumber = this.context.extractNumber(nameOrNumber)
       const globPatterns: string[] = []
-      if (deleteType === 'all' || deleteType === 'chapter') {
+      // if (deleteType === 'all' || deleteType === 'chapter') {
         globPatterns.push(this.configInstance.chapterWildcardWithNumber(filterNumber, isAtNumber))
-      }
-      if (deleteType === 'all' || deleteType === 'summary') {
+      // }
+      // if (deleteType === 'all' || deleteType === 'summary') {
         globPatterns.push(this.configInstance.summaryWildcardWithNumber(filterNumber, isAtNumber))
-      }
-      if (deleteType === 'all' || deleteType === 'metadata') {
+      // }
+      // if (deleteType === 'all' || deleteType === 'metadata') {
         globPatterns.push(this.configInstance.metadataWildcardWithNumber(filterNumber, isAtNumber))
-      }
+      // }
 
       for (const gp of globPatterns) {
         const pathName = path.join(this.configInstance.projectRootPath, gp)

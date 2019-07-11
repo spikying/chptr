@@ -9,16 +9,17 @@ import Command from './edit-save-base'
 const debug = d('command:rename')
 
 export default class Rename extends Command {
-  static description = 'Modify chapter title in text, metadata and filename'
+  static description = 'Modify chapter title in text, metadata and filename or tracked filename'
 
   static flags = {
     ...Command.flags
+    // TODO: add a flag to allow for title parsing of chapter or summary file (if there are different results, ask which to use after)
   }
 
   static args = [
     {
-      name: 'chapter',
-      description: 'Chapter number to modify',
+      name: 'chapter', // TODO: change name to show it could be a tracked filename
+      description: 'Chapter number or tracked filename to modify',
       required: false,
       default: ''
     },
@@ -40,6 +41,7 @@ export default class Rename extends Command {
 
     if (!args.chapter) {
       //no chapter given; must ask for it
+      //TODO: allow for tracked filename
       queryBuilder.add('chapter', queryBuilder.textinput('What chapter to rename?', ''))
     }
 

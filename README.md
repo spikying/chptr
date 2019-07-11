@@ -38,6 +38,7 @@ USAGE
 * [`spixNovel rename [CHAPTER] [NEWNAME]`](#spixnovel-rename-chapter-newname)
 * [`spixNovel reorder ORIGIN DESTINATION`](#spixnovel-reorder-origin-destination)
 * [`spixNovel save [MESSAGE]`](#spixnovel-save-message)
+* [`spixNovel track [FILENAME]`](#spixnovel-track-filename)
 
 ## `spixNovel add [NAME] [NUMBER]`
 
@@ -54,17 +55,17 @@ ARGUMENTS
           AtNumbering will be determined by the presence or absence of @ sign.
 
 OPTIONS
-  -a, --atnumbered   Add an @numbered chapter
-  -h, --help         show CLI help
-  -n, --[no-]notify  show a notification box when build is completed.  Use --no-notify to suppress notification
-  -p, --path=path    [default: .] Path where root of project files are
+  -a, --atnumbered  Add an @numbered chapter
+  -h, --help        show CLI help
+  -n, --notify      show a notification box when build is completed.
+  -p, --path=path   [default: .] Path where root of project files are
 ```
 
 _See code: [src\commands\add.ts](https://github.com/spikying/spixNovel/blob/v0.0.0/src\commands\add.ts)_
 
 ## `spixNovel antidote [FILTER]`
 
-Launch Antidote spell-checker
+Launch Antidote spell-checker for given chapter
 
 ```
 USAGE
@@ -74,16 +75,16 @@ ARGUMENTS
   FILTER  Chapter number to Antidote.
 
 OPTIONS
-  -h, --help         show CLI help
-  -n, --[no-]notify  show a notification box when build is completed.  Use --no-notify to suppress notification
-  -p, --path=path    [default: .] Path where root of project files are
+  -h, --help       show CLI help
+  -n, --notify     show a notification box when build is completed.
+  -p, --path=path  [default: .] Path where root of project files are
 ```
 
 _See code: [src\commands\antidote.ts](https://github.com/spikying/spixNovel/blob/v0.0.0/src\commands\antidote.ts)_
 
 ## `spixNovel build`
 
-Takes all original .MD files and outputs a single file without metadata and comments.  Handles these output formats: md, pdf, docx, html, epub, tex
+Takes all original .MD files and outputs a single file without metadata and comments.  Handles these output formats: md, pdf, docx, html, epub, tex.  Gives some insight into writing rate.
 
 ```
 USAGE
@@ -93,16 +94,10 @@ OPTIONS
   -c, --compact                                Compact chapter numbers at the same time
   -d, --datetimestamp                          adds datetime stamp before output filename
   -h, --help                                   show CLI help
-
-  -n, --[no-]notify                            show a notification box when build is completed.  Use --no-notify to
-                                               suppress notification
-
+  -n, --notify                                 show a notification box when build is completed.
   -p, --path=path                              [default: .] Path where root of project files are
-
-  -r, --removemarkup                           Remove paragraph numbers and other markup
-
+  -r, --removemarkup                           Remove paragraph numbers and other markup in output
   -s, --showWritingRate=all|short|none|export  [default: short] Show word count per day in varying details
-
   -t, --filetype=md|pdf|docx|html|epub|tex     filetype to export to.  Can be set multiple times.
 
 ALIASES
@@ -113,26 +108,20 @@ _See code: [src\commands\build.ts](https://github.com/spikying/spixNovel/blob/v0
 
 ## `spixNovel delete [NAME]`
 
-Delete a file locally and in the repository
+Delete a chapter or tracked file locally and in the repository
 
 ```
 USAGE
   $ spixNovel delete [NAME]
 
 ARGUMENTS
-  NAME  filename pattern or chapter number to delete
+  NAME  chapter number or filename to delete
 
 OPTIONS
-  -c, --compact                            Compact chapter numbers at the same time
-  -h, --help                               show CLI help
-
-  -n, --[no-]notify                        show a notification box when build is completed.  Use --no-notify to suppress
-                                           notification
-
-  -p, --path=path                          [default: .] Path where root of project files are
-
-  -t, --type=all|summary|chapter|metadata  [default: all] Delete either chapter file, summary file, metadata file or
-                                           all.
+  -c, --compact    Compact chapter numbers at the same time
+  -h, --help       show CLI help
+  -n, --notify     show a notification box when build is completed.
+  -p, --path=path  [default: .] Path where root of project files are
 
 ALIASES
   $ spixNovel del
@@ -142,7 +131,7 @@ _See code: [src\commands\delete.ts](https://github.com/spikying/spixNovel/blob/v
 
 ## `spixNovel edit [FILTER]`
 
-Adjust sentence and paragraph endings to allow for easier editing.
+Adjust sentence and paragraph endings to allow for easier editing.  Commit changes with SAVE command.
 
 ```
 USAGE
@@ -153,12 +142,8 @@ ARGUMENTS
 
 OPTIONS
   -h, --help                      show CLI help
-
-  -n, --[no-]notify               show a notification box when build is completed.  Use --no-notify to suppress
-                                  notification
-
+  -n, --notify                    show a notification box when build is completed.
   -p, --path=path                 [default: .] Path where root of project files are
-
   -t, --type=all|summary|chapter  [default: all] Edit either chapter file, summary file or all.
 
 ALIASES
@@ -208,7 +193,7 @@ OPTIONS
 
   -l, --language=language    Language of project
 
-  -n, --[no-]notify          show a notification box when build is completed.  Use --no-notify to suppress notification
+  -n, --notify               show a notification box when build is completed.
 
   -p, --path=path            [default: .] Path where root of project files are
 
@@ -219,20 +204,20 @@ _See code: [src\commands\init.ts](https://github.com/spikying/spixNovel/blob/v0.
 
 ## `spixNovel rename [CHAPTER] [NEWNAME]`
 
-Modify chapter title in text, metadata and filename
+Modify chapter title in text, metadata and filename or tracked filename
 
 ```
 USAGE
   $ spixNovel rename [CHAPTER] [NEWNAME]
 
 ARGUMENTS
-  CHAPTER  Chapter number to modify
+  CHAPTER  Chapter number or tracked filename to modify
   NEWNAME  New chapter name
 
 OPTIONS
-  -h, --help         show CLI help
-  -n, --[no-]notify  show a notification box when build is completed.  Use --no-notify to suppress notification
-  -p, --path=path    [default: .] Path where root of project files are
+  -h, --help       show CLI help
+  -n, --notify     show a notification box when build is completed.
+  -p, --path=path  [default: .] Path where root of project files are
 ```
 
 _See code: [src\commands\rename.ts](https://github.com/spikying/spixNovel/blob/v0.0.0/src\commands\rename.ts)_
@@ -250,10 +235,10 @@ ARGUMENTS
   DESTINATION  Number it will become (write `end` or `@end`to put at the end of each stack).
 
 OPTIONS
-  -c, --compact      Compact chapter numbers at the same time
-  -h, --help         show CLI help
-  -n, --[no-]notify  show a notification box when build is completed.  Use --no-notify to suppress notification
-  -p, --path=path    [default: .] Path where root of project files are
+  -c, --compact    Compact chapter numbers at the same time
+  -h, --help       show CLI help
+  -n, --notify     show a notification box when build is completed.
+  -p, --path=path  [default: .] Path where root of project files are
 
 ALIASES
   $ spixNovel move
@@ -263,7 +248,7 @@ _See code: [src\commands\reorder.ts](https://github.com/spikying/spixNovel/blob/
 
 ## `spixNovel save [MESSAGE]`
 
-Parse modified text files, adjust sentence and paragraph endings, commit files to repository (remove deleted ones) and readjust endings.
+Parse modified text files, adjust sentence and paragraph endings, and commit files to repository.
 
 ```
 USAGE
@@ -273,9 +258,9 @@ ARGUMENTS
   MESSAGE  Message to use in commit to repository
 
 OPTIONS
-  -f, --filter=filter  Chapter number to filter which files to stage before saving to repository
+  -f, --filter=filter  Chapter number or tracked filename to filter which files to stage before saving to repository
   -h, --help           show CLI help
-  -n, --[no-]notify    show a notification box when build is completed.  Use --no-notify to suppress notification
+  -n, --notify         show a notification box when build is completed.
   -p, --path=path      [default: .] Path where root of project files are
 
 ALIASES
@@ -283,4 +268,23 @@ ALIASES
 ```
 
 _See code: [src\commands\save.ts](https://github.com/spikying/spixNovel/blob/v0.0.0/src\commands\save.ts)_
+
+## `spixNovel track [FILENAME]`
+
+Add a file to be tracked in repository that is not a chapter, summary or metadata file.
+
+```
+USAGE
+  $ spixNovel track [FILENAME]
+
+ARGUMENTS
+  FILENAME  Filename to track
+
+OPTIONS
+  -h, --help       show CLI help
+  -n, --notify     show a notification box when build is completed.
+  -p, --path=path  [default: .] Path where root of project files are
+```
+
+_See code: [src\commands\track.ts](https://github.com/spikying/spixNovel/blob/v0.0.0/src\commands\track.ts)_
 <!-- commandsstop -->

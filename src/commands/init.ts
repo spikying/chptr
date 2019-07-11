@@ -1,6 +1,5 @@
 import { flags } from '@oclif/command'
 import { cli } from 'cli-ux'
-// import * as d from "debug";
 import * as fs from 'fs'
 import * as path from 'path'
 
@@ -8,15 +7,11 @@ import { Author } from '../config'
 import { QueryBuilder } from '../queries'
 
 import Command, { createDir, createFile, d, sanitizeFileName } from './base'
-// import { pathToFileURL } from 'url';
-// import { promisify } from "util";
 
 const debug = d('command:init')
-// const createDir = promisify(fs.mkdir);
-// const createFile = promisify(fs.writeFile);
 
 export default class Init extends Command {
-  // export default class Init extends Add {
+
   static description = 'Generates basic config files for a new novel project'
 
   static flags = {

@@ -58,7 +58,7 @@ String.prototype.resultNormalColor = function() {
 String.prototype.infoColor = function() {
   return chalk.gray(this)
 }
-String.prototype.errorColor = function () {
+String.prototype.errorColor = function() {
   return chalk.redBright(this)
 }
 
@@ -69,15 +69,14 @@ export default abstract class extends Command {
     help: flags.help({ char: 'h' }),
     notify: flags.boolean({
       char: 'n',
-      description: 'show a notification box when build is completed.  Use --no-notify to suppress notification',
-      default: false,
-      allowNo: true,
+      description: 'show a notification box when build is completed.',
+      default: false
     }),
     path: flags.string({
       char: 'p',
       default: '.',
-      description: 'Path where root of project files are',
-    }),
+      description: 'Path where root of project files are'
+    })
   }
   static hidden = true
 
@@ -117,24 +116,28 @@ export default abstract class extends Command {
     if (flags.notify) {
       notifier.notify({
         title: 'Spix Novel Builder',
-        message: `Task completed for ${this.configInstance.config.projectTitle}`,
+        message: `Task completed for ${this.configInstance.config.projectTitle}`
       })
     }
   }
 
-  public async addDigitsToNecessaryStacks(): Promise<void> {
+  public async addDigitsToNecessaryStacks(): Promise<boolean> {
+    let didAddDigits = false
     await this.context.getAllNovelFiles(true)
     for (const b of [true, false]) {
       const maxDigits = this.context.getMaxNecessaryDigits(b)
       const minDigits = this.context.getMinDigits(b)
       if (minDigits < maxDigits) {
         await this.addDigitsToFiles(await this.context.getAllFilesForOneType(b, true), maxDigits, b)
+        didAddDigits = true
       }
     }
+    return didAddDigits
   }
 
   public async compactFileNumbers(): Promise<void> {
     cli.action.start('Compacting file numbers'.actionStartColor())
+    //TODO: turn into a cli.table for output
     const renumberingDone: string[] = []
     const movePromises: Promise<MoveSummary>[] = []
 
@@ -159,6 +162,7 @@ export default abstract class extends Command {
 
           if (fromFilename !== toFilename) {
             renumberingDone.push(`    Compacted from ${fromFilename} to ${toFilename}`)
+            //TODO: move to temp folder and then back after all name changes are done
             movePromises.push(this.git.mv(fromFilename, toFilename))
           }
           currentNumber += this.configInstance.config.numberingStep
@@ -197,7 +201,6 @@ export const numDigits = function(x: number, buffer = 2) {
 }
 
 export const stringifyNumber = function(x: number, digits: number): string {
-  //, unNumbered: boolean): string {
   const s = x.toString()
   const zeroes = Math.max(digits - s.length, 0)
   if (zeroes > 0) {

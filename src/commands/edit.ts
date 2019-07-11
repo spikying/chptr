@@ -10,7 +10,7 @@ import Command from './edit-save-base'
 const debug = d('command:edit')
 
 export default class Edit extends Command {
-  static description = 'Adjust sentence and paragraph endings to allow for easier editing.'
+  static description = 'Adjust sentence and paragraph endings to allow for easier editing.  Commit changes with SAVE command.'
 
   static flags = {
     ...Command.flags,

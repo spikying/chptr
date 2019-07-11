@@ -4,7 +4,6 @@ import * as fs from 'fs'
 import * as path from 'path'
 import { MoveSummary } from 'simple-git/typings/response'
 
-
 import { d } from './base'
 import Command from './edit-save-base'
 
@@ -18,8 +17,8 @@ export default class Reorder extends Command {
     compact: flags.boolean({
       char: 'c',
       description: 'Compact chapter numbers at the same time',
-      default: false,
-    }),
+      default: false
+    })
   }
 
   static args = [
@@ -27,8 +26,8 @@ export default class Reorder extends Command {
     {
       name: 'destination',
       description: 'Number it will become (write `end` or `@end`to put at the end of each stack).',
-      required: true,
-    },
+      required: true
+    }
   ]
 
   static aliases = ['move']
@@ -88,7 +87,7 @@ export default class Reorder extends Command {
         (await this.context.getAllFilesForOneType(destIsAtNumbering)).map(file => {
           return this.context.extractNumber(file)
         })
-      ),
+      )
     ] //to make unique
       .filter(fileNumber => {
         if (sameAtNumbering) {
@@ -219,12 +218,15 @@ export default class Reorder extends Command {
 
     cli.action.stop(`Moved files${fileMovesPretty}\nDeleted temp folder ${tempDir}`.actionStopColor())
 
-    await this.addDigitsToNecessaryStacks()
+    const didAddDigits = await this.addDigitsToNecessaryStacks()
 
     let commitMessage = `Reordered files from ${(originIsAtNumbering ? '@' : '') + originNumber} to ${(destIsAtNumbering ? '@' : '') + destNumber}`
     if (compact) {
       commitMessage += '\nCompacted file numbers'
       await this.compactFileNumbers()
+    }
+    if (didAddDigits) {
+      commitMessage += '\nAdded digits to chapter numbers'
     }
 
     // cli.action.start('Commit and push to remote repository')
