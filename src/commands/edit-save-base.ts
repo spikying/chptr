@@ -8,7 +8,7 @@ const debug = d('command:edit-save-base')
 
 export default abstract class extends Command {
   static flags = {
-    ...Command.flags,
+    ...Command.flags
   }
 
   // https://unicode.org/reports/tr29/#Sentence_Boundaries
@@ -97,9 +97,9 @@ export default abstract class extends Command {
         await this.git.pull()
 
         debug(`commitSummary:\n${JSON.stringify(commitSummary)}`)
-        const toStagePretty = toStageFiles.map(f => `\n    ${f}`)
+        const toStagePretty = toStageFiles.map(f => `\n    ${f}`.infoColor())
         cli.action.stop(
-          `Commited and pushed ${commitSummary.commit}:\n${message}\nFile${toStageFiles.length > 1 ? 's' : ''}:${toStagePretty}`.actionStopColor()
+          `\nCommited and pushed ${commitSummary.commit}:\n${message.infoColor()}\nFile${toStageFiles.length > 1 ? 's' : ''}:${toStagePretty}`.actionStopColor()
         )
       } catch (err) {
         this.error(err.toString().errorColor())
@@ -142,7 +142,7 @@ export default abstract class extends Command {
       })
   }
 
-  async processChapterFilesBeforeSaving(toStageFiles: string[]): Promise<void> {
+  public async processChapterFilesBeforeSaving(toStageFiles: string[]): Promise<void> {
     // cli.action.start('Reading and processing modified files')
     for (const filename of toStageFiles) {
       const fullPath = path.join(this.configInstance.projectRootPath, filename)

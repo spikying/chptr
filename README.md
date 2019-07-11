@@ -28,26 +28,30 @@ USAGE
 <!-- usagestop -->
 # Commands
 <!-- commands -->
-* [`spixNovel add [NAME]`](#spixnovel-add-name)
+* [`spixNovel add [NAME] [NUMBER]`](#spixnovel-add-name-number)
 * [`spixNovel antidote [FILTER]`](#spixnovel-antidote-filter)
-* [`spixNovel build [OUTPUTFILE]`](#spixnovel-build-outputfile)
+* [`spixNovel build`](#spixnovel-build)
 * [`spixNovel delete [NAME]`](#spixnovel-delete-name)
 * [`spixNovel edit [FILTER]`](#spixnovel-edit-filter)
 * [`spixNovel help [COMMAND]`](#spixnovel-help-command)
 * [`spixNovel init [NAME]`](#spixnovel-init-name)
+* [`spixNovel rename [CHAPTER] [NEWNAME]`](#spixnovel-rename-chapter-newname)
 * [`spixNovel reorder ORIGIN DESTINATION`](#spixnovel-reorder-origin-destination)
 * [`spixNovel save [MESSAGE]`](#spixnovel-save-message)
 
-## `spixNovel add [NAME]`
+## `spixNovel add [NAME] [NUMBER]`
 
 Adds a file or set of files as a new chapter, locally and in repository
 
 ```
 USAGE
-  $ spixNovel add [NAME]
+  $ spixNovel add [NAME] [NUMBER]
 
 ARGUMENTS
-  NAME  name of chapter file(s) to add
+  NAME    name of chapter file(s) to add
+
+  NUMBER  force this number to be used, if available.  If this argument is given, the `atnumbered` flag is ignored.
+          AtNumbering will be determined by the presence or absence of @ sign.
 
 OPTIONS
   -a, --atnumbered   Add an @numbered chapter
@@ -77,30 +81,29 @@ OPTIONS
 
 _See code: [src\commands\antidote.ts](https://github.com/spikying/spixNovel/blob/v0.0.0/src\commands\antidote.ts)_
 
-## `spixNovel build [OUTPUTFILE]`
+## `spixNovel build`
 
 Takes all original .MD files and outputs a single file without metadata and comments.  Handles these output formats: md, pdf, docx, html, epub, tex
 
 ```
 USAGE
-  $ spixNovel build [OUTPUTFILE]
-
-ARGUMENTS
-  OUTPUTFILE  output filename, without extension, concatenating all other files's contents
+  $ spixNovel build
 
 OPTIONS
-  -c, --compact                             Compact chapter numbers at the same time
-  -d, --datetimestamp                       adds datetime stamp before output filename
-  -h, --help                                show CLI help
+  -c, --compact                                Compact chapter numbers at the same time
+  -d, --datetimestamp                          adds datetime stamp before output filename
+  -h, --help                                   show CLI help
 
-  -n, --[no-]notify                         show a notification box when build is completed.  Use --no-notify to
-                                            suppress notification
+  -n, --[no-]notify                            show a notification box when build is completed.  Use --no-notify to
+                                               suppress notification
 
-  -p, --path=path                           [default: .] Path where root of project files are
+  -p, --path=path                              [default: .] Path where root of project files are
 
-  -r, --removemarkup                        Remove paragraph numbers and other markup
+  -r, --removemarkup                           Remove paragraph numbers and other markup
 
-  -t, --filetype=md|pdf|docx|html|epub|tex  filetype to export in.  Can be set multiple times.
+  -s, --showWritingRate=all|short|none|export  [default: short] Show word count per day in varying details
+
+  -t, --filetype=md|pdf|docx|html|epub|tex     filetype to export to.  Can be set multiple times.
 
 ALIASES
   $ spixNovel compile
@@ -214,6 +217,26 @@ OPTIONS
 
 _See code: [src\commands\init.ts](https://github.com/spikying/spixNovel/blob/v0.0.0/src\commands\init.ts)_
 
+## `spixNovel rename [CHAPTER] [NEWNAME]`
+
+Modify chapter title in text, metadata and filename
+
+```
+USAGE
+  $ spixNovel rename [CHAPTER] [NEWNAME]
+
+ARGUMENTS
+  CHAPTER  Chapter number to modify
+  NEWNAME  New chapter name
+
+OPTIONS
+  -h, --help         show CLI help
+  -n, --[no-]notify  show a notification box when build is completed.  Use --no-notify to suppress notification
+  -p, --path=path    [default: .] Path where root of project files are
+```
+
+_See code: [src\commands\rename.ts](https://github.com/spikying/spixNovel/blob/v0.0.0/src\commands\rename.ts)_
+
 ## `spixNovel reorder ORIGIN DESTINATION`
 
 Takes a chapter and modifies its index number to fit another ordering place
@@ -254,7 +277,6 @@ OPTIONS
   -h, --help           show CLI help
   -n, --[no-]notify    show a notification box when build is completed.  Use --no-notify to suppress notification
   -p, --path=path      [default: .] Path where root of project files are
-  --[no-]warning       Use --no-warning to suppress warning when there is no files to save
 
 ALIASES
   $ spixNovel commit

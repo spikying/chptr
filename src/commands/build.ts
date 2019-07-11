@@ -119,7 +119,7 @@ export default class Build extends Command {
 
       await this.CommitToGit('Autosave markup updates')
 
-      cli.info('Extracting metadata for all chapters files'.infoColor())
+      cli.info('Extracting metadata for all chapters files'.actionStartColor())
 
       const allMetadataFilesArray = (await globPromise(path.join(this.configInstance.projectRootPath, this.configInstance.metadataWildcard(false)))).concat(
         await globPromise(path.join(this.configInstance.projectRootPath, this.configInstance.metadataWildcard(true)))
@@ -458,9 +458,10 @@ export default class Build extends Command {
       const isAt = this.configInstance.isAtNumbering(file)
 
       const metadataFilename = await this.context.getMetadataFilenameFromParameters(num, isAt)
+      // const metadataFilePath = await this.overwriteMetadata(metadataFilename, extractedMarkup, computedMarkup)
+      // if (metadataFilePath) { modifiedFiles.push(metadataFilePath) }
+
       const metadataFilePath = path.join(this.configInstance.projectRootPath, metadataFilename)
-      // const buff = await readFile(path.join(this.configInstance.projectRootPath, metadataFilename))
-      // const initialContent = await buff.toString('utf8', 0, buff.byteLength)
       const initialContent = await this.readFileContent(metadataFilePath)
       const obj = JSON.parse(initialContent)
       obj.extracted = extractedMarkup
@@ -474,6 +475,20 @@ export default class Build extends Command {
     }
     return modifiedFiles
   }
+
+  // private async overwriteMetadata(metadataFilename: string, extractedMarkup: any, computedMarkup: any): Promise<string | undefined> {
+  //   const metadataFilePath = path.join(this.configInstance.projectRootPath, metadataFilename)
+  //   const initialContent = await this.readFileContent(metadataFilePath)
+  //   const obj = JSON.parse(initialContent)
+  //   obj.extracted = extractedMarkup
+  //   obj.computed = computedMarkup
+
+  //   const updatedContent = JSON.stringify(obj, null, 4)
+  //   if (initialContent !== updatedContent) {
+  //     await writeFile(metadataFilePath, updatedContent)
+  //     return metadataFilePath
+  //   }
+  // }
 
   private async extractMeta(filepath: string, extractAll: boolean): Promise<MetaObj[]> {
     const file = path.basename(filepath)

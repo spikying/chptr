@@ -1,11 +1,10 @@
 import { flags } from '@oclif/command'
 import { cli } from 'cli-ux'
-import * as glob from 'glob'
 import * as path from 'path'
 
 import { QueryBuilder } from '../queries'
 
-import { d } from './base'
+import { d, globPromise } from './base'
 import Command from './edit-save-base'
 
 const debug = d('command:edit')
@@ -19,8 +18,8 @@ export default class Edit extends Command {
       char: 't',
       description: 'Edit either chapter file, summary file or all.',
       default: 'all',
-      options: ['all', 'summary', 'chapter'],
-    }),
+      options: ['all', 'summary', 'chapter']
+    })
   }
 
   static args = [
@@ -28,8 +27,8 @@ export default class Edit extends Command {
       name: 'filter',
       description: 'Chapter number(s) to modify, comma-separated.',
       required: false,
-      default: '',
-    },
+      default: ''
+    }
   ]
 
   static aliases = ['modify', 'mod']
@@ -62,19 +61,21 @@ export default class Edit extends Command {
       }
     }
 
-    chapterIds.forEach(async id => {
+    for (const id of chapterIds) {
       const num = this.context.extractNumber(id)
       const isAtNumbering = this.configInstance.isAtNumbering(id)
 
-      const foundFiles: string[] = []
       if (editType === 'all' || editType === 'chapter') {
-        foundFiles.push(...glob.sync(path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcardWithNumber(num, isAtNumbering))))
+        toEditFiles.push(
+          ...(await globPromise(path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcardWithNumber(num, isAtNumbering))))
+        )
       }
       if (editType === 'all' || editType === 'summary') {
-        foundFiles.push(...glob.sync(path.join(this.configInstance.projectRootPath, this.configInstance.summaryWildcardWithNumber(num, isAtNumbering))))
+        toEditFiles.push(
+          ...(await globPromise(path.join(this.configInstance.projectRootPath, this.configInstance.summaryWildcardWithNumber(num, isAtNumbering))))
+        )
       }
-      toEditFiles.push(...foundFiles)
-    })
+    }
 
     if (toEditFiles.length === 0) {
       this.error('No files matching input'.errorColor())

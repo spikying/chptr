@@ -19,7 +19,7 @@ interface StackStatistics {
 const nullStackStats: StackStatistics = {
   highestNumber: 0,
   minDigits: 1,
-  maxNecessaryDigits: 1,
+  maxNecessaryDigits: 1
 }
 
 export class Context {
@@ -45,6 +45,19 @@ export class Context {
     })
   }
 
+  public async getAllFileForChapter(num: number, isAtNumbered: boolean): Promise<string[]> {
+    const files: string[] = []
+    const wildcards = [
+      this.configInstance.chapterWildcardWithNumber(num, isAtNumbered),
+      this.configInstance.metadataWildcardWithNumber(num, isAtNumbered),
+      this.configInstance.summaryWildcardWithNumber(num, isAtNumbered)
+    ]
+    for (const wildcard of wildcards) {
+      files.push(...(await globPromise(path.join(this.configInstance.projectRootPath, wildcard))))
+    }
+    return files
+  }
+
   public async getAllFilesForOneType(isAtNumbered: boolean, refresh = false): Promise<string[]> {
     const existingFiles = isAtNumbered ? this._allAtNumberedFiles : this._allNormalFiles
 
@@ -53,7 +66,7 @@ export class Context {
       const wildcards = [
         this.configInstance.chapterWildcard(isAtNumbered),
         this.configInstance.metadataWildcard(isAtNumbered),
-        this.configInstance.summaryWildcard(isAtNumbered),
+        this.configInstance.summaryWildcard(isAtNumbered)
       ]
       for (const wildcard of wildcards) {
         files.push(...(await globPromise(path.join(this.configInstance.projectRootPath, wildcard))))
@@ -97,6 +110,11 @@ export class Context {
     } else {
       return this._allNovelStatistics.normalStack.minDigits
     }
+  }
+
+  public getActualDigitsFromChapterFilename(filename: string, atNumber: boolean): number {
+    const match = this.configInstance.chapterRegex(atNumber).exec(path.basename(filename))
+    return match ? match[1].length : 1
   }
 
   public getNextFilenumber(previousNumber: number): number {
@@ -185,7 +203,7 @@ export class Context {
     this._allNovelStatistics[index] = {
       highestNumber,
       minDigits,
-      maxNecessaryDigits,
+      maxNecessaryDigits
     }
   }
 }

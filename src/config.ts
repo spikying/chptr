@@ -41,7 +41,7 @@ export class Config {
     jsonConfig.metadataFields = {
       manual: jsonConfig.metadataFields,
       computed: { title: '###', wordCount: 0 },
-      extracted: {},
+      extracted: {}
     }
 
     debug(`Config Object: ${json.stringify(jsonConfig)}`)
@@ -103,7 +103,7 @@ date: ${moment().format('D MMMM YYYY')}
           throw new Error('Must have NUM and NAME in pattern')
         }
       },
-      default: 'NUM NAME',
+      default: 'NUM NAME'
     },
     metadataPattern: {
       doc:
@@ -114,7 +114,7 @@ date: ${moment().format('D MMMM YYYY')}
           throw new Error('Must have NUM in pattern')
         }
       },
-      default: 'NUM.metadata',
+      default: 'NUM.metadata'
     },
     summaryPattern: {
       doc:
@@ -125,46 +125,46 @@ date: ${moment().format('D MMMM YYYY')}
           throw new Error('Must have NUM in pattern')
         }
       },
-      default: 'NUM.summary',
+      default: 'NUM.summary'
     },
     buildDirectory: {
       doc: 'Directory where to output builds done with Pandoc.  Defaults to `build/`.',
-      default: 'build/',
+      default: 'build/'
     },
     projectTitle: {
       doc: 'Title for the project.  Will be used as a head title in renderings.',
-      default: 'MyNovel',
+      default: 'MyNovel'
     },
     projectAuthor: {
       name: {
         doc: 'Author for the project.',
-        default: '---',
+        default: '---'
       },
       email: {
         doc: 'Author for the project.',
         default: '---',
-        format: 'email',
-      },
+        format: 'email'
+      }
     },
     projectLang: {
       doc: 'Project language',
-      default: 'en',
+      default: 'en'
     },
     fontName: {
       doc: 'Font to use for the rendering engines that use it',
-      default: 'Arial',
+      default: 'Arial'
     },
     fontSize: {
       doc: 'Font size for the rendering engines that use it',
-      default: '12pt',
+      default: '12pt'
     },
     numberingStep: {
       doc: 'Increment step when numbering files',
-      default: 1,
+      default: 1
     },
     numberingInitial: {
       doc: 'Initial file number',
-      default: 1,
+      default: 1
     },
     metadataFields: {
       doc: 'All fields to be added in each Metadata file',
@@ -174,9 +174,9 @@ date: ${moment().format('D MMMM YYYY')}
         characters: [],
         mainCharacter: '',
         mainCharacterQuest: '',
-        otherQuest: '',
-      },
-    },
+        otherQuest: ''
+      }
+    }
   }
   private readonly configSchema = Convict(this.configSchemaObject)
   private readonly rootPath: string
@@ -223,8 +223,8 @@ date: ${moment().format('D MMMM YYYY')}
         configDefaultsString += `"`
         configDefaultsString += `: `
         let val = overrideObj2[props[i]] || this.configSchema.default(props[i])
-        if (typeof val === 'object') {          
-          val = JSON.stringify(val)          
+        if (typeof val === 'object') {
+          val = JSON.stringify(val)
         } else {
           val = `"${val}"`
         }
@@ -293,7 +293,7 @@ date: ${moment().format('D MMMM YYYY')}
   private numberWildcardPortion(atNumbering: boolean, num: number | null = null) {
     let result = ''
     if (atNumbering) {
-      result += '\\@'
+      result += '@'
     }
     if (num) {
       result += '*(0)' + num.toString()
