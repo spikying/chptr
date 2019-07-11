@@ -3,6 +3,7 @@ import { cli } from 'cli-ux'
 import * as deb from 'debug'
 import * as fs from 'fs'
 import * as glob from 'glob'
+import * as latinize from 'latinize'
 import * as notifier from 'node-notifier'
 import * as path from 'path'
 import * as sanitize from 'sanitize-filename'
@@ -21,7 +22,9 @@ export const copyFile = promisify(fs.copyFile)
 export const moveFile = promisify(fs.rename)
 export const listFiles = promisify(glob)
 export const createDir = promisify(fs.mkdir)
+export const deleteDir = promisify(fs.rmdir)
 export const deleteFile = promisify(fs.unlink)
+export const mkdtemp = promisify(fs.mkdtemp)
 export const fileExists = async function(path: fs.PathLike): Promise<boolean> {
   return new Promise(resolve => {
     fs.access(path, err => {
@@ -128,8 +131,7 @@ export default abstract class extends Command {
       const maxDigits = this.context.getMaxNecessaryDigits(b)
       const minDigits = this.context.getMinDigits(b)
       if (minDigits < maxDigits) {
-        await this.addDigitsToFiles(await this.context.getAllFilesForOneType(b, true), maxDigits, b)
-        didAddDigits = true
+        didAddDigits = didAddDigits || (await this.addDigitsToFiles(await this.context.getAllFilesForOneType(b, true), maxDigits, b))
       }
     }
     return didAddDigits
@@ -137,9 +139,12 @@ export default abstract class extends Command {
 
   public async compactFileNumbers(): Promise<void> {
     cli.action.start('Compacting file numbers'.actionStartColor())
-    //TODO: turn into a cli.table for output
-    const renumberingDone: string[] = []
+
+    const table = this.tableize('from', 'to')
+    const moves: { fromFilename: string; toFilename: string }[] = []
     const movePromises: Promise<MoveSummary>[] = []
+    const { tempDir, removeTempDir } = await this.getTempDir()
+    const tempDirForGit = this.context.mapFileToBeRelativeToRootPath(tempDir)
 
     for (const b of [true, false]) {
       const wildcards = [this.configInstance.chapterWildcard(b), this.configInstance.metadataWildcard(b), this.configInstance.summaryWildcard(b)]
@@ -161,9 +166,10 @@ export default abstract class extends Command {
           )
 
           if (fromFilename !== toFilename) {
-            renumberingDone.push(`    Compacted from ${fromFilename} to ${toFilename}`)
-            //TODO: move to temp folder and then back after all name changes are done
-            movePromises.push(this.git.mv(fromFilename, toFilename))
+            debug(`from: ${fromFilename} to: ${path.join(tempDirForGit, toFilename)}`)
+            moves.push({ fromFilename, toFilename })
+            table.accumulator(fromFilename, toFilename)
+            movePromises.push(this.git.mv(fromFilename, path.join(tempDirForGit, toFilename)))
           }
           currentNumber += this.configInstance.config.numberingStep
         }
@@ -171,11 +177,92 @@ export default abstract class extends Command {
     }
 
     await Promise.all(movePromises)
-    cli.action.stop(`\n${JSON.stringify(renumberingDone)}`.actionStopColor())
+    for (const renumbering of moves) {
+      debug(`from: ${path.join(tempDirForGit, renumbering.toFilename)} to: ${renumbering.toFilename}`)
+      movePromises.push(this.git.mv(path.join(tempDirForGit, renumbering.toFilename), renumbering.toFilename))
+    }
+    await Promise.all(movePromises)
+
+    await removeTempDir()
+
+    if (moves.length === 0) {
+      cli.action.stop(`no compacting was needed`.actionStopColor())
+    } else {
+      cli.action.stop(`done:`.actionStopColor())
+      debug
+      table.show()
+      // cli.table(moves.map(o => ({ fromFilename: o.fromFilename.resultNormalColor, toFilename: o.toFilename.resultHighlighColor })), {
+      //   fromFilename: {
+      //     header: 'from'.infoColor(),
+      //     minWidth: 30
+      //     // minWidth: 15
+      //   },
+      //   ' ->': {
+      //     get: () => ''
+      //   },
+      //   toFilename: {
+      //     header: 'to'.infoColor()
+      //   }
+      // })
+    }
   }
 
-  private async addDigitsToFiles(files: string[], newDigitNumber: number, atNumberingStack: boolean): Promise<MoveSummary[]> {
+  public async getTempDir(): Promise<{ tempDir: string; removeTempDir(): Promise<void> }> {
+    let tempDir = ''
+    try {
+      const tempPrefix = 'temp'
+      tempDir = await mkdtemp(path.join(this.configInstance.projectRootPath, tempPrefix))
+      debug(`Created temp dir: ${tempDir}`)
+    } catch (err) {
+      cli.error(err.errorColor())
+      cli.exit(1)
+    }
+
+    const removeTempDir = async function() {
+      try {
+        debug(`Deleting temp dir: ${tempDir}`)
+        await deleteDir(tempDir)
+      } catch (err) {
+        cli.error(err.errorColor())
+        cli.exit(1)
+      }
+    }
+
+    return { tempDir, removeTempDir }
+  }
+
+  public tableize(col1: string, col2: string) {
+    const moves: { from: string; to: string }[] = []
+    const accumulator = function(from: string, to: string) {
+      moves.push({ from, to })
+    }
+
+    const show = () => {
+      if (moves.length > 0) {
+        cli.table(moves.map(o => ({ from: o.from.resultNormalColor(), to: o.to.resultHighlighColor() })), {
+          from: {
+            header: col1.infoColor(),
+            minWidth: 30
+          },
+          ' ->': {
+            get: () => ''
+          },
+          to: {
+            header: col2.infoColor()
+          }
+        })
+      }
+    }
+
+    const returnObj = { accumulator, show }
+    return returnObj
+  }
+
+  private async addDigitsToFiles(files: string[], newDigitNumber: number, atNumberingStack: boolean): Promise<boolean> {
     const promises: Promise<MoveSummary>[] = []
+    let hasMadeChanges = false
+    const table = this.tableize('from', 'to')
+
     for (const file of files) {
       const filename = path.basename(file)
       const atNumbering = this.configInstance.isAtNumbering(filename)
@@ -187,12 +274,17 @@ export default abstract class extends Command {
           path.join(path.dirname(file), this.context.renumberedFilename(filename, filenumber, newDigitNumber, atNumbering))
         )
         if (fromFilename !== toFilename) {
-          this.log(`renaming with new file number "${fromFilename}" to "${toFilename}"`)
+          // this.log(`renaming with new file number "${fromFilename}" to "${toFilename}"`.infoColor())
+          table.accumulator(fromFilename, toFilename)
           promises.push(this.git.mv(fromFilename, toFilename))
+          hasMadeChanges = true
         }
       }
     }
-    return Promise.all(promises)
+
+    table.show()
+    await Promise.all(promises)
+    return hasMadeChanges
   }
 }
 
@@ -212,7 +304,8 @@ export const stringifyNumber = function(x: number, digits: number): string {
 
 export const sanitizeFileName = function(original: string): string {
   const sanitized = sanitize(original)
-  return sanitized
+  const latinized = latinize(sanitized)
+  return latinized
 }
 
 const sanitize_url = require('@braintree/sanitize-url').sanitizeUrl

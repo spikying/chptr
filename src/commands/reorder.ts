@@ -1,6 +1,5 @@
 import { flags } from '@oclif/command'
 import { cli } from 'cli-ux'
-import * as fs from 'fs'
 import * as path from 'path'
 import { MoveSummary } from 'simple-git/typings/response'
 
@@ -41,7 +40,7 @@ export default class Reorder extends Command {
 
     cli.action.start('Analyzing files'.actionStartColor())
 
-    const dir = path.join(flags.path as string)
+    // const dir = path.join(flags.path as string)
     const originIsAtNumbering = args.origin.toString().substring(0, 1) === '@'
     const destIsAtNumbering = args.destination.toString().substring(0, 1) === '@'
 
@@ -158,15 +157,16 @@ export default class Reorder extends Command {
     cli.action.stop('done'.actionStopColor())
     cli.action.start('Moving files to temp directory'.actionStartColor())
 
-    let tempDir = ''
-    try {
-      const tempPrefix = 'temp'
-      tempDir = fs.mkdtempSync(path.join(dir, tempPrefix))
-      debug(`Created temp dir: ${tempDir}`)
-    } catch (err) {
-      cli.error(err.errorColor())
-      cli.exit(1)
-    }
+    // let tempDir = ''
+    // try {
+    //   const tempPrefix = 'temp'
+    //   tempDir = fs.mkdtempSync(path.join(dir, tempPrefix))
+    //   debug(`Created temp dir: ${tempDir}`)
+    // } catch (err) {
+    //   cli.error(err.errorColor())
+    //   cli.exit(1)
+    // }
+    const { tempDir, removeTempDir } = await this.getTempDir()
 
     try {
       const moveTempPromises: Promise<MoveSummary>[] = []
@@ -208,15 +208,16 @@ export default class Reorder extends Command {
       cli.exit(1)
     }
 
-    try {
-      debug(`Deleting temp dir: ${tempDir}`)
-      fs.rmdirSync(tempDir)
-    } catch (err) {
-      cli.error(err.errorColor())
-      cli.exit(1)
-    }
+    // try {
+    //   debug(`Deleting temp dir: ${tempDir}`)
+    //   fs.rmdirSync(tempDir)
+    // } catch (err) {
+    //   cli.error(err.errorColor())
+    //   cli.exit(1)
+    // }
+    await removeTempDir()
 
-    cli.action.stop(`Moved files${fileMovesPretty}\nDeleted temp folder ${tempDir}`.actionStopColor())
+    cli.action.stop('done'.actionStopColor()) // `Moved files${fileMovesPretty}\n`.actionStopColor() + `Deleted temp folder `.actionStartColor() + `${tempDir}`.actionStopColor())
 
     const didAddDigits = await this.addDigitsToNecessaryStacks()
 

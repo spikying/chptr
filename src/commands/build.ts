@@ -164,15 +164,17 @@ export default class Build extends Command {
 
         if (showWritingRate) {
           cli.info(`Writing rate:`.infoColor())
+          const tableSummary = this.tableize('Date', 'Word diff')
+          const tableDetails = this.tableize('Date | Chapter file #', 'Word diff')
           for (const date of Object.keys(diffByDate).sort()) {
-            const table: any[] = []
-            const total: string = diffByDate[date].total.toString()
-            const output = {
-              summary: `${date.resultNormalColor()} ->\t${total.resultHighlighColor()}`,
-              details: '',
-              table,
-            }
-            cli.info(output.summary)
+            tableSummary.accumulator(date, diffByDate[date].total.toString())
+            // const total: string = diffByDate[date].total.toString()
+            // const output = {
+            //   summary: `${date.resultNormalColor()} ->\t${total.resultHighlighColor()}`,
+            //   // details: '',
+            //   // table,
+            // }
+            // cli.info(output.summary)
 
             if (showWritingRateDetails) {
               for (const metafile of Object.keys(diffByDate[date])) {
@@ -180,30 +182,35 @@ export default class Build extends Command {
                   const isAtNumbering = this.configInstance.isAtNumbering(metafile)
                   const chapterNumberMatch = this.configInstance.metadataRegex(isAtNumbering).exec(metafile)
 
-                  let chapterNumber = chapterNumberMatch ? (isAtNumbering ? '@' : '') + chapterNumberMatch[1] : '?'
-                  chapterNumber = (' '.repeat(14 - chapterNumber.length) + chapterNumber).infoColor()
+                  const chapterNumber = chapterNumberMatch ? (isAtNumbering ? '@' : '') + chapterNumberMatch[1] : '?'
+                  // chapterNumber = (' '.repeat(14 - chapterNumber.length) + chapterNumber).infoColor()
 
                   let wordDiff: string = diffByDate[date][metafile].toString()
                   wordDiff = wordDiff.resultSecondaryColor()
 
-                  output.table.push({ chapterNumber, wordDiff })
+                  // output.table.push({ chapterNumber, wordDiff })
+                  tableDetails.accumulator(`${date.infoColor()} # ${chapterNumber}`, wordDiff)
                 }
               }
 
-              cli.table(output.table, {
-                chapterNumber: {
-                  header: `${'Chapter file #'.infoColor()}`,
-                  minWidth: 15,
-                },
-                ' ->': {
-                  get: () => '',
-                },
-                wordDiff: {
-                  header: `${'Word diff'.infoColor()}`,
-                },
-              })
+              
+              
+              // cli.table(output.table, {
+              //   chapterNumber: {
+              //     header: `${'Chapter file #'.infoColor()}`,
+              //     minWidth: 15,
+              //   },
+              //   ' ->': {
+              //     get: () => '',
+              //   },
+              //   wordDiff: {
+              //     header: `${'Word diff'.infoColor()}`,
+              //   },
+              // })
             }
           }
+          tableDetails.show()
+          tableSummary.show()
         }
       })
 

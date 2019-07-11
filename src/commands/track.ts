@@ -3,7 +3,7 @@ import * as path from 'path'
 
 import { QueryBuilder } from '../queries'
 
-import { d, globPromise } from './base'
+import { d } from './base'
 import Command from './edit-save-base'
 
 const debug = d('command:track')

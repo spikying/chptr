@@ -7,7 +7,7 @@ import * as json from 'json5'
 import moment = require('moment')
 import * as path from 'path'
 
-import { sanitizeFileName } from './Commands/base'
+import { sanitizeFileName } from './commands/base'
 
 const debug = d('config')
 const loadFileSync = fs.readFileSync as (path: string) => string

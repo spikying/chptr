@@ -99,7 +99,7 @@ export default abstract class extends Command {
         debug(`commitSummary:\n${JSON.stringify(commitSummary)}`)
         const toStagePretty = toStageFiles.map(f => `\n    ${f}`.infoColor())
         cli.action.stop(
-          `\nCommited and pushed ${commitSummary.commit}:\n${message.infoColor()}\nFile${toStageFiles.length > 1 ? 's' : ''}:${toStagePretty}`.actionStopColor()
+          `\nCommited and pushed ${commitSummary.commit.resultHighlighColor()}:\n${message.infoColor()}\nFile${toStageFiles.length > 1 ? 's' : ''}:${toStagePretty}`.actionStopColor()
         )
       } catch (err) {
         this.error(err.toString().errorColor())
