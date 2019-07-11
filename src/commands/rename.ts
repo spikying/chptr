@@ -57,11 +57,6 @@ export default class Rename extends Command {
 
     cli.action.start('Renaming files'.actionStartColor())
 
-    // const novelFiles = (await this.context.getAllNovelFiles()).filter(f => {
-    //   const n = this.context.extractNumber(f)
-    //   const at = this.configInstance.isAtNumbering(f)
-    //   return num === n && isAtNumbering === at
-    // })
     const chapterFile = (await globPromise(
       path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcardWithNumber(num, isAtNumbering))
     ))[0]
@@ -72,8 +67,7 @@ export default class Rename extends Command {
       path.join(this.configInstance.projectRootPath, this.configInstance.metadataWildcardWithNumber(num, isAtNumbering))
     ))[0]
 
-    // if (novelFiles.length === 0) {
-      if (!chapterFile || !summaryFile || !metadataFile) {
+    if (!chapterFile || !summaryFile || !metadataFile) {
       await this.context.updateStackStatistics(isAtNumbering)
       const digits = this.context.getMinDigits(isAtNumbering)
       const expectedFiles = [
@@ -82,13 +76,10 @@ export default class Rename extends Command {
         this.configInstance.metadataFileNameFromParameters(stringifyNumber(num, digits), newNameForFile, isAtNumbering)
       ]
       this.error(`Missing a file within this list:${expectedFiles.map(f => `\n    ${f}`)}`.errorColor())
-      // this.exit(0)
-      // this.error('No file found'.errorColor())
       this.exit(0)
     }
 
     const digits = this.context.getActualDigitsFromChapterFilename(chapterFile, isAtNumbering)
-
 
     const didUpdateChapter = {
       filename: chapterFile,
@@ -103,17 +94,12 @@ export default class Rename extends Command {
       rename: ''
     }
     const didUpdateMetadata = {
-      filename:metadataFile,
+      filename: metadataFile,
       title: await this.replaceTitleInObject(metadataFile, newName),
       newFileName: this.configInstance.metadataFileNameFromParameters(stringifyNumber(num, digits), newNameForFile, isAtNumbering),
       rename: ''
     }
-
     const didUpdates = [didUpdateChapter, didUpdateSummary, didUpdateMetadata]
-
-    // const newChapterFilename = this.configInstance.chapterFileNameFromParameters(stringifyNumber(num, digits), newNameForFile, isAtNumbering)
-    // const newSummaryFilename = this.configInstance.summaryFileNameFromParameters(stringifyNumber(num, digits), newNameForFile, isAtNumbering)
-    // const newMetadataFilename = this.configInstance.metadataFileNameFromParameters(stringifyNumber(num, digits), newNameForFile, isAtNumbering)
 
     for (const didUpdate of didUpdates) {
       if (this.context.mapFileToBeRelativeToRootPath(didUpdate.filename) !== didUpdate.newFileName) {
@@ -121,19 +107,6 @@ export default class Rename extends Command {
         await this.git.mv(this.context.mapFileToBeRelativeToRootPath(didUpdate.filename), didUpdate.newFileName)
       }
     }
-
-    // if (this.context.mapFileToBeRelativeToRootPath(chapterFile) !== newChapterFilename) {
-    //   didUpdateChapter.rename = newChapterFilename
-    //   await this.git.mv(this.context.mapFileToBeRelativeToRootPath(chapterFile), newChapterFilename)
-    // }
-    // if (this.context.mapFileToBeRelativeToRootPath(summaryFile) !== newSummaryFilename) {
-    //   didUpdateSummary.rename = newSummaryFilename
-    //   await this.git.mv(this.context.mapFileToBeRelativeToRootPath(summaryFile), newSummaryFilename)
-    // }
-    // if (this.context.mapFileToBeRelativeToRootPath(metadataFile) !== newMetadataFilename) {
-    //   didUpdateMetadata.rename = newMetadataFilename
-    //   await this.git.mv(this.context.mapFileToBeRelativeToRootPath(metadataFile), newMetadataFilename)
-    // }
 
     const toRenamePretty = didUpdates.reduce(
       (previous, current) =>
@@ -168,7 +141,7 @@ export default class Rename extends Command {
     extractedMarkup.title = newTitle
 
     const updatedContent = JSON.stringify(obj, null, 4)
-    // debug(`initialCntent=${JSON.stringify(initialContent)} updatedContent=${updatedContent}`)
+
     if (initialContent !== updatedContent) {
       await writeFile(metadataFile, updatedContent)
       return true
@@ -176,6 +149,4 @@ export default class Rename extends Command {
       return false
     }
   }
-
-  
 }
