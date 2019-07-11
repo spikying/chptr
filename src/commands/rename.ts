@@ -57,6 +57,11 @@ export default class Rename extends Command {
 
     cli.action.start('Renaming files'.actionStartColor())
 
+    // const novelFiles = (await this.context.getAllNovelFiles()).filter(f => {
+    //   const n = this.context.extractNumber(f)
+    //   const at = this.configInstance.isAtNumbering(f)
+    //   return num === n && isAtNumbering === at
+    // })
     const chapterFile = (await globPromise(
       path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcardWithNumber(num, isAtNumbering))
     ))[0]
@@ -67,7 +72,8 @@ export default class Rename extends Command {
       path.join(this.configInstance.projectRootPath, this.configInstance.metadataWildcardWithNumber(num, isAtNumbering))
     ))[0]
 
-    if (!chapterFile || !summaryFile || !metadataFile) {
+    // if (novelFiles.length === 0) {
+      if (!chapterFile || !summaryFile || !metadataFile) {
       await this.context.updateStackStatistics(isAtNumbering)
       const digits = this.context.getMinDigits(isAtNumbering)
       const expectedFiles = [
@@ -76,47 +82,60 @@ export default class Rename extends Command {
         this.configInstance.metadataFileNameFromParameters(stringifyNumber(num, digits), newNameForFile, isAtNumbering)
       ]
       this.error(`Missing a file within this list:${expectedFiles.map(f => `\n    ${f}`)}`.errorColor())
+      // this.exit(0)
+      // this.error('No file found'.errorColor())
       this.exit(0)
     }
 
     const digits = this.context.getActualDigitsFromChapterFilename(chapterFile, isAtNumbering)
 
-    const didUpdateChapter = { filename: chapterFile, title: await this.replaceTitleInMarkdown(chapterFile, newName), rename: '' }
-    const didUpdateSummary = { filename: summaryFile, title: await this.replaceTitleInMarkdown(summaryFile, newName), rename: '' }
-    const didUpdateMetadata = { filename: metadataFile, title: false, rename: '' }
 
-    const initialContent = await this.readFileContent(metadataFile)
-    const obj = JSON.parse(initialContent)
-    const extractedMarkup = obj.extracted
-
-    extractedMarkup.title = newName
-
-    // await this.overwriteMetadata(metadataFile, extractedMarkup, computedMarkup)
-    const updatedContent = JSON.stringify(obj, null, 4)
-    debug(`initialCntent=${JSON.stringify(initialContent)} updatedContent=${updatedContent}`)
-    if (initialContent !== updatedContent) {
-      await writeFile(metadataFile, updatedContent)
-      didUpdateMetadata.title = true
+    const didUpdateChapter = {
+      filename: chapterFile,
+      title: await this.replaceTitleInMarkdown(chapterFile, newName),
+      newFileName: this.configInstance.chapterFileNameFromParameters(stringifyNumber(num, digits), newNameForFile, isAtNumbering),
+      rename: ''
+    }
+    const didUpdateSummary = {
+      filename: summaryFile,
+      title: await this.replaceTitleInMarkdown(summaryFile, newName),
+      newFileName: this.configInstance.summaryFileNameFromParameters(stringifyNumber(num, digits), newNameForFile, isAtNumbering),
+      rename: ''
+    }
+    const didUpdateMetadata = {
+      filename:metadataFile,
+      title: await this.replaceTitleInObject(metadataFile, newName),
+      newFileName: this.configInstance.metadataFileNameFromParameters(stringifyNumber(num, digits), newNameForFile, isAtNumbering),
+      rename: ''
     }
 
-    const newChapterFilename = this.configInstance.chapterFileNameFromParameters(stringifyNumber(num, digits), newNameForFile, isAtNumbering)
-    const newSummaryFilename = this.configInstance.summaryFileNameFromParameters(stringifyNumber(num, digits), newNameForFile, isAtNumbering)
-    const newMetadataFilename = this.configInstance.metadataFileNameFromParameters(stringifyNumber(num, digits), newNameForFile, isAtNumbering)
+    const didUpdates = [didUpdateChapter, didUpdateSummary, didUpdateMetadata]
 
-    if (this.context.mapFileToBeRelativeToRootPath(chapterFile) !== newChapterFilename) {
-      didUpdateChapter.rename = newChapterFilename
-      await this.git.mv(this.context.mapFileToBeRelativeToRootPath(chapterFile), newChapterFilename)
-    }
-    if (this.context.mapFileToBeRelativeToRootPath(summaryFile) !== newSummaryFilename) {
-      didUpdateSummary.rename = newSummaryFilename
-      await this.git.mv(this.context.mapFileToBeRelativeToRootPath(summaryFile), newSummaryFilename)
-    }
-    if (this.context.mapFileToBeRelativeToRootPath(metadataFile) !== newMetadataFilename) {
-      didUpdateMetadata.rename = newMetadataFilename
-      await this.git.mv(this.context.mapFileToBeRelativeToRootPath(metadataFile), newMetadataFilename)
+    // const newChapterFilename = this.configInstance.chapterFileNameFromParameters(stringifyNumber(num, digits), newNameForFile, isAtNumbering)
+    // const newSummaryFilename = this.configInstance.summaryFileNameFromParameters(stringifyNumber(num, digits), newNameForFile, isAtNumbering)
+    // const newMetadataFilename = this.configInstance.metadataFileNameFromParameters(stringifyNumber(num, digits), newNameForFile, isAtNumbering)
+
+    for (const didUpdate of didUpdates) {
+      if (this.context.mapFileToBeRelativeToRootPath(didUpdate.filename) !== didUpdate.newFileName) {
+        didUpdate.rename = didUpdate.newFileName
+        await this.git.mv(this.context.mapFileToBeRelativeToRootPath(didUpdate.filename), didUpdate.newFileName)
+      }
     }
 
-    const toRenamePretty = [didUpdateChapter, didUpdateSummary, didUpdateMetadata].reduce(
+    // if (this.context.mapFileToBeRelativeToRootPath(chapterFile) !== newChapterFilename) {
+    //   didUpdateChapter.rename = newChapterFilename
+    //   await this.git.mv(this.context.mapFileToBeRelativeToRootPath(chapterFile), newChapterFilename)
+    // }
+    // if (this.context.mapFileToBeRelativeToRootPath(summaryFile) !== newSummaryFilename) {
+    //   didUpdateSummary.rename = newSummaryFilename
+    //   await this.git.mv(this.context.mapFileToBeRelativeToRootPath(summaryFile), newSummaryFilename)
+    // }
+    // if (this.context.mapFileToBeRelativeToRootPath(metadataFile) !== newMetadataFilename) {
+    //   didUpdateMetadata.rename = newMetadataFilename
+    //   await this.git.mv(this.context.mapFileToBeRelativeToRootPath(metadataFile), newMetadataFilename)
+    // }
+
+    const toRenamePretty = didUpdates.reduce(
       (previous, current) =>
         `${previous}\n    ${current.filename} (${current.title ? 'updated content' : 'content not updated'}; ${
           current.rename ? 'renamed to ' + current.rename : 'not renamed'
@@ -130,14 +149,33 @@ export default class Rename extends Command {
     await this.CommitToGit(`Renaming chapter ${chapterId} to ${newName}${toRenamePretty}`, toCommitFiles)
   }
 
-  private async replaceTitleInMarkdown(actualFile: string, newName: string): Promise<boolean> {
+  private async replaceTitleInMarkdown(actualFile: string, newTitle: string): Promise<boolean> {
     const titleRegex = /^\n# (.*?)\n/
     const initialContent = await this.readFileContent(actualFile)
-    const replacedContent = initialContent.replace(titleRegex, `\n# ${newName}\n`)
+    const replacedContent = initialContent.replace(titleRegex, `\n# ${newTitle}\n`)
     if (initialContent !== replacedContent) {
       await writeFile(actualFile, replacedContent, 'utf8')
       return true
     }
     return false
   }
+
+  private async replaceTitleInObject(metadataFile: string, newTitle: string): Promise<boolean> {
+    const initialContent = await this.readFileContent(metadataFile)
+    const obj = JSON.parse(initialContent)
+    const extractedMarkup = obj.extracted
+
+    extractedMarkup.title = newTitle
+
+    const updatedContent = JSON.stringify(obj, null, 4)
+    // debug(`initialCntent=${JSON.stringify(initialContent)} updatedContent=${updatedContent}`)
+    if (initialContent !== updatedContent) {
+      await writeFile(metadataFile, updatedContent)
+      return true
+    } else {
+      return false
+    }
+  }
+
+  
 }
