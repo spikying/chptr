@@ -1,10 +1,11 @@
 import { flags } from '@oclif/command'
 import { cli } from 'cli-ux'
 import * as minimatch from 'minimatch'
+import * as path from 'path'
 
 import { QueryBuilder } from '../queries'
 
-import { d } from './base'
+import { d, fileExists } from './base'
 import Command from './edit-save-base'
 
 const debug = d('command:save')
@@ -18,14 +19,21 @@ export default class Save extends Command {
       char: 'n',
       required: false,
       default: '',
-      description: 'Chapter number to filter which files to stage before saving to repository'
+      description: 'Chapter number to filter which files to stage before saving to repository',
+      exclusive: ['filename']
     }),
     filename: flags.string({
       char: 'f',
       required: false,
       default: '',
-      description: 'Tracked filename or filename pattern to filter which files sto stage before saving to repository',
-      exclusive: ['extra-flag']
+      description: 'Tracked filename or filename pattern to filter which files to stage before saving to repository'
+    }),
+    track: flags.boolean({
+      char: 't',
+      required: false,
+      default: false,
+      description: 'Force tracking of file if not already in repository',
+      dependsOn: ['filename']
     })
   }
 
@@ -46,13 +54,12 @@ export default class Save extends Command {
     debug('Running Save command')
     const { args, flags } = this.parse(Save)
 
-    // TODO: check for tracked filename
     const atFilter = flags.number ? flags.number.substring(0, 1) === '@' : false
     const numberFilter = flags.number ? this.context.extractNumber(flags.number) : undefined
 
     const preStageFiles = flags.number ? await this.GetGitListOfStageableFiles(numberFilter, atFilter) : []
 
-    debug(`flags.number=${ flags.number} numberFilter=${numberFilter} at=${atFilter} preStageFiles=${JSON.stringify(preStageFiles)}`)
+    debug(`flags.number=${flags.number} numberFilter=${numberFilter} at=${atFilter} preStageFiles=${JSON.stringify(preStageFiles)}`)
 
     for (const toStageFile of preStageFiles) {
       const isChapterFile = numberFilter
@@ -73,20 +80,37 @@ export default class Save extends Command {
       : await this.GetGitListOfStageableFiles()
 
     if (toStageFiles.length === 0) {
-      this.warn('No files to save to repository')
-    } else {
-      const queryBuilder = new QueryBuilder()
-      if (!args.message) {
-        queryBuilder.add('message', queryBuilder.textinput('Message to use in commit to repository?', ''))
+      const filepath = path.join(this.configInstance.projectRootPath, flags.filename || '')
+      if (flags.filename && (await fileExists(filepath))) {
+        if (flags.track) {
+          toStageFiles.push(this.context.mapFileToBeRelativeToRootPath(filepath))
+        } else {
+          const warnMsg =
+            `That file is not tracked.  You may want to run "` +
+            `track '${flags.filename}'`.resultNormalColor() +
+            `" or add ` +
+            `--track`.resultNormalColor() +
+            ` flag to this command.`
+          this.warn(warnMsg.infoColor())
+          this.exit(0)
+        }
+      } else {
+        this.warn('No files to save to repository')
+        this.exit(0)
       }
-
-      const queryResponses: any = await queryBuilder.responses()
-
-      let message: string = args.message || queryResponses.message || 'Modified files:'
-      message += '\n' + `${JSON.stringify(toStageFiles)}`
-
-      await this.CommitToGit(message, toStageFiles)
     }
+
+    const queryBuilder = new QueryBuilder()
+    if (!args.message) {
+      queryBuilder.add('message', queryBuilder.textinput('Message to use in commit to repository?', ''))
+    }
+
+    const queryResponses: any = await queryBuilder.responses()
+
+    let message: string = args.message || queryResponses.message || 'Modified files:'
+    message += '\n' + `${JSON.stringify(toStageFiles)}`
+
+    await this.CommitToGit(message, toStageFiles)
   }
 
   private async UpdateSingleMetadata(chapterFile: string) {
