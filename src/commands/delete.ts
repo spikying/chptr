@@ -1,6 +1,6 @@
 import { flags } from '@oclif/command'
 import { cli } from 'cli-ux'
-import * as glob from 'glob'
+// import * as glob from 'glob'
 import * as path from 'path'
 
 import { QueryBuilder } from '../queries'
@@ -24,8 +24,8 @@ export default class Delete extends Command {
     compact: flags.boolean({
       char: 'c',
       description: 'Compact chapter numbers at the same time',
-      default: false,
-    }),
+      default: false
+    })
   }
 
   static args = [
@@ -33,8 +33,8 @@ export default class Delete extends Command {
       name: 'name',
       description: 'chapter number or filename to delete',
       required: false,
-      default: '',
-    },
+      default: ''
+    }
   ]
 
   static aliases = ['del']
@@ -51,7 +51,6 @@ export default class Delete extends Command {
     const queryBuilder = new QueryBuilder()
 
     if (!args.name) {
-      //TODO: ask 1st if it's by chapter number or tracked file, then allow for tracked file scrolling
       queryBuilder.add('name', queryBuilder.textinput('Chapter number or filename to delete?'))
     }
 
@@ -73,10 +72,10 @@ export default class Delete extends Command {
 
     if (!isChapterNumberOnly) {
       // we will delete all files matching the name entered
-      let filePattern = '*' + nameOrNumber + '*'
-      if (glob.hasMagic(nameOrNumber)) {
-        filePattern = nameOrNumber
-      }
+      let filePattern = '**/' + nameOrNumber
+      // if (glob.hasMagic(nameOrNumber)) {
+      //   filePattern = nameOrNumber
+      // }
       const pathName = path.join(this.configInstance.projectRootPath, filePattern)
       toDeleteFiles.push(...(await listFiles(pathName)))
     } else {
@@ -84,13 +83,13 @@ export default class Delete extends Command {
       const filterNumber = this.context.extractNumber(nameOrNumber)
       const globPatterns: string[] = []
       // if (deleteType === 'all' || deleteType === 'chapter') {
-        globPatterns.push(this.configInstance.chapterWildcardWithNumber(filterNumber, isAtNumber))
+      globPatterns.push(this.configInstance.chapterWildcardWithNumber(filterNumber, isAtNumber))
       // }
       // if (deleteType === 'all' || deleteType === 'summary') {
-        globPatterns.push(this.configInstance.summaryWildcardWithNumber(filterNumber, isAtNumber))
+      globPatterns.push(this.configInstance.summaryWildcardWithNumber(filterNumber, isAtNumber))
       // }
       // if (deleteType === 'all' || deleteType === 'metadata') {
-        globPatterns.push(this.configInstance.metadataWildcardWithNumber(filterNumber, isAtNumber))
+      globPatterns.push(this.configInstance.metadataWildcardWithNumber(filterNumber, isAtNumber))
       // }
 
       for (const gp of globPatterns) {

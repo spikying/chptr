@@ -35,7 +35,7 @@ USAGE
 * [`spixNovel edit [FILTER]`](#spixnovel-edit-filter)
 * [`spixNovel help [COMMAND]`](#spixnovel-help-command)
 * [`spixNovel init [NAME]`](#spixnovel-init-name)
-* [`spixNovel rename [CHAPTER] [NEWNAME]`](#spixnovel-rename-chapter-newname)
+* [`spixNovel rename [CHAPTERORFILENAME] [NEWNAME]`](#spixnovel-rename-chapterorfilename-newname)
 * [`spixNovel reorder ORIGIN DESTINATION`](#spixnovel-reorder-origin-destination)
 * [`spixNovel save [MESSAGE]`](#spixnovel-save-message)
 * [`spixNovel track [FILENAME]`](#spixnovel-track-filename)
@@ -202,22 +202,23 @@ OPTIONS
 
 _See code: [src\commands\init.ts](https://github.com/spikying/spixNovel/blob/v0.0.0/src\commands\init.ts)_
 
-## `spixNovel rename [CHAPTER] [NEWNAME]`
+## `spixNovel rename [CHAPTERORFILENAME] [NEWNAME]`
 
 Modify chapter title in text, metadata and filename or tracked filename
 
 ```
 USAGE
-  $ spixNovel rename [CHAPTER] [NEWNAME]
+  $ spixNovel rename [CHAPTERORFILENAME] [NEWNAME]
 
 ARGUMENTS
-  CHAPTER  Chapter number or tracked filename to modify
-  NEWNAME  New chapter name
+  CHAPTERORFILENAME  Chapter number or tracked filename to modify
+  NEWNAME            New chapter name
 
 OPTIONS
   -h, --help       show CLI help
   -n, --notify     show a notification box when build is completed.
   -p, --path=path  [default: .] Path where root of project files are
+  -t, --title      'Use chapter's title as new name.  Will supercede a `newName` argument.
 ```
 
 _See code: [src\commands\rename.ts](https://github.com/spikying/spixNovel/blob/v0.0.0/src\commands\rename.ts)_
@@ -258,10 +259,16 @@ ARGUMENTS
   MESSAGE  Message to use in commit to repository
 
 OPTIONS
-  -f, --filter=filter  Chapter number or tracked filename to filter which files to stage before saving to repository
-  -h, --help           show CLI help
-  -n, --notify         show a notification box when build is completed.
-  -p, --path=path      [default: .] Path where root of project files are
+  -f, --filename=filename  Tracked filename or filename pattern to filter which files sto stage before saving to
+                           repository
+
+  -h, --help               show CLI help
+
+  -n, --notify             show a notification box when build is completed.
+
+  -n, --number=number      Chapter number to filter which files to stage before saving to repository
+
+  -p, --path=path          [default: .] Path where root of project files are
 
 ALIASES
   $ spixNovel commit

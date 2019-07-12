@@ -261,9 +261,14 @@ export default abstract class extends Command {
         await writeFile(metadataFilePath, updatedContent)
         modifiedFiles.push({
           file: metadataFilePath,
-          diff: JsDiff.diffWords(initialContent, updatedContent)
-            .map(d => JSON.stringify(d))
-            .join(', ')
+          diff: JsDiff.diffJson(JSON.parse(initialContent), JSON.parse(updatedContent))
+            .map(d => {
+              let s = d.added ? `++ ${d.value.trim()}` : ''
+              s += d.removed ? `-- ${d.value.trim()}` : ''
+              return s
+            })
+            .filter(s=> s.length>0)
+            .join('; ')
         })
       }
     }

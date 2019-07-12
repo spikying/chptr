@@ -14,11 +14,18 @@ export default class Save extends Command {
 
   static flags = {
     ...Command.flags,
-    filter: flags.string({
+    number: flags.string({
+      char: 'n',
+      required: false,
+      default: '',
+      description: 'Chapter number to filter which files to stage before saving to repository'
+    }),
+    filename: flags.string({
       char: 'f',
       required: false,
       default: '',
-      description: 'Chapter number or tracked filename to filter which files to stage before saving to repository'
+      description: 'Tracked filename or filename pattern to filter which files sto stage before saving to repository',
+      exclusive: ['extra-flag']
     })
   }
 
@@ -40,11 +47,12 @@ export default class Save extends Command {
     const { args, flags } = this.parse(Save)
 
     // TODO: check for tracked filename
-    const atFilter = flags.filter ? flags.filter.substring(0, 1) === '@' : false
-    const numberFilter = flags.filter ? this.context.extractNumber(flags.filter) : undefined
+    const atFilter = flags.number ? flags.number.substring(0, 1) === '@' : false
+    const numberFilter = flags.number ? this.context.extractNumber(flags.number) : undefined
 
-    debug(`flag filter= ${flags.filter} numberFilter = ${numberFilter}`)
-    const preStageFiles = await this.GetGitListOfStageableFiles(numberFilter, atFilter)
+    const preStageFiles = flags.number ? await this.GetGitListOfStageableFiles(numberFilter, atFilter) : []
+
+    debug(`flags.number=${ flags.number} numberFilter=${numberFilter} at=${atFilter} preStageFiles=${JSON.stringify(preStageFiles)}`)
 
     for (const toStageFile of preStageFiles) {
       const isChapterFile = numberFilter
@@ -55,7 +63,14 @@ export default class Save extends Command {
         await this.UpdateSingleMetadata(toStageFile)
       }
     }
-    const toStageFiles = await this.GetGitListOfStageableFiles(numberFilter, atFilter)
+    const toStageFiles = flags.number
+      ? await this.GetGitListOfStageableFiles(numberFilter, atFilter)
+      : flags.filename
+      ? (await this.GetGitListOfStageableFiles()).filter(f => {
+          debug(`f=${f}, flags.filename=${flags.filename}`)
+          return minimatch(f, flags.filename || '')
+        })
+      : await this.GetGitListOfStageableFiles()
 
     if (toStageFiles.length === 0) {
       this.warn('No files to save to repository')

@@ -138,10 +138,12 @@ export default class Build extends Command {
       })
       await Promise.all(metaExtractPromises).then(async fullMetaArray => {
         const flattenedMetaArray: MetaObj[] = ([] as MetaObj[]).concat(...fullMetaArray).filter(m => m.wordCountDiff !== 0)
-        debug(`flattenedMetaArray: ${JSON.stringify(flattenedMetaArray, null, 2)}`)
+
         const diffByDate: any = {}
 
         const mappedDiffArray = flattenedMetaArray.map(m => ({ file: m.log.file, date: m.log.date.format('YYYY-MM-DD'), diff: m.wordCountDiff }))
+
+        debug(`mappedArray=${JSON.stringify(mappedDiffArray.filter(d=>d.date === moment().format('YYYY-MM-DD')), null, 2)}`)
 
         if (exportWritingRate) {
           cli.action.start('Writing rate CSV file'.actionStartColor())
@@ -418,6 +420,12 @@ export default class Build extends Command {
           .reduce((previous, current) => {
             return previous + current
           }, 0)
+
+          // if (log.date >= moment().add(-12, 'hour') && wordCountDiff ===0) {
+          //   debug(`log data: ${JSON.stringify(log)}`)
+          //   debug(`diff data: ${s[1]}`)
+          //   debug(`wordCountDiff: ${wordCountDiff}`)
+          // }
 
         return { log, wordCountDiff }
       })

@@ -71,7 +71,7 @@ export default abstract class extends Command {
   static flags = {
     help: flags.help({ char: 'h' }),
     notify: flags.boolean({
-      char: 'n',
+      char: 'N',
       description: 'show a notification box when build is completed.',
       default: false
     }),
