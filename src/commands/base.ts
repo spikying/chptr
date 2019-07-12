@@ -236,6 +236,11 @@ export default abstract class extends Command {
     const accumulator = function(from: string, to: string) {
       moves.push({ from, to })
     }
+    const accumulatorArray = function (arr: { from: string, to: string }[]) {
+      for (const line of arr) {
+        accumulator(line.from, line.to)
+      }
+    }
 
     const show = () => {
       if (moves.length > 0) {
@@ -254,7 +259,7 @@ export default abstract class extends Command {
       }
     }
 
-    const returnObj = { accumulator, show }
+    const returnObj = { accumulator, show, accumulatorArray }
     return returnObj
   }
 
