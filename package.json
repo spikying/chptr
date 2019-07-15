@@ -1,12 +1,12 @@
 {
-  "name": "spixnovel",
+  "name": "chptr",
   "description": "git ",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "author": "spikying @spikying",
   "bin": {
-    "spixNovel": "./bin/run"
+    "chptr": "./bin/run"
   },
-  "bugs": "https://github.com/spikying/spixNovel/issues",
+  "bugs": "https://github.com/spikying/chptr/issues",
   "dependencies": {
     "@braintree/sanitize-url": "3.1.0",
     "@oclif/command": "1.5.13",
@@ -71,7 +71,7 @@
     "/npm-shrinkwrap.json",
     "/oclif.manifest.json"
   ],
-  "homepage": "https://github.com/spikying/spixNovel",
+  "homepage": "https://github.com/spikying/chptr",
   "keywords": [
     "oclif"
   ],
@@ -79,12 +79,12 @@
   "main": "lib/index.js",
   "oclif": {
     "commands": "./lib/commands",
-    "bin": "spixNovel",
+    "bin": "chptr",
     "plugins": [
       "@oclif/plugin-help"
     ]
   },
-  "repository": "spikying/spixNovel",
+  "repository": "spikying/chptr",
   "scripts": {
     "postpack": "rimraf oclif.manifest.json",
     "posttest": "tslint -p test -t stylish",

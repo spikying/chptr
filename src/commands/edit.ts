@@ -4,7 +4,7 @@ import * as path from 'path'
 
 import { QueryBuilder } from '../queries'
 
-import { d, globPromise } from './base'
+import { d, globPromise, writeFile } from './base'
 import Command from './edit-save-base'
 
 const debug = d('command:edit')
@@ -85,7 +85,15 @@ export default class Edit extends Command {
     cli.action.start('Reading and processing files'.actionStartColor())
     for (const filename of toEditFiles) {
       const fullPath = path.join(this.configInstance.projectRootPath, filename)
-      await this.processFileBack(fullPath)
+
+      try {
+      const initialContent = await this.readFileContent(fullPath)
+      const replacedContent = await this.processContentBack(initialContent)
+        await writeFile(fullPath, replacedContent, 'utf8')
+      } catch (err) {
+        this.error(err.toString().errorColor())
+        this.exit(1)
+      }
     }
     const toEditPretty = toEditFiles.map(f => `\n    ${f}`)
     cli.action.stop(`modified file${toEditFiles.length > 1 ? 's' : ''}:${toEditPretty}`.actionStopColor())

@@ -6,6 +6,6 @@
 /tmp
 /yarn.lock
 node_modules
-spixnovel-linux
-spixnovel-macos
+chptr-linux
+chptr-macos
 tsconfig.tsbuildinfo

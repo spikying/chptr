@@ -55,10 +55,10 @@ export default class Antidote extends Command {
 
     cli.action.start(`Launching Antidote with ${antidoteFilePath}`.actionStartColor())
     await copyFile(basicFilePath, antidoteFilePath)
-    await this.turnToUTF8BOM(antidoteFilePath)
-    await this.processFileBack(antidoteFilePath)
-    await this.processFile(antidoteFilePath)
-    await this.processFileForAntidote(antidoteFilePath)
+    await this.processUTF8BOMandContent(antidoteFilePath)
+    // await this.processFileBack(antidoteFilePath)
+    // await this.processFile(antidoteFilePath)
+    // await this.processFileForAntidote(antidoteFilePath)
 
     const filePath = `"${path.resolve(antidoteFilePath)}"`
 
@@ -73,8 +73,8 @@ export default class Antidote extends Command {
     const message = (queryResponses2.message + '\nPost-Antidote').replace(/"/, '`')
 
     await this.processFileBackFromAntidote(antidoteFilePath)
-    await this.processFileBack(antidoteFilePath)
-    await this.processFile(antidoteFilePath)
+    // await this.processFileBack(antidoteFilePath)
+    // await this.processFile(antidoteFilePath)
     await moveFile(antidoteFilePath, basicFilePath)
 
     if (queryResponses2.message !== 'cancel') {
@@ -102,22 +102,23 @@ export default class Antidote extends Command {
         }
         resolve()
       })
-
     })
   }
 
-  private async processFileForAntidote(filepath: string): Promise<void> {
+  private processContentForAntidote(initialContent: string): string {
     try {
-      const initialContent = await this.readFileContent(filepath)
+      // const initialContent = await this.readFileContent(filepath)
 
       const re = new RegExp(this.sentenceBreakChar + '\r?\n', 'gm')
       const replacedContent = initialContent.replace(re, this.sentenceBreakChar + '  ').replace(/\n/gm, '\r\n')
       debug(`Processed antidote content: \n${replacedContent.substring(0, 250)}`)
-      await writeFile(filepath, replacedContent, 'utf8')
+      // await writeFile(filepath, replacedContent, 'utf8')
+      return replacedContent
     } catch (err) {
       this.error(err.toString().errorColor())
       this.exit(1)
     }
+    return ''
   }
 
   private removeTripleEnters(str: string): string {
@@ -135,7 +136,7 @@ export default class Antidote extends Command {
 
       const sentenceRE = new RegExp(this.sentenceBreakChar + '  ', 'gm')
       const paragraphRE = new RegExp('(' + this.paragraphBreakChar + '{{\\d+}}\\n)\\n', 'gm')
-      const replacedContent = this.removeTripleEnters(
+      let replacedContent = this.removeTripleEnters(
         initialContent
           .replace(sentenceRE, this.sentenceBreakChar + '\n')
           .replace(/\r\n/gm, '\n\n')
@@ -143,6 +144,8 @@ export default class Antidote extends Command {
           .replace(paragraphRE, '$1')
           .replace(/([.!?…}"])$/, '$1\n')
       )
+      replacedContent = this.processContent(this.processContentBack(replacedContent))
+
       debug(`Processed back antidote content: \n${replacedContent.substring(0, 250)}`)
       await writeFile(filepath, replacedContent, 'utf8')
     } catch (err) {
@@ -151,14 +154,18 @@ export default class Antidote extends Command {
     }
   }
 
-  private async turnToUTF8BOM(filepath: string): Promise<void> {
+  private async processUTF8BOMandContent(filepath: string): Promise<void> {
     try {
       const initialContent = await this.readFileContent(filepath)
 
+      let replacedContent = initialContent
       if (initialContent.charCodeAt(0) !== 65279) {
-        const replacedContent = String.fromCharCode(65279) + initialContent
-        await writeFile(filepath, replacedContent, 'utf8')
+        replacedContent = String.fromCharCode(65279) + initialContent
       }
+
+      replacedContent = await this.processContentForAntidote(this.processContent(this.processContentBack(replacedContent)))
+
+      await writeFile(filepath, replacedContent, 'utf8')
     } catch (err) {
       this.error(err.toString().errorColor())
       this.exit(1)
