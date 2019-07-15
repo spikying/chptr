@@ -3,7 +3,8 @@ $if(beamerarticle)$
 \usepackage{beamerarticle} % needs to be loaded first
 $endif$
 
-\renewcommand{\rule}[2]{\bigskip\par\noindent\parbox{\linewidth}{\centering\large{*}\\[-4pt]{*}\hskip 0.75em{*}}\bigskip\par}%
+% \renewcommand{\rule}[2]{\bigskip\par\noindent\parbox{\linewidth}{\centering\large{*}\\[-4pt]{*}\hskip 0.75em{*}}\bigskip\par}
+\newcommand{\asterism}{\bigskip\par\noindent\parbox{\linewidth}{\centering\large{*}\\[-4pt]{*}\hskip 0.75em{*}}\bigskip\par}
 
 % \usepackage[french]{babel}
 \usepackage[french=quotes]{csquotes}

@@ -25,7 +25,7 @@ export default class Build extends Command {
     filetype: flags.string({
       char: 't',
       description: 'filetype to export to.  Can be set multiple times.',
-      options: Build.exportableFileTypes,
+      options: Build.exportableFileTypes.concat('all'),
       default: '',
       multiple: true
     }),
@@ -77,14 +77,19 @@ export default class Build extends Command {
       const queryResponses: any = await queryBuilder.responses()
       outputFiletype = queryResponses.type
     }
+    if (outputFiletype.indexOf('all') >= 0) {
+      outputFiletype = Build.exportableFileTypes
+    }
 
     await this.CommitToGit('Autosave before build')
 
-    const tmpMetadataResult = await tmpFile()
-    const tempMetadataFd = tmpMetadataResult.fd
-    const tempMetadataPath = tmpMetadataResult.path
-    const tempMetadataCleanup = tmpMetadataResult.cleanup
-    debug(`temp file = ${tempMetadataPath}`)
+    const tmpMDfile = await tmpFile()
+    const tmpMDfileTex = await tmpFile()
+
+    // const tempMetadataFd = tmpMetadataResult.fd
+    // const tempMetadataPath = tmpMetadataResult.path
+    // const tempMetadataCleanup = tmpMetadataResult.cleanup
+    debug(`temp files = ${tmpMDfile.path} and ${tmpMDfileTex.path}`)
 
     try {
       const originalChapterFilesArray = (await globPromise(path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcard(false)))).sort()
@@ -93,37 +98,6 @@ export default class Build extends Command {
         await globPromise(path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcard(true)))
       )
 
-      // cli.action.start('Extracting global metadata'.actionStartColor())
-      // const originalChapterFilesArray = (await globPromise(path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcard(false)))).sort()
-
-      // const allChapterFilesArray = originalChapterFilesArray.concat(
-      //   await globPromise(path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcard(true)))
-      // )
-
-      // let markupFilenamesPretty = ''
-      // const extractPromises: Promise<MarkupObj[]>[] = []
-      // allChapterFilesArray.forEach(cf => {
-      //   extractPromises.push(this.extractMarkup(cf))
-      // })
-      // await Promise.all(extractPromises).then(async fullMarkupArray => {
-      //   const flattenedMarkupArray: MarkupObj[] = ([] as MarkupObj[]).concat(...fullMarkupArray)
-
-      //   const { markupByFile, markupByType } = this.objectifyMarkupArray(flattenedMarkupArray)
-
-      //   await writeFile(path.join(this.configInstance.buildDirectory, `${outputFile}.markupByFile.json`), JSON.stringify(markupByFile, null, 4))
-      //   await writeFile(path.join(this.configInstance.buildDirectory, `${outputFile}.markupByType.json`), JSON.stringify(markupByType, null, 4))
-
-      //   const modifiedMetadataFiles = await this.writeMetadataInEachFile(markupByFile)
-
-      //   // for (const file of Object.keys(markupByFile)) {
-
-      //   markupFilenamesPretty = modifiedMetadataFiles.reduce((previous, current) => `${previous}\n    ${current}`,'')
-      //   // }
-      // })
-
-      // cli.action.stop(`updated these files:\n    ${outputFile}.markupByFile.json\n    ${outputFile}.markupByType.json${markupFilenamesPretty}`.actionStopColor())
-
-      // await this.CommitToGit('Autosave markup updates')
       await this.extractGlobalMetadata(allChapterFilesArray, outputFile)
 
       cli.info('Extracting metadata for all chapters files'.actionStartColor())
@@ -143,7 +117,7 @@ export default class Build extends Command {
 
         const mappedDiffArray = flattenedMetaArray.map(m => ({ file: m.log.file, date: m.log.date.format('YYYY-MM-DD'), diff: m.wordCountDiff }))
 
-        debug(`mappedArray=${JSON.stringify(mappedDiffArray.filter(d=>d.date === moment().format('YYYY-MM-DD')), null, 2)}`)
+        debug(`mappedArray=${JSON.stringify(mappedDiffArray.filter(d => d.date === moment().format('YYYY-MM-DD')), null, 2)}`)
 
         if (exportWritingRate) {
           cli.action.start('Writing rate CSV file'.actionStartColor())
@@ -206,9 +180,10 @@ export default class Build extends Command {
         fullOriginalContent += '\n' + (await this.readFileContent(file))
       }
       const fullCleanedOrTransformedContent = removeMarkup ? this.cleanMarkupContent(fullOriginalContent) : this.transformMarkupContent(fullOriginalContent)
-      await writeInFile(tempMetadataFd, fullCleanedOrTransformedContent)
+      await writeInFile(tmpMDfile.fd, fullCleanedOrTransformedContent)
+      await writeInFile(tmpMDfileTex.fd, fullCleanedOrTransformedContent.replace(/^\*\s?\*\s?\*$/gm, '\\asterism'))
 
-      const chapterFiles = '"' + tempMetadataPath + '" '
+      let chapterFiles = '"' + tmpMDfile.path + '" '
 
       const pandocRuns: Promise<void>[] = []
       const allOutputFilePath: string[] = []
@@ -218,7 +193,7 @@ export default class Build extends Command {
         const fullOutputFilePath = path.join(buildDirectory, outputFile + '.' + filetype)
         allOutputFilePath.push(fullOutputFilePath)
 
-        let pandocArgs = [chapterFiles, '--smart', '--standalone', '-o', `"${fullOutputFilePath}"`] //
+        let pandocArgs: string[] = [] // [chapterFiles, '--smart', '--standalone', '-o', `"${fullOutputFilePath}"`]
 
         if (filetype === 'md') {
           pandocArgs = pandocArgs.concat(['--number-sections', '--to', 'markdown-raw_html', '--wrap=none', '--atx-headers'])
@@ -262,6 +237,8 @@ export default class Build extends Command {
         }
 
         if (filetype === 'pdf' || filetype === 'tex') {
+          chapterFiles = '"' + tmpMDfileTex.path + '" '
+
           const templateFullPath = path.join(this.configInstance.configPath, 'template.latex')
           if (fs.existsSync(templateFullPath)) {
             pandocArgs = pandocArgs.concat([`--template`, `"${templateFullPath}"`])
@@ -269,12 +246,23 @@ export default class Build extends Command {
             this.warn(`For a better output, create a latex template at ${templateFullPath}`)
           }
 
-          pandocArgs = pandocArgs.concat(['--toc', '--toc-depth', '2', '--top-level-division=chapter', '--number-sections', '--latex-engine=xelatex']) //
+          pandocArgs = pandocArgs.concat([
+            '--toc',
+            '--toc-depth',
+            '2',
+            '--top-level-division=chapter',
+            '--number-sections',
+            '--latex-engine=xelatex',
+            '--to',
+            'latex+raw_tex'
+          ])
         }
 
         if (filetype === 'epub') {
           pandocArgs = pandocArgs.concat(['--toc', '--toc-depth', '2', '--top-level-division=chapter', '--number-sections'])
         }
+
+        pandocArgs = [chapterFiles, '--smart', '--standalone', '-o', `"${fullOutputFilePath}"`].concat(pandocArgs)
 
         try {
           pandocRuns.push(this.runPandoc(pandocArgs))
@@ -299,7 +287,8 @@ export default class Build extends Command {
       this.error(err.toString().errorColor())
       this.exit(1)
     } finally {
-      await tempMetadataCleanup()
+      await tmpMDfile.cleanup()
+      await tmpMDfileTex.cleanup()
     }
   }
 
@@ -317,15 +306,33 @@ export default class Build extends Command {
 
       const { markupByFile, markupByType } = this.objectifyMarkupArray(flattenedMarkupArray)
 
-      await writeFile(path.join(this.configInstance.buildDirectory, `${outputFile}.markupByFile.json`), JSON.stringify(markupByFile, null, 4))
-      await writeFile(path.join(this.configInstance.buildDirectory, `${outputFile}.markupByType.json`), JSON.stringify(markupByType, null, 4))
+      // const markupByFileFullPath = path.join(this.configInstance.buildDirectory, `${outputFile}.markupByFile.json`)
+      const allMarkups = [
+        { markupObj: markupByFile, fullPath: path.join(this.configInstance.buildDirectory, `${outputFile}.markupByFile.json`) },
+        { markupObj: markupByType, fullPath: path.join(this.configInstance.buildDirectory, `${outputFile}.markupByType.json`) }
+      ]
+
+      for (const markup of allMarkups) {
+        const existingMarkupContent = await this.readFileContent(markup.fullPath)
+
+        if (existingMarkupContent !== JSON.stringify(markup.markupObj, null, 4)) {
+          await writeFile(markup.fullPath, JSON.stringify(markup.markupObj, null, 4))
+          table.accumulator(path.basename(markup.fullPath), 'updated')
+        }
+      }
+
+      // if (existingMarkupContent !== JSON.stringify(markupByFile, null, 4)) {
+      //   await writeFile(markupByFileFullPath, JSON.stringify(markupByFile, null, 4))
+      //   table.accumulator(path.basename(markupByFileFullPath), 'updated')
+      // }
+      // await writeFile(path.join(this.configInstance.buildDirectory, `${outputFile}.markupByType.json`), JSON.stringify(markupByType, null, 4))
 
       const modifiedMetadataFiles = await this.writeMetadataInEachFile(markupByFile)
-      table.accumulatorArray(modifiedMetadataFiles.map(val => ({ from: val.file, to: val.diff })))
+      table.accumulatorArray(modifiedMetadataFiles.map(val => ({ from: path.basename(val.file), to: val.diff })))
       // markupFilenamesPretty = modifiedMetadataFiles.reduce((previous, current) => `${previous}\n    ${current}`,'')
     })
 
-    cli.action.stop(`updated these files:\n    ${outputFile}.markupByFile.json\n    ${outputFile}.markupByType.json`.actionStopColor())
+    cli.action.stop(`done`.actionStopColor())
     table.show()
 
     await this.CommitToGit('Autosave markup updates')
@@ -366,7 +373,10 @@ export default class Build extends Command {
       return { replaced, didReplacement }
     }
 
-    let replacedContent = initialContent.replace(paragraphBreakRegex, '^_($1)_^\t')
+    let replacedContent = initialContent
+      .replace(paragraphBreakRegex, '^_($1)_^\t')
+      .replace(/^### (.*)$/gm, '* * *\n\n## $1')
+      .replace(/^\\(.*)$/gm, '_% $1_')
 
     let continueReplacing = true
     while (continueReplacing) {
@@ -377,20 +387,6 @@ export default class Build extends Command {
 
     return replacedContent
   }
-
-  // private async overwriteMetadata(metadataFilename: string, extractedMarkup: any, computedMarkup: any): Promise<string | undefined> {
-  //   const metadataFilePath = path.join(this.configInstance.projectRootPath, metadataFilename)
-  //   const initialContent = await this.readFileContent(metadataFilePath)
-  //   const obj = JSON.parse(initialContent)
-  //   obj.extracted = extractedMarkup
-  //   obj.computed = computedMarkup
-
-  //   const updatedContent = JSON.stringify(obj, null, 4)
-  //   if (initialContent !== updatedContent) {
-  //     await writeFile(metadataFilePath, updatedContent)
-  //     return metadataFilePath
-  //   }
-  // }
 
   private async extractMeta(filepath: string, extractAll: boolean): Promise<MetaObj[]> {
     const file = path.basename(filepath)
@@ -421,11 +417,11 @@ export default class Build extends Command {
             return previous + current
           }, 0)
 
-          // if (log.date >= moment().add(-12, 'hour') && wordCountDiff ===0) {
-          //   debug(`log data: ${JSON.stringify(log)}`)
-          //   debug(`diff data: ${s[1]}`)
-          //   debug(`wordCountDiff: ${wordCountDiff}`)
-          // }
+        // if (log.date >= moment().add(-12, 'hour') && wordCountDiff ===0) {
+        //   debug(`log data: ${JSON.stringify(log)}`)
+        //   debug(`diff data: ${s[1]}`)
+        //   debug(`wordCountDiff: ${wordCountDiff}`)
+        // }
 
         return { log, wordCountDiff }
       })
@@ -443,4 +439,3 @@ interface MetaObj {
   }
   wordCountDiff: number
 }
-

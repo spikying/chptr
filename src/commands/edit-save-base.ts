@@ -24,35 +24,39 @@ export default abstract class extends Command {
     }
   }
 
-  public async processFile(filepath: string): Promise<void> {
-    try {
-      const initialContent = await this.readFileContent(filepath)
+  // public async processFile(filepath: string): Promise<void> {
+  //   try {
+  //     const initialContent = await this.readFileContent(filepath)
 
-      const replacedContent = this.processContent(initialContent)
-      await writeFile(filepath, replacedContent, 'utf8')
-    } catch (err) {
-      this.error(err.toString().errorColor())
-      this.exit(1)
-    }
-  }
+  //     const replacedContent = this.processContent(initialContent)
+  //     await writeFile(filepath, replacedContent, 'utf8')
+  //   } catch (err) {
+  //     this.error(err.toString().errorColor())
+  //     this.exit(1)
+  //   }
+  // }
 
-  public async processFileBack(filepath: string): Promise<void> {
-    try {
-      const initialContent = await this.readFileContent(filepath)
+  // public async processFileBack(filepath: string): Promise<void> {
+  //   try {
+  //     const initialContent = await this.readFileContent(filepath)
 
-      const replacedContent = this.processContentBack(initialContent)
-      await writeFile(filepath, replacedContent, 'utf8')
-    } catch (err) {
-      this.error(err.toString().errorColor())
-      this.exit(1)
-    }
-  }
+  //     const replacedContent = this.processContentBack(initialContent)
+  //     await writeFile(filepath, replacedContent, 'utf8')
+  //   } catch (err) {
+  //     this.error(err.toString().errorColor())
+  //     this.exit(1)
+  //   }
+  // }
 
   public async readFileContent(filepath: string): Promise<string> {
-    const buff = await readFile(filepath)
-    const content = await buff.toString('utf8', 0, buff.byteLength)
-    debug(`Reading filepath: ${filepath}\nContent:\n${content}`)
-    return content
+    try {
+      const buff = await readFile(filepath)
+      const content = await buff.toString('utf8', 0, buff.byteLength)
+      debug(`Reading filepath: ${filepath}\nContent:\n${content}`)
+      return content
+    } catch {
+      return ''
+    }
   }
 
   public processContent(initialContent: string): string {
@@ -152,7 +156,6 @@ export default abstract class extends Command {
   }
 
   public async processChapterFilesBeforeSaving(toStageFiles: string[]): Promise<void> {
-    // cli.action.start('Reading and processing modified files')
     for (const filename of toStageFiles) {
       const fullPath = path.join(this.configInstance.projectRootPath, filename)
       const exists = await fileExists(fullPath)
@@ -160,11 +163,19 @@ export default abstract class extends Command {
         exists &&
         (this.configInstance.chapterRegex(false).test(path.basename(fullPath)) || this.configInstance.chapterRegex(true).test(path.basename(fullPath)))
       ) {
-        await this.processFileBack(fullPath)
-        await this.processFile(fullPath)
+        try {
+          const initialContent = await this.readFileContent(fullPath)
+          const replacedContent = this.processContent(this.processContentBack(initialContent))
+          await writeFile(fullPath, replacedContent, 'utf8')
+        } catch (err) {
+          this.error(err.toString().errorColor())
+          this.exit(1)
+        }
+
+        // await this.processFileBack(fullPath)
+        // await this.processFile(fullPath)
       }
     }
-    // cli.action.stop(`done ${toStageFiles.join(' ')}`)
   }
 
   public async extractMarkup(chapterFilepath: string): Promise<MarkupObj[]> {
@@ -196,6 +207,7 @@ export default abstract class extends Command {
 
     return resultArray
   }
+
   public objectifyMarkupArray(flattenedMarkupArray: MarkupObj[]): { markupByFile: MarkupByFile; markupByType: any } {
     const markupByFile: MarkupByFile = {}
     const markupByType: any = {}
@@ -267,7 +279,7 @@ export default abstract class extends Command {
               s += d.removed ? `-- ${d.value.trim()}` : ''
               return s
             })
-            .filter(s=> s.length>0)
+            .filter(s => s.length > 0)
             .join('; ')
         })
       }
@@ -283,6 +295,8 @@ export default abstract class extends Command {
       .replace(paragraphBreakRegex, '')
       .replace(/{.*?:.*?} ?/gm, ' ')
       .replace(sentenceBreakRegex, '  ')
+      .replace(/^### (.*)$/gm, '* * *')
+      .replace(/^\\(.*)$/gm, '_% $1_')
 
     return replacedContent
   }
