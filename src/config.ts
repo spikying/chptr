@@ -192,15 +192,19 @@ date: ${moment().format('D MMMM YYYY')}
       const configFileString = loadFileSync(this.configFileName)
       const json5Config = jsonComment.parse(configFileString, undefined, true)
       this.configSchema.load(json5Config)
+      this.configSchema.validate({ allowed: 'strict' }) // 'strict' throws error if config does not conform to schema
+
       debug(`Loaded config from ${this.configFileName}:\n${jsonComment.stringify(json5Config)}`)
     } catch (err) {
       debug(err)
     }
 
-    const emptyFileString = loadFileSync(this.emptyFilePath)
-    this.emptyFileString = emptyFileString
-
-    this.configSchema.validate({ allowed: 'strict' }) // 'strict' throws error if config does not conform to schema
+    try {
+      const emptyFileString = loadFileSync(this.emptyFilePath)
+      this.emptyFileString = emptyFileString
+    } catch (err) {
+      debug(err)
+    }
   }
 
   public configDefaultsWithMetaString(overrideObj?: object): string {

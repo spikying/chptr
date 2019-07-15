@@ -16,11 +16,11 @@ export default class Init extends Command {
 
   static flags = {
     ...Command.flags,
-    digits: flags.string({
-      char: 'd',
-      default: '2',
-      description: 'Number of digits to use in file numbering initially.  Defaults to `2`.',
-    }),
+    // digits: flags.string({
+    //   char: 'd',
+    //   default: '2',
+    //   description: 'Number of digits to use in file numbering initially.  Defaults to `2`.',
+    // }),
     gitRemote: flags.string({
       char: 'r',
       required: false,

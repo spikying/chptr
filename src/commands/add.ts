@@ -96,10 +96,12 @@ export default class Add extends Command {
       allPromises.push(createFile(fullPathMeta, filledTemplateMeta, { encoding: 'utf8' }))
       allPromises.push(createFile(fullPathSummary, filledTemplateData, { encoding: 'utf8' }))
       await Promise.all(allPromises)
-      cli.action.stop(`Added\n    ${fullPathMD}\n    ${fullPathSummary}\n    ${fullPathMeta}`.actionStopColor())
+      cli.action.stop(
+        `Added\n    ${fullPathMD.resultNormalColor()}\n    ${fullPathSummary.resultNormalColor()}\n    ${fullPathMeta.resultNormalColor()}`.actionStopColor()
+      )
 
       const toStageFiles = this.context.mapFilesToBeRelativeToRootPath([fullPathMD, fullPathMeta, fullPathSummary])
-      const commitMessage = `added ${fullPathMD}, ${fullPathMeta} and ${fullPathSummary}`
+      const commitMessage = `added ${path.basename(fullPathMD)}, ${path.basename(fullPathMeta)} and ${path.basename(fullPathSummary)}`
 
       await this.CommitToGit(commitMessage, toStageFiles)
 

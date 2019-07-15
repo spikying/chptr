@@ -8,7 +8,7 @@ import { file as tmpFile } from 'tmp-promise'
 
 import { QueryBuilder } from '../queries'
 
-import { d, globPromise, sanitizeFileName, writeFile, writeInFile } from './base'
+import { createDir, d, globPromise, sanitizeFileName, writeFile, writeInFile } from './base'
 import Command, { MarkupObj } from './edit-save-base'
 
 const debug = d('command:build')
@@ -85,11 +85,11 @@ export default class Build extends Command {
 
     const tmpMDfile = await tmpFile()
     const tmpMDfileTex = await tmpFile()
-
-    // const tempMetadataFd = tmpMetadataResult.fd
-    // const tempMetadataPath = tmpMetadataResult.path
-    // const tempMetadataCleanup = tmpMetadataResult.cleanup
     debug(`temp files = ${tmpMDfile.path} and ${tmpMDfileTex.path}`)
+
+    try {
+      await createDir(path.join(this.configInstance.projectRootPath, this.configInstance.buildDirectory))
+    } catch {}
 
     try {
       const originalChapterFilesArray = (await globPromise(path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcard(false)))).sort()

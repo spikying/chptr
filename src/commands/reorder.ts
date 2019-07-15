@@ -230,12 +230,7 @@ export default class Reorder extends Command {
       commitMessage += '\nAdded digits to chapter numbers'
     }
 
-    // cli.action.start('Commit and push to remote repository')
     await this.CommitToGit(commitMessage)
-    // await this.git.commit(commitMessage)
-    // await this.git.push()
-    // await this.git.pull()
-    // cli.action.stop()
   }
 
   private readonly isEndOfStack = function(value: string): boolean {

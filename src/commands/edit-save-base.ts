@@ -98,8 +98,13 @@ export default abstract class extends Command {
         await this.git.addConfig('user.email', this.configInstance.config.projectAuthor.email)
 
         const commitSummary = await this.git.commit(message)
-        await this.git.push()
-        await this.git.pull()
+        const hasRemote: boolean = await this.git.getRemotes(false).then(result => {
+          return result.find(value => value.name === 'origin') !== undefined
+        })
+        if (hasRemote) {
+          await this.git.push()
+          await this.git.pull()
+        }
 
         debug(`commitSummary:\n${JSON.stringify(commitSummary)}`)
         const toStagePretty = toStageFiles.map(f => `\n    ${f}`.infoColor())

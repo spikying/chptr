@@ -115,6 +115,7 @@ export default abstract class extends Command {
   }
 
   async finally() {
+    debug(`Base Finally`)
     const { flags } = this.parse(this.constructor as any)
     if (flags.notify) {
       notifier.notify({
@@ -236,7 +237,7 @@ export default abstract class extends Command {
     const accumulator = function(from: string, to: string) {
       moves.push({ from, to })
     }
-    const accumulatorArray = function (arr: { from: string, to: string }[]) {
+    const accumulatorArray = function(arr: { from: string; to: string }[]) {
       for (const line of arr) {
         accumulator(line.from, line.to)
       }
