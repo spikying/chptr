@@ -1,19 +1,23 @@
-spixNovel
-=========
+# chptr
 
-Command Line tool to handle separate Markdown files with Handlebar notations as a single project
+Command Line tool to handle separate Markdown files with special markup notations and export as a complete document.
 
 [![oclif](https://img.shields.io/badge/cli-oclif-brightgreen.svg)](https://oclif.io)
-[![Version](https://img.shields.io/npm/v/spixNovel.svg)](https://npmjs.org/package/spixNovel)
-[![Downloads/week](https://img.shields.io/npm/dw/spixNovel.svg)](https://npmjs.org/package/spixNovel)
-[![License](https://img.shields.io/npm/l/spixNovel.svg)](https://github.com/spikying/spixNovel/blob/master/package.json)
+[![Version](https://img.shields.io/npm/v/chptr.svg)](https://npmjs.org/package/chptr)
+[![Downloads/week](https://img.shields.io/npm/dw/chptr.svg)](https://npmjs.org/package/chptr)
+[![License](https://img.shields.io/npm/l/chptr.svg)](https://github.com/spikying/chptr/blob/master/package.json)
 
 <!-- toc -->
-* [Usage](#usage)
-* [Commands](#commands)
-<!-- tocstop -->
+
+- [chptr](#chptr)
+- [Usage](#usage)
+- [Commands](#commands)
+  <!-- tocstop -->
+
 # Usage
+
 <!-- usage -->
+
 ```sh-session
 $ npm install -g chptr
 $ chptr COMMAND
@@ -25,20 +29,24 @@ USAGE
   $ chptr COMMAND
 ...
 ```
+
 <!-- usagestop -->
+
 # Commands
+
 <!-- commands -->
-* [`chptr add [NAME] [NUMBER]`](#chptr-add-name-number)
-* [`chptr antidote [FILTER]`](#chptr-antidote-filter)
-* [`chptr build`](#chptr-build)
-* [`chptr delete [NAME]`](#chptr-delete-name)
-* [`chptr edit [FILTER]`](#chptr-edit-filter)
-* [`chptr help [COMMAND]`](#chptr-help-command)
-* [`chptr init [NAME]`](#chptr-init-name)
-* [`chptr rename [CHAPTERORFILENAME] [NEWNAME]`](#chptr-rename-chapterorfilename-newname)
-* [`chptr reorder ORIGIN DESTINATION`](#chptr-reorder-origin-destination)
-* [`chptr save [MESSAGE]`](#chptr-save-message)
-* [`chptr track [FILENAME]`](#chptr-track-filename)
+
+- [`chptr add [NAME] [NUMBER]`](#chptr-add-name-number)
+- [`chptr antidote [FILTER]`](#chptr-antidote-filter)
+- [`chptr build`](#chptr-build)
+- [`chptr delete [NAME]`](#chptr-delete-name)
+- [`chptr edit [FILTER]`](#chptr-edit-filter)
+- [`chptr help [COMMAND]`](#chptr-help-command)
+- [`chptr init [NAME]`](#chptr-init-name)
+- [`chptr rename [CHAPTERORFILENAME] [NEWNAME]`](#chptr-rename-chapterorfilename-newname)
+- [`chptr reorder ORIGIN DESTINATION`](#chptr-reorder-origin-destination)
+- [`chptr save [MESSAGE]`](#chptr-save-message)
+- [`chptr track [FILENAME]`](#chptr-track-filename)
 
 ## `chptr add [NAME] [NUMBER]`
 
@@ -84,7 +92,7 @@ _See code: [src\commands\antidote.ts](https://github.com/spikying/chptr/blob/v0.
 
 ## `chptr build`
 
-Takes all original .MD files and outputs a single file without metadata and comments.  Handles these output formats: md, pdf, docx, html, epub, tex.  Gives some insight into writing rate.
+Takes all original .MD files and outputs a single file without metadata and comments. Handles these output formats: md, pdf, docx, html, epub, tex. Gives some insight into writing rate.
 
 ```
 USAGE
@@ -131,7 +139,7 @@ _See code: [src\commands\delete.ts](https://github.com/spikying/chptr/blob/v0.1.
 
 ## `chptr edit [FILTER]`
 
-Adjust sentence and paragraph endings to allow for easier editing.  Commit changes with SAVE command.
+Adjust sentence and paragraph endings to allow for easier editing. Commit changes with SAVE command.
 
 ```
 USAGE
@@ -295,4 +303,5 @@ OPTIONS
 ```
 
 _See code: [src\commands\track.ts](https://github.com/spikying/chptr/blob/v0.1.0/src\commands\track.ts)_
+
 <!-- commandsstop -->

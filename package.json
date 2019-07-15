@@ -1,6 +1,6 @@
 {
   "name": "chptr",
-  "description": "git ",
+  "description": "Command Line tool to handle separate Markdown files with special markup notations and export as a complete document.",
   "version": "0.1.0",
   "author": "spikying @spikying",
   "bin": {
