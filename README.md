@@ -8,16 +8,14 @@ Command Line tool to handle separate Markdown files with special markup notation
 [![License](https://img.shields.io/npm/l/chptr.svg)](https://github.com/spikying/chptr/blob/master/package.json)
 
 <!-- toc -->
-
-- [chptr](#chptr)
-- [Usage](#usage)
-- [Commands](#commands)
-  <!-- tocstop -->
+* [chptr](#chptr)
+* [Usage](#usage)
+* [Commands](#commands)
+<!-- tocstop -->
 
 # Usage
 
 <!-- usage -->
-
 ```sh-session
 $ npm install -g chptr
 $ chptr COMMAND
@@ -29,24 +27,22 @@ USAGE
   $ chptr COMMAND
 ...
 ```
-
 <!-- usagestop -->
 
 # Commands
 
 <!-- commands -->
-
-- [`chptr add [NAME] [NUMBER]`](#chptr-add-name-number)
-- [`chptr antidote [FILTER]`](#chptr-antidote-filter)
-- [`chptr build`](#chptr-build)
-- [`chptr delete [NAME]`](#chptr-delete-name)
-- [`chptr edit [FILTER]`](#chptr-edit-filter)
-- [`chptr help [COMMAND]`](#chptr-help-command)
-- [`chptr init [NAME]`](#chptr-init-name)
-- [`chptr rename [CHAPTERORFILENAME] [NEWNAME]`](#chptr-rename-chapterorfilename-newname)
-- [`chptr reorder ORIGIN DESTINATION`](#chptr-reorder-origin-destination)
-- [`chptr save [MESSAGE]`](#chptr-save-message)
-- [`chptr track [FILENAME]`](#chptr-track-filename)
+* [`chptr add [NAME] [NUMBER]`](#chptr-add-name-number)
+* [`chptr antidote [FILTER]`](#chptr-antidote-filter)
+* [`chptr build`](#chptr-build)
+* [`chptr delete [NAME]`](#chptr-delete-name)
+* [`chptr edit [FILTER]`](#chptr-edit-filter)
+* [`chptr help [COMMAND]`](#chptr-help-command)
+* [`chptr init [NAME]`](#chptr-init-name)
+* [`chptr rename [CHAPTERORFILENAME] [NEWNAME]`](#chptr-rename-chapterorfilename-newname)
+* [`chptr reorder ORIGIN DESTINATION`](#chptr-reorder-origin-destination)
+* [`chptr save [MESSAGE]`](#chptr-save-message)
+* [`chptr track [FILENAME]`](#chptr-track-filename)
 
 ## `chptr add [NAME] [NUMBER]`
 
@@ -92,7 +88,7 @@ _See code: [src\commands\antidote.ts](https://github.com/spikying/chptr/blob/v0.
 
 ## `chptr build`
 
-Takes all original .MD files and outputs a single file without metadata and comments. Handles these output formats: md, pdf, docx, html, epub, tex. Gives some insight into writing rate.
+Takes all original Markdown files and outputs a single file without metadata and comments.  Handles these output formats: md, pdf, docx, html, epub, tex.  Gives some insight into writing rate.
 
 ```
 USAGE
@@ -139,7 +135,7 @@ _See code: [src\commands\delete.ts](https://github.com/spikying/chptr/blob/v0.1.
 
 ## `chptr edit [FILTER]`
 
-Adjust sentence and paragraph endings to allow for easier editing. Commit changes with SAVE command.
+Adjust sentence and paragraph endings to allow for easier editing.  Commit changes with SAVE command.
 
 ```
 USAGE
@@ -192,7 +188,6 @@ ARGUMENTS
 OPTIONS
   -N, --notify               show a notification box when build is completed.
   -a, --author=author        Name of author of project
-  -d, --digits=digits        [default: 2] Number of digits to use in file numbering initially.  Defaults to `2`.
   -e, --email=email          Email of author of project
 
   -f, --force=force          [default: false] Overwrite config files if they exist.  Specify a filename to overwrite
@@ -303,5 +298,4 @@ OPTIONS
 ```
 
 _See code: [src\commands\track.ts](https://github.com/spikying/chptr/blob/v0.1.0/src\commands\track.ts)_
-
 <!-- commandsstop -->

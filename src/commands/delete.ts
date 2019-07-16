@@ -6,7 +6,7 @@ import * as path from 'path'
 import { QueryBuilder } from '../queries'
 
 import { d, listFiles } from './base'
-import Command from './edit-save-base'
+import Command from './initialized-base'
 
 const debug = d('command:delete')
 

@@ -120,7 +120,8 @@ export default abstract class extends Command {
     if (flags.notify) {
       notifier.notify({
         title: 'Spix Novel Builder',
-        message: `Task completed for ${this.configInstance.config.projectTitle}`
+        message: `Task completed for ${this.configInstance.config.projectTitle}`,
+        sound: true
       })
     }
   }
@@ -192,19 +193,6 @@ export default abstract class extends Command {
       cli.action.stop(`done:`.actionStopColor())
       debug
       table.show()
-      // cli.table(moves.map(o => ({ fromFilename: o.fromFilename.resultNormalColor, toFilename: o.toFilename.resultHighlighColor })), {
-      //   fromFilename: {
-      //     header: 'from'.infoColor(),
-      //     minWidth: 30
-      //     // minWidth: 15
-      //   },
-      //   ' ->': {
-      //     get: () => ''
-      //   },
-      //   toFilename: {
-      //     header: 'to'.infoColor()
-      //   }
-      // })
     }
   }
 

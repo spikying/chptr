@@ -5,7 +5,7 @@ import * as path from 'path'
 import { getFilenameFromInput } from '../queries'
 
 import { createFile, d, listFiles, numDigits, stringifyNumber } from './base'
-import Command from './edit-save-base'
+import Command from './initialized-base'
 
 const debug = d('command:add')
 
@@ -71,7 +71,10 @@ export default class Add extends Command {
     const newDigits = numDigits(nextNumber)
 
     const filledTemplateData = this.configInstance.emptyFileString.toString().replace(/{TITLE}/gim, name) //`# ${name}\n\n...`
-    const filledTemplateMeta = JSON.stringify(this.configInstance.config.metadataFields, undefined, 4).replace(/{TITLE}/gim, name)
+    const metadataObj :any = this.configInstance.config.metadataFields
+    metadataObj.computed.title = name
+    metadataObj.computed.wordCount= this.GetWordCount(name)
+    const filledTemplateMeta = JSON.stringify(metadataObj, undefined, 4) //.replace(/{TITLE}/gim, name)
 
     const fullPathMD = path.join(
       this.configInstance.projectRootPath,

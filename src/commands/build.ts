@@ -9,14 +9,14 @@ import { file as tmpFile } from 'tmp-promise'
 import { QueryBuilder } from '../queries'
 
 import { createDir, d, globPromise, sanitizeFileName, writeFile, writeInFile } from './base'
-import Command, { MarkupObj } from './edit-save-base'
+import Command, { MarkupObj } from './initialized-base'
 
 const debug = d('command:build')
 
 export default class Build extends Command {
   static readonly exportableFileTypes = ['md', 'pdf', 'docx', 'html', 'epub', 'tex']
 
-  static description = `Takes all original .MD files and outputs a single file without metadata and comments.  Handles these output formats: ${Build.exportableFileTypes.join(
+  static description = `Takes all original Markdown files and outputs a single file without metadata and comments.  Handles these output formats: ${Build.exportableFileTypes.join(
     ', '
   )}.  Gives some insight into writing rate.`
 
@@ -295,7 +295,6 @@ export default class Build extends Command {
   private async extractGlobalMetadata(allChapterFilesArray: string[], outputFile: string) {
     cli.action.start('Extracting global metadata'.actionStartColor())
 
-    // let markupFilenamesPretty = ''
     const table = this.tableize('file', 'diff')
     const extractPromises: Promise<MarkupObj[]>[] = []
     allChapterFilesArray.forEach(cf => {
@@ -306,7 +305,6 @@ export default class Build extends Command {
 
       const { markupByFile, markupByType } = this.objectifyMarkupArray(flattenedMarkupArray)
 
-      // const markupByFileFullPath = path.join(this.configInstance.buildDirectory, `${outputFile}.markupByFile.json`)
       const allMarkups = [
         { markupObj: markupByFile, fullPath: path.join(this.configInstance.buildDirectory, `${outputFile}.markupByFile.json`) },
         { markupObj: markupByType, fullPath: path.join(this.configInstance.buildDirectory, `${outputFile}.markupByType.json`) }
@@ -416,12 +414,6 @@ export default class Build extends Command {
           .reduce((previous, current) => {
             return previous + current
           }, 0)
-
-        // if (log.date >= moment().add(-12, 'hour') && wordCountDiff ===0) {
-        //   debug(`log data: ${JSON.stringify(log)}`)
-        //   debug(`diff data: ${s[1]}`)
-        //   debug(`wordCountDiff: ${wordCountDiff}`)
-        // }
 
         return { log, wordCountDiff }
       })

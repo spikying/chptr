@@ -97,35 +97,35 @@ date: ${moment().format('D MMMM YYYY')}
   private readonly configSchemaObject: any = {
     chapterPattern: {
       doc:
-        'File naming pattern for chapter files. Use NUM for chapter number and NAME for chapter name.  Optionally use `/` for a folder structure, e.g. `NUM.NAME` or `NUM/NAME`.  Defaults to `NUM NAME`.',
+        'File naming pattern for chapter files. Use NUM for chapter number and NAME for chapter name.  Optionally use `/` for a folder structure, e.g. `NUM.NAME.md` or `NUM/NAME.chptr`.  Defaults to `NUM NAME.chptr`.',
       format: (val: string) => {
         if (!/^(?=.*NUM)(?=.*NAME).*$/.test(val)) {
           throw new Error('Must have NUM and NAME in pattern')
         }
       },
-      default: 'NUM NAME'
+      default: 'NUM NAME.chptr'
     },
     metadataPattern: {
       doc:
-        'File naming pattern for metadata files.  Use NUM for chapter number and NAME for optional chapter name.  Optionally use `/` for a folder structure. Defaults to `NUM.metadata`.',
+        'File naming pattern for metadata files.  Use NUM for chapter number and NAME for optional chapter name.  Optionally use `/` for a folder structure. Defaults to `NUM.metadata.json`.',
       format: (val: string) => {
         if (!/^(?=.*NUM).*$/.test(val)) {
           // && !/^$/.test(val)
           throw new Error('Must have NUM in pattern')
         }
       },
-      default: 'NUM.metadata'
+      default: 'NUM.metadata.json'
     },
     summaryPattern: {
       doc:
-        'File naming pattern for summary files.  Use NUM for chapter number and NAME for optional chapter name.  Optionally use `/` for a folder structure. Defaults to `NUM.summary`.',
+        'File naming pattern for summary files.  Use NUM for chapter number and NAME for optional chapter name.  Optionally use `/` for a folder structure. Defaults to `NUM.summary.md`.',
       format: (val: string) => {
         if (!/^(?=.*NUM).*$/.test(val)) {
           // && !/^$/.test(val)
           throw new Error('Must have NUM in pattern')
         }
       },
-      default: 'NUM.summary'
+      default: 'NUM.summary.md'
     },
     buildDirectory: {
       doc: 'Directory where to output builds done with Pandoc.  Defaults to `build/`.',
@@ -243,35 +243,35 @@ date: ${moment().format('D MMMM YYYY')}
   }
 
   public chapterWildcard(atNumbering: boolean): string {
-    return this.config.chapterPattern.replace('NUM', this.numberWildcardPortion(atNumbering)).replace('NAME', '*') + '.md'
+    return this.config.chapterPattern.replace('NUM', this.numberWildcardPortion(atNumbering)).replace('NAME', '*') //+ '.md'
   }
   public metadataWildcard(atNumbering: boolean): string {
-    return this.config.metadataPattern.replace('NUM', this.numberWildcardPortion(atNumbering)).replace('NAME', '*') + '.json'
+    return this.config.metadataPattern.replace('NUM', this.numberWildcardPortion(atNumbering)).replace('NAME', '*') //+ '.json'
   }
   public summaryWildcard(atNumbering: boolean): string {
-    return this.config.summaryPattern.replace('NUM', this.numberWildcardPortion(atNumbering)).replace('NAME', '*') + '.md'
+    return this.config.summaryPattern.replace('NUM', this.numberWildcardPortion(atNumbering)).replace('NAME', '*') //+ '.md'
   }
 
   public chapterWildcardWithNumber(num: number, atNumbering: boolean): string {
-    return this.config.chapterPattern.replace('NUM', this.numberWildcardPortion(atNumbering, num)).replace('NAME', '*') + '.md'
+    return this.config.chapterPattern.replace('NUM', this.numberWildcardPortion(atNumbering, num)).replace('NAME', '*')// + '.md'
   }
   public metadataWildcardWithNumber(num: number, atNumbering: boolean): string {
-    return this.config.metadataPattern.replace('NUM', this.numberWildcardPortion(atNumbering, num)).replace('NAME', '*') + '.json'
+    return this.config.metadataPattern.replace('NUM', this.numberWildcardPortion(atNumbering, num)).replace('NAME', '*')// + '.json'
   }
   public summaryWildcardWithNumber(num: number, atNumbering: boolean): string {
-    return this.config.summaryPattern.replace('NUM', this.numberWildcardPortion(atNumbering, num)).replace('NAME', '*') + '.md'
+    return this.config.summaryPattern.replace('NUM', this.numberWildcardPortion(atNumbering, num)).replace('NAME', '*') //+ '.md'
   }
 
   public chapterFileNameFromParameters(num: string, name: string, atNumbering: boolean): string {
-    return this.config.chapterPattern.replace('NUM', (atNumbering ? '@' : '') + num).replace('NAME', sanitizeFileName(name)) + '.md'
+    return this.config.chapterPattern.replace('NUM', (atNumbering ? '@' : '') + num).replace('NAME', sanitizeFileName(name)) //+ '.md'
   }
 
   public metadataFileNameFromParameters(num: string, name: string, atNumbering: boolean): string {
-    return this.config.metadataPattern.replace('NUM', (atNumbering ? '@' : '') + num).replace('NAME', sanitizeFileName(name)) + '.json'
+    return this.config.metadataPattern.replace('NUM', (atNumbering ? '@' : '') + num).replace('NAME', sanitizeFileName(name)) //+ '.json'
   }
 
   public summaryFileNameFromParameters(num: string, name: string, atNumbering: boolean): string {
-    return this.config.summaryPattern.replace('NUM', (atNumbering ? '@' : '') + num).replace('NAME', sanitizeFileName(name)) + '.md'
+    return this.config.summaryPattern.replace('NUM', (atNumbering ? '@' : '') + num).replace('NAME', sanitizeFileName(name)) //+ '.md'
   }
 
   public chapterRegex(atNumber: boolean): RegExp {
@@ -292,8 +292,9 @@ date: ${moment().format('D MMMM YYYY')}
   }
 
   public antidotePathName(chapterFilename: string): string {
-    return path.join(this.projectRootPath, chapterFilename.replace(/\.md$/, '.antidote'))
+    return path.join(this.projectRootPath, chapterFilename.replace(/\.\w+$/, '.antidote'))
   }
+
   private numberWildcardPortion(atNumbering: boolean, num: number | null = null) {
     let result = ''
     if (atNumbering) {

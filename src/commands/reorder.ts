@@ -4,7 +4,7 @@ import * as path from 'path'
 import { MoveSummary } from 'simple-git/typings/response'
 
 import { d } from './base'
-import Command from './edit-save-base'
+import Command from './initialized-base'
 
 const debug = d('command:reorder')
 

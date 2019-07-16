@@ -5,7 +5,7 @@ import * as path from 'path'
 
 import Command, { d, fileExists, readFile, writeFile } from './base'
 
-const debug = d('command:edit-save-base')
+const debug = d('command:initialized-base')
 
 export default abstract class extends Command {
   static flags = {
@@ -18,35 +18,19 @@ export default abstract class extends Command {
 
   async init() {
     await super.init()
+
     const isRepo = await this.git.checkIsRepo()
     if (!isRepo) {
       throw new Error('Directory is not a repository')
     }
+
+    const hasConfigFolder = await fileExists(this.configInstance.configPath)
+    const hasConfigFile = await fileExists(this.configInstance.configFilePath)
+
+    if (!hasConfigFolder || !hasConfigFile) {
+      throw new Error('Directory was not initialized.  Run `init` command.')
+    }
   }
-
-  // public async processFile(filepath: string): Promise<void> {
-  //   try {
-  //     const initialContent = await this.readFileContent(filepath)
-
-  //     const replacedContent = this.processContent(initialContent)
-  //     await writeFile(filepath, replacedContent, 'utf8')
-  //   } catch (err) {
-  //     this.error(err.toString().errorColor())
-  //     this.exit(1)
-  //   }
-  // }
-
-  // public async processFileBack(filepath: string): Promise<void> {
-  //   try {
-  //     const initialContent = await this.readFileContent(filepath)
-
-  //     const replacedContent = this.processContentBack(initialContent)
-  //     await writeFile(filepath, replacedContent, 'utf8')
-  //   } catch (err) {
-  //     this.error(err.toString().errorColor())
-  //     this.exit(1)
-  //   }
-  // }
 
   public async readFileContent(filepath: string): Promise<string> {
     try {
@@ -176,9 +160,6 @@ export default abstract class extends Command {
           this.error(err.toString().errorColor())
           this.exit(1)
         }
-
-        // await this.processFileBack(fullPath)
-        // await this.processFile(fullPath)
       }
     }
   }
@@ -306,7 +287,7 @@ export default abstract class extends Command {
     return replacedContent
   }
 
-  private GetWordCount(text: string): number {
+  public GetWordCount(text: string): number {
     const wordRegex = require('word-regex')
     const cleanedText = this.cleanMarkupContent(text)
     const match = cleanedText.match(wordRegex())

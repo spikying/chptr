@@ -5,7 +5,7 @@ import * as path from 'path'
 import { QueryBuilder } from '../queries'
 
 import { d, globPromise, writeFile } from './base'
-import Command from './edit-save-base'
+import Command from './initialized-base'
 
 const debug = d('command:edit')
 
