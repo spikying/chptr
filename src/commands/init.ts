@@ -173,7 +173,6 @@ export default class Init extends Command {
         content: `build/
 pandoc*/
 *.antidote
-temp*/
 `
       },
       {

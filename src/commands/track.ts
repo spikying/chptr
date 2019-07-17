@@ -1,5 +1,5 @@
 import { cli } from 'cli-ux'
-// import * as path from 'path'
+import * as path from 'path'
 
 import { QueryBuilder } from '../queries'
 
@@ -34,30 +34,44 @@ export default class Track extends Command {
 
     if (!args.filename) {
       const untrackedGitFiles = await this.GetGitListOfUntrackedFiles()
-      const root = this.configInstance.projectRootPath
-      const mapFiles = this.context.mapFileToBeRelativeToRootPath
+      let untrackedGitFilesFlat: string[] = []
+      for (const utFile of untrackedGitFiles) {
+        untrackedGitFilesFlat.push(...utFile.split('/'))
+      }
 
+      if (!untrackedGitFiles) {
+        cli.error(`No file untracked by repository`)
+        cli.exit(0)
+      }
+      const root = this.configInstance.projectRootPath
+
+      debug(`untrackedGitFiles=${JSON.stringify(untrackedGitFiles, null, 4)}`)
       const toExcludeFiles = function(file: string): boolean {
         // return TRUE to EXCLUDE file, FALSE to keep it
+        debug(`In Exclude function for file ${file}`)
         const isRoot = file === root
         if (isRoot) {
+          debug('isRoot')
           return false
         }
 
         const isGitDir = file.indexOf('.git') >= 0
         if (isGitDir) {
+          debug('isGitDir')
           return true
         }
 
-        const isInUntrackedFiles =
-          untrackedGitFiles
-            .map(unTrackedFile => {
-              return unTrackedFile.indexOf(mapFiles(file))
-            })
-            .reduce((previous, current) => {
-              return Math.max(previous, current)
-            }, -1) >= 0
-
+        // debug(`untrackedGitFilesFlat=${untrackedGitFilesFlat}`)
+        // debug(`map function = ${mapFile}`)
+        // debug(`mappedFile = ${path.basename(file)}`)
+        const isInUntrackedFiles = untrackedGitFilesFlat.indexOf(path.basename(file)) >= 0
+        // .map(unTrackedFile => {
+        //   return unTrackedFile === mapFile(file)
+        // })
+        // .reduce((previous, current) => {
+        //   return previous && current
+        // }, false)
+        debug(`isInUntrackedFiles? ${isInUntrackedFiles}`)
         return !isInUntrackedFiles
       }
       queryBuilder.add('filename', queryBuilder.fuzzyFilename(this.configInstance.projectRootPath, toExcludeFiles, 'What file to track?'))
