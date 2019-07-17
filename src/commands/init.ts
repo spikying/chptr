@@ -253,6 +253,8 @@ eol=lf
           }
           if (didAddRemote) {
             msg += `\n    added remote ${remoteRepo.resultHighlighColor()}`.resultNormalColor()
+          } else {
+            msg += `\n    no remote added`.resultHighlighColor()
           }
           if (didSyncRemote) {
             msg += `\n    synched remote`.resultNormalColor()
@@ -270,7 +272,7 @@ eol=lf
         `Use option --force=gitRemote to overwrite this one or -f, --force=true to overwrite all.`.infoColor()
       )
     }
-    table.show()
+    table.show('Init operations not done')
 
     cli.info('End of initialization'.infoColor())
   }

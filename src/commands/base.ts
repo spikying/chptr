@@ -72,7 +72,8 @@ export default abstract class extends Command {
     if (!this._git) {
       this._git = simplegit(this._rootPath)
     }
-    return this._git  }
+    return this._git
+  }
   public get hardConfig(): HardConfig {
     return this._hardConfig as HardConfig
   }
@@ -92,7 +93,7 @@ export default abstract class extends Command {
   }
   static hidden = true
 
-  private _rootPath =''
+  private _rootPath = ''
   private _git: simplegit.SimpleGit | undefined
   private _hardConfig: HardConfig | undefined
 
@@ -156,8 +157,12 @@ export default abstract class extends Command {
       }
     }
 
-    const show = () => {
+    const show = (title?: string) => {
       if (moves.length > 0) {
+        if (title) {
+          cli.info(`${title.actionStartColor()}... ${'done'.actionStopColor()}`.color('white'))
+        }
+
         cli.table(moves.map(o => ({ from: o.from.resultNormalColor(), to: o.to.resultHighlighColor() })), {
           from: {
             header: col1.infoColor(),
@@ -177,7 +182,20 @@ export default abstract class extends Command {
     return returnObj
   }
 
+  public async createSubDirectoryIfNecessary(fullFilePath: string): Promise<string | null> {
+    const directoryPath = path.dirname(fullFilePath)
+    const directoryExists = await fileExists(directoryPath)
+    if (!directoryExists) {
+      try {
+        await createDir(directoryPath)
+        return directoryPath
+      } catch {}
+    }
+    return null
+  }
+
   public async createFile(fullPathName: string, content: string) {
+    // TODO: Use this.createSubDirectoryIfNecessary
     const directoryPath = path.dirname(fullPathName)
     const directoryExists = await fileExists(directoryPath)
     if (!directoryExists) {
@@ -196,7 +214,6 @@ export default abstract class extends Command {
       cli.info(`Created ${fullPathName.resultHighlighColor()}`.resultNormalColor())
     }
   }
-
 }
 
 export const numDigits = function(x: number, buffer = 2) {

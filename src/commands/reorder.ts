@@ -3,7 +3,7 @@ import { cli } from 'cli-ux'
 import * as path from 'path'
 import { MoveSummary } from 'simple-git/typings/response'
 
-import { createDir, d, deleteDir, fileExists } from './base'
+import { createDir, d, fileExists } from './base'
 import Command from './initialized-base'
 
 const debug = d('command:reorder')
@@ -156,7 +156,7 @@ export default class Reorder extends Command {
     cli.action.start('Moving files to temp directory'.actionStartColor())
 
     const { tempDir, removeTempDir } = await this.getTempDir()
-    let oldSubDirectory = ''
+    // let oldSubDirectory = ''
 
     try {
       const moveTempPromises: Promise<MoveSummary>[] = []
@@ -165,6 +165,7 @@ export default class Reorder extends Command {
         const toFilename = this.context.mapFileToBeRelativeToRootPath(path.join(tempDir, fromFilename))
         debug(`Original file: ${fromFilename} TEMP TO ${toFilename}`)
 
+        // TODO: Use this.createSubDirectoryIfNecessary
         const directoryPath = path.dirname(path.join(tempDir, fromFilename))
         const directoryExists = await fileExists(directoryPath)
         if (!directoryExists) {
@@ -175,7 +176,7 @@ export default class Reorder extends Command {
 
         moveTempPromises.push(this.git.mv(fromFilename, toFilename))
 
-        oldSubDirectory = path.dirname(fromFilename)
+        // oldSubDirectory = path.dirname(fromFilename)
       }
       await Promise.all(moveTempPromises)
 
@@ -187,7 +188,7 @@ export default class Reorder extends Command {
 
     cli.action.start('Moving files to their final states'.actionStartColor())
     let fileMovesPretty = ''
-    let tempSubDirectory = ''
+    // let tempSubDirectory = ''
 
     try {
       const moveBackPromises: Promise<MoveSummary>[] = []
@@ -199,6 +200,7 @@ export default class Reorder extends Command {
         const fromFilename = this.context.mapFileToBeRelativeToRootPath(path.join(tempDir, filename))
         const toFilename = this.context.renumberedFilename(filename, newFileNumber, destDigits, destIsAtNumbering)
 
+        // TODO: Use this.createSubDirectoryIfNecessary
         const directoryPath = path.dirname(path.join(this.configInstance.projectRootPath, toFilename))
         const directoryExists = await fileExists(directoryPath)
         debug(`directoryPath=${directoryPath} directoryExists=${directoryExists}`)
@@ -213,7 +215,7 @@ export default class Reorder extends Command {
         fileMovesPretty.concat(`\n    renaming from "${fromFilename}" to "${toFilename}"`)
         moveBackPromises.push(this.git.mv(fromFilename, toFilename))
 
-        tempSubDirectory = path.dirname(fromFilename)
+        // tempSubDirectory = path.dirname(fromFilename)
       }
       await Promise.all(moveBackPromises)
     } catch (err) {
@@ -221,19 +223,20 @@ export default class Reorder extends Command {
       cli.exit(1)
     }
 
-    if (tempSubDirectory) {
-      const subDirExists = await fileExists(path.join(this.configInstance.projectRootPath, tempSubDirectory))
-      if (subDirExists) {
-        await deleteDir(path.join(this.configInstance.projectRootPath, tempSubDirectory))
-      }
-    }
-    if (oldSubDirectory) {
-      const subDirExists = await fileExists(path.join(this.configInstance.projectRootPath, oldSubDirectory))
-      if (subDirExists) {
-        await deleteDir(path.join(this.configInstance.projectRootPath, oldSubDirectory))
-      }
-    }
+    // if (tempSubDirectory) {
+    //   const subDirExists = await fileExists(path.join(this.configInstance.projectRootPath, tempSubDirectory))
+    //   if (subDirExists) {
+    //     await deleteDir(path.join(this.configInstance.projectRootPath, tempSubDirectory))
+    //   }
+    // }
+    // if (oldSubDirectory) {
+    //   const subDirExists = await fileExists(path.join(this.configInstance.projectRootPath, oldSubDirectory))
+    //   if (subDirExists) {
+    //     await deleteDir(path.join(this.configInstance.projectRootPath, oldSubDirectory))
+    //   }
+    // }
     await removeTempDir()
+    await this.deleteEmptySubDirectories()
 
     cli.action.stop('done'.actionStopColor()) // `Moved files${fileMovesPretty}\n`.actionStopColor() + `Deleted temp folder `.actionStartColor() + `${tempDir}`.actionStopColor())
 

@@ -2,17 +2,16 @@ import { cli } from 'cli-ux'
 import * as JsDiff from 'diff'
 import * as minimatch from 'minimatch'
 import * as path from 'path'
-import { MoveSummary } from 'simple-git/typings/response';
+import { MoveSummary } from 'simple-git/typings/response'
 
-import { Config } from '../config';
-import { Context } from '../context';
+import { Config } from '../config'
+import { Context } from '../context'
 
-import Command, { d, fileExists, globPromise, readFile, writeFile } from './base'
+import Command, { d, deleteDir, fileExists, globPromise, readFile, writeFile } from './base'
 
 const debug = d('command:initialized-base')
 
 export default abstract class extends Command {
-
   public get configInstance(): Config {
     return this._configInstance as Config
   }
@@ -169,7 +168,8 @@ export default abstract class extends Command {
       const exists = await fileExists(fullPath)
       if (
         exists &&
-        (this.configInstance.chapterRegex(false).test(this.context.mapFileToBeRelativeToRootPath(fullPath)) || this.configInstance.chapterRegex(true).test(this.context.mapFileToBeRelativeToRootPath(fullPath)))
+        (this.configInstance.chapterRegex(false).test(this.context.mapFileToBeRelativeToRootPath(fullPath)) ||
+          this.configInstance.chapterRegex(true).test(this.context.mapFileToBeRelativeToRootPath(fullPath)))
       ) {
         try {
           const initialContent = await this.readFileContent(fullPath)
@@ -327,6 +327,7 @@ export default abstract class extends Command {
     }
     return didAddDigits
   }
+
   public async compactFileNumbers(): Promise<void> {
     cli.action.start('Compacting file numbers'.actionStartColor())
 
@@ -384,6 +385,24 @@ export default abstract class extends Command {
     }
   }
 
+  public async deleteEmptySubDirectories(): Promise<string[]> {
+    const allDirs = await globPromise('**/', { cwd: this.configInstance.projectRootPath })
+    // debug(`allDirs=${allDirs}`)
+    const emptyDirs: string[] = []
+    for (const subDir of allDirs) {
+      const filesOfSubDir = await globPromise('**', { cwd: path.join(this.configInstance.projectRootPath, subDir) })
+      // debug(`subDir=${subDir} filesOfSubDir=${filesOfSubDir}`)
+      if (filesOfSubDir.length === 0) {
+        emptyDirs.push(subDir)
+      }
+    }
+    // debug(`EmptyDirs=${emptyDirs}`)
+    for (const subDir of emptyDirs) {
+      await deleteDir(path.join(this.configInstance.projectRootPath, subDir))
+    }
+    return emptyDirs
+  }
+
   private async addDigitsToFiles(files: string[], newDigitNumber: number, atNumberingStack: boolean): Promise<boolean> {
     const promises: Promise<MoveSummary>[] = []
     let hasMadeChanges = false
@@ -395,12 +414,16 @@ export default abstract class extends Command {
 
       if (atNumbering === atNumberingStack) {
         const filenumber = this.context.extractNumber(file)
-        const fromFilename = this.context.mapFileToBeRelativeToRootPath(path.join(path.dirname(file), filename))
-        const toFilename = this.context.mapFileToBeRelativeToRootPath(
-          path.join(path.dirname(file), this.context.renumberedFilename(filename, filenumber, newDigitNumber, atNumbering))
-        )
+        debug(`file=${file} filename=${filename} filenumber=${filenumber}`)
+        const fromFilename = filename // this.context.mapFileToBeRelativeToRootPath(path.join(path.dirname(file), filename))
+        const toFilename = //this.context.mapFileToBeRelativeToRootPath(
+          //path.join(path.dirname(file),
+          this.context.renumberedFilename(filename, filenumber, newDigitNumber, atNumbering)
+        //   )
+        // )
         if (fromFilename !== toFilename) {
-          // this.log(`renaming with new file number "${fromFilename}" to "${toFilename}"`.infoColor())
+          debug(`renaming with new file number "${fromFilename}" to "${toFilename}"`.infoColor())
+          await this.createSubDirectoryIfNecessary(path.join(this.configInstance.projectRootPath, toFilename))
           table.accumulator(fromFilename, toFilename)
           promises.push(this.git.mv(fromFilename, toFilename))
           hasMadeChanges = true
@@ -408,12 +431,12 @@ export default abstract class extends Command {
       }
     }
 
-    table.show()
+    await this.deleteEmptySubDirectories()
+
+    table.show('Adding digits to files')
     await Promise.all(promises)
     return hasMadeChanges
   }
-
-
 }
 
 export interface MarkupObj {

@@ -125,6 +125,7 @@ export class Context {
     }
   }
 
+  //TODO: make aware of which filetype it is and use real patterns for cases where the number is repeated
   public renumberedFilename(filename: string, newFilenumber: number, digits: number, atNumbering: boolean): string {
     const re = new RegExp(/^(.*?)(@?\d+)(.*)$/)
     return filename.replace(re, '$1' + (atNumbering ? '@' : '') + stringifyNumber(newFilenumber, digits) + '$3')
