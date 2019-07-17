@@ -113,7 +113,7 @@ export class Context {
   }
 
   public getActualDigitsFromChapterFilename(filename: string, atNumber: boolean): number {
-    const match = this.configInstance.chapterRegex(atNumber).exec(path.basename(filename))
+    const match = this.configInstance.chapterRegex(atNumber).exec(this.mapFileToBeRelativeToRootPath(filename))
     return match ? match[1].length : 1
   }
 
@@ -132,7 +132,7 @@ export class Context {
 
   public extractNumber(filename: string): number {
     const re = new RegExp(this.configInstance.numbersPattern(false))
-    const match = re.exec(path.basename(filename))
+    const match = re.exec(this.mapFileToBeRelativeToRootPath(filename))
     const fileNumber = match ? parseInt(match[1], 10) : -1
 
     if (isNaN(fileNumber)) {
@@ -159,6 +159,7 @@ export class Context {
     const fileRegex: RegExp = this.configInstance.chapterRegex(atNumbers)
     const index = atNumbers ? 'atNumberStack' : 'normalStack'
 
+    debug(`files: ${files}\nfileRegex: ${fileRegex}\nindex: ${index}`)
     if (files.length === 0) {
       this._allNovelStatistics[index] = nullStackStats
       return
@@ -166,25 +167,16 @@ export class Context {
 
     const highestNumber = files
       .map(value => {
-        const matches = fileRegex.exec(path.basename(value))
+        const matches = fileRegex.exec(this.mapFileToBeRelativeToRootPath(value))
         return matches ? parseInt(matches[1], 10) : 0
       })
       .reduce((previous, current) => {
         return Math.max(previous, current)
       })
 
-    // const maxDigits = files
-    //   .map(value => {
-    //     const matches = fileRegex.exec(path.basename(value))
-    //     return matches ? matches[1].length : 0
-    //   })
-    //   .reduce((previous, current) => {
-    //     return Math.max(previous, current)
-    //   })
-
     const minDigits = files
       .map(value => {
-        const matches = fileRegex.exec(path.basename(value))
+        const matches = fileRegex.exec(this.mapFileToBeRelativeToRootPath(value))
         return matches ? matches[1].length : 0
       })
       .reduce((previous, current) => {
@@ -193,7 +185,7 @@ export class Context {
 
     const maxNecessaryDigits = files
       .map(value => {
-        const matches = fileRegex.exec(path.basename(value))
+        const matches = fileRegex.exec(this.mapFileToBeRelativeToRootPath(value))
         return matches ? numDigits(parseInt(matches[1], 10)) : 0
       })
       .reduce((previous, current) => {

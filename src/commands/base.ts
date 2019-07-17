@@ -8,15 +8,11 @@ import * as notifier from 'node-notifier'
 import * as path from 'path'
 import * as sanitize from 'sanitize-filename'
 import * as simplegit from 'simple-git/promise'
-import { MoveSummary } from 'simple-git/typings/response'
 import { promisify } from 'util'
 
-import { Config } from '../config'
-import { Context } from '../context'
+import { HardConfig } from '../config'
 
 export const readFile = promisify(fs.readFile)
-export const writeFile = promisify(fs.writeFile)
-export const createFile = promisify(fs.writeFile)
 export const writeInFile = promisify(fs.write)
 export const copyFile = promisify(fs.copyFile)
 export const moveFile = promisify(fs.rename)
@@ -36,8 +32,12 @@ export const fileExists = async function(path: fs.PathLike): Promise<boolean> {
     })
   })
 }
-
+export const writeFile = async function(path: string, data: string) {
+  const wf = promisify(fs.writeFile)
+  return wf(path, data, 'utf8')
+}
 export const globPromise = promisify(glob)
+
 export const d = deb
 const chalk: any = require('chalk')
 String.prototype.color = function(colorName: string) {
@@ -68,6 +68,15 @@ String.prototype.errorColor = function() {
 const debug = d('command:base')
 
 export default abstract class extends Command {
+  public get git(): simplegit.SimpleGit {
+    if (!this._git) {
+      this._git = simplegit(this._rootPath)
+    }
+    return this._git  }
+  public get hardConfig(): HardConfig {
+    return this._hardConfig as HardConfig
+  }
+
   static flags = {
     help: flags.help({ char: 'h' }),
     notify: flags.boolean({
@@ -83,30 +92,16 @@ export default abstract class extends Command {
   }
   static hidden = true
 
-  private _configInstance: Config | undefined
-  public get configInstance(): Config {
-    return this._configInstance as Config
-  }
-
+  private _rootPath =''
   private _git: simplegit.SimpleGit | undefined
-  public get git(): simplegit.SimpleGit {
-    if (!this._git) {
-      this._git = simplegit(this.configInstance.projectRootPath)
-    }
-    return this._git
-  }
-
-  private _context: Context | undefined
-  public get context(): Context {
-    return this._context as Context
-  }
+  private _hardConfig: HardConfig | undefined
 
   async init() {
     debug('Base init')
     const { flags } = this.parse(this.constructor as any)
     const dir = path.join(flags.path as string)
-    this._configInstance = new Config(dir)
-    this._context = new Context(this.configInstance)
+    this._rootPath = dir
+    this._hardConfig = new HardConfig(dir)
   }
 
   async catch(err: Error) {
@@ -119,80 +114,10 @@ export default abstract class extends Command {
     const { flags } = this.parse(this.constructor as any)
     if (flags.notify) {
       notifier.notify({
-        title: 'Spix Novel Builder',
-        message: `Task completed for ${this.configInstance.config.projectTitle}`,
+        title: 'Chptr',
+        message: `Task completed for command ${this.constructor.toString()}`,
         sound: true
       })
-    }
-  }
-
-  public async addDigitsToNecessaryStacks(): Promise<boolean> {
-    let didAddDigits = false
-    await this.context.getAllNovelFiles(true)
-    for (const b of [true, false]) {
-      const maxDigits = this.context.getMaxNecessaryDigits(b)
-      const minDigits = this.context.getMinDigits(b)
-      if (minDigits < maxDigits) {
-        didAddDigits = didAddDigits || (await this.addDigitsToFiles(await this.context.getAllFilesForOneType(b, true), maxDigits, b))
-      }
-    }
-    return didAddDigits
-  }
-
-  public async compactFileNumbers(): Promise<void> {
-    cli.action.start('Compacting file numbers'.actionStartColor())
-
-    const table = this.tableize('from', 'to')
-    const moves: { fromFilename: string; toFilename: string }[] = []
-    const movePromises: Promise<MoveSummary>[] = []
-    const { tempDir, removeTempDir } = await this.getTempDir()
-    const tempDirForGit = this.context.mapFileToBeRelativeToRootPath(tempDir)
-
-    for (const b of [true, false]) {
-      const wildcards = [this.configInstance.chapterWildcard(b), this.configInstance.metadataWildcard(b), this.configInstance.summaryWildcard(b)]
-      for (const wildcard of wildcards) {
-        const files = await globPromise(path.join(this.configInstance.projectRootPath, wildcard))
-
-        const organizedFiles: any[] = []
-        for (const file of files) {
-          organizedFiles.push({ number: this.context.extractNumber(file), filename: file })
-        }
-
-        const destDigits = this.context.getMaxNecessaryDigits(b)
-        let currentNumber = this.configInstance.config.numberingInitial
-
-        for (const file of organizedFiles.sort((a, b) => a.number - b.number)) {
-          const fromFilename = this.context.mapFileToBeRelativeToRootPath(file.filename)
-          const toFilename = this.context.mapFileToBeRelativeToRootPath(
-            path.join(path.dirname(file.filename), this.context.renumberedFilename(file.filename, currentNumber, destDigits, b))
-          )
-
-          if (fromFilename !== toFilename) {
-            debug(`from: ${fromFilename} to: ${path.join(tempDirForGit, toFilename)}`)
-            moves.push({ fromFilename, toFilename })
-            table.accumulator(fromFilename, toFilename)
-            movePromises.push(this.git.mv(fromFilename, path.join(tempDirForGit, toFilename)))
-          }
-          currentNumber += this.configInstance.config.numberingStep
-        }
-      }
-    }
-
-    await Promise.all(movePromises)
-    for (const renumbering of moves) {
-      debug(`from: ${path.join(tempDirForGit, renumbering.toFilename)} to: ${renumbering.toFilename}`)
-      movePromises.push(this.git.mv(path.join(tempDirForGit, renumbering.toFilename), renumbering.toFilename))
-    }
-    await Promise.all(movePromises)
-
-    await removeTempDir()
-
-    if (moves.length === 0) {
-      cli.action.stop(`no compacting was needed`.actionStopColor())
-    } else {
-      cli.action.stop(`done:`.actionStopColor())
-      debug
-      table.show()
     }
   }
 
@@ -200,10 +125,10 @@ export default abstract class extends Command {
     let tempDir = ''
     try {
       const tempPrefix = 'temp'
-      tempDir = await mkdtemp(path.join(this.configInstance.projectRootPath, tempPrefix))
+      tempDir = await mkdtemp(path.join(this._rootPath, tempPrefix))
       debug(`Created temp dir: ${tempDir}`)
     } catch (err) {
-      cli.error(err.errorColor())
+      cli.error(err.toString().errorColor())
       cli.exit(1)
     }
 
@@ -212,7 +137,7 @@ export default abstract class extends Command {
         debug(`Deleting temp dir: ${tempDir}`)
         await deleteDir(tempDir)
       } catch (err) {
-        cli.error(err.errorColor())
+        cli.error(err.toString().errorColor())
         cli.exit(1)
       }
     }
@@ -252,34 +177,26 @@ export default abstract class extends Command {
     return returnObj
   }
 
-  private async addDigitsToFiles(files: string[], newDigitNumber: number, atNumberingStack: boolean): Promise<boolean> {
-    const promises: Promise<MoveSummary>[] = []
-    let hasMadeChanges = false
-    const table = this.tableize('from', 'to')
-
-    for (const file of files) {
-      const filename = path.basename(file)
-      const atNumbering = this.configInstance.isAtNumbering(filename)
-
-      if (atNumbering === atNumberingStack) {
-        const filenumber = this.context.extractNumber(file)
-        const fromFilename = this.context.mapFileToBeRelativeToRootPath(path.join(path.dirname(file), filename))
-        const toFilename = this.context.mapFileToBeRelativeToRootPath(
-          path.join(path.dirname(file), this.context.renumberedFilename(filename, filenumber, newDigitNumber, atNumbering))
-        )
-        if (fromFilename !== toFilename) {
-          // this.log(`renaming with new file number "${fromFilename}" to "${toFilename}"`.infoColor())
-          table.accumulator(fromFilename, toFilename)
-          promises.push(this.git.mv(fromFilename, toFilename))
-          hasMadeChanges = true
-        }
-      }
+  public async createFile(fullPathName: string, content: string) {
+    const directoryPath = path.dirname(fullPathName)
+    const directoryExists = await fileExists(directoryPath)
+    if (!directoryExists) {
+      try {
+        await createDir(directoryPath)
+      } catch {}
     }
 
-    table.show()
-    await Promise.all(promises)
-    return hasMadeChanges
+    const createFile = promisify(fs.writeFile)
+    try {
+      await createFile(fullPathName, content, { encoding: 'utf8' })
+    } catch (err) {
+      this.error(err.toString().errorColor())
+      this.exit(1)
+    } finally {
+      cli.info(`Created ${fullPathName.resultHighlighColor()}`.resultNormalColor())
+    }
   }
+
 }
 
 export const numDigits = function(x: number, buffer = 2) {
@@ -296,8 +213,11 @@ export const stringifyNumber = function(x: number, digits: number): string {
   }
 }
 
-export const sanitizeFileName = function(original: string): string {
-  const sanitized = sanitize(original)
+export const sanitizeFileName = function(original: string, keepFolders = false): string {
+  if (keepFolders) {
+    original = original.replace(/[\/\\]/g, '\u2029')
+  }
+  const sanitized = sanitize(original).replace(/\u2029/g, path.sep)
   const latinized = latinize(sanitized)
   return latinized
 }

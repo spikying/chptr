@@ -107,12 +107,10 @@ export default class Antidote extends Command {
 
   private processContentForAntidote(initialContent: string): string {
     try {
-      // const initialContent = await this.readFileContent(filepath)
-
       const re = new RegExp(this.sentenceBreakChar + '\r?\n', 'gm')
       const replacedContent = initialContent.replace(re, this.sentenceBreakChar + '  ').replace(/\n/gm, '\r\n')
       debug(`Processed antidote content: \n${replacedContent.substring(0, 250)}`)
-      // await writeFile(filepath, replacedContent, 'utf8')
+
       return replacedContent
     } catch (err) {
       this.error(err.toString().errorColor())
@@ -147,7 +145,7 @@ export default class Antidote extends Command {
       replacedContent = this.processContent(this.processContentBack(replacedContent))
 
       debug(`Processed back antidote content: \n${replacedContent.substring(0, 250)}`)
-      await writeFile(filepath, replacedContent, 'utf8')
+      await writeFile(filepath, replacedContent)
     } catch (err) {
       this.error(err.toString().errorColor())
       this.exit(1)
@@ -165,7 +163,7 @@ export default class Antidote extends Command {
 
       replacedContent = await this.processContentForAntidote(this.processContent(this.processContentBack(replacedContent)))
 
-      await writeFile(filepath, replacedContent, 'utf8')
+      await writeFile(filepath, replacedContent)
     } catch (err) {
       this.error(err.toString().errorColor())
       this.exit(1)

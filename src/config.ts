@@ -3,7 +3,7 @@ import * as jsonComment from 'comment-json'
 import * as Convict from 'convict'
 import * as d from 'debug'
 import fs = require('fs')
-import * as json from 'json5'
+// import * as json from 'json5'
 import moment = require('moment')
 import * as path from 'path'
 
@@ -35,43 +35,22 @@ export interface Author {
 export class Config {
   public get config(): ConfigObject {
     const jsonConfig: any = this.configSchema.getProperties() // so we can operate with a plain old JavaScript object and abstract away convict (optional)
-
-    jsonConfig.chapterPattern = sanitizeFileName(jsonConfig.chapterPattern)
-    jsonConfig.metadataPattern = sanitizeFileName(jsonConfig.metadataPattern)
+    // debug(`chapter pre-Sanitize: ${jsonConfig.chapterPattern}`)
+    jsonConfig.chapterPattern = sanitizeFileName(jsonConfig.chapterPattern, true)
+    jsonConfig.metadataPattern = sanitizeFileName(jsonConfig.metadataPattern, true)
+    jsonConfig.summaryPattern = sanitizeFileName(jsonConfig.summaryPattern, true)
     jsonConfig.metadataFields = {
-      manual: jsonConfig.metadataFields,
+      manual: JSON.parse(jsonConfig.metadataFields),
       computed: { title: '###', wordCount: 0 },
       extracted: {}
     }
 
-    debug(`Config Object: ${json.stringify(jsonConfig)}`)
+    // debug(`Config Object: ${json.stringify(jsonConfig, null, 2)}`)
     return jsonConfig as ConfigObject
   }
 
   public get projectRootPath(): string {
     return this.rootPath
-  }
-  public get configPath(): string {
-    return this.configPathName
-  }
-  public get configFilePath(): string {
-    return this.configFileName
-  }
-
-  public get emptyFilePath(): string {
-    return path.join(this.configPathName, 'empty.md')
-  }
-
-  public get readmeFilePath(): string {
-    return path.join(this.rootPath, 'readme.md')
-  }
-
-  public get gitignoreFilePath(): string {
-    return path.join(this.rootPath, '.gitignore')
-  }
-
-  public get gitattributesFilePath(): string {
-    return path.join(this.rootPath, '.gitattributes')
   }
 
   public get buildDirectory(): string {
@@ -89,11 +68,22 @@ date: ${moment().format('D MMMM YYYY')}
 
 `
   }
-  public emptyFileString = `
-# {TITLE}
 
-`
-
+  private readonly metadataCustomFieldsObject = {
+    datetimeRange: '',
+    revisionSteps: {
+      draft: false,
+      language: false,
+      style: { wordRepetitions: false, languageLevel: false },
+      dialogs: false,
+      questAnalysis: false,
+      tenPercentCut: false
+    },
+    characters: [],
+    mainCharacter: '',
+    mainCharacterQuest: '',
+    otherQuest: ''
+  }
   private readonly configSchemaObject: any = {
     chapterPattern: {
       doc:
@@ -136,12 +126,18 @@ date: ${moment().format('D MMMM YYYY')}
       default: 'MyNovel'
     },
     projectAuthor: {
+      doc: "Author's name and email for the project.",
       name: {
-        doc: 'Author for the project.',
-        default: '---'
+        doc: "Author's name for the project.",
+        default: '',
+        format: (val: string) => {
+          if (val.length === 0) {
+            throw new Error('Must have an author name')
+          }
+        }
       },
       email: {
-        doc: 'Author for the project.',
+        doc: "Author's email for the project.",
         default: '---',
         format: 'email'
       }
@@ -151,10 +147,12 @@ date: ${moment().format('D MMMM YYYY')}
       default: 'en'
     },
     fontName: {
+      //TODO: use parameter?
       doc: 'Font to use for the rendering engines that use it',
-      default: 'Arial'
+      default: ''
     },
     fontSize: {
+      //TODO: use parameter?
       doc: 'Font size for the rendering engines that use it',
       default: '12pt'
     },
@@ -167,43 +165,50 @@ date: ${moment().format('D MMMM YYYY')}
       default: 1
     },
     metadataFields: {
-      doc: 'All fields to be added in each Metadata file',
-      default: {
-        datetimeRange: '',
-        revisionStep: 0,
-        characters: [],
-        mainCharacter: '',
-        mainCharacterQuest: '',
-        otherQuest: ''
-      }
+      doc: 'All fields to be added in each Metadata file.  JSON.stringified string.',
+      format: String,
+      default: JSON.stringify(JSON.stringify(this.metadataCustomFieldsObject))
     }
   }
   private readonly configSchema = Convict(this.configSchemaObject)
+  private readonly hardConfig: HardConfig
   private readonly rootPath: string
-  private readonly configPathName: string
-  private readonly configFileName: string
 
-  constructor(dirname: string) {
+  constructor(dirname: string, readFromFile = true) {
+    this.hardConfig = new HardConfig(dirname)
     this.rootPath = path.join(dirname)
-    this.configPathName = path.join(this.rootPath, './config/')
-    this.configFileName = path.join(this.configPathName, 'config.json5')
+    // this.configPathName = path.join(this.rootPath, './config/')
+    // this.configFileName = path.join(this.configPathName, 'config.json5')
 
-    try {
-      const configFileString = loadFileSync(this.configFileName)
-      const json5Config = jsonComment.parse(configFileString, undefined, true)
-      this.configSchema.load(json5Config)
-      this.configSchema.validate({ allowed: 'strict' }) // 'strict' throws error if config does not conform to schema
+    if (readFromFile) {
+      try {
+        fs.accessSync(this.hardConfig.configFilePath, fs.constants.R_OK)
+      } catch (err) {
+        throw new Error(`File ${this.hardConfig.configFilePath} either doesn't exist or is not readable by process.\n${err}`)
+      }
 
-      debug(`Loaded config from ${this.configFileName}:\n${jsonComment.stringify(json5Config)}`)
-    } catch (err) {
-      debug(err)
-    }
+      let configFileString = ''
+      try {
+        configFileString = loadFileSync(this.hardConfig.configFilePath)
+        // debug(`configFileString=${configFileString}`)
+      } catch (err) {
+        debug(err)
+      }
 
-    try {
-      const emptyFileString = loadFileSync(this.emptyFilePath)
-      this.emptyFileString = emptyFileString
-    } catch (err) {
-      debug(err)
+      try {
+        const json5Config = jsonComment.parse(configFileString, undefined, true)
+        // debug(`json5Config object: ${JSON.stringify(json5Config, null, 2)}`)
+        this.configSchema.load(json5Config)
+        // this.configSchema.loadFile(this.configFileName)
+
+        // if (readFromFile) {
+        this.configSchema.validate() //({ allowed: 'strict' }) // 'strict' throws error if config does not conform to schema
+        // }
+
+        // debug(`Loaded config from ${this.hardConfig.configFilePath}:\n${jsonComment.stringify(json5Config)}`)
+      } catch (err) {
+        throw new Error(`loading config error: ${err.toString().infoColor()}`.errorColor())
+      }
     }
   }
 
@@ -230,7 +235,11 @@ date: ${moment().format('D MMMM YYYY')}
         if (typeof val === 'object') {
           val = JSON.stringify(val)
         } else {
-          val = `"${val}"`
+          if (typeof val === 'string' && val.substring(0, 1) === '"') {
+            // do nothing
+          } else {
+            val = `"${val}"`
+          }
         }
         configDefaultsString += val
         configDefaultsString += `,\n`
@@ -253,33 +262,49 @@ date: ${moment().format('D MMMM YYYY')}
   }
 
   public chapterWildcardWithNumber(num: number, atNumbering: boolean): string {
-    return this.config.chapterPattern.replace('NUM', this.numberWildcardPortion(atNumbering, num)).replace('NAME', '*')// + '.md'
+    return this.config.chapterPattern.replace('NUM', this.numberWildcardPortion(atNumbering, num)).replace('NAME', '*') // + '.md'
   }
   public metadataWildcardWithNumber(num: number, atNumbering: boolean): string {
-    return this.config.metadataPattern.replace('NUM', this.numberWildcardPortion(atNumbering, num)).replace('NAME', '*')// + '.json'
+    return this.config.metadataPattern.replace('NUM', this.numberWildcardPortion(atNumbering, num)).replace('NAME', '*') // + '.json'
   }
   public summaryWildcardWithNumber(num: number, atNumbering: boolean): string {
     return this.config.summaryPattern.replace('NUM', this.numberWildcardPortion(atNumbering, num)).replace('NAME', '*') //+ '.md'
   }
 
   public chapterFileNameFromParameters(num: string, name: string, atNumbering: boolean): string {
-    return this.config.chapterPattern.replace('NUM', (atNumbering ? '@' : '') + num).replace('NAME', sanitizeFileName(name)) //+ '.md'
+    debug(`chapterPattern = ${this.config.chapterPattern}`)
+    return this.config.chapterPattern.replace('NUM', (atNumbering ? '@' : '') + num).replace('NAME', sanitizeFileName(name))
+    // .replace('/', path.sep) //+ '.md'
   }
 
   public metadataFileNameFromParameters(num: string, name: string, atNumbering: boolean): string {
-    return this.config.metadataPattern.replace('NUM', (atNumbering ? '@' : '') + num).replace('NAME', sanitizeFileName(name)) //+ '.json'
+    return this.config.metadataPattern.replace('NUM', (atNumbering ? '@' : '') + num).replace('NAME', sanitizeFileName(name))
+    // .replace('/', path.sep) //+ '.json'
   }
 
   public summaryFileNameFromParameters(num: string, name: string, atNumbering: boolean): string {
-    return this.config.summaryPattern.replace('NUM', (atNumbering ? '@' : '') + num).replace('NAME', sanitizeFileName(name)) //+ '.md'
+    return this.config.summaryPattern.replace('NUM', (atNumbering ? '@' : '') + num).replace('NAME', sanitizeFileName(name))
+    // .replace('/', path.sep) //+ '.md'
   }
 
   public chapterRegex(atNumber: boolean): RegExp {
-    return new RegExp('^' + this.config.chapterPattern.replace('NUM', this.numbersPattern(atNumber)).replace('NAME', '(.*)'))
+    return new RegExp(
+      '^' +
+        this.config.chapterPattern
+          .replace(/[\/\\]/g, '[\\/\\\\]')
+          .replace('NUM', this.numbersPattern(atNumber))
+          .replace('NAME', '(.*)')
+    )
   }
 
   public metadataRegex(atNumber: boolean): RegExp {
-    return new RegExp('^' + this.config.metadataPattern.replace('NUM', this.numbersPattern(atNumber)).replace('NAME', '(.*)'))
+    return new RegExp(
+      '^' +
+        this.config.metadataPattern
+          .replace(/[\/\\]/g, '[\\/\\\\]')
+          .replace('NUM', this.numbersPattern(atNumber))
+          .replace('NAME', '(.*)')
+    )
   }
 
   public numbersPattern(atNumber: boolean): string {
@@ -306,5 +331,52 @@ date: ${moment().format('D MMMM YYYY')}
       result += '+(0|1|2|3|4|5|6|7|8|9)'
     }
     return result
+  }
+}
+
+export class HardConfig {
+  public get configPath(): string {
+    return this.configPathName
+  }
+  public get configFilePath(): string {
+    return this.configFileName
+  }
+
+  public get emptyFilePath(): string {
+    return path.join(this.configPathName, 'empty.md')
+  }
+
+  public get readmeFilePath(): string {
+    return path.join(this.rootPath, 'readme.md')
+  }
+
+  public get gitignoreFilePath(): string {
+    return path.join(this.rootPath, '.gitignore')
+  }
+
+  public get gitattributesFilePath(): string {
+    return path.join(this.rootPath, '.gitattributes')
+  }
+
+  public emptyFileString = `
+# {TITLE}
+
+`
+
+  private readonly rootPath: string
+  private readonly configPathName: string
+  private readonly configFileName: string
+
+  constructor(dirname: string) {
+    this.rootPath = path.join(dirname)
+    this.configPathName = path.join(this.rootPath, './config/')
+    this.configFileName = path.join(this.configPathName, 'config.json5')
+
+    try {
+      const emptyFileString = loadFileSync(this.emptyFilePath)
+      this.emptyFileString = emptyFileString
+    } catch (err) {
+      debug(err)
+    }
   }
 }

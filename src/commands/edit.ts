@@ -89,7 +89,7 @@ export default class Edit extends Command {
       try {
       const initialContent = await this.readFileContent(fullPath)
       const replacedContent = await this.processContentBack(initialContent)
-        await writeFile(fullPath, replacedContent, 'utf8')
+        await writeFile(fullPath, replacedContent)
       } catch (err) {
         this.error(err.toString().errorColor())
         this.exit(1)

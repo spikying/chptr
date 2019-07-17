@@ -61,11 +61,12 @@ export class QueryBuilder {
     return obj
   }
 
-  public textinput(msg?: string, defaultValue?: string): object {
+  public textinput(msg?: string, defaultValue?: string, filter?: (val:string)=>string): object {
     const obj = {
       message: msg || 'Enter a value',
       type: 'input',
-      default: defaultValue
+      default: defaultValue,
+      filter
     }
     return obj
   }

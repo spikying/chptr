@@ -3,7 +3,7 @@ import { cli } from 'cli-ux'
 import * as path from 'path'
 import { MoveSummary } from 'simple-git/typings/response'
 
-import { d } from './base'
+import { createDir, d, deleteDir, fileExists } from './base'
 import Command from './initialized-base'
 
 const debug = d('command:reorder')
@@ -129,7 +129,7 @@ export default class Reorder extends Command {
       return allMandatories.map(m => m.fileNumber).includes(info.fileNumber)
     })
 
-    debug(`toMoveFiles=${JSON.stringify(toMoveFiles, null, 4)}`)
+    // debug(`toMoveFiles=${JSON.stringify(toMoveFiles, null, 4)}`)
 
     const toRenameFiles = (await this.context.getAllFilesForOneType(destIsAtNumbering))
       .filter(file => {
@@ -152,69 +152,87 @@ export default class Reorder extends Command {
       }
     }
 
-    debug(`toRenameFiles=${JSON.stringify(toRenameFiles, null, 2)}`)
-
     cli.action.stop('done'.actionStopColor())
     cli.action.start('Moving files to temp directory'.actionStartColor())
 
-    // let tempDir = ''
-    // try {
-    //   const tempPrefix = 'temp'
-    //   tempDir = fs.mkdtempSync(path.join(dir, tempPrefix))
-    //   debug(`Created temp dir: ${tempDir}`)
-    // } catch (err) {
-    //   cli.error(err.errorColor())
-    //   cli.exit(1)
-    // }
     const { tempDir, removeTempDir } = await this.getTempDir()
+    let oldSubDirectory = ''
 
     try {
       const moveTempPromises: Promise<MoveSummary>[] = []
       for (const file of toRenameFiles.map(f => f.file)) {
         const fromFilename = this.context.mapFileToBeRelativeToRootPath(file)
-        const toFilename = this.context.mapFileToBeRelativeToRootPath(path.join(tempDir, path.basename(file)))
+        const toFilename = this.context.mapFileToBeRelativeToRootPath(path.join(tempDir, fromFilename))
         debug(`Original file: ${fromFilename} TEMP TO ${toFilename}`)
+
+        const directoryPath = path.dirname(path.join(tempDir, fromFilename))
+        const directoryExists = await fileExists(directoryPath)
+        if (!directoryExists) {
+          try {
+            await createDir(directoryPath)
+          } catch {}
+        }
+
         moveTempPromises.push(this.git.mv(fromFilename, toFilename))
+
+        oldSubDirectory = path.dirname(fromFilename)
       }
       await Promise.all(moveTempPromises)
 
       cli.action.stop(tempDir.actionStopColor())
     } catch (err) {
-      cli.error(err.errorColor())
+      cli.error(err.toString().errorColor())
       cli.exit(1)
     }
 
     cli.action.start('Moving files to their final states'.actionStartColor())
     let fileMovesPretty = ''
+    let tempSubDirectory = ''
 
     try {
       const moveBackPromises: Promise<MoveSummary>[] = []
       for (const moveItem of toRenameFiles) {
-        const filename = path.basename(moveItem.file)
+        const filename = this.context.mapFileToBeRelativeToRootPath(moveItem.file)
         const newFileNumber: number = moveItem.newFileNumber
         const destDigits = this.context.getMaxNecessaryDigits(destIsAtNumbering)
 
         const fromFilename = this.context.mapFileToBeRelativeToRootPath(path.join(tempDir, filename))
-        const toFilename = this.context.mapFileToBeRelativeToRootPath(
-          path.join(path.dirname(moveItem.file), this.context.renumberedFilename(filename, newFileNumber, destDigits, destIsAtNumbering))
-        )
+        const toFilename = this.context.renumberedFilename(filename, newFileNumber, destDigits, destIsAtNumbering)
 
-        fileMovesPretty.concat(`\n    renaming from "${path.basename(fromFilename)}" to "${toFilename}"`)
+        const directoryPath = path.dirname(path.join(this.configInstance.projectRootPath, toFilename))
+        const directoryExists = await fileExists(directoryPath)
+        debug(`directoryPath=${directoryPath} directoryExists=${directoryExists}`)
+        if (!directoryExists) {
+          try {
+            await createDir(directoryPath)
+          } catch {}
+        }
+
+        debug(`TEMPed file: ${fromFilename} BACK TO ${toFilename}`)
+
+        fileMovesPretty.concat(`\n    renaming from "${fromFilename}" to "${toFilename}"`)
         moveBackPromises.push(this.git.mv(fromFilename, toFilename))
+
+        tempSubDirectory = path.dirname(fromFilename)
       }
       await Promise.all(moveBackPromises)
     } catch (err) {
-      cli.error(err.errorColor())
+      cli.error(err.toString().errorColor())
       cli.exit(1)
     }
 
-    // try {
-    //   debug(`Deleting temp dir: ${tempDir}`)
-    //   fs.rmdirSync(tempDir)
-    // } catch (err) {
-    //   cli.error(err.errorColor())
-    //   cli.exit(1)
-    // }
+    if (tempSubDirectory) {
+      const subDirExists = await fileExists(path.join(this.configInstance.projectRootPath, tempSubDirectory))
+      if (subDirExists) {
+        await deleteDir(path.join(this.configInstance.projectRootPath, tempSubDirectory))
+      }
+    }
+    if (oldSubDirectory) {
+      const subDirExists = await fileExists(path.join(this.configInstance.projectRootPath, oldSubDirectory))
+      if (subDirExists) {
+        await deleteDir(path.join(this.configInstance.projectRootPath, oldSubDirectory))
+      }
+    }
     await removeTempDir()
 
     cli.action.stop('done'.actionStopColor()) // `Moved files${fileMovesPretty}\n`.actionStopColor() + `Deleted temp folder `.actionStartColor() + `${tempDir}`.actionStopColor())

@@ -2,11 +2,12 @@ import { flags } from '@oclif/command'
 import { cli } from 'cli-ux'
 // import * as fs from 'fs'
 import * as path from 'path'
+import * as validator from 'validator'
 
-import { Author } from '../config'
+import { Author, Config } from '../config'
 import { QueryBuilder } from '../queries'
 
-import Command, { createDir, createFile, d, fileExists, sanitizeFileName } from './base'
+import Command, { createDir, d, fileExists } from './base'
 
 const debug = d('command:init')
 
@@ -49,8 +50,8 @@ export default class Init extends Command {
       name: 'name',
       description: 'Name of project',
       required: false,
-      default: '',
-      parse: sanitizeFileName
+      default: ''
+      // parse: sanitizeFileName
     }
   ]
 
@@ -63,12 +64,14 @@ export default class Init extends Command {
   async run() {
     debug('Running Init command')
     const { args, flags } = this.parse(Init)
-    // this.flagForce = flags.force || 'false'
+
+    const force = flags.force
+    const forceAll = force === 'true' || force === 'all'
 
     // Create folder structure, with /config
     try {
-      await createDir(this.configInstance.configPath)
-      cli.info(`Created directory ${this.configInstance.configPath.resultHighlighColor()}`.resultNormalColor())
+      await createDir(this.hardConfig.configPath)
+      cli.info(`Created directory ${this.hardConfig.configPath.resultHighlighColor()}`.resultNormalColor())
     } catch {
       // If directory already exists, silently swallow the error
     }
@@ -76,28 +79,38 @@ export default class Init extends Command {
     // Prompt config options if necessary
     const queryBuilder = new QueryBuilder()
 
-    const forceConfigJson = flags.force === 'true' || flags.force === path.basename(this.configInstance.configFilePath)
-    if (forceConfigJson || !(await fileExists(this.configInstance.configFilePath))) {
+    const forceConfigJson = forceAll || force === path.basename(this.hardConfig.configFilePath)
+    const notEmptyString = function(val: string): string {
+      if (!val) {
+        throw new Error('Must not be empty')
+      } else {
+        return val
+      }
+    }
+    const emailString = function(val: string): string {
+      if (!validator.isEmail(val)) {
+        throw new Error('Must be an email address')
+      } else {
+        return val
+      }
+    }
+    if (forceConfigJson || !(await fileExists(this.hardConfig.configFilePath))) {
       const options: any = {
         name: {
           arg: args.name,
-          query: queryBuilder.filename('What is the project working name?', 'MyNovel')
+          query: queryBuilder.textinput('What is the project working name?', 'MyNovel', notEmptyString)
         },
-        // gitRemote: {
-        //   arg: flags.gitRemote,
-        //   query: queryBuilder.gitremote()
-        // },
         author: {
           arg: flags.author,
-          query: queryBuilder.textinput('What is the name of the author?')
+          query: queryBuilder.textinput('What is the name of the author?', undefined, notEmptyString)
         },
         email: {
           arg: flags.email,
-          query: queryBuilder.textinput('What is the email of the author?')
+          query: queryBuilder.textinput('What is the email of the author?', undefined, emailString)
         },
         language: {
           arg: flags.language,
-          query: queryBuilder.textinput('What language code do you use? (ex. en, fr, es...)')
+          query: queryBuilder.textinput('What language code do you use? (ex. en, fr, es...)', 'en')
         }
       }
 
@@ -107,31 +120,6 @@ export default class Init extends Command {
         }
       }
     }
-    // if (!args.name) {
-    //   queryBuilder.add('name', queryBuilder.filename('What is the project working name?', 'MyNovel'))
-    // }
-    // if (flags.gitRemote === undefined) {
-    //   queryBuilder.add('gitRemote', queryBuilder.gitremote())
-    // }
-    // if (!flags.author) {
-    //   queryBuilder.add('author', queryBuilder.textinput('What is the name of the author?'))
-    // }
-    // if (!flags.email) {
-    //   queryBuilder.add('email', queryBuilder.textinput('What is the email of the author?'))
-    // }
-    // if (!flags.language) {
-    //   queryBuilder.add('language', queryBuilder.textinput('What language code do you use? (ex. en, fr, es...)'))
-    // }
-
-    // const queryResponses: any = await queryBuilder.responses()
-
-    // const name = args.name || queryResponses.name
-    // const remoteRepo = flags.gitRemote || queryResponses.gitRemote || ''
-    // const authorName = flags.author || queryResponses.author || ''
-    // const authorEmail = flags.email || queryResponses.email || ''
-    // const language = flags.language || queryResponses.language || 'en'
-
-    // Create /config files
 
     //check if we prompt for gitRemote and keep doGitOperation=true
     let doGitOperation = true
@@ -142,7 +130,7 @@ export default class Init extends Command {
           return result.find(value => value.name === 'origin') !== undefined
         }))
 
-      const forceConfig = flags.force === 'true' || flags.force === 'gitRemote'
+      const forceConfig = forceAll || force === 'gitRemote'
       if (!isRepoWithRemote || forceConfig) {
         queryBuilder.add('gitRemote', queryBuilder.gitremote())
       } else {
@@ -160,32 +148,36 @@ export default class Init extends Command {
     const language = flags.language || queryResponses.language || 'en'
 
     //prepare for creating config files
+
+    //TODO : VirginConfigInstance's essentials could be moved to HardConfig?
+    const virginConfigInstance = new Config(path.join(flags.path as string), false)
     const allConfigOperations = [
       {
-        fullPathName: this.configInstance.configFilePath,
-        content: this.configInstance.configDefaultsWithMetaString({
+        fullPathName: this.hardConfig.configFilePath,
+        content: virginConfigInstance.configDefaultsWithMetaString({
           projectTitle: name,
           projectAuthor: { name: authorName, email: authorEmail } as Author,
           projectLang: language
         })
       },
       {
-        fullPathName: this.configInstance.emptyFilePath,
-        content: this.configInstance.emptyFileString
+        fullPathName: this.hardConfig.emptyFilePath,
+        content: this.hardConfig.emptyFileString
       },
       {
-        fullPathName: this.configInstance.readmeFilePath,
+        fullPathName: this.hardConfig.readmeFilePath,
         content: `# ${name}\n\nA novel by ${authorName}.`
       },
       {
-        fullPathName: this.configInstance.gitignoreFilePath,
+        fullPathName: this.hardConfig.gitignoreFilePath, //todo: move content to HardConfig
         content: `build/
 pandoc*/
 *.antidote
+temp*/
 `
       },
       {
-        fullPathName: this.configInstance.gitattributesFilePath,
+        fullPathName: this.hardConfig.gitattributesFilePath, //todo: move content to HardConfig
         content: `autocrlf=false
 eol=lf
 * text=auto
@@ -197,17 +189,14 @@ eol=lf
     const allConfigFiles: { fullPathName: string; content: string }[] = []
     const table = this.tableize('file', '')
     for (const operation of allConfigOperations) {
-      const forceConfig = flags.force === 'true' || flags.force === path.basename(operation.fullPathName)
+      const forceConfig = forceAll || force === path.basename(operation.fullPathName)
       if (!forceConfig && (await fileExists(operation.fullPathName))) {
-        // cli.info(
-        //   `${operation.fullPathName.resultNormalColor()} already exists.  Use option --force=${path.basename(
-        //     operation.fullPathName
-        //   )} to overwrite this one or -f, --force=true to overwrite all.`.infoColor()
-        // )
-        table.accumulator(
-          `${operation.fullPathName.resultNormalColor()} already exists.`.infoColor(),
-          `Use option --force=${path.basename(operation.fullPathName)} to overwrite this one or -f, --force=true to overwrite all.`.infoColor()
-        )
+        if (!force) {
+          table.accumulator(
+            `${operation.fullPathName.resultNormalColor()} already exists.`.infoColor(),
+            `Use option --force=${path.basename(operation.fullPathName)} to overwrite this one or -f, --force=true to overwrite all.`.infoColor()
+          )
+        }
       } else {
         allConfigFiles.push(operation)
       }
@@ -254,7 +243,7 @@ eol=lf
           didSyncRemote = true
         }
       } catch (err) {
-        this.warn(err.errorColor())
+        this.warn(err.toString().errorColor())
       } finally {
         let msg = ''
         if (!didGitInit && !didAddRemote && !didSyncRemote) {
@@ -273,35 +262,17 @@ eol=lf
         cli.action.stop(msg.actionStopColor())
       }
     } else {
-      const remote = (await this.git.getRemotes(true).then(result => {
+      const remote = await this.git.getRemotes(true).then(result => {
         return result.find(value => value.name === 'origin')
-      }))
-      const remoteName = remote? remote.refs.fetch : ''
-      table.accumulator(`git repository already exists with remote ${remoteName.resultNormalColor()}`.infoColor(),`Use option --force=gitRemote to overwrite this one or -f, --force=true to overwrite all.`.infoColor())
+      })
+      const remoteName = remote ? remote.refs.fetch : ''
+      table.accumulator(
+        `git repository already exists with remote ${remoteName.resultNormalColor()}`.infoColor(),
+        `Use option --force=gitRemote to overwrite this one or -f, --force=true to overwrite all.`.infoColor()
+      )
     }
     table.show()
 
     cli.info('End of initialization'.infoColor())
-  }
-
-  private async createFile(fullPathName: string, content: string) {
-    // const forceAll = this.flagForce === 'true'
-    // const baseName = path.basename(fullPathName)
-    // const configForce = forceAll || this.flagForce === baseName
-    // if (!configForce && fs.existsSync(fullPathName)) {
-    //   if (this.flagForce === 'false') {
-    //     this.warn(`${fullPathName} already exists.  Use option --force=${baseName} to overwrite this one or -f, --force=true to overwrite all.`)
-    //   }
-    // } else {
-    try {
-      // cli.action.start(`Creating ${baseName}`)
-      await createFile(fullPathName, content)
-    } catch (err) {
-      this.error(err.toString().errorColor())
-      this.exit(1)
-    } finally {
-      cli.info(`Created ${fullPathName.resultHighlighColor()}`.resultNormalColor())
-    }
-    // }
   }
 }

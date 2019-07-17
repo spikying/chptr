@@ -200,7 +200,7 @@ export default class Build extends Command {
         }
 
         if (filetype === 'docx') {
-          const referenceDocFullPath = path.join(this.configInstance.configPath, 'reference.docx')
+          const referenceDocFullPath = path.join(this.hardConfig.configPath, 'reference.docx')
           if (fs.existsSync(referenceDocFullPath)) {
             pandocArgs = pandocArgs.concat([`--reference-docx="${referenceDocFullPath}"`])
           } else {
@@ -210,14 +210,14 @@ export default class Build extends Command {
         }
 
         if (filetype === 'html') {
-          const templateFullPath = path.join(this.configInstance.configPath, 'template.html')
+          const templateFullPath = path.join(this.hardConfig.configPath, 'template.html')
           if (fs.existsSync(templateFullPath)) {
             pandocArgs = pandocArgs.concat([`--template`, `"${templateFullPath}"`])
           } else {
             this.warn(`For a better output, create an html template at ${templateFullPath}`)
           }
 
-          const cssFullPath = path.join(this.configInstance.configPath, 'template.css')
+          const cssFullPath = path.join(this.hardConfig.configPath, 'template.css')
           if (fs.existsSync(cssFullPath)) {
             pandocArgs = pandocArgs.concat([`--css`, `"${cssFullPath}"`])
           } else {
@@ -239,7 +239,7 @@ export default class Build extends Command {
         if (filetype === 'pdf' || filetype === 'tex') {
           chapterFiles = '"' + tmpMDfileTex.path + '" '
 
-          const templateFullPath = path.join(this.configInstance.configPath, 'template.latex')
+          const templateFullPath = path.join(this.hardConfig.configPath, 'template.latex')
           if (fs.existsSync(templateFullPath)) {
             pandocArgs = pandocArgs.concat([`--template`, `"${templateFullPath}"`])
           } else {
@@ -315,18 +315,12 @@ export default class Build extends Command {
 
         if (existingMarkupContent !== JSON.stringify(markup.markupObj, null, 4)) {
           await writeFile(markup.fullPath, JSON.stringify(markup.markupObj, null, 4))
-          table.accumulator(path.basename(markup.fullPath), 'updated')
+          table.accumulator(this.context.mapFileToBeRelativeToRootPath(markup.fullPath), 'updated')
         }
       }
 
-      // if (existingMarkupContent !== JSON.stringify(markupByFile, null, 4)) {
-      //   await writeFile(markupByFileFullPath, JSON.stringify(markupByFile, null, 4))
-      //   table.accumulator(path.basename(markupByFileFullPath), 'updated')
-      // }
-      // await writeFile(path.join(this.configInstance.buildDirectory, `${outputFile}.markupByType.json`), JSON.stringify(markupByType, null, 4))
-
       const modifiedMetadataFiles = await this.writeMetadataInEachFile(markupByFile)
-      table.accumulatorArray(modifiedMetadataFiles.map(val => ({ from: path.basename(val.file), to: val.diff })))
+      table.accumulatorArray(modifiedMetadataFiles.map(val => ({ from: this.context.mapFileToBeRelativeToRootPath(val.file), to: val.diff })))
       // markupFilenamesPretty = modifiedMetadataFiles.reduce((previous, current) => `${previous}\n    ${current}`,'')
     })
 
@@ -387,7 +381,7 @@ export default class Build extends Command {
   }
 
   private async extractMeta(filepath: string, extractAll: boolean): Promise<MetaObj[]> {
-    const file = path.basename(filepath)
+    const file = this.context.mapFileToBeRelativeToRootPath(filepath)
     const beginBlock = '########'
     const endFormattedBlock = '------------------------ >8 ------------------------'
     const gitLogArgs = ['log', '-c', '--follow', `--pretty=format:"${beginBlock}%H;%aI;%s${endFormattedBlock}"`]

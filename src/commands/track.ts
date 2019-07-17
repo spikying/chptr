@@ -1,5 +1,5 @@
 import { cli } from 'cli-ux'
-import * as path from 'path'
+// import * as path from 'path'
 
 import { QueryBuilder } from '../queries'
 
@@ -35,6 +35,7 @@ export default class Track extends Command {
     if (!args.filename) {
       const untrackedGitFiles = await this.GetGitListOfUntrackedFiles()
       const root = this.configInstance.projectRootPath
+      const mapFiles = this.context.mapFileToBeRelativeToRootPath
 
       const toExcludeFiles = function(file: string): boolean {
         // return TRUE to EXCLUDE file, FALSE to keep it
@@ -51,7 +52,7 @@ export default class Track extends Command {
         const isInUntrackedFiles =
           untrackedGitFiles
             .map(unTrackedFile => {
-              return unTrackedFile.indexOf(path.basename(file))
+              return unTrackedFile.indexOf(mapFiles(file))
             })
             .reduce((previous, current) => {
               return Math.max(previous, current)

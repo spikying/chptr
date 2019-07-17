@@ -134,7 +134,7 @@ export default class Rename extends Command {
     const initialContent = await this.readFileContent(actualFile)
     const replacedContent = initialContent.replace(this.titleRegex, `\n# ${newTitle}\n`)
     if (initialContent !== replacedContent) {
-      await writeFile(actualFile, replacedContent, 'utf8')
+      await writeFile(actualFile, replacedContent)
       return true
     }
     return false
