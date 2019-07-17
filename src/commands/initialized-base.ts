@@ -352,9 +352,10 @@ export default abstract class extends Command {
 
         for (const file of organizedFiles.sort((a, b) => a.number - b.number)) {
           const fromFilename = this.context.mapFileToBeRelativeToRootPath(file.filename)
-          const toFilename = this.context.mapFileToBeRelativeToRootPath(
-            path.join(path.dirname(file.filename), this.context.renumberedFilename(file.filename, currentNumber, destDigits, b))
-          )
+          const toFilename = this.context.renumberedFilename(fromFilename, currentNumber, destDigits, b)
+          //   this.context.mapFileToBeRelativeToRootPath(
+          //   path.join(path.dirname(file.filename), this.context.renumberedFilename(file.filename, currentNumber, destDigits, b))
+          // )
 
           if (fromFilename !== toFilename) {
             debug(`from: ${fromFilename} to: ${path.join(tempDirForGit, toFilename)}`)
@@ -379,6 +380,7 @@ export default abstract class extends Command {
     if (moves.length === 0) {
       cli.action.stop(`no compacting was needed`.actionStopColor())
     } else {
+      await this.addDigitsToNecessaryStacks()
       cli.action.stop(`done:`.actionStopColor())
       debug
       table.show()

@@ -59,7 +59,7 @@ export default class Reorder extends Command {
       })
       .reduce((previous, current) => {
         return previous || current
-      })
+      }, false)
     if (!originExists) {
       this.error('Origin does not exist'.errorColor())
       this.exit(1)
@@ -155,7 +155,7 @@ export default class Reorder extends Command {
     cli.action.stop('done'.actionStopColor())
     cli.action.start('Moving files to temp directory'.actionStartColor())
 
-    const { tempDir, removeTempDir } = await this.getTempDir()
+    const { tempDir } = await this.getTempDir()
     // let oldSubDirectory = ''
 
     try {
@@ -235,8 +235,8 @@ export default class Reorder extends Command {
     //     await deleteDir(path.join(this.configInstance.projectRootPath, oldSubDirectory))
     //   }
     // }
-    await removeTempDir()
     await this.deleteEmptySubDirectories()
+    // await removeTempDir()
 
     cli.action.stop('done'.actionStopColor()) // `Moved files${fileMovesPretty}\n`.actionStopColor() + `Deleted temp folder `.actionStartColor() + `${tempDir}`.actionStopColor())
 

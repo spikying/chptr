@@ -127,6 +127,24 @@ export class Context {
 
   //TODO: make aware of which filetype it is and use real patterns for cases where the number is repeated
   public renumberedFilename(filename: string, newFilenumber: number, digits: number, atNumbering: boolean): string {
+    //Identify if it's a chapter, summary or metadata
+    const isChapter = this.configInstance.chapterRegex(true).test(filename) || this.configInstance.chapterRegex(false).test(filename)
+    const isSummary = this.configInstance.summaryRegex(true).test(filename) || this.configInstance.summaryRegex(false).test(filename)
+    const isMetadata = this.configInstance.metadataRegex(true).test(filename) || this.configInstance.metadataRegex(false).test(filename)
+
+    debug(`filename: ${filename}\nregex: ${this.configInstance.chapterRegex(atNumbering)}\nisChapter: ${isChapter}`)
+    const total = (isChapter ? 1 : 0) + (isSummary ? 1 : 0) + (isMetadata ? 1 : 0)
+    if (total !== 1) {
+      throw new Error('Filename does not match Chapter, Summary or Metadata pattern and cannot be renamed.')
+    }
+    //
+    if (isChapter) {
+      const matches = this.configInstance.chapterRegex(atNumbering).exec(filename)
+      const name = matches ? matches[2] : ''
+      debug(`return ${this.configInstance.chapterFileNameFromParameters(stringifyNumber(newFilenumber, digits), name, atNumbering)}`)
+      return this.configInstance.chapterFileNameFromParameters(stringifyNumber(newFilenumber, digits), name, atNumbering)
+    }
+
     const re = new RegExp(/^(.*?)(@?\d+)(.*)$/)
     return filename.replace(re, '$1' + (atNumbering ? '@' : '') + stringifyNumber(newFilenumber, digits) + '$3')
   }
@@ -173,7 +191,7 @@ export class Context {
       })
       .reduce((previous, current) => {
         return Math.max(previous, current)
-      })
+      }, 0)
 
     const minDigits = files
       .map(value => {
@@ -182,7 +200,7 @@ export class Context {
       })
       .reduce((previous, current) => {
         return Math.min(previous, current)
-      })
+      }, 1)
 
     const maxNecessaryDigits = files
       .map(value => {
@@ -191,7 +209,7 @@ export class Context {
       })
       .reduce((previous, current) => {
         return Math.max(previous, current)
-      })
+      }, 1)
 
     this._allNovelStatistics[index] = {
       highestNumber,

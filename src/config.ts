@@ -92,6 +92,11 @@ date: ${moment().format('D MMMM YYYY')}
         if (!/^(?=.*NUM)(?=.*NAME).*$/.test(val)) {
           throw new Error('Must have NUM and NAME in pattern')
         }
+        const numPos = val.indexOf('NUM')
+        const namePos = val.indexOf('NAME')
+        if (namePos < numPos) {
+          throw new Error('First NUM must be before first NAME in pattern')
+        }
       },
       default: 'NUM NAME.chptr'
     },
@@ -103,6 +108,13 @@ date: ${moment().format('D MMMM YYYY')}
           // && !/^$/.test(val)
           throw new Error('Must have NUM in pattern')
         }
+        if (/^(?=.*NAME).*$/.test(val)) {
+          const numPos = val.indexOf('NUM')
+          const namePos = val.indexOf('NAME')
+          if (namePos < numPos) {
+            throw new Error('First NUM must be before first NAME in pattern')
+          }
+        }
       },
       default: 'NUM.metadata.json'
     },
@@ -113,6 +125,13 @@ date: ${moment().format('D MMMM YYYY')}
         if (!/^(?=.*NUM).*$/.test(val)) {
           // && !/^$/.test(val)
           throw new Error('Must have NUM in pattern')
+        }
+        if (/^(?=.*NAME).*$/.test(val)) {
+          const numPos = val.indexOf('NUM')
+          const namePos = val.indexOf('NAME')
+          if (namePos < numPos) {
+            throw new Error('First NUM must be before first NAME in pattern')
+          }
         }
       },
       default: 'NUM.summary.md'
@@ -283,7 +302,7 @@ date: ${moment().format('D MMMM YYYY')}
   }
 
   public metadataFileNameFromParameters(num: string, name: string, atNumbering: boolean): string {
-    return this.filenameFromParameters(this.config.metadataPattern, num, name, atNumbering)    // return this.config.metadataPattern.replace(/NUM/g, (atNumbering ? '@' : '') + num).replace(/NAME/g, sanitizeFileName(name))
+    return this.filenameFromParameters(this.config.metadataPattern, num, name, atNumbering) // return this.config.metadataPattern.replace(/NUM/g, (atNumbering ? '@' : '') + num).replace(/NAME/g, sanitizeFileName(name))
   }
 
   public summaryFileNameFromParameters(num: string, name: string, atNumbering: boolean): string {
@@ -311,6 +330,10 @@ date: ${moment().format('D MMMM YYYY')}
     //       .replace(/NUM/g, this.numbersPattern(atNumber))
     //       .replace(/NAME/g, '(.*)')
     // )
+  }
+
+  public summaryRegex(atNumber: boolean): RegExp {
+    return this.patternRegexer(this.config.summaryPattern, atNumber)
   }
 
   public numbersPattern(atNumber: boolean): string {
@@ -343,8 +366,10 @@ date: ${moment().format('D MMMM YYYY')}
       '^' +
         pattern
           .replace(/[\/\\]/g, '[\\/\\\\]')
-          .replace(/NUM/g, this.numbersPattern(atNumber))
-          .replace(/NAME/g, '(.*)')
+          .replace(/NUM/, this.numbersPattern(atNumber))
+          .replace(/NAME/, '(.*)')
+          .replace(/NUM/g, '\\1')
+          .replace(/NAME/g, '\\2')
     )
   }
 
