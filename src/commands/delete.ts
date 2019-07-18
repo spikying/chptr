@@ -15,12 +15,6 @@ export default class Delete extends Command {
 
   static flags = {
     ...Command.flags,
-    // type: flags.string({
-    //   char: 't',
-    //   description: 'Delete either chapter file, summary file, metadata file or all.',
-    //   default: 'all',
-    //   options: ['all', 'summary', 'chapter', 'metadata'],
-    // }),
     compact: flags.boolean({
       char: 'c',
       description: 'Compact chapter numbers at the same time',

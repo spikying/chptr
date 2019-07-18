@@ -4,8 +4,8 @@ import { cli } from 'cli-ux'
 import * as path from 'path'
 import * as validator from 'validator'
 
-import { Author, Config } from '../config'
 import { QueryBuilder } from '../queries'
+import { Author, SoftConfig } from '../soft-config'
 
 import Command, { createDir, d, fileExists } from './base'
 
@@ -16,11 +16,6 @@ export default class Init extends Command {
 
   static flags = {
     ...Command.flags,
-    // digits: flags.string({
-    //   char: 'd',
-    //   default: '2',
-    //   description: 'Number of digits to use in file numbering initially.  Defaults to `2`.',
-    // }),
     gitRemote: flags.string({
       char: 'r',
       required: false,
@@ -59,6 +54,7 @@ export default class Init extends Command {
 
   static hidden = false
 
+  static aliases = ['setup']
   // private flagForce = 'false'
 
   async run() {
@@ -80,6 +76,7 @@ export default class Init extends Command {
     const queryBuilder = new QueryBuilder()
 
     const forceConfigJson = forceAll || force === path.basename(this.hardConfig.configFilePath)
+
     const notEmptyString = function(val: string): string {
       if (!val) {
         throw new Error('Must not be empty')
@@ -94,6 +91,7 @@ export default class Init extends Command {
         return val
       }
     }
+
     if (forceConfigJson || !(await fileExists(this.hardConfig.configFilePath))) {
       const options: any = {
         name: {
@@ -150,7 +148,7 @@ export default class Init extends Command {
     //prepare for creating config files
 
     //TODO : VirginConfigInstance's essentials could be moved to HardConfig?
-    const virginConfigInstance = new Config(path.join(flags.path as string), false)
+    const virginConfigInstance = new SoftConfig(path.join(flags.path as string), false)
     const allConfigOperations = [
       {
         fullPathName: this.hardConfig.configFilePath,
@@ -159,6 +157,10 @@ export default class Init extends Command {
           projectAuthor: { name: authorName, email: authorEmail } as Author,
           projectLang: language
         })
+      },
+      {
+        fullPathName: this.hardConfig.metadataFieldsFilePath,
+        content: this.hardConfig.metadataFieldsDefaults
       },
       {
         fullPathName: this.hardConfig.emptyFilePath,

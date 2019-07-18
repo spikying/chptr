@@ -8,9 +8,10 @@ import moment = require('moment')
 import * as path from 'path'
 
 import { sanitizeFileName } from './commands/base'
+import { HardConfig } from './hard-config'
 
-const debug = d('config')
-const loadFileSync = fs.readFileSync as (path: string) => string
+const debug = d('config:soft')
+export const loadFileSync = fs.readFileSync as (path: string) => string
 
 interface ConfigObject {
   chapterPattern: string // | ConfigProperty
@@ -32,21 +33,26 @@ export interface Author {
   email: string
 }
 
-export class Config {
+export class SoftConfig {
+  private _config: ConfigObject | undefined
+  private readonly _metadataFieldsObj: any
   public get config(): ConfigObject {
-    const jsonConfig: any = this.configSchema.getProperties() // so we can operate with a plain old JavaScript object and abstract away convict (optional)
-    // debug(`chapter pre-Sanitize: ${jsonConfig.chapterPattern}`)
-    jsonConfig.chapterPattern = sanitizeFileName(jsonConfig.chapterPattern, true)
-    jsonConfig.metadataPattern = sanitizeFileName(jsonConfig.metadataPattern, true)
-    jsonConfig.summaryPattern = sanitizeFileName(jsonConfig.summaryPattern, true)
-    jsonConfig.metadataFields = {
-      manual: JSON.parse(jsonConfig.metadataFields),
-      computed: { title: '###', wordCount: 0 },
-      extracted: {}
-    }
+    if (this._config) {
+      return this._config as ConfigObject
+    } else {
+      const jsonConfig: any = this.configSchema.getProperties() // so we can operate with a plain old JavaScript object and abstract away convict (optional)
+      jsonConfig.chapterPattern = sanitizeFileName(jsonConfig.chapterPattern, true)
+      jsonConfig.metadataPattern = sanitizeFileName(jsonConfig.metadataPattern, true)
+      jsonConfig.summaryPattern = sanitizeFileName(jsonConfig.summaryPattern, true)
+      jsonConfig.metadataFields = {
+        manual: this._metadataFieldsObj, //JSON.parse(jsonConfig.metadataFields),
+        computed: { title: '###', wordCount: 0 },
+        extracted: {}
+      }
 
-    // debug(`Config Object: ${json.stringify(jsonConfig, null, 2)}`)
-    return jsonConfig as ConfigObject
+      this._config = jsonConfig
+      return jsonConfig as ConfigObject
+    }
   }
 
   public get projectRootPath(): string {
@@ -182,12 +188,13 @@ date: ${moment().format('D MMMM YYYY')}
     numberingInitial: {
       doc: 'Initial file number',
       default: 1
-    },
-    metadataFields: {
-      doc: 'All fields to be added in each Metadata file.  JSON.stringified string.',
-      format: String,
-      default: JSON.stringify(JSON.stringify(this.metadataCustomFieldsObject))
     }
+    // ,
+    // metadataFields: {
+    //   doc: 'All fields to be added in each Metadata file.  JSON.stringified string.',
+    //   format: String,
+    //   default: JSON.stringify(JSON.stringify(this.metadataCustomFieldsObject))
+    // }
   }
   private readonly configSchema = Convict(this.configSchemaObject)
   private readonly hardConfig: HardConfig
@@ -207,11 +214,12 @@ date: ${moment().format('D MMMM YYYY')}
       }
 
       let configFileString = ''
+      let metadataFieldsString = ''
       try {
         configFileString = loadFileSync(this.hardConfig.configFilePath)
-        // debug(`configFileString=${configFileString}`)
+        metadataFieldsString = loadFileSync(this.hardConfig.metadataFieldsFilePath)
       } catch (err) {
-        debug(err)
+        throw new Error(`loading config files error: ${err.toString().infoColor()}`.errorColor())
       }
 
       try {
@@ -226,7 +234,13 @@ date: ${moment().format('D MMMM YYYY')}
 
         // debug(`Loaded config from ${this.hardConfig.configFilePath}:\n${jsonComment.stringify(json5Config)}`)
       } catch (err) {
-        throw new Error(`loading config error: ${err.toString().infoColor()}`.errorColor())
+        throw new Error(`processing config data error: ${err.toString().infoColor()}`.errorColor())
+      }
+
+      try {
+        this._metadataFieldsObj = jsonComment.parse(metadataFieldsString, undefined, false)
+      } catch (err) {
+        throw new Error(`processing metadata fields error: ${err.toString().infoColor()}`.errorColor())
       }
     }
   }
@@ -240,7 +254,7 @@ date: ${moment().format('D MMMM YYYY')}
     let configDefaultsString = '{\n'
 
     for (let i = 0; i !== props.length; i++) {
-      if (jsonConfig.hasOwnProperty(props[i])) {
+      if (jsonConfig.hasOwnProperty(props[i]) && this.configSchemaObject[props[i]]) {
         configDefaultsString += ' '.repeat(spaces)
         configDefaultsString += '// '
         configDefaultsString += this.configSchemaObject[props[i]].doc
@@ -384,52 +398,5 @@ date: ${moment().format('D MMMM YYYY')}
       result += '+(0|1|2|3|4|5|6|7|8|9)'
     }
     return result
-  }
-}
-
-export class HardConfig {
-  public get configPath(): string {
-    return this.configPathName
-  }
-  public get configFilePath(): string {
-    return this.configFileName
-  }
-
-  public get emptyFilePath(): string {
-    return path.join(this.configPathName, 'empty.md')
-  }
-
-  public get readmeFilePath(): string {
-    return path.join(this.rootPath, 'readme.md')
-  }
-
-  public get gitignoreFilePath(): string {
-    return path.join(this.rootPath, '.gitignore')
-  }
-
-  public get gitattributesFilePath(): string {
-    return path.join(this.rootPath, '.gitattributes')
-  }
-
-  public emptyFileString = `
-# {TITLE}
-
-`
-
-  private readonly rootPath: string
-  private readonly configPathName: string
-  private readonly configFileName: string
-
-  constructor(dirname: string) {
-    this.rootPath = path.join(dirname)
-    this.configPathName = path.join(this.rootPath, './config/')
-    this.configFileName = path.join(this.configPathName, 'config.json5')
-
-    try {
-      const emptyFileString = loadFileSync(this.emptyFilePath)
-      this.emptyFileString = emptyFileString
-    } catch (err) {
-      debug(err)
-    }
   }
 }

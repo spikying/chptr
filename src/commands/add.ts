@@ -73,7 +73,7 @@ export default class Add extends Command {
     const filledTemplateData = emptyFileString.replace(/{TITLE}/gim, name)
     const metadataObj: any = this.configInstance.config.metadataFields
     metadataObj.computed.title = name
-    metadataObj.computed.wordCount = this.GetWordCount(name)
+    metadataObj.computed.wordCount = this.GetWordCount(filledTemplateData)
     const filledTemplateMeta = JSON.stringify(metadataObj, undefined, 4) //.replace(/{TITLE}/gim, name)
 
     const fullPathMD = path.join(

@@ -10,7 +10,7 @@ import * as sanitize from 'sanitize-filename'
 import * as simplegit from 'simple-git/promise'
 import { promisify } from 'util'
 
-import { HardConfig } from '../config'
+import { HardConfig } from "../hard-config";
 
 export const readFile = promisify(fs.readFile)
 export const writeInFile = promisify(fs.write)

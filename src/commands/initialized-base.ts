@@ -4,16 +4,16 @@ import * as minimatch from 'minimatch'
 import * as path from 'path'
 import { MoveSummary } from 'simple-git/typings/response'
 
-import { Config } from '../config'
 import { Context } from '../context'
+import { SoftConfig } from '../soft-config'
 
 import Command, { d, deleteDir, fileExists, globPromise, readFile, writeFile } from './base'
 
 const debug = d('command:initialized-base')
 
 export default abstract class extends Command {
-  public get configInstance(): Config {
-    return this._configInstance as Config
+  public get configInstance(): SoftConfig {
+    return this._configInstance as SoftConfig
   }
   public get context(): Context {
     return this._context as Context
@@ -26,7 +26,7 @@ export default abstract class extends Command {
   public readonly sentenceBreakChar = '\u2028' // '\u000D'// '\u200D' // '\u2028'
   public readonly paragraphBreakChar = '\u2029'
 
-  private _configInstance: Config | undefined
+  private _configInstance: SoftConfig | undefined
   private _context: Context | undefined
 
   async init() {
@@ -34,7 +34,7 @@ export default abstract class extends Command {
 
     const { flags } = this.parse(this.constructor as any)
     const dir = path.join(flags.path as string)
-    this._configInstance = new Config(dir)
+    this._configInstance = new SoftConfig(dir)
     this._context = new Context(this.configInstance)
 
     const isRepo = await this.git.checkIsRepo()

@@ -3,7 +3,7 @@ import * as fs from 'fs'
 import * as path from 'path'
 
 import { globPromise, numDigits, stringifyNumber } from './commands/base'
-import { Config } from './config'
+import { SoftConfig } from './soft-config'
 
 const debug = d('context')
 
@@ -23,7 +23,7 @@ const nullStackStats: StackStatistics = {
 }
 
 export class Context {
-  private readonly configInstance: Config
+  private readonly configInstance: SoftConfig
 
   // private _allNovelFiles: string[] | null = null
   private _allNormalFiles: string[] | null = null
@@ -31,7 +31,7 @@ export class Context {
 
   private readonly _allNovelStatistics: NovelStatistics = { atNumberStack: nullStackStats, normalStack: nullStackStats }
 
-  constructor(configInstance: Config) {
+  constructor(configInstance: SoftConfig) {
     debug(`New Context instance`)
     this.configInstance = configInstance
   }
