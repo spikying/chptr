@@ -38,8 +38,6 @@ export default class Rename extends Command {
 
   static hidden = false
 
-  titleRegex = /^\n# (.*?)\n/
-
   async run() {
     debug('Running Rename command')
     const { args, flags } = this.parse(Rename)
@@ -73,7 +71,7 @@ export default class Rename extends Command {
       path.join(this.configInstance.projectRootPath, this.configInstance.metadataWildcardWithNumber(num, isAtNumbering))
     ))[0]
 
-    const newName = flags.title ? await this.extractTitle(chapterFile) : args.newName || queryResponses.newName || 'chapter'
+    const newName = flags.title ? await this.extractTitleFromFile(chapterFile) : args.newName || queryResponses.newName || 'chapter'
     const newNameForFile = sanitizeFileName(newName)
 
     if (!chapterFile || !summaryFile || !metadataFile) {
@@ -157,13 +155,15 @@ export default class Rename extends Command {
     }
   }
 
-  private async extractTitle(chapterFile: string): Promise<string | null> {
+  private async extractTitleFromFile(chapterFile: string): Promise<string | null> {
     const initialContent = await this.readFileContent(path.join(this.configInstance.projectRootPath, chapterFile))
-    const match = this.titleRegex.exec(initialContent)
-    if (match) {
-      return match[1]
-    } else {
-      return null
-    }
+    //  const match = this.titleRegex.exec(initialContent)
+    // if (match) {
+    //   return match[1]
+    // } else {
+    //   return null
+    // }
+    return this.extractTitleFromString(initialContent)
   }
+
 }

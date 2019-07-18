@@ -68,4 +68,8 @@ export class HardConfig {
       debug(err)
     }
   }
+
+  public antidotePathName(chapterFilename: string): string {
+    return path.join(this.rootPath, chapterFilename.replace(/\.\w+$/, '.antidote'))
+  }
 }

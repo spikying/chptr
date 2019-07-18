@@ -55,6 +55,10 @@ export class SoftConfig {
     }
   }
 
+  public get metadataFieldsDefaults(): any{
+return this._metadataFieldsObj
+  }
+
   public get projectRootPath(): string {
     return this.rootPath
   }
@@ -75,21 +79,21 @@ date: ${moment().format('D MMMM YYYY')}
 `
   }
 
-  private readonly metadataCustomFieldsObject = {
-    datetimeRange: '',
-    revisionSteps: {
-      draft: false,
-      language: false,
-      style: { wordRepetitions: false, languageLevel: false },
-      dialogs: false,
-      questAnalysis: false,
-      tenPercentCut: false
-    },
-    characters: [],
-    mainCharacter: '',
-    mainCharacterQuest: '',
-    otherQuest: ''
-  }
+  // private readonly metadataCustomFieldsObject = {
+  //   datetimeRange: '',
+  //   revisionSteps: {
+  //     draft: false,
+  //     language: false,
+  //     style: { wordRepetitions: false, languageLevel: false },
+  //     dialogs: false,
+  //     questAnalysis: false,
+  //     tenPercentCut: false
+  //   },
+  //   characters: [],
+  //   mainCharacter: '',
+  //   mainCharacterQuest: '',
+  //   otherQuest: ''
+  // }
   private readonly configSchemaObject: any = {
     chapterPattern: {
       doc:
@@ -357,10 +361,6 @@ date: ${moment().format('D MMMM YYYY')}
   public isAtNumbering(filename: string): boolean {
     const re = new RegExp(this.numbersPattern(true))
     return re.exec(filename) !== null
-  }
-
-  public antidotePathName(chapterFilename: string): string {
-    return path.join(this.projectRootPath, chapterFilename.replace(/\.\w+$/, '.antidote'))
   }
 
   private wildcard(pattern: string, atNumbering: boolean): string {

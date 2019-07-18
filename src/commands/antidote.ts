@@ -51,7 +51,7 @@ export default class Antidote extends Command {
     }
 
     const basicFilePath = path.join(this.configInstance.projectRootPath, chapterFileName)
-    const antidoteFilePath = this.configInstance.antidotePathName(chapterFileName)
+    const antidoteFilePath = this.hardConfig.antidotePathName(chapterFileName)
 
     cli.action.start(`Launching Antidote with ${antidoteFilePath}`.actionStartColor())
     await copyFile(basicFilePath, antidoteFilePath)

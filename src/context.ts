@@ -45,12 +45,25 @@ export class Context {
     })
   }
 
-  public async getAllFileForChapter(num: number, isAtNumbered: boolean): Promise<string[]> {
+  // TODO: refactor to feed same private function different wildcard arrays
+  public async getAllFilesForChapter(num: number, isAtNumbered: boolean): Promise<string[]> {
     const files: string[] = []
     const wildcards = [
       this.configInstance.chapterWildcardWithNumber(num, isAtNumbered),
       this.configInstance.metadataWildcardWithNumber(num, isAtNumbered),
       this.configInstance.summaryWildcardWithNumber(num, isAtNumbered)
+    ]
+    for (const wildcard of wildcards) {
+      files.push(...(await globPromise(path.join(this.configInstance.projectRootPath, wildcard))))
+    }
+    return files
+  }
+
+  public async getAllMetadataFiles(): Promise<string[]> {
+    const files: string[] = []
+    const wildcards = [
+      this.configInstance.metadataWildcard(true),
+      this.configInstance.metadataWildcard(false),
     ]
     for (const wildcard of wildcards) {
       files.push(...(await globPromise(path.join(this.configInstance.projectRootPath, wildcard))))

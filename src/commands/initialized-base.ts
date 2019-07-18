@@ -1,4 +1,5 @@
 import { cli } from 'cli-ux'
+import { applyChange, diff, observableDiff } from 'deep-diff'
 import * as JsDiff from 'diff'
 import * as minimatch from 'minimatch'
 import * as path from 'path'
@@ -8,7 +9,6 @@ import { Context } from '../context'
 import { SoftConfig } from '../soft-config'
 
 import Command, { d, deleteDir, fileExists, globPromise, readFile, writeFile } from './base'
-
 const debug = d('command:initialized-base')
 
 export default abstract class extends Command {
@@ -25,6 +25,7 @@ export default abstract class extends Command {
   // https://unicode.org/reports/tr29/#Sentence_Boundaries
   public readonly sentenceBreakChar = '\u2028' // '\u000D'// '\u200D' // '\u2028'
   public readonly paragraphBreakChar = '\u2029'
+  public titleRegex = /^\n# (.*?)\n/
 
   private _configInstance: SoftConfig | undefined
   private _context: Context | undefined
@@ -54,7 +55,7 @@ export default abstract class extends Command {
     try {
       const buff = await readFile(filepath)
       const content = await buff.toString('utf8', 0, buff.byteLength)
-      debug(`Reading filepath: ${filepath}\nContent:\n${content}`)
+      // debug(`Reading filepath: ${filepath}\nContent:\n${content}`)
       return content
     } catch {
       return ''
@@ -70,7 +71,7 @@ export default abstract class extends Command {
         paraCounter++
         return `${one}\n\n${this.paragraphBreakChar}{{${paraCounter}}}\n${two}`
       })
-    debug(`Processed content: \n${replacedContent.substring(0, 250)}`)
+    // debug(`Processed content: \n${replacedContent.substring(0, 250)}`)
     return replacedContent
   }
 
@@ -83,7 +84,7 @@ export default abstract class extends Command {
       .replace(paragraphBreakRegex, '\n\n')
       .replace(/([.!?…}"]) +\n/g, '$1\n')
       .replace(/\n*$/, '\n')
-    debug(`Processed back content: \n${replacedContent.substring(0, 250)}`)
+    // debug(`Processed back content: \n${replacedContent.substring(0, 250)}`)
     return replacedContent
   }
 
@@ -108,12 +109,12 @@ export default abstract class extends Command {
           await this.git.pull()
         }
 
-        debug(`commitSummary:\n${JSON.stringify(commitSummary)}`)
+        // debug(`commitSummary:\n${JSON.stringify(commitSummary)}`)
         const toStagePretty = toStageFiles.map(f => `\n    ${f}`.infoColor())
         cli.action.stop(
           `\nCommited and pushed ${commitSummary.commit.resultHighlighColor()}:\n${message.infoColor()}\nFile${
             toStageFiles.length > 1 ? 's' : ''
-          }:${toStagePretty}`.actionStopColor()
+            }:${toStagePretty}`.actionStopColor()
         )
       } catch (err) {
         this.error(err.toString().errorColor())
@@ -123,17 +124,17 @@ export default abstract class extends Command {
 
   public async GetGitListOfStageableFiles(numberFilter?: number, atFilter?: boolean): Promise<string[]> {
     const gitStatus = await this.git.status()
-    debug(`git status\n${JSON.stringify(gitStatus, null, 4)}`)
-    debug(`Number filter (header): ${numberFilter}`)
+    // debug(`git status\n${JSON.stringify(gitStatus, null, 4)}`)
+    // debug(`Number filter (header): ${numberFilter}`)
 
-    const unQuote = function(value: string) {
+    const unQuote = function (value: string) {
       if (!value) {
         return value
       }
       return value.replace(/"(.*)"/, '$1')
     }
 
-    const onlyUnique = function(value: any, index: number, self: any) {
+    const onlyUnique = function (value: any, index: number, self: any) {
       return self.indexOf(value) === index
     }
 
@@ -146,18 +147,18 @@ export default abstract class extends Command {
       .concat(gitStatus.renamed.map((value: any) => value.to as string).map(unQuote))
       .filter(onlyUnique)
 
-    debug(`unfilteredFileList = ${JSON.stringify(unfilteredFileList)}`)
+    // debug(`unfilteredFileList = ${JSON.stringify(unfilteredFileList)}`)
     return unfilteredFileList
       .filter(val => val !== '')
       .filter(val => {
-        debug(`Number filter: ${numberFilter}`)
-        debug(`Minimatch chapter: ${minimatch(val, this.configInstance.chapterWildcardWithNumber(numberFilter || -1, atFilter || false))}`)
-        debug(`Minimatch metadata: ${minimatch(val, this.configInstance.metadataWildcardWithNumber(numberFilter || -1, atFilter || false))}`)
-        debug(`Minimatch summary: ${minimatch(val, this.configInstance.summaryWildcardWithNumber(numberFilter || 0 - 1, atFilter || false))}`)
+        // debug(`Number filter: ${numberFilter}`)
+        // debug(`Minimatch chapter: ${minimatch(val, this.configInstance.chapterWildcardWithNumber(numberFilter || -1, atFilter || false))}`)
+        // debug(`Minimatch metadata: ${minimatch(val, this.configInstance.metadataWildcardWithNumber(numberFilter || -1, atFilter || false))}`)
+        // debug(`Minimatch summary: ${minimatch(val, this.configInstance.summaryWildcardWithNumber(numberFilter || 0 - 1, atFilter || false))}`)
         return numberFilter
           ? minimatch(val, this.configInstance.chapterWildcardWithNumber(numberFilter, atFilter || false)) ||
-              minimatch(val, this.configInstance.metadataWildcardWithNumber(numberFilter, atFilter || false)) ||
-              minimatch(val, this.configInstance.summaryWildcardWithNumber(numberFilter, atFilter || false))
+          minimatch(val, this.configInstance.metadataWildcardWithNumber(numberFilter, atFilter || false)) ||
+          minimatch(val, this.configInstance.summaryWildcardWithNumber(numberFilter, atFilter || false))
           : true
       })
   }
@@ -203,6 +204,13 @@ export default abstract class extends Command {
         filename: this.context.mapFileToBeRelativeToRootPath(chapterFilepath),
         type: 'wordCount',
         value: wordCount,
+        computed: true
+      })
+      const title = (await this.extractTitleFromString(initialContent)) || '###'
+      resultArray.push({
+        filename: this.context.mapFileToBeRelativeToRootPath(chapterFilepath),
+        type: 'title',
+        value: title,
         computed: true
       })
     } catch (err) {
@@ -276,6 +284,7 @@ export default abstract class extends Command {
       const updatedContent = JSON.stringify(obj, null, 4)
       if (initialContent !== updatedContent) {
         await writeFile(metadataFilePath, updatedContent)
+        //todo: move to deep-diff?
         modifiedFiles.push({
           file: metadataFilePath,
           diff: JsDiff.diffJson(JSON.parse(initialContent), JSON.parse(updatedContent))
@@ -311,7 +320,7 @@ export default abstract class extends Command {
     const cleanedText = this.cleanMarkupContent(text)
     const match = cleanedText.match(wordRegex())
     const wordCount = match ? match.length : 0
-    debug(`WORD COUNT=${wordCount} of text:\n${cleanedText}`)
+    // debug(`WORD COUNT=${wordCount} of text:\n${cleanedText}`)
     return wordCount
   }
 
@@ -358,7 +367,7 @@ export default abstract class extends Command {
           // )
 
           if (fromFilename !== toFilename) {
-            debug(`from: ${fromFilename} to: ${path.join(tempDirForGit, toFilename)}`)
+            // debug(`from: ${fromFilename} to: ${path.join(tempDirForGit, toFilename)}`)
             moves.push({ fromFilename, toFilename })
             table.accumulator(fromFilename, toFilename)
             movePromises.push(this.git.mv(fromFilename, path.join(tempDirForGit, toFilename)))
@@ -370,7 +379,7 @@ export default abstract class extends Command {
 
     await Promise.all(movePromises)
     for (const renumbering of moves) {
-      debug(`from: ${path.join(tempDirForGit, renumbering.toFilename)} to: ${renumbering.toFilename}`)
+      // debug(`from: ${path.join(tempDirForGit, renumbering.toFilename)} to: ${renumbering.toFilename}`)
       movePromises.push(this.git.mv(path.join(tempDirForGit, renumbering.toFilename), renumbering.toFilename))
     }
     await Promise.all(movePromises)
@@ -382,7 +391,6 @@ export default abstract class extends Command {
     } else {
       await this.addDigitsToNecessaryStacks()
       cli.action.stop(`done:`.actionStopColor())
-      debug
       table.show()
     }
   }
@@ -405,6 +413,48 @@ export default abstract class extends Command {
     return emptyDirs
   }
 
+  public async UpdateAllMetadataFields(): Promise<void> {
+    const allMetadataFiles = await this.context.getAllMetadataFiles()
+    const table = this.tableize('file', 'changes')
+    for (const file of allMetadataFiles) {
+      debug(`file=${file}`)
+      const initialContent = await this.readFileContent(file)
+      try {
+        const initialObj = JSON.parse(initialContent)
+        const replacedObj = JSON.parse(initialContent)
+
+        let changeApplied = false
+        observableDiff(replacedObj.manual, this.configInstance.metadataFieldsDefaults, d => {
+          if ((d.kind === 'D' && d.lhs === '') || d.kind === 'N') {
+            changeApplied = true
+            applyChange(replacedObj.manual, this.configInstance.metadataFieldsDefaults, d)
+          }
+        })
+        if (changeApplied) {
+          const diffs = diff(initialObj.manual, replacedObj.manual) || []
+          diffs.map(d => {
+            const expl = (d.kind === 'N' ? 'New ' : 'Deleted ') + d.path
+            table.accumulator(this.context.mapFileToBeRelativeToRootPath(file), expl)
+          })
+          // debug(`diffs=${JSON.stringify(diffs)}`)
+          // debug(`modified obj = ${JSON.stringify(replacedObj)}`)
+          await writeFile(file, JSON.stringify(replacedObj, null, 4))
+        }
+      } catch (err) {
+        debug(err.toString().errorColor())
+      }
+    }
+    table.show('Metadata fields updated in files')
+  }
+  public async extractTitleFromString(initialContent: string): Promise<string | null> {
+    const match = this.titleRegex.exec(initialContent)
+    if (match) {
+      return match[1]
+    } else {
+      return null
+    }
+  }
+
   private async addDigitsToFiles(files: string[], newDigitNumber: number, atNumberingStack: boolean): Promise<boolean> {
     const promises: Promise<MoveSummary>[] = []
     let hasMadeChanges = false
@@ -416,7 +466,7 @@ export default abstract class extends Command {
 
       if (atNumbering === atNumberingStack) {
         const filenumber = this.context.extractNumber(file)
-        debug(`file=${file} filename=${filename} filenumber=${filenumber}`)
+        // debug(`file=${file} filename=${filename} filenumber=${filenumber}`)
         const fromFilename = filename // this.context.mapFileToBeRelativeToRootPath(path.join(path.dirname(file), filename))
         const toFilename = //this.context.mapFileToBeRelativeToRootPath(
           //path.join(path.dirname(file),
@@ -424,7 +474,7 @@ export default abstract class extends Command {
         //   )
         // )
         if (fromFilename !== toFilename) {
-          debug(`renaming with new file number "${fromFilename}" to "${toFilename}"`.infoColor())
+          // debug(`renaming with new file number "${fromFilename}" to "${toFilename}"`.infoColor())
           await this.createSubDirectoryIfNecessary(path.join(this.configInstance.projectRootPath, toFilename))
           table.accumulator(fromFilename, toFilename)
           promises.push(this.git.mv(fromFilename, toFilename))

@@ -84,12 +84,14 @@ export default class Build extends Command {
 
     await this.CommitToGit('Autosave before build')
 
+await this.UpdateAllMetadataFields()
+
     const tmpMDfile = await tmpFile()
     const tmpMDfileTex = await tmpFile()
     debug(`temp files = ${tmpMDfile.path} and ${tmpMDfileTex.path}`)
 
     try {
-      await createDir(path.join(this.configInstance.projectRootPath, this.configInstance.buildDirectory))
+      await createDir(this.configInstance.buildDirectory)
     } catch {}
 
     try {
