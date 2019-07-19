@@ -45,6 +45,7 @@ export class Context {
     })
   }
 
+  // TODO: send back to soft-config?
   // TODO: refactor to feed same private function different wildcard arrays
   public async getAllFilesForChapter(num: number, isAtNumbered: boolean): Promise<string[]> {
     const files: string[] = []
@@ -178,6 +179,7 @@ export class Context {
     return files[0]
   }
 
+  // TODO : make async / await
   public getBuildDirectory(): string {
     const buildDirectory = path.join(this.configInstance.projectRootPath, this.configInstance.buildDirectory)
     if (!fs.existsSync(buildDirectory)) {

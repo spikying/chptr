@@ -2,13 +2,15 @@ import { cli } from 'cli-ux'
 import { applyChange, diff, observableDiff } from 'deep-diff'
 import * as JsDiff from 'diff'
 import * as minimatch from 'minimatch'
+import * as moment from 'moment'
 import * as path from 'path'
 import { MoveSummary } from 'simple-git/typings/response'
 
 import { Context } from '../context'
 import { SoftConfig } from '../soft-config'
 
-import Command, { d, deleteDir, fileExists, globPromise, readFile, writeFile } from './base'
+import Command, { d, deleteDir, fileExists, globPromise, readFile, writeFile, fileStat } from './base'
+
 const debug = d('command:initialized-base')
 
 export default abstract class extends Command {
@@ -446,6 +448,24 @@ export default abstract class extends Command {
     }
     table.show('Metadata fields updated in files')
   }
+
+  public async RenameFilesIfNewPattern(): Promise<void> {
+    const statPromises = []
+    const allMetadataByFileFiles = (await globPromise(path.join(this.context.getBuildDirectory(), '*.markupByFile.json')))
+    for (const metadataFile of allMetadataByFileFiles) {
+      statPromises.push(fileStat(metadataFile))
+    }
+    await Promise.all(statPromises).then(stats => {
+      const orderedStats = stats.sort((a, b) => moment(b.stats.mtime).unix() - moment(a.stats.mtime).unix())
+      const lastMetadataByFile = orderedStats[0].path
+
+      //TODO: continue function...
+
+      //ça marchera pas avec le fichier .markupbyFile.json.  Il va falloir checker si le fichier live est différent du dernier commit (donc cette fonction doit être appelée dans initializedBase.init) et s'il y a une différence, on renomme chaque fichier du type modifié.
+    })
+
+  }
+
   public async extractTitleFromString(initialContent: string): Promise<string | null> {
     const match = this.titleRegex.exec(initialContent)
     if (match) {

@@ -21,6 +21,19 @@ export const createDir = promisify(fs.mkdir)
 export const deleteDir = promisify(fs.rmdir)
 export const deleteFile = promisify(fs.unlink)
 export const mkdtemp = promisify(fs.mkdtemp)
+export const fileStat = async function (path: fs.PathLike): Promise<{path:fs.PathLike,stats: fs.Stats}>{  
+  return new Promise((resolve, reject) => {
+    fs.stat(path, (err, stats) => {
+      if (err) {
+        reject(err)
+      } else {
+        resolve({path, stats})
+      }
+    })
+  })
+}
+  
+  
 export const fileExists = async function(path: fs.PathLike): Promise<boolean> {
   return new Promise(resolve => {
     fs.access(path, err => {

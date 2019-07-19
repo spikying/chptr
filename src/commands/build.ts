@@ -84,7 +84,8 @@ export default class Build extends Command {
 
     await this.CommitToGit('Autosave before build')
 
-await this.UpdateAllMetadataFields()
+    await this.UpdateAllMetadataFields()
+    await this.RenameFilesIfNewPattern()
 
     const tmpMDfile = await tmpFile()
     const tmpMDfileTex = await tmpFile()

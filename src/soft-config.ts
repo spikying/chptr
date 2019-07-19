@@ -3,7 +3,6 @@ import * as jsonComment from 'comment-json'
 import * as Convict from 'convict'
 import * as d from 'debug'
 import fs = require('fs')
-// import * as json from 'json5'
 import moment = require('moment')
 import * as path from 'path'
 
@@ -37,22 +36,23 @@ export class SoftConfig {
   private _config: ConfigObject | undefined
   private readonly _metadataFieldsObj: any
   public get config(): ConfigObject {
-    if (this._config) {
-      return this._config as ConfigObject
-    } else {
+    if (!this._config) {
+    //   return this._config as ConfigObject
+    // } else {
       const jsonConfig: any = this.configSchema.getProperties() // so we can operate with a plain old JavaScript object and abstract away convict (optional)
       jsonConfig.chapterPattern = sanitizeFileName(jsonConfig.chapterPattern, true)
       jsonConfig.metadataPattern = sanitizeFileName(jsonConfig.metadataPattern, true)
       jsonConfig.summaryPattern = sanitizeFileName(jsonConfig.summaryPattern, true)
       jsonConfig.metadataFields = {
-        manual: this._metadataFieldsObj, //JSON.parse(jsonConfig.metadataFields),
+        manual: this._metadataFieldsObj,
         computed: { title: '###', wordCount: 0 },
         extracted: {}
       }
 
       this._config = jsonConfig
-      return jsonConfig as ConfigObject
+      // return jsonConfig as ConfigObject
     }
+    return this._config as ConfigObject
   }
 
   public get metadataFieldsDefaults(): any{
@@ -79,21 +79,6 @@ date: ${moment().format('D MMMM YYYY')}
 `
   }
 
-  // private readonly metadataCustomFieldsObject = {
-  //   datetimeRange: '',
-  //   revisionSteps: {
-  //     draft: false,
-  //     language: false,
-  //     style: { wordRepetitions: false, languageLevel: false },
-  //     dialogs: false,
-  //     questAnalysis: false,
-  //     tenPercentCut: false
-  //   },
-  //   characters: [],
-  //   mainCharacter: '',
-  //   mainCharacterQuest: '',
-  //   otherQuest: ''
-  // }
   private readonly configSchemaObject: any = {
     chapterPattern: {
       doc:
@@ -207,8 +192,6 @@ date: ${moment().format('D MMMM YYYY')}
   constructor(dirname: string, readFromFile = true) {
     this.hardConfig = new HardConfig(dirname)
     this.rootPath = path.join(dirname)
-    // this.configPathName = path.join(this.rootPath, './config/')
-    // this.configFileName = path.join(this.configPathName, 'config.json5')
 
     if (readFromFile) {
       try {
@@ -228,15 +211,8 @@ date: ${moment().format('D MMMM YYYY')}
 
       try {
         const json5Config = jsonComment.parse(configFileString, undefined, true)
-        // debug(`json5Config object: ${JSON.stringify(json5Config, null, 2)}`)
         this.configSchema.load(json5Config)
-        // this.configSchema.loadFile(this.configFileName)
-
-        // if (readFromFile) {
-        this.configSchema.validate() //({ allowed: 'strict' }) // 'strict' throws error if config does not conform to schema
-        // }
-
-        // debug(`Loaded config from ${this.hardConfig.configFilePath}:\n${jsonComment.stringify(json5Config)}`)
+        this.configSchema.validate({ allowed: 'strict' }) // 'strict' throws error if config does not conform to schema
       } catch (err) {
         throw new Error(`processing config data error: ${err.toString().infoColor()}`.errorColor())
       }
@@ -290,64 +266,42 @@ date: ${moment().format('D MMMM YYYY')}
 
   public chapterWildcard(atNumbering: boolean): string {
     return this.wildcard(this.config.chapterPattern, atNumbering)
-    // return this.config.chapterPattern.replace(/NUM/g, this.numberWildcardPortion(atNumbering)).replace(/NAME/g, '*') //+ '.md'
   }
   public metadataWildcard(atNumbering: boolean): string {
     return this.wildcard(this.config.metadataPattern, atNumbering)
-    // return this.config.metadataPattern.replace(/NUM/g, this.numberWildcardPortion(atNumbering)).replace(/NAME/g, '*') //+ '.json'
   }
   public summaryWildcard(atNumbering: boolean): string {
     return this.wildcard(this.config.summaryPattern, atNumbering)
-    // return this.config.summaryPattern.replace(/NUM/g, this.numberWildcardPortion(atNumbering)).replace(/NAME/g, '*') //+ '.md'
   }
 
   public chapterWildcardWithNumber(num: number, atNumbering: boolean): string {
     return this.wildcardWithNumber(this.config.chapterPattern, num, atNumbering)
-    // return this.config.chapterPattern.replace(/NUM/g, this.numberWildcardPortion(atNumbering, num)).replace(/NAME/g, '*') // + '.md'
   }
   public metadataWildcardWithNumber(num: number, atNumbering: boolean): string {
     return this.wildcardWithNumber(this.config.metadataPattern, num, atNumbering)
-    // return this.config.metadataPattern.replace(/NUM/g, this.numberWildcardPortion(atNumbering, num)).replace(/NAME/g, '*') // + '.json'
   }
   public summaryWildcardWithNumber(num: number, atNumbering: boolean): string {
     return this.wildcardWithNumber(this.config.summaryPattern, num, atNumbering)
-    // return this.config.summaryPattern.replace(/NUM/g, this.numberWildcardPortion(atNumbering, num)).replace(/NAME/g, '*') //+ '.md'
   }
 
   public chapterFileNameFromParameters(num: string, name: string, atNumbering: boolean): string {
     return this.filenameFromParameters(this.config.chapterPattern, num, name, atNumbering)
-    // return this.config.chapterPattern.replace(/NUM/g, (atNumbering ? '@' : '') + num).replace(/NAME/g, sanitizeFileName(name))
   }
 
   public metadataFileNameFromParameters(num: string, name: string, atNumbering: boolean): string {
-    return this.filenameFromParameters(this.config.metadataPattern, num, name, atNumbering) // return this.config.metadataPattern.replace(/NUM/g, (atNumbering ? '@' : '') + num).replace(/NAME/g, sanitizeFileName(name))
+    return this.filenameFromParameters(this.config.metadataPattern, num, name, atNumbering)    
   }
 
   public summaryFileNameFromParameters(num: string, name: string, atNumbering: boolean): string {
     return this.filenameFromParameters(this.config.summaryPattern, num, name, atNumbering)
-    // return this.config.summaryPattern.replace(/NUM/g, (atNumbering ? '@' : '') + num).replace(/NAME/g, sanitizeFileName(name))
   }
 
   public chapterRegex(atNumber: boolean): RegExp {
     return this.patternRegexer(this.config.chapterPattern, atNumber)
-    // return new RegExp(
-    //   '^' +
-    //     this.config.chapterPattern
-    //       .replace(/[\/\\]/g, '[\\/\\\\]')
-    //       .replace(/NUM/g, this.numbersPattern(atNumber))
-    //       .replace(/NAME/g, '(.*)')
-    // )
   }
 
   public metadataRegex(atNumber: boolean): RegExp {
     return this.patternRegexer(this.config.metadataPattern, atNumber)
-    // return new RegExp(
-    //   '^' +
-    //     this.config.metadataPattern
-    //       .replace(/[\/\\]/g, '[\\/\\\\]')
-    //       .replace(/NUM/g, this.numbersPattern(atNumber))
-    //       .replace(/NAME/g, '(.*)')
-    // )
   }
 
   public summaryRegex(atNumber: boolean): RegExp {

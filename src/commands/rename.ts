@@ -128,6 +128,7 @@ export default class Rename extends Command {
     debug(`toCommitFiles = ${JSON.stringify(toCommitFiles)}`)
     await this.CommitToGit(`Renaming chapter ${chapterId} to ${newName}${toRenamePretty}`, toCommitFiles)
   }
+  
   private async replaceTitleInMarkdown(actualFile: string, newTitle: string): Promise<boolean> {
     const initialContent = await this.readFileContent(actualFile)
     const replacedContent = initialContent.replace(this.titleRegex, `\n# ${newTitle}\n`)

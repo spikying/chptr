@@ -14,9 +14,9 @@ export default class Config extends Command {
 
   static flags = {
     ...Command.flags,
-    exportManualMetadata: flags.boolean({
-      char: 'e',
-      description: 'Export a clean JSON file with all manual fields to track',
+    rePattern: flags.boolean({
+      char: 'r',
+      description: 'rename files based',
       required: false,
       default: false
     })

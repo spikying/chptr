@@ -109,9 +109,8 @@ export default class Add extends Command {
         fullPathMeta
       )} and ${this.context.mapFileToBeRelativeToRootPath(fullPathSummary)}`
 
-      await this.CommitToGit(commitMessage, toStageFiles)
-
       await this.addDigitsToNecessaryStacks()
+      await this.CommitToGit(commitMessage, toStageFiles)
     } catch (err) {
       this.error(err.toString().errorColor())
     }
