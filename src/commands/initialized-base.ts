@@ -10,7 +10,7 @@ import { MoveSummary } from 'simple-git/typings/response'
 import { Context } from '../context'
 import { SoftConfig } from '../soft-config'
 
-import Command, { d, deleteDir, fileExists, globPromise, readFile, sanitizeFileName, writeFile } from './base'
+import Command, { d, deleteDir, fileExists, globPromise, moveFile, readFile, sanitizeFileName, writeFile } from './base'
 
 const debug = d('command:initialized-base')
 
@@ -33,6 +33,9 @@ export default abstract class extends Command {
   private _configInstance: SoftConfig | undefined
   private _context: Context | undefined
 
+  private _lastConfigObj: any
+  private _actualConfigObj: any
+
   async init() {
     await super.init()
 
@@ -54,9 +57,14 @@ export default abstract class extends Command {
     }
 
     await this.RenameFilesIfNewPattern()
-    //TODO: check for build directory change
+    await this.MoveToNewBuildDirectory()
     //TODO: check for project title change
     //TODO: check for step or initial number change (and use reordering function)
+    await this.deleteEmptySubDirectories()
+  }
+
+  public async finally(){
+    await super.finally()
     await this.deleteEmptySubDirectories()
   }
 
@@ -457,35 +465,18 @@ export default abstract class extends Command {
   }
 
   public async RenameFilesIfNewPattern(): Promise<boolean> {
-    // const statPromises = []
-    // const allMetadataByFileFiles = (await globPromise(path.join(this.context.getBuildDirectory(), '*.markupByFile.json')))
-    // for (const metadataFile of allMetadataByFileFiles) {
-    //   statPromises.push(fileStat(metadataFile))
-    // }
-    // await Promise.all(statPromises).then(stats => {
-    //   const orderedStats = stats.sort((a, b) => moment(b.stats.mtime).unix() - moment(a.stats.mtime).unix())
-    //   const lastMetadataByFile = orderedStats[0].path
-
-    //   //ça marchera pas avec le fichier .markupbyFile.json.  Il va falloir checker si le fichier live est différent du dernier commit (donc cette fonction doit être appelée dans initializedBase.init) et s'il y a une différence, on renomme chaque fichier du type modifié.
-    // })
-
     let result = false
-    const lastConfigContent =
-      (await this.git.show([`HEAD:${this.context.mapFileToBeRelativeToRootPath(this.hardConfig.configFilePath).replace(/\\/, '/')}`])) || '{}'
-    const actualConfigContent = await this.readFileContent(this.hardConfig.configFilePath)
+    const { lastConfigObj, actualConfigObj } = await this.getLastAndActualConfigObjects()
 
-    const lastConfigObj = jsonComment.parse(lastConfigContent, undefined, true)
-    const actualConfigObj = jsonComment.parse(actualConfigContent, undefined, true)
-
-    // const filesToRenamePromises: Promise<{ files: string[]; oldPattern: string; newPattern: string }>[] = []
     const oldVsNew: { oldPattern: string; newPattern: string }[] = []
     observableDiff(lastConfigObj, actualConfigObj, d => {
       if (
         d.kind === 'E' &&
         d.path &&
-        d.path.filter(p => {
-          return p.indexOf('Pattern').length > 0
-        })
+        d.path.reduce((previous, current) => {
+          // debug(`p=${p} indexOf Pattern>0 = ${p.indexOf('Pattern')>0}`)
+          return previous || current.indexOf('Pattern') > 0
+        }, false)
       ) {
         const fileType = d.path && d.path[0]
         const oldPattern = d.lhs
@@ -525,6 +516,37 @@ export default abstract class extends Command {
     return result
   }
 
+  public async MoveToNewBuildDirectory(): Promise<void> {
+    const { lastConfigObj, actualConfigObj } = await this.getLastAndActualConfigObjects()
+
+    let oldDir = ''
+    let newDir = ''
+
+    observableDiff(lastConfigObj, actualConfigObj, d => {
+      if (
+        d.kind === 'E' &&
+        d.path &&
+        d.path.filter(p => {
+          return p === 'buildDirectory'
+        })
+      ) {
+        oldDir = d.lhs
+        newDir = sanitizeFileName(d.rhs, true)
+      }
+    })
+
+    if (oldDir !== newDir) {
+      const files = await globPromise(path.join(this.configInstance.projectRootPath, oldDir, '**/*.*'))
+      debug(`files=${files}`)
+      await this.createSubDirectoryIfNecessary(path.join(this.configInstance.projectRootPath, newDir, 'futureBuildDir.txt'))
+
+      for (const file of files) {
+        const newFile = path.relative(path.join(this.configInstance.projectRootPath, oldDir), file)
+        await moveFile(file, path.join(this.configInstance.projectRootPath, newDir, newFile))
+      }
+    }
+  }
+
   public async extractTitleFromString(initialContent: string): Promise<string | null> {
     const match = this.titleRegex.exec(initialContent)
     if (match) {
@@ -532,6 +554,19 @@ export default abstract class extends Command {
     } else {
       return null
     }
+  }
+
+  private async getLastAndActualConfigObjects(): Promise<{ lastConfigObj: any; actualConfigObj: any }> {
+    if (!this._lastConfigObj || !this._actualConfigObj) {
+      const lastConfigContent =
+        (await this.git.show([`HEAD:${this.context.mapFileToBeRelativeToRootPath(this.hardConfig.configFilePath).replace(/\\/, '/')}`])) || '{}'
+      const actualConfigContent = await this.readFileContent(this.hardConfig.configFilePath)
+
+      this._lastConfigObj = jsonComment.parse(lastConfigContent, undefined, true)
+      this._actualConfigObj = jsonComment.parse(actualConfigContent, undefined, true)
+    }
+
+    return { lastConfigObj: this._lastConfigObj, actualConfigObj: this._actualConfigObj }
   }
 
   private async addDigitsToFiles(files: string[], newDigitNumber: number, atNumberingStack: boolean): Promise<boolean> {
