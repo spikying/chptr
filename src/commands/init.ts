@@ -57,6 +57,7 @@ export default class Init extends Command {
   static aliases = ['setup']
   // private flagForce = 'false'
 
+  //TODO: allow for YAML config files?
   async run() {
     debug('Running Init command')
     const { args, flags } = this.parse(Init)
@@ -164,7 +165,7 @@ export default class Init extends Command {
       },
       {
         fullPathName: this.hardConfig.emptyFilePath,
-        content: this.hardConfig.emptyFileString
+        content: this.hardConfig.templateEmptyFileString
       },
       {
         fullPathName: this.hardConfig.readmeFilePath,

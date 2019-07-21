@@ -1,15 +1,16 @@
 import { cli } from 'cli-ux'
+import * as jsonComment from 'comment-json'
 import { applyChange, diff, observableDiff } from 'deep-diff'
 import * as JsDiff from 'diff'
 import * as minimatch from 'minimatch'
-import * as moment from 'moment'
+// import * as moment from 'moment'
 import * as path from 'path'
 import { MoveSummary } from 'simple-git/typings/response'
 
 import { Context } from '../context'
 import { SoftConfig } from '../soft-config'
 
-import Command, { d, deleteDir, fileExists, globPromise, readFile, writeFile, fileStat } from './base'
+import Command, { d, deleteDir, fileExists, globPromise, readFile, sanitizeFileName, writeFile } from './base'
 
 const debug = d('command:initialized-base')
 
@@ -51,6 +52,12 @@ export default abstract class extends Command {
     if (!hasConfigFolder || !hasConfigFile) {
       throw new Error('Directory was not initialized.  Run `init` command.')
     }
+
+    await this.RenameFilesIfNewPattern()
+    //TODO: check for build directory change
+    //TODO: check for project title change
+    //TODO: check for step or initial number change (and use reordering function)
+    await this.deleteEmptySubDirectories()
   }
 
   public async readFileContent(filepath: string): Promise<string> {
@@ -116,7 +123,7 @@ export default abstract class extends Command {
         cli.action.stop(
           `\nCommited and pushed ${commitSummary.commit.resultHighlighColor()}:\n${message.infoColor()}\nFile${
             toStageFiles.length > 1 ? 's' : ''
-            }:${toStagePretty}`.actionStopColor()
+          }:${toStagePretty}`.actionStopColor()
         )
       } catch (err) {
         this.error(err.toString().errorColor())
@@ -129,14 +136,14 @@ export default abstract class extends Command {
     // debug(`git status\n${JSON.stringify(gitStatus, null, 4)}`)
     // debug(`Number filter (header): ${numberFilter}`)
 
-    const unQuote = function (value: string) {
+    const unQuote = function(value: string) {
       if (!value) {
         return value
       }
       return value.replace(/"(.*)"/, '$1')
     }
 
-    const onlyUnique = function (value: any, index: number, self: any) {
+    const onlyUnique = function(value: any, index: number, self: any) {
       return self.indexOf(value) === index
     }
 
@@ -159,8 +166,8 @@ export default abstract class extends Command {
         // debug(`Minimatch summary: ${minimatch(val, this.configInstance.summaryWildcardWithNumber(numberFilter || 0 - 1, atFilter || false))}`)
         return numberFilter
           ? minimatch(val, this.configInstance.chapterWildcardWithNumber(numberFilter, atFilter || false)) ||
-          minimatch(val, this.configInstance.metadataWildcardWithNumber(numberFilter, atFilter || false)) ||
-          minimatch(val, this.configInstance.summaryWildcardWithNumber(numberFilter, atFilter || false))
+              minimatch(val, this.configInstance.metadataWildcardWithNumber(numberFilter, atFilter || false)) ||
+              minimatch(val, this.configInstance.summaryWildcardWithNumber(numberFilter, atFilter || false))
           : true
       })
   }
@@ -449,21 +456,73 @@ export default abstract class extends Command {
     table.show('Metadata fields updated in files')
   }
 
-  public async RenameFilesIfNewPattern(): Promise<void> {
-    const statPromises = []
-    const allMetadataByFileFiles = (await globPromise(path.join(this.context.getBuildDirectory(), '*.markupByFile.json')))
-    for (const metadataFile of allMetadataByFileFiles) {
-      statPromises.push(fileStat(metadataFile))
-    }
-    await Promise.all(statPromises).then(stats => {
-      const orderedStats = stats.sort((a, b) => moment(b.stats.mtime).unix() - moment(a.stats.mtime).unix())
-      const lastMetadataByFile = orderedStats[0].path
+  public async RenameFilesIfNewPattern(): Promise<boolean> {
+    // const statPromises = []
+    // const allMetadataByFileFiles = (await globPromise(path.join(this.context.getBuildDirectory(), '*.markupByFile.json')))
+    // for (const metadataFile of allMetadataByFileFiles) {
+    //   statPromises.push(fileStat(metadataFile))
+    // }
+    // await Promise.all(statPromises).then(stats => {
+    //   const orderedStats = stats.sort((a, b) => moment(b.stats.mtime).unix() - moment(a.stats.mtime).unix())
+    //   const lastMetadataByFile = orderedStats[0].path
 
-      //TODO: continue function...
+    //   //ça marchera pas avec le fichier .markupbyFile.json.  Il va falloir checker si le fichier live est différent du dernier commit (donc cette fonction doit être appelée dans initializedBase.init) et s'il y a une différence, on renomme chaque fichier du type modifié.
+    // })
 
-      //ça marchera pas avec le fichier .markupbyFile.json.  Il va falloir checker si le fichier live est différent du dernier commit (donc cette fonction doit être appelée dans initializedBase.init) et s'il y a une différence, on renomme chaque fichier du type modifié.
+    let result = false
+    const lastConfigContent =
+      (await this.git.show([`HEAD:${this.context.mapFileToBeRelativeToRootPath(this.hardConfig.configFilePath).replace(/\\/, '/')}`])) || '{}'
+    const actualConfigContent = await this.readFileContent(this.hardConfig.configFilePath)
+
+    const lastConfigObj = jsonComment.parse(lastConfigContent, undefined, true)
+    const actualConfigObj = jsonComment.parse(actualConfigContent, undefined, true)
+
+    // const filesToRenamePromises: Promise<{ files: string[]; oldPattern: string; newPattern: string }>[] = []
+    const oldVsNew: { oldPattern: string; newPattern: string }[] = []
+    observableDiff(lastConfigObj, actualConfigObj, d => {
+      if (
+        d.kind === 'E' &&
+        d.path &&
+        d.path.filter(p => {
+          return p.indexOf('Pattern').length > 0
+        })
+      ) {
+        const fileType = d.path && d.path[0]
+        const oldPattern = d.lhs
+        const newPattern = sanitizeFileName(d.rhs, true)
+        debug(`fileType=${fileType}, oldPattern=${oldPattern}, newPattern=${newPattern}`)
+        oldVsNew.push({ oldPattern, newPattern })
+      }
     })
 
+    debug(`old vs new: ${JSON.stringify(oldVsNew)}`)
+
+    const movePromises: Promise<MoveSummary>[] = []
+    for (const oldAndNew of oldVsNew) {
+      const files = await this.context.getAllFilesForPattern(oldAndNew.oldPattern)
+      for (const file of files) {
+        const reNormal = this.configInstance.patternRegexer(oldAndNew.oldPattern, false)
+        const reAtNumber = this.configInstance.patternRegexer(oldAndNew.oldPattern, true)
+        const isAtNumber = this.configInstance.isAtNumbering(file)
+        const rootedFile = this.context.mapFileToBeRelativeToRootPath(file)
+
+        const num = rootedFile.replace(isAtNumber ? reAtNumber : reNormal, '$1')
+        //TODO: get name from metadata file's title?  Here if old pattern has no name, it gives '$2' as a name.
+        const name = rootedFile.replace(isAtNumber ? reAtNumber : reNormal, '$2')
+
+        const renamedFile = oldAndNew.newPattern.replace(/NUM/g, (isAtNumber ? '@' : '') + num).replace(/NAME/g, name)
+
+        // debug(`num:${num} name:${name} file:${file}\nrootedFile:${rootedFile} renamedFile:${renamedFile}`)
+
+        await this.createSubDirectoryIfNecessary(path.join(this.configInstance.projectRootPath, renamedFile))
+
+        result = true
+        movePromises.push(this.git.mv(rootedFile, renamedFile))
+      }
+    }
+
+    await Promise.all(movePromises)
+    return result
   }
 
   public async extractTitleFromString(initialContent: string): Promise<string | null> {

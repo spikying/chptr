@@ -10,7 +10,7 @@ import * as sanitize from 'sanitize-filename'
 import * as simplegit from 'simple-git/promise'
 import { promisify } from 'util'
 
-import { HardConfig } from "../hard-config";
+import { HardConfig } from '../hard-config'
 
 export const readFile = promisify(fs.readFile)
 export const writeInFile = promisify(fs.write)
@@ -21,19 +21,18 @@ export const createDir = promisify(fs.mkdir)
 export const deleteDir = promisify(fs.rmdir)
 export const deleteFile = promisify(fs.unlink)
 export const mkdtemp = promisify(fs.mkdtemp)
-export const fileStat = async function (path: fs.PathLike): Promise<{path:fs.PathLike,stats: fs.Stats}>{  
+export const fileStat = async function(path: fs.PathLike): Promise<{ path: fs.PathLike; stats: fs.Stats }> {
   return new Promise((resolve, reject) => {
     fs.stat(path, (err, stats) => {
       if (err) {
         reject(err)
       } else {
-        resolve({path, stats})
+        resolve({ path, stats })
       }
     })
   })
 }
-  
-  
+
 export const fileExists = async function(path: fs.PathLike): Promise<boolean> {
   return new Promise(resolve => {
     fs.access(path, err => {
@@ -196,15 +195,28 @@ export default abstract class extends Command {
   }
 
   public async createSubDirectoryIfNecessary(fullFilePath: string): Promise<string | null> {
-    const directoryPath = path.dirname(fullFilePath)
-    const directoryExists = await fileExists(directoryPath)
-    if (!directoryExists) {
-      try {
-        await createDir(directoryPath)
-        return directoryPath
-      } catch {}
-    }
-    return null
+    const mkdirp = require('mkdirp')
+
+    return new Promise((resolve, reject) => {
+      const directoryPath = path.dirname(fullFilePath)
+      mkdirp(directoryPath, (err:any, made:any) => {
+        if (err) {
+          debug(err)
+          reject(err)
+        }
+        resolve(made)
+      })
+    })
+
+    // const directoryExists = await fileExists(directoryPath)
+    // debug(`directoryPath:${directoryPath}\ndirectoryExists:${directoryExists}`)
+    // if (!directoryExists) {
+    //   try {
+    //     await createDir(directoryPath)
+    //  return directoryPath
+    //   } catch {}
+    // }
+    // return null
   }
 
   public async createFile(fullPathName: string, content: string) {

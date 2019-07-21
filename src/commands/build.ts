@@ -85,7 +85,6 @@ export default class Build extends Command {
     await this.CommitToGit('Autosave before build')
 
     await this.UpdateAllMetadataFields()
-    await this.RenameFilesIfNewPattern()
 
     const tmpMDfile = await tmpFile()
     const tmpMDfileTex = await tmpFile()
@@ -115,6 +114,7 @@ export default class Build extends Command {
         metaExtractPromises.push(this.extractMeta(m, exportWritingRate))
       })
       await Promise.all(metaExtractPromises).then(async fullMetaArray => {
+        //flatten equivalent
         const flattenedMetaArray: MetaObj[] = ([] as MetaObj[]).concat(...fullMetaArray).filter(m => m.wordCountDiff !== 0)
 
         const diffByDate: any = {}

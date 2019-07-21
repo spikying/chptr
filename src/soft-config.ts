@@ -33,12 +33,10 @@ export interface Author {
 }
 
 export class SoftConfig {
-  private _config: ConfigObject | undefined
-  private readonly _metadataFieldsObj: any
   public get config(): ConfigObject {
     if (!this._config) {
-    //   return this._config as ConfigObject
-    // } else {
+      //   return this._config as ConfigObject
+      // } else {
       const jsonConfig: any = this.configSchema.getProperties() // so we can operate with a plain old JavaScript object and abstract away convict (optional)
       jsonConfig.chapterPattern = sanitizeFileName(jsonConfig.chapterPattern, true)
       jsonConfig.metadataPattern = sanitizeFileName(jsonConfig.metadataPattern, true)
@@ -55,8 +53,8 @@ export class SoftConfig {
     return this._config as ConfigObject
   }
 
-  public get metadataFieldsDefaults(): any{
-return this._metadataFieldsObj
+  public get metadataFieldsDefaults(): any {
+    return this._metadataFieldsObj
   }
 
   public get projectRootPath(): string {
@@ -78,6 +76,21 @@ date: ${moment().format('D MMMM YYYY')}
 
 `
   }
+
+  public get emptyFileString(): string {
+    if (!this._emptyFileString) {
+      try {
+        const content = loadFileSync(this.hardConfig.emptyFilePath)
+        this._emptyFileString = content
+      } catch (err) {
+        debug(err)
+      }
+    }
+    return this._emptyFileString
+  }
+
+  private _config: ConfigObject | undefined
+  private readonly _metadataFieldsObj: any
 
   private readonly configSchemaObject: any = {
     chapterPattern: {
@@ -189,6 +202,8 @@ date: ${moment().format('D MMMM YYYY')}
   private readonly hardConfig: HardConfig
   private readonly rootPath: string
 
+  private _emptyFileString=''
+
   constructor(dirname: string, readFromFile = true) {
     this.hardConfig = new HardConfig(dirname)
     this.rootPath = path.join(dirname)
@@ -265,13 +280,13 @@ date: ${moment().format('D MMMM YYYY')}
   }
 
   public chapterWildcard(atNumbering: boolean): string {
-    return this.wildcard(this.config.chapterPattern, atNumbering)
+    return this.wildcardize(this.config.chapterPattern, atNumbering)
   }
   public metadataWildcard(atNumbering: boolean): string {
-    return this.wildcard(this.config.metadataPattern, atNumbering)
+    return this.wildcardize(this.config.metadataPattern, atNumbering)
   }
   public summaryWildcard(atNumbering: boolean): string {
-    return this.wildcard(this.config.summaryPattern, atNumbering)
+    return this.wildcardize(this.config.summaryPattern, atNumbering)
   }
 
   public chapterWildcardWithNumber(num: number, atNumbering: boolean): string {
@@ -289,7 +304,7 @@ date: ${moment().format('D MMMM YYYY')}
   }
 
   public metadataFileNameFromParameters(num: string, name: string, atNumbering: boolean): string {
-    return this.filenameFromParameters(this.config.metadataPattern, num, name, atNumbering)    
+    return this.filenameFromParameters(this.config.metadataPattern, num, name, atNumbering)
   }
 
   public summaryFileNameFromParameters(num: string, name: string, atNumbering: boolean): string {
@@ -317,19 +332,11 @@ date: ${moment().format('D MMMM YYYY')}
     return re.exec(filename) !== null
   }
 
-  private wildcard(pattern: string, atNumbering: boolean): string {
+  public wildcardize(pattern: string, atNumbering: boolean): string {
     return pattern.replace(/NUM/g, this.numberWildcardPortion(atNumbering)).replace(/NAME/g, '*')
   }
 
-  private wildcardWithNumber(pattern: string, num: number, atNumbering: boolean): string {
-    return pattern.replace(/NUM/g, this.numberWildcardPortion(atNumbering, num)).replace(/NAME/g, '*')
-  }
-
-  private filenameFromParameters(pattern: string, num: string, name: string, atNumbering: boolean): string {
-    return pattern.replace(/NUM/g, (atNumbering ? '@' : '') + num).replace(/NAME/g, sanitizeFileName(name))
-  }
-
-  private patternRegexer(pattern: string, atNumber: boolean): RegExp {
+  public patternRegexer(pattern: string, atNumber: boolean): RegExp {
     return new RegExp(
       '^' +
         pattern
@@ -339,6 +346,14 @@ date: ${moment().format('D MMMM YYYY')}
           .replace(/NUM/g, '\\1')
           .replace(/NAME/g, '\\2')
     )
+  }
+
+  private wildcardWithNumber(pattern: string, num: number, atNumbering: boolean): string {
+    return pattern.replace(/NUM/g, this.numberWildcardPortion(atNumbering, num)).replace(/NAME/g, '*')
+  }
+
+  private filenameFromParameters(pattern: string, num: string, name: string, atNumbering: boolean): string {
+    return pattern.replace(/NUM/g, (atNumbering ? '@' : '') + num).replace(/NAME/g, sanitizeFileName(name))
   }
 
   private numberWildcardPortion(atNumbering: boolean, num: number | null = null) {

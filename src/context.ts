@@ -22,6 +22,7 @@ const nullStackStats: StackStatistics = {
   maxNecessaryDigits: 1
 }
 
+//TODO: move functions where they belong: base.ts, initialized-base.ts, softConfig?
 export class Context {
   private readonly configInstance: SoftConfig
 
@@ -60,12 +61,14 @@ export class Context {
     return files
   }
 
+  public async getAllFilesForPattern(pattern: string): Promise<string[]> {
+    const wildcards = [this.configInstance.wildcardize(pattern, false), this.configInstance.wildcardize(pattern, true)]
+    return this.getAllFilesForWildcards(wildcards)
+  }
+
   public async getAllMetadataFiles(): Promise<string[]> {
     const files: string[] = []
-    const wildcards = [
-      this.configInstance.metadataWildcard(true),
-      this.configInstance.metadataWildcard(false),
-    ]
+    const wildcards = [this.configInstance.metadataWildcard(true), this.configInstance.metadataWildcard(false)]
     for (const wildcard of wildcards) {
       files.push(...(await globPromise(path.join(this.configInstance.projectRootPath, wildcard))))
     }
@@ -231,5 +234,15 @@ export class Context {
       minDigits,
       maxNecessaryDigits
     }
+  }
+
+  
+  //TODO: make all other functions use this one
+  private async getAllFilesForWildcards(wildcards: string[]): Promise<string[]> {
+    const files: string[] = []
+    for (const wildcard of wildcards) {
+      files.push(...(await globPromise(path.join(this.configInstance.projectRootPath, wildcard))))
+    }
+    return files
   }
 }

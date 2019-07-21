@@ -69,7 +69,7 @@ export default class Add extends Command {
     }
     const newDigits = numDigits(nextNumber)
 
-    const emptyFileString = this.hardConfig.emptyFileString.toString()
+    const emptyFileString = this.configInstance.emptyFileString.toString()
     const filledTemplateData = emptyFileString.replace(/{TITLE}/gim, name)
     const metadataObj: any = this.configInstance.config.metadataFields
     metadataObj.computed.title = name
