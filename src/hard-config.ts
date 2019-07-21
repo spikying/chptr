@@ -53,10 +53,10 @@ export class HardConfig {
 
     return JSON.stringify(obj, null, 4)
   }
-  public templateEmptyFileString = `
-# {TITLE}
-
-`
+  
+  public templateEmptyFileString = `\n# {TITLE}\n\n`
+  public templateGitignoreString =  `build/\npandoc*/\n*.antidote\n`
+  public templateGitattributesString =  `autocrlf=false\neol=lf\n* text=auto\n`
 
   private readonly rootPath: string
   private _configPathName = ''

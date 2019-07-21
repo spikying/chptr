@@ -53,10 +53,8 @@ export default class Build extends Command {
   }
 
   static aliases = ['compile']
-
   static hidden = false
 
-  //TODO: add missing manual fields from config in metadata files if any
   async run() {
     const { flags } = this.parse(Build)
 

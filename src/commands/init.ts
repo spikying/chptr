@@ -169,21 +169,15 @@ export default class Init extends Command {
       },
       {
         fullPathName: this.hardConfig.readmeFilePath,
-        content: `# ${name}\n\nA novel by ${authorName}.`
+        content: `\n# ${name}\n\nA novel by ${authorName}.` // can't be moved to HardConfig because it depends on not-yet-initialized soft config values
       },
       {
-        fullPathName: this.hardConfig.gitignoreFilePath, //todo: move content to HardConfig
-        content: `build/
-pandoc*/
-*.antidote
-`
+        fullPathName: this.hardConfig.gitignoreFilePath,
+        content: this.hardConfig.templateGitignoreString
       },
       {
-        fullPathName: this.hardConfig.gitattributesFilePath, //todo: move content to HardConfig
-        content: `autocrlf=false
-eol=lf
-* text=auto
-`
+        fullPathName: this.hardConfig.gitattributesFilePath,
+        content: this.hardConfig.templateGitattributesString
       }
     ]
 

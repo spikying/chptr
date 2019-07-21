@@ -89,6 +89,8 @@ date: ${moment().format('D MMMM YYYY')}
     return this._emptyFileString
   }
 
+  // public templateReadmeString = `\n# ${this.config.projectTitle}\n\nA novel by ${this.config.projectAuthor.name}.`
+
   private _config: ConfigObject | undefined
   private readonly _metadataFieldsObj: any
 
@@ -175,11 +177,13 @@ date: ${moment().format('D MMMM YYYY')}
     },
     fontName: {
       //TODO: use parameter?
+      //TODO: make use of it in exports
       doc: 'Font to use for the rendering engines that use it',
       default: ''
     },
     fontSize: {
       //TODO: use parameter?
+      //TODO: make use of it in exports
       doc: 'Font size for the rendering engines that use it',
       default: '12pt'
     },
@@ -347,6 +351,7 @@ date: ${moment().format('D MMMM YYYY')}
           .replace(/NAME/g, '\\2')
     )
   }
+
 
   private wildcardWithNumber(pattern: string, num: number, atNumbering: boolean): string {
     return pattern.replace(/NUM/g, this.numberWildcardPortion(atNumbering, num)).replace(/NAME/g, '*')

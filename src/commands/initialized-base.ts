@@ -10,7 +10,7 @@ import { MoveSummary } from 'simple-git/typings/response'
 import { Context } from '../context'
 import { SoftConfig } from '../soft-config'
 
-import Command, { d, deleteDir, fileExists, globPromise, moveFile, readFile, sanitizeFileName, writeFile } from './base'
+import Command, { d, deleteDir, fileExists, globPromise, moveFile, readFileBuffer, sanitizeFileName, writeFile } from './base'
 
 const debug = d('command:initialized-base')
 
@@ -24,6 +24,7 @@ export default abstract class extends Command {
   static flags = {
     ...Command.flags
   }
+  // TODO: put --compact flag here? it's in build, delete and reorder now.
 
   // https://unicode.org/reports/tr29/#Sentence_Boundaries
   public readonly sentenceBreakChar = '\u2028' // '\u000D'// '\u200D' // '\u2028'
@@ -58,8 +59,9 @@ export default abstract class extends Command {
 
     await this.RenameFilesIfNewPattern()
     await this.MoveToNewBuildDirectory()
-    //TODO: check for project title change
-    //TODO: check for step or initial number change (and use reordering function)
+    await this.RenameProjectTitle()
+    await this.CheckIfStepOrInitialNumberHaveChanged()
+
     await this.deleteEmptySubDirectories()
   }
 
@@ -70,7 +72,7 @@ export default abstract class extends Command {
 
   public async readFileContent(filepath: string): Promise<string> {
     try {
-      const buff = await readFile(filepath)
+      const buff = await readFileBuffer(filepath)
       const content = await buff.toString('utf8', 0, buff.byteLength)
       // debug(`Reading filepath: ${filepath}\nContent:\n${content}`)
       return content
@@ -526,9 +528,9 @@ export default abstract class extends Command {
       if (
         d.kind === 'E' &&
         d.path &&
-        d.path.filter(p => {
-          return p === 'buildDirectory'
-        })
+        d.path.reduce((previous, current) => {
+          return previous || current === 'buildDirectory'
+        }, false)
       ) {
         oldDir = d.lhs
         newDir = sanitizeFileName(d.rhs, true)
@@ -537,14 +539,72 @@ export default abstract class extends Command {
 
     if (oldDir !== newDir) {
       const files = await globPromise(path.join(this.configInstance.projectRootPath, oldDir, '**/*.*'))
-      debug(`files=${files}`)
+      debug(`move to new build dir : files=${files}`)
       await this.createSubDirectoryIfNecessary(path.join(this.configInstance.projectRootPath, newDir, 'futureBuildDir.txt'))
 
       for (const file of files) {
         const newFile = path.relative(path.join(this.configInstance.projectRootPath, oldDir), file)
         await moveFile(file, path.join(this.configInstance.projectRootPath, newDir, newFile))
       }
+
+      const gitIgnoreContent = await this.readFileContent(this.hardConfig.gitignoreFilePath)
+      const newGitIgnoreContent = gitIgnoreContent.replace(oldDir, newDir.replace(/\\/g, '/'))
+      await writeFile(this.hardConfig.gitignoreFilePath, newGitIgnoreContent)
     }
+  }
+
+  public async RenameProjectTitle() {
+    const { lastConfigObj, actualConfigObj } = await this.getLastAndActualConfigObjects()
+
+    let oldTitle = ''
+    let newTitle = ''
+
+    observableDiff(lastConfigObj, actualConfigObj, d => {
+      if (
+        d.kind === 'E' &&
+        d.path &&
+        d.path.reduce((previous, current) => {
+          return previous || current === 'projectTitle'
+        }, false)
+      ) {
+        oldTitle = d.lhs
+        newTitle = d.rhs
+      }
+    })
+
+    if (oldTitle !== newTitle) {
+      const oldReadmeContent = await this.readFileContent(this.hardConfig.readmeFilePath)
+      if (oldTitle === await this.extractTitleFromString(oldReadmeContent)) {
+        const newReadmeContent = oldReadmeContent.replace(this.titleRegex, `\n# ${newTitle}\n`)
+        await writeFile(this.hardConfig.readmeFilePath, newReadmeContent)
+      }
+    }
+  }
+
+  public async CheckIfStepOrInitialNumberHaveChanged() {
+    const { lastConfigObj, actualConfigObj } = await this.getLastAndActualConfigObjects()
+
+    // const numberingChanges = []
+    const table = this.tableize('Old', 'New')
+    
+    observableDiff(lastConfigObj, actualConfigObj, d => {
+      if (
+        d.kind === 'E' &&
+        d.path &&
+        d.path.reduce((previous, current) => {
+          return previous || current.substring(0,9) === 'numbering'
+        }, false)
+      ) {
+        const numberingType = d.path && d.path[0]
+        const oldNumbering = d.lhs
+        const newNumbering = d.rhs
+        // numberingChanges.push({ numberingType, oldNumbering, newNumbering })
+        table.accumulator(`${numberingType}: ${oldNumbering}`, newNumbering.toString())
+      }
+    })
+
+    table.show('Config file has changes.  Run `reorder` or `build` command with `--compact` flag to rename files with new scheme.')
+    // if (numberingChanges.length>0) { }
   }
 
   public async extractTitleFromString(initialContent: string): Promise<string | null> {

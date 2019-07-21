@@ -12,7 +12,7 @@ import { promisify } from 'util'
 
 import { HardConfig } from '../hard-config'
 
-export const readFile = promisify(fs.readFile)
+export const readFileBuffer = promisify(fs.readFile)
 export const writeInFile = promisify(fs.write)
 export const copyFile = promisify(fs.copyFile)
 export const moveFile = promisify(fs.rename)
@@ -220,14 +220,7 @@ export default abstract class extends Command {
   }
 
   public async createFile(fullPathName: string, content: string) {
-    // TODO: Use this.createSubDirectoryIfNecessary
-    const directoryPath = path.dirname(fullPathName)
-    const directoryExists = await fileExists(directoryPath)
-    if (!directoryExists) {
-      try {
-        await createDir(directoryPath)
-      } catch {}
-    }
+    await this.createSubDirectoryIfNecessary(fullPathName)
 
     const createFile = promisify(fs.writeFile)
     try {
