@@ -3,7 +3,7 @@ import { cli } from 'cli-ux'
 import * as path from 'path'
 import { MoveSummary } from 'simple-git/typings/response'
 
-import {  d } from './base'
+import { d } from './base'
 import Command from './initialized-base'
 
 const debug = d('command:reorder')
@@ -40,13 +40,14 @@ export default class Reorder extends Command {
 
     cli.action.start('Analyzing files'.actionStartColor())
 
-    // const dir = path.join(flags.path as string)
     const originIsAtNumbering = args.origin.toString().substring(0, 1) === '@'
     const destIsAtNumbering = args.destination.toString().substring(0, 1) === '@'
 
     const files = await this.statistics.getAllNovelFiles()
 
-    const originNumber: number = this.isEndOfStack(args.origin) ? this.statistics.getHighestNumber(originIsAtNumbering) : this.configInstance.extractNumber(args.origin)
+    const originNumber: number = this.isEndOfStack(args.origin)
+      ? this.statistics.getHighestNumber(originIsAtNumbering)
+      : this.configInstance.extractNumber(args.origin)
     const destNumber: number = this.isEndOfStack(args.destination)
       ? this.statistics.getHighestNumber(destIsAtNumbering) === 0
         ? this.configInstance.config.numberingInitial
@@ -129,8 +130,6 @@ export default class Reorder extends Command {
       return allMandatories.map(m => m.fileNumber).includes(info.fileNumber)
     })
 
-    // debug(`toMoveFiles=${JSON.stringify(toMoveFiles, null, 4)}`)
-
     const toRenameFiles = (await this.statistics.getAllFilesForOneType(destIsAtNumbering))
       .filter(file => {
         const fileNumber = this.configInstance.extractNumber(file)
@@ -155,8 +154,7 @@ export default class Reorder extends Command {
     cli.action.stop('done'.actionStopColor())
     cli.action.start('Moving files to temp directory'.actionStartColor())
 
-    const { tempDir } = await this.getTempDir()
-    // let oldSubDirectory = ''
+    const { tempDir } = await this.fsUtils.getTempDir(this.configInstance.projectRootPath)
 
     try {
       const moveTempPromises: Promise<MoveSummary>[] = []
@@ -175,8 +173,6 @@ export default class Reorder extends Command {
         }
 
         moveTempPromises.push(this.git.mv(fromFilename, toFilename))
-
-        // oldSubDirectory = path.dirname(fromFilename)
       }
       await Promise.all(moveTempPromises)
 
@@ -188,7 +184,6 @@ export default class Reorder extends Command {
 
     cli.action.start('Moving files to their final states'.actionStartColor())
     let fileMovesPretty = ''
-    // let tempSubDirectory = ''
 
     try {
       const moveBackPromises: Promise<MoveSummary>[] = []
@@ -214,8 +209,6 @@ export default class Reorder extends Command {
 
         fileMovesPretty.concat(`\n    renaming from "${fromFilename}" to "${toFilename}"`)
         moveBackPromises.push(this.git.mv(fromFilename, toFilename))
-
-        // tempSubDirectory = path.dirname(fromFilename)
       }
       await Promise.all(moveBackPromises)
     } catch (err) {
@@ -223,22 +216,9 @@ export default class Reorder extends Command {
       cli.exit(1)
     }
 
-    // if (tempSubDirectory) {
-    //   const subDirExists = await fileExists(path.join(this.configInstance.projectRootPath, tempSubDirectory))
-    //   if (subDirExists) {
-    //     await deleteDir(path.join(this.configInstance.projectRootPath, tempSubDirectory))
-    //   }
-    // }
-    // if (oldSubDirectory) {
-    //   const subDirExists = await fileExists(path.join(this.configInstance.projectRootPath, oldSubDirectory))
-    //   if (subDirExists) {
-    //     await deleteDir(path.join(this.configInstance.projectRootPath, oldSubDirectory))
-    //   }
-    // }
-    await this.deleteEmptySubDirectories()
-    // await removeTempDir()
+    await this.fsUtils.deleteEmptySubDirectories(this.configInstance.projectRootPath)
 
-    cli.action.stop('done'.actionStopColor()) // `Moved files${fileMovesPretty}\n`.actionStopColor() + `Deleted temp folder `.actionStartColor() + `${tempDir}`.actionStopColor())
+    cli.action.stop('done'.actionStopColor())
 
     const didAddDigits = await this.addDigitsToNecessaryStacks()
 

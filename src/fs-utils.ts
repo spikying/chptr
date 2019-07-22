@@ -8,7 +8,6 @@ import { promisify } from 'util'
 const debug = d('fs-utils')
 
 export class FsUtils {
-  public readonly readFileBuffer = promisify(fs.readFile)
   public readonly writeInFile = promisify(fs.write)
   public readonly copyFile = promisify(fs.copyFile)
   public readonly moveFile = promisify(fs.rename)
@@ -19,6 +18,8 @@ export class FsUtils {
   public readonly mkdtemp = promisify(fs.mkdtemp)
   public readonly globPromise = promisify(glob)
   public readonly loadFileSync = fs.readFileSync as (path: string) => string
+
+  private readonly readFileBuffer = promisify(fs.readFile)
   public readonly accessSync = function(filePath: string): void {
     return fs.accessSync(filePath, fs.constants.R_OK)
   }
@@ -86,6 +87,59 @@ export class FsUtils {
       files.push(...(await this.globPromise(path.join(rootPath, wildcard))))
     }
     return files
+  }
+
+  public async deleteEmptySubDirectories(rootPath: string): Promise<string[]> {
+    const allDirs = await this.globPromise('**/', { cwd: rootPath })
+    const emptyDirs: string[] = []
+    for (const subDir of allDirs) {
+      const filesOfSubDir = await this.globPromise('**', { cwd: path.join(rootPath, subDir) })
+      if (filesOfSubDir.length === 0) {
+        emptyDirs.push(subDir)
+      }
+    }
+
+    for (const subDir of emptyDirs) {
+      await this.deleteDir(path.join(rootPath, subDir))
+    }
+
+    return emptyDirs
+  }
+
+  public async getTempDir(rootPath: string): Promise<{ tempDir: string; removeTempDir(): Promise<void> }> {
+    let tempDir = ''
+    try {
+      const tempPrefix = 'temp'
+      tempDir = await this.mkdtemp(path.join(rootPath, tempPrefix))
+      debug(`Created temp dir: ${tempDir}`)
+    } catch (err) {
+      cli.error(err.toString().errorColor())
+      cli.exit(1)
+    }
+
+    const delDirFct = this.deleteDir
+    const removeTempDir = async function() {
+      try {
+        debug(`Deleting temp dir: ${tempDir}`)
+        await delDirFct(tempDir)
+      } catch (err) {
+        cli.error(err.toString().errorColor())
+        cli.exit(1)
+      }
+    }
+
+    return { tempDir, removeTempDir }
+  }
+
+  
+  public async readFileContent(filepath: string): Promise<string> {
+    try {
+      const buff = await this.readFileBuffer(filepath)
+      const content = await buff.toString('utf8', 0, buff.byteLength)
+      return content
+    } catch {
+      return ''
+    }
   }
 
 }

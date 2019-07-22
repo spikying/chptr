@@ -2,7 +2,7 @@ import { flags } from '@oclif/command'
 import { cli } from 'cli-ux'
 import * as path from 'path'
 
-import { getFilenameFromInput } from '../queries'
+import { QueryBuilder } from '../ui-utils'
 
 import { d, numDigits, stringifyNumber } from './base'
 import Command from './initialized-base'
@@ -42,7 +42,14 @@ export default class Add extends Command {
     debug(`Running Add command`)
     const { args, flags } = this.parse(Add)
 
-    const name: string = args.name || (await getFilenameFromInput())
+    const queryBuilder = new QueryBuilder()
+    if (!args.name) {
+      queryBuilder.add('name', queryBuilder.filename('What name do you want as a filename?'))
+    }
+
+    const queryResponses: any = await queryBuilder.responses()
+
+    const name: string = args.name || queryResponses.name
 
     let atNumbering: boolean
     let nextNumber: number
@@ -73,7 +80,7 @@ export default class Add extends Command {
     const filledTemplateData = emptyFileString.replace(/{TITLE}/gim, name)
     const metadataObj: any = this.configInstance.config.metadataFields
     metadataObj.computed.title = name
-    metadataObj.computed.wordCount = this.GetWordCount(filledTemplateData)
+    metadataObj.computed.wordCount = this.markupUtils.GetWordCount(filledTemplateData)
     const filledTemplateMeta = JSON.stringify(metadataObj, undefined, 4) //.replace(/{TITLE}/gim, name)
 
     const fullPathMD = path.join(

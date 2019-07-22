@@ -3,8 +3,8 @@ import { cli } from 'cli-ux'
 import * as path from 'path'
 import * as validator from 'validator'
 
-import { QueryBuilder } from '../queries'
 import { Author, SoftConfig } from '../soft-config'
+import { QueryBuilder, tableize } from '../ui-utils'
 
 import Command, {  d } from './base'
 
@@ -220,7 +220,7 @@ export default class Init extends Command {
 
     //validate which config files to create
     const allConfigFiles: { fullPathName: string; content: string }[] = []
-    const table = this.tableize('file', '')
+    const table = tableize('file', '')
     for (const operation of allConfigOperations) {
       const forceConfig = forceAll || force === path.basename(operation.fullPathName)
       if (!forceConfig && (await this.fsUtils.fileExists(operation.fullPathName))) {

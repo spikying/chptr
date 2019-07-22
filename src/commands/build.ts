@@ -5,10 +5,11 @@ import * as moment from 'moment'
 import * as path from 'path'
 import { file as tmpFile } from 'tmp-promise'
 
-import { QueryBuilder } from '../queries'
+import { MarkupObj } from '../markup-utils'
+import { QueryBuilder, tableize } from '../ui-utils'
 
-import {  d,  sanitizeFileName } from './base'
-import Command, { MarkupObj } from './initialized-base'
+import { d, sanitizeFileName } from './base'
+import Command from './initialized-base'
 
 const debug = d('command:build')
 
@@ -83,7 +84,7 @@ export default class Build extends Command {
 
     await this.CommitToGit('Autosave before build')
 
-    await this.UpdateAllMetadataFields()
+    await this.markupUtils.UpdateAllMetadataFields()
 
     const tmpMDfile = await tmpFile()
     const tmpMDfileTex = await tmpFile()
@@ -94,7 +95,9 @@ export default class Build extends Command {
     } catch {}
 
     try {
-      const originalChapterFilesArray = (await this.fsUtils.globPromise(path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcard(false)))).sort()
+      const originalChapterFilesArray = (await this.fsUtils.globPromise(
+        path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcard(false))
+      )).sort()
 
       const allChapterFilesArray = originalChapterFilesArray.concat(
         await this.fsUtils.globPromise(path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcard(true)))
@@ -104,9 +107,9 @@ export default class Build extends Command {
 
       cli.info('Extracting metadata for all chapters files'.actionStartColor())
 
-      const allMetadataFilesArray = (await this.fsUtils.globPromise(path.join(this.configInstance.projectRootPath, this.configInstance.metadataWildcard(false)))).concat(
-        await this.fsUtils.globPromise(path.join(this.configInstance.projectRootPath, this.configInstance.metadataWildcard(true)))
-      )
+      const allMetadataFilesArray = (await this.fsUtils.globPromise(
+        path.join(this.configInstance.projectRootPath, this.configInstance.metadataWildcard(false))
+      )).concat(await this.fsUtils.globPromise(path.join(this.configInstance.projectRootPath, this.configInstance.metadataWildcard(true))))
 
       const metaExtractPromises: Promise<MetaObj[]>[] = []
       allMetadataFilesArray.forEach(m => {
@@ -151,8 +154,8 @@ export default class Build extends Command {
 
         if (showWritingRate) {
           cli.info(`Writing rate:`.infoColor())
-          const tableSummary = this.tableize('Date', 'Word diff')
-          const tableDetails = this.tableize('Date | Chapter file #', 'Word diff')
+          const tableSummary = tableize('Date', 'Word diff')
+          const tableDetails = tableize('Date | Chapter file #', 'Word diff')
           for (const date of Object.keys(diffByDate).sort()) {
             tableSummary.accumulator(date, diffByDate[date].total.toString())
 
@@ -180,9 +183,11 @@ export default class Build extends Command {
 
       let fullOriginalContent = this.configInstance.globalMetadataContent
       for (const file of originalChapterFilesArray) {
-        fullOriginalContent += '\n' + (await this.readFileContent(file))
+        fullOriginalContent += '\n' + (await this.fsUtils.readFileContent(file))
       }
-      const fullCleanedOrTransformedContent = removeMarkup ? this.cleanMarkupContent(fullOriginalContent) : this.transformMarkupContent(fullOriginalContent)
+      const fullCleanedOrTransformedContent = removeMarkup
+        ? this.markupUtils.cleanMarkupContent(fullOriginalContent)
+        : this.transformMarkupContent(fullOriginalContent)
       await this.fsUtils.writeInFile(tmpMDfile.fd, fullCleanedOrTransformedContent)
       await this.fsUtils.writeInFile(tmpMDfileTex.fd, fullCleanedOrTransformedContent.replace(/^\*\s?\*\s?\*$/gm, '\\asterism'))
 
@@ -193,7 +198,7 @@ export default class Build extends Command {
       const buildDirectory = await this.getBuildDirectoryAndCreateIfNecessary()
 
       for (const filetype of outputFiletype) {
-      // outputFiletype.forEach(filetype => {
+        // outputFiletype.forEach(filetype => {
         const fullOutputFilePath = path.join(buildDirectory, outputFile + '.' + filetype)
         allOutputFilePath.push(fullOutputFilePath)
 
@@ -299,15 +304,15 @@ export default class Build extends Command {
   private async extractGlobalMetadata(allChapterFilesArray: string[], outputFile: string) {
     cli.action.start('Extracting global metadata'.actionStartColor())
 
-    const table = this.tableize('file', 'diff')
+    const table = tableize('file', 'diff')
     const extractPromises: Promise<MarkupObj[]>[] = []
     allChapterFilesArray.forEach(cf => {
-      extractPromises.push(this.extractMarkup(cf))
+      extractPromises.push(this.markupUtils.extractMarkup(cf))
     })
     await Promise.all(extractPromises).then(async fullMarkupArray => {
       const flattenedMarkupArray: MarkupObj[] = ([] as MarkupObj[]).concat(...fullMarkupArray)
 
-      const { markupByFile, markupByType } = this.objectifyMarkupArray(flattenedMarkupArray)
+      const { markupByFile, markupByType } = this.markupUtils.objectifyMarkupArray(flattenedMarkupArray)
 
       const allMarkups = [
         { markupObj: markupByFile, fullPath: path.join(this.configInstance.buildDirectory, `${outputFile}.markupByFile.json`) },
@@ -315,7 +320,7 @@ export default class Build extends Command {
       ]
 
       for (const markup of allMarkups) {
-        const existingMarkupContent = await this.readFileContent(markup.fullPath)
+        const existingMarkupContent = await this.fsUtils.readFileContent(markup.fullPath)
 
         if (existingMarkupContent !== JSON.stringify(markup.markupObj, null, 4)) {
           await this.fsUtils.writeFile(markup.fullPath, JSON.stringify(markup.markupObj, null, 4))
@@ -356,7 +361,7 @@ export default class Build extends Command {
   }
 
   private transformMarkupContent(initialContent: string): string {
-    const paragraphBreakRegex = new RegExp(this.paragraphBreakChar + '{{(\\d+)}}\\n', 'g')
+    const paragraphBreakRegex = new RegExp(this.markupUtils.paragraphBreakChar + '{{(\\d+)}}\\n', 'g')
     let markupCounter = 0
 
     const transformInFootnote = function(initial: string): { replaced: string; didReplacement: boolean } {

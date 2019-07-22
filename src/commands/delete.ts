@@ -3,7 +3,7 @@ import { cli } from 'cli-ux'
 // import * as glob from 'glob'
 import * as path from 'path'
 
-import { QueryBuilder } from '../queries'
+import { QueryBuilder } from '../ui-utils'
 
 import { d } from './base'
 import Command from './initialized-base'

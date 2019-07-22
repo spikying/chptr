@@ -2,7 +2,7 @@ import { flags } from '@oclif/command'
 import { cli } from 'cli-ux'
 import * as path from 'path'
 
-import { QueryBuilder } from '../queries'
+import { QueryBuilder } from '../ui-utils'
 
 import { d } from './base'
 import Command from './initialized-base'
@@ -87,7 +87,7 @@ export default class Edit extends Command {
       const fullPath = path.join(this.configInstance.projectRootPath, filename)
 
       try {
-      const initialContent = await this.readFileContent(fullPath)
+      const initialContent = await this.fsUtils.readFileContent(fullPath)
       const replacedContent = await this.processContentBack(initialContent)
         await this.fsUtils.writeFile(fullPath, replacedContent)
       } catch (err) {

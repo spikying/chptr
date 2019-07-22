@@ -1,14 +1,16 @@
 import { cli } from 'cli-ux'
 import * as jsonComment from 'comment-json'
-import { applyChange, diff, observableDiff } from 'deep-diff'
+import { observableDiff } from 'deep-diff'
 import * as JsDiff from 'diff'
 import yaml = require('js-yaml')
 import * as minimatch from 'minimatch'
 import * as path from 'path'
 import { MoveSummary } from 'simple-git/typings/response'
 
+import { MarkupObj, MarkupUtils } from '../markup-utils'
 import { SoftConfig } from '../soft-config'
 import { Statistics } from '../statistics'
+import { tableize } from '../ui-utils'
 
 import Command, { d, sanitizeFileName } from './base'
 const debug = d('command:initialized-base')
@@ -20,18 +22,18 @@ export default abstract class extends Command {
   public get statistics(): Statistics {
     return this._statistics as Statistics
   }
+  public get markupUtils(): MarkupUtils {
+    return this._markupUtils as MarkupUtils
+  }
+
   static flags = {
     ...Command.flags
   }
   // TODO: put --compact flag here? it's in build, delete and reorder now.
 
-  // https://unicode.org/reports/tr29/#Sentence_Boundaries
-  public readonly sentenceBreakChar = '\u2028' // '\u000D'// '\u200D' // '\u2028'
-  public readonly paragraphBreakChar = '\u2029'
-  public titleRegex = /^\n# (.*?)\n/
-
   private _configInstance: SoftConfig | undefined
   private _statistics: Statistics | undefined
+  private _markupUtils: MarkupUtils | undefined
 
   private _lastConfigObj: any
   private _actualConfigObj: any
@@ -44,6 +46,7 @@ export default abstract class extends Command {
     const dir = path.join(flags.path as string)
     this._configInstance = new SoftConfig(dir)
     this._statistics = new Statistics(this.configInstance)
+    this._markupUtils = new MarkupUtils(this._configInstance)
 
     const isRepo = await this.git.checkIsRepo()
     if (!isRepo) {
@@ -63,48 +66,37 @@ export default abstract class extends Command {
     await this.RenameProjectTitle()
     await this.CheckIfStepOrInitialNumberHaveChanged()
 
-    await this.deleteEmptySubDirectories()
+    await this.fsUtils.deleteEmptySubDirectories(this.configInstance.projectRootPath)
   }
 
   public async finally() {
     await super.finally()
-    await this.deleteEmptySubDirectories()
-  }
-
-  //TODO: move to fsUtils and put readFileBuffer in private
-  public async readFileContent(filepath: string): Promise<string> {
-    try {
-      const buff = await this.fsUtils.readFileBuffer(filepath)
-      const content = await buff.toString('utf8', 0, buff.byteLength)
-      return content
-    } catch {
-      return ''
-    }
+    await this.fsUtils.deleteEmptySubDirectories(this.configInstance.projectRootPath)
   }
 
   public processContent(initialContent: string): string {
     let paraCounter = 1
     // \u2028 = line sep  \u200D = zero width joiner
     const replacedContent = initialContent
-      .replace(/([.!?…}"]) {2}([{A-ZÀ-Ú])/gm, '$1' + this.sentenceBreakChar + '\n$2')
+      .replace(/([.!?…}"]) {2}([{A-ZÀ-Ú])/gm, '$1' + this.markupUtils.sentenceBreakChar + '\n$2')
       .replace(/([.!?…}"])\n{2}([{A-ZÀ-Ú])/gm, (_full, one, two) => {
         paraCounter++
-        return `${one}\n\n${this.paragraphBreakChar}{{${paraCounter}}}\n${two}`
+        return `${one}\n\n${this.markupUtils.paragraphBreakChar}{{${paraCounter}}}\n${two}`
       })
-    // debug(`Processed content: \n${replacedContent.substring(0, 250)}`)
+
     return replacedContent
   }
 
   public processContentBack(initialContent: string): string {
-    const sentenceBreakRegex = new RegExp(this.sentenceBreakChar + '\\n', 'g')
-    const paragraphBreakRegex = new RegExp('\\n\\n' + this.paragraphBreakChar + '{{\\d+}}\\n', 'g')
+    const sentenceBreakRegex = new RegExp(this.markupUtils.sentenceBreakChar + '\\n', 'g')
+    const paragraphBreakRegex = new RegExp('\\n\\n' + this.markupUtils.paragraphBreakChar + '{{\\d+}}\\n', 'g')
 
     const replacedContent = initialContent
       .replace(sentenceBreakRegex, '  ')
       .replace(paragraphBreakRegex, '\n\n')
       .replace(/([.!?…}"]) +\n/g, '$1\n')
       .replace(/\n*$/, '\n')
-    // debug(`Processed back content: \n${replacedContent.substring(0, 250)}`)
+
     return replacedContent
   }
 
@@ -143,8 +135,6 @@ export default abstract class extends Command {
 
   public async GetGitListOfStageableFiles(numberFilter?: number, atFilter?: boolean): Promise<string[]> {
     const gitStatus = await this.git.status()
-    // debug(`git status\n${JSON.stringify(gitStatus, null, 4)}`)
-    // debug(`Number filter (header): ${numberFilter}`)
 
     const unQuote = function(value: string) {
       if (!value) {
@@ -159,21 +149,15 @@ export default abstract class extends Command {
 
     const unfilteredFileList = (await this.git.diff(['--name-only']))
       .split('\n')
-      // .concat(gitStatus.not_added.map(unQuote))
       .concat(gitStatus.deleted.map(unQuote))
       .concat(gitStatus.modified.map(unQuote))
       .concat(gitStatus.created.map(unQuote))
       .concat(gitStatus.renamed.map((value: any) => value.to as string).map(unQuote))
       .filter(onlyUnique)
 
-    // debug(`unfilteredFileList = ${JSON.stringify(unfilteredFileList)}`)
     return unfilteredFileList
       .filter(val => val !== '')
       .filter(val => {
-        // debug(`Number filter: ${numberFilter}`)
-        // debug(`Minimatch chapter: ${minimatch(val, this.configInstance.chapterWildcardWithNumber(numberFilter || -1, atFilter || false))}`)
-        // debug(`Minimatch metadata: ${minimatch(val, this.configInstance.metadataWildcardWithNumber(numberFilter || -1, atFilter || false))}`)
-        // debug(`Minimatch summary: ${minimatch(val, this.configInstance.summaryWildcardWithNumber(numberFilter || 0 - 1, atFilter || false))}`)
         return numberFilter
           ? minimatch(val, this.configInstance.chapterWildcardWithNumber(numberFilter, atFilter || false)) ||
               minimatch(val, this.configInstance.metadataWildcardWithNumber(numberFilter, atFilter || false)) ||
@@ -192,7 +176,7 @@ export default abstract class extends Command {
           this.configInstance.chapterRegex(true).test(this.configInstance.mapFileToBeRelativeToRootPath(fullPath)))
       ) {
         try {
-          const initialContent = await this.readFileContent(fullPath)
+          const initialContent = await this.fsUtils.readFileContent(fullPath)
           const replacedContent = this.processContent(this.processContentBack(initialContent))
           await this.fsUtils.writeFile(fullPath, replacedContent)
         } catch (err) {
@@ -203,67 +187,67 @@ export default abstract class extends Command {
     }
   }
 
-  public async extractMarkup(chapterFilepath: string): Promise<MarkupObj[]> {
-    const resultArray: MarkupObj[] = []
-    try {
-      const initialContent = await this.readFileContent(path.join(this.configInstance.projectRootPath, chapterFilepath))
-      const markupRegex = /(?:{{(\d+)}}\n)?.*?{(.*?)\s?:\s?(.*?)}/gm
-      let regexArray: RegExpExecArray | null
-      while ((regexArray = markupRegex.exec(initialContent)) !== null) {
-        resultArray.push({
-          filename: this.configInstance.mapFileToBeRelativeToRootPath(chapterFilepath),
-          paragraph: parseInt(regexArray[1] || '1', 10),
-          type: regexArray[2].toLowerCase(),
-          value: regexArray[3],
-          computed: false
-        })
-      }
-      const wordCount = this.GetWordCount(initialContent)
-      resultArray.push({
-        filename: this.configInstance.mapFileToBeRelativeToRootPath(chapterFilepath),
-        type: 'wordCount',
-        value: wordCount,
-        computed: true
-      })
-      const title = (await this.extractTitleFromString(initialContent)) || '###'
-      resultArray.push({
-        filename: this.configInstance.mapFileToBeRelativeToRootPath(chapterFilepath),
-        type: 'title',
-        value: title,
-        computed: true
-      })
-    } catch (err) {
-      this.error(err.toString().errorColor())
-      this.exit(1)
-    }
+  // public async extractMarkup(chapterFilepath: string): Promise<MarkupObj[]> {
+  //   const resultArray: MarkupObj[] = []
+  //   try {
+  //     const initialContent = await this.fsUtils.readFileContent(path.join(this.configInstance.projectRootPath, chapterFilepath))
+  //     const markupRegex = /(?:{{(\d+)}}\n)?.*?{(.*?)\s?:\s?(.*?)}/gm
+  //     let regexArray: RegExpExecArray | null
+  //     while ((regexArray = markupRegex.exec(initialContent)) !== null) {
+  //       resultArray.push({
+  //         filename: this.configInstance.mapFileToBeRelativeToRootPath(chapterFilepath),
+  //         paragraph: parseInt(regexArray[1] || '1', 10),
+  //         type: regexArray[2].toLowerCase(),
+  //         value: regexArray[3],
+  //         computed: false
+  //       })
+  //     }
+  //     const wordCount = this.GetWordCount(initialContent)
+  //     resultArray.push({
+  //       filename: this.configInstance.mapFileToBeRelativeToRootPath(chapterFilepath),
+  //       type: 'wordCount',
+  //       value: wordCount,
+  //       computed: true
+  //     })
+  //     const title = (await this.extractTitleFromString(initialContent)) || '###'
+  //     resultArray.push({
+  //       filename: this.configInstance.mapFileToBeRelativeToRootPath(chapterFilepath),
+  //       type: 'title',
+  //       value: title,
+  //       computed: true
+  //     })
+  //   } catch (err) {
+  //     this.error(err.toString().errorColor())
+  //     this.exit(1)
+  //   }
 
-    return resultArray
-  }
+  //   return resultArray
+  // }
 
-  public objectifyMarkupArray(flattenedMarkupArray: MarkupObj[]): { markupByFile: MarkupByFile; markupByType: any } {
-    const markupByFile: MarkupByFile = {}
-    const markupByType: any = {}
+  // public objectifyMarkupArray(flattenedMarkupArray: MarkupObj[]): { markupByFile: MarkupByFile; markupByType: any } {
+  //   const markupByFile: MarkupByFile = {}
+  //   const markupByType: any = {}
 
-    flattenedMarkupArray.forEach(markup => {
-      markupByFile[markup.filename] = markupByFile[markup.filename] || []
-      if (markup.computed) {
-        markupByFile[markup.filename].push({ computed: true, type: markup.type, value: markup.value })
-      } else {
-        markupByFile[markup.filename].push({ computed: false, paragraph: markup.paragraph, type: markup.type, value: markup.value })
-      }
+  //   flattenedMarkupArray.forEach(markup => {
+  //     markupByFile[markup.filename] = markupByFile[markup.filename] || []
+  //     if (markup.computed) {
+  //       markupByFile[markup.filename].push({ computed: true, type: markup.type, value: markup.value })
+  //     } else {
+  //       markupByFile[markup.filename].push({ computed: false, paragraph: markup.paragraph, type: markup.type, value: markup.value })
+  //     }
 
-      if (!markup.computed) {
-        markupByType[markup.type] = markupByType[markup.type] || []
-        markupByType[markup.type].push({ filename: markup.filename, paragraph: markup.paragraph, value: markup.value })
-      } else {
-        if (markup.type === 'wordCount') {
-          markupByType.totalWordCount = markupByType.totalWordCount || 0
-          markupByType.totalWordCount += markup.value
-        }
-      }
-    })
-    return { markupByFile, markupByType }
-  }
+  //     if (!markup.computed) {
+  //       markupByType[markup.type] = markupByType[markup.type] || []
+  //       markupByType[markup.type].push({ filename: markup.filename, paragraph: markup.paragraph, value: markup.value })
+  //     } else {
+  //       if (markup.type === 'wordCount') {
+  //         markupByType.totalWordCount = markupByType.totalWordCount || 0
+  //         markupByType.totalWordCount += markup.value
+  //       }
+  //     }
+  //   })
+  //   return { markupByFile, markupByType }
+  // }
 
   public async writeMetadataInEachFile(markupByFile: any): Promise<{ file: string; diff: string }[]> {
     const modifiedFiles: { file: string; diff: string }[] = []
@@ -292,7 +276,7 @@ export default abstract class extends Command {
 
       const metadataFilename = await this.configInstance.getMetadataFilenameFromParameters(num, isAt)
       const metadataFilePath = path.join(this.configInstance.projectRootPath, metadataFilename)
-      const initialContent = await this.readFileContent(metadataFilePath)
+      const initialContent = await this.fsUtils.readFileContent(metadataFilePath)
 
       const obj = JSON.parse(initialContent)
       obj.extracted = extractedMarkup
@@ -318,28 +302,27 @@ export default abstract class extends Command {
     return modifiedFiles
   }
 
-  public cleanMarkupContent(initialContent: string): string {
-    const paragraphBreakRegex = new RegExp(this.paragraphBreakChar + '{{\\d+}}\\n', 'g')
-    const sentenceBreakRegex = new RegExp(this.sentenceBreakChar + '\\s?', 'g')
+  // public cleanMarkupContent(initialContent: string): string {
+  //   const paragraphBreakRegex = new RegExp(this.paragraphBreakChar + '{{\\d+}}\\n', 'g')
+  //   const sentenceBreakRegex = new RegExp(this.sentenceBreakChar + '\\s?', 'g')
 
-    const replacedContent = initialContent
-      .replace(paragraphBreakRegex, '')
-      .replace(/{.*?:.*?} ?/gm, ' ')
-      .replace(sentenceBreakRegex, '  ')
-      .replace(/^### (.*)$/gm, '* * *')
-      .replace(/^\\(.*)$/gm, '_% $1_')
+  //   const replacedContent = initialContent
+  //     .replace(paragraphBreakRegex, '')
+  //     .replace(/{.*?:.*?} ?/gm, ' ')
+  //     .replace(sentenceBreakRegex, '  ')
+  //     .replace(/^### (.*)$/gm, '* * *')
+  //     .replace(/^\\(.*)$/gm, '_% $1_')
 
-    return replacedContent
-  }
+  //   return replacedContent
+  // }
 
-  public GetWordCount(text: string): number {
-    const wordRegex = require('word-regex')
-    const cleanedText = this.cleanMarkupContent(text)
-    const match = cleanedText.match(wordRegex())
-    const wordCount = match ? match.length : 0
-    // debug(`WORD COUNT=${wordCount} of text:\n${cleanedText}`)
-    return wordCount
-  }
+  // public GetWordCount(text: string): number {
+  //   const wordRegex = require('word-regex')
+  //   const cleanedText = this.cleanMarkupContent(text)
+  //   const match = cleanedText.match(wordRegex())
+  //   const wordCount = match ? match.length : 0
+  //   return wordCount
+  // }
 
   public async addDigitsToNecessaryStacks(): Promise<boolean> {
     let didAddDigits = false
@@ -357,10 +340,10 @@ export default abstract class extends Command {
   public async compactFileNumbers(): Promise<void> {
     cli.action.start('Compacting file numbers'.actionStartColor())
 
-    const table = this.tableize('from', 'to')
+    const table = tableize('from', 'to')
     const moves: { fromFilename: string; toFilename: string }[] = []
     const movePromises: Promise<MoveSummary>[] = []
-    const { tempDir, removeTempDir } = await this.getTempDir()
+    const { tempDir, removeTempDir } = await this.fsUtils.getTempDir(this.configInstance.projectRootPath)
     const tempDirForGit = this.configInstance.mapFileToBeRelativeToRootPath(tempDir)
 
     for (const b of [true, false]) {
@@ -392,7 +375,6 @@ export default abstract class extends Command {
 
     await Promise.all(movePromises)
     for (const renumbering of moves) {
-      // debug(`from: ${path.join(tempDirForGit, renumbering.toFilename)} to: ${renumbering.toFilename}`)
       movePromises.push(this.git.mv(path.join(tempDirForGit, renumbering.toFilename), renumbering.toFilename))
     }
     await Promise.all(movePromises)
@@ -408,58 +390,37 @@ export default abstract class extends Command {
     }
   }
 
-  public async deleteEmptySubDirectories(): Promise<string[]> {
-    // debug(`configInstance=${JSON.stringify(this.configInstance, null, 2)}`)
-    const allDirs = await this.fsUtils.globPromise('**/', { cwd: this.configInstance.projectRootPath })
-    // debug(`allDirs=${allDirs}`)
-    const emptyDirs: string[] = []
-    for (const subDir of allDirs) {
-      const filesOfSubDir = await this.fsUtils.globPromise('**', { cwd: path.join(this.configInstance.projectRootPath, subDir) })
-      // debug(`subDir=${subDir} filesOfSubDir=${filesOfSubDir}`)
-      if (filesOfSubDir.length === 0) {
-        emptyDirs.push(subDir)
-      }
-    }
-    // debug(`EmptyDirs=${emptyDirs}`)
-    for (const subDir of emptyDirs) {
-      await this.fsUtils.deleteDir(path.join(this.configInstance.projectRootPath, subDir))
-    }
-    return emptyDirs
-  }
+  // public async UpdateAllMetadataFields(): Promise<void> {
+  //   const allMetadataFiles = await this.configInstance.getAllMetadataFiles()
+  //   const table = this.tableize('file', 'changes')
+  //   for (const file of allMetadataFiles) {
+  //     debug(`file=${file}`)
+  //     const initialContent = await this.fsUtils.readFileContent(file)
+  //     try {
+  //       const initialObj = JSON.parse(initialContent)
+  //       const replacedObj = JSON.parse(initialContent)
 
-  public async UpdateAllMetadataFields(): Promise<void> {
-    const allMetadataFiles = await this.configInstance.getAllMetadataFiles()
-    const table = this.tableize('file', 'changes')
-    for (const file of allMetadataFiles) {
-      debug(`file=${file}`)
-      const initialContent = await this.readFileContent(file)
-      try {
-        const initialObj = JSON.parse(initialContent)
-        const replacedObj = JSON.parse(initialContent)
-
-        let changeApplied = false
-        observableDiff(replacedObj.manual, this.configInstance.metadataFieldsDefaults, d => {
-          if ((d.kind === 'D' && d.lhs === '') || d.kind === 'N') {
-            changeApplied = true
-            applyChange(replacedObj.manual, this.configInstance.metadataFieldsDefaults, d)
-          }
-        })
-        if (changeApplied) {
-          const diffs = diff(initialObj.manual, replacedObj.manual) || []
-          diffs.map(d => {
-            const expl = (d.kind === 'N' ? 'New ' : 'Deleted ') + d.path
-            table.accumulator(this.configInstance.mapFileToBeRelativeToRootPath(file), expl)
-          })
-          // debug(`diffs=${JSON.stringify(diffs)}`)
-          // debug(`modified obj = ${JSON.stringify(replacedObj)}`)
-          await this.fsUtils.writeFile(file, JSON.stringify(replacedObj, null, 4))
-        }
-      } catch (err) {
-        debug(err.toString().errorColor())
-      }
-    }
-    table.show('Metadata fields updated in files')
-  }
+  //       let changeApplied = false
+  //       observableDiff(replacedObj.manual, this.configInstance.metadataFieldsDefaults, d => {
+  //         if ((d.kind === 'D' && d.lhs === '') || d.kind === 'N') {
+  //           changeApplied = true
+  //           applyChange(replacedObj.manual, this.configInstance.metadataFieldsDefaults, d)
+  //         }
+  //       })
+  //       if (changeApplied) {
+  //         const diffs = diff(initialObj.manual, replacedObj.manual) || []
+  //         diffs.map(d => {
+  //           const expl = (d.kind === 'N' ? 'New ' : 'Deleted ') + d.path
+  //           table.accumulator(this.configInstance.mapFileToBeRelativeToRootPath(file), expl)
+  //         })
+  //         await this.fsUtils.writeFile(file, JSON.stringify(replacedObj, null, 4))
+  //       }
+  //     } catch (err) {
+  //       debug(err.toString().errorColor())
+  //     }
+  //   }
+  //   table.show('Metadata fields updated in files')
+  // }
 
   public async RenameFilesIfNewPattern(): Promise<boolean> {
     let result = false
@@ -471,7 +432,6 @@ export default abstract class extends Command {
         d.kind === 'E' &&
         d.path &&
         d.path.reduce((previous, current) => {
-          // debug(`p=${p} indexOf Pattern>0 = ${p.indexOf('Pattern')>0}`)
           return previous || current.indexOf('Pattern') > 0
         }, false)
       ) {
@@ -493,14 +453,11 @@ export default abstract class extends Command {
         const reAtNumber = this.configInstance.patternRegexer(oldAndNew.oldPattern, true)
         const isAtNumber = this.configInstance.isAtNumbering(file)
         const rootedFile = this.configInstance.mapFileToBeRelativeToRootPath(file)
-
         const num = rootedFile.replace(isAtNumber ? reAtNumber : reNormal, '$1')
+
         //TODO: get name from metadata file's title?  Here if old pattern has no name, it gives '$2' as a name.
         const name = rootedFile.replace(isAtNumber ? reAtNumber : reNormal, '$2')
-
         const renamedFile = oldAndNew.newPattern.replace(/NUM/g, (isAtNumber ? '@' : '') + num).replace(/NAME/g, name)
-
-        // debug(`num:${num} name:${name} file:${file}\nrootedFile:${rootedFile} renamedFile:${renamedFile}`)
 
         await this.fsUtils.createSubDirectoryIfNecessary(path.join(this.configInstance.projectRootPath, renamedFile))
 
@@ -549,7 +506,7 @@ export default abstract class extends Command {
         await this.fsUtils.moveFile(file, path.join(this.configInstance.projectRootPath, newDir, newFile))
       }
 
-      const gitIgnoreContent = await this.readFileContent(this.hardConfig.gitignoreFilePath)
+      const gitIgnoreContent = await this.fsUtils.readFileContent(this.hardConfig.gitignoreFilePath)
       const newGitIgnoreContent = gitIgnoreContent.replace(oldDir, newDir.replace(/\\/g, '/'))
       await this.fsUtils.writeFile(this.hardConfig.gitignoreFilePath, newGitIgnoreContent)
     }
@@ -575,9 +532,9 @@ export default abstract class extends Command {
     })
 
     if (oldTitle !== newTitle) {
-      const oldReadmeContent = await this.readFileContent(this.hardConfig.readmeFilePath)
-      if (oldTitle === (await this.extractTitleFromString(oldReadmeContent))) {
-        const newReadmeContent = oldReadmeContent.replace(this.titleRegex, `\n# ${newTitle}\n`)
+      const oldReadmeContent = await this.fsUtils.readFileContent(this.hardConfig.readmeFilePath)
+      if (oldTitle === (await this.markupUtils.extractTitleFromString(oldReadmeContent))) {
+        const newReadmeContent = oldReadmeContent.replace(this.markupUtils.titleRegex, `\n# ${newTitle}\n`)
         await this.fsUtils.writeFile(this.hardConfig.readmeFilePath, newReadmeContent)
       }
     }
@@ -586,8 +543,7 @@ export default abstract class extends Command {
   public async CheckIfStepOrInitialNumberHaveChanged() {
     const { lastConfigObj, actualConfigObj } = await this.getLastAndActualConfigObjects()
 
-    // const numberingChanges = []
-    const table = this.tableize('Old', 'New')
+    const table = tableize('Old', 'New')
 
     observableDiff(lastConfigObj, actualConfigObj, d => {
       if (
@@ -600,22 +556,11 @@ export default abstract class extends Command {
         const numberingType = d.path && d.path[0]
         const oldNumbering = d.lhs
         const newNumbering = d.rhs
-        // numberingChanges.push({ numberingType, oldNumbering, newNumbering })
         table.accumulator(`${numberingType}: ${oldNumbering}`, newNumbering.toString())
       }
     })
 
     table.show('Config file has changes.  Run `reorder` or `build` command with `--compact` flag to rename files with new scheme.')
-    // if (numberingChanges.length>0) { }
-  }
-
-  public async extractTitleFromString(initialContent: string): Promise<string | null> {
-    const match = this.titleRegex.exec(initialContent)
-    if (match) {
-      return match[1]
-    } else {
-      return null
-    }
   }
 
   private async getLastAndActualConfigObjects(): Promise<{ lastConfigObj: any; actualConfigObj: any }> {
@@ -628,7 +573,7 @@ export default abstract class extends Command {
           : ''
       const lastConfigContent = (await this.git.show([`HEAD:${this.configInstance.mapFileToBeRelativeToRootPath(configFilePath).replace(/\\/, '/')}`])) || '{}'
 
-      const actualConfigContent = await this.readFileContent(configFilePath)
+      const actualConfigContent = await this.fsUtils.readFileContent(configFilePath)
 
       this._lastConfigObj =
         this.configInstance.configStyle === 'JSON5' ? jsonComment.parse(lastConfigContent, undefined, true) : yaml.safeLoad(lastConfigContent)
@@ -642,7 +587,7 @@ export default abstract class extends Command {
   private async addDigitsToFiles(files: string[], newDigitNumber: number, atNumberingStack: boolean): Promise<boolean> {
     const promises: Promise<MoveSummary>[] = []
     let hasMadeChanges = false
-    const table = this.tableize('from', 'to')
+    const table = tableize('from', 'to')
 
     for (const file of files) {
       const filename = this.configInstance.mapFileToBeRelativeToRootPath(file)
@@ -650,15 +595,10 @@ export default abstract class extends Command {
 
       if (atNumbering === atNumberingStack) {
         const filenumber = this.configInstance.extractNumber(file)
-        // debug(`file=${file} filename=${filename} filenumber=${filenumber}`)
-        const fromFilename = filename // this.configInstance.mapFileToBeRelativeToRootPath(path.join(path.dirname(file), filename))
-        const toFilename = //this.configInstance.mapFileToBeRelativeToRootPath(
-          //path.join(path.dirname(file),
-          this.statistics.renumberedFilename(filename, filenumber, newDigitNumber, atNumbering)
-        //   )
-        // )
+        const fromFilename = filename
+        const toFilename = this.statistics.renumberedFilename(filename, filenumber, newDigitNumber, atNumbering)
+
         if (fromFilename !== toFilename) {
-          // debug(`renaming with new file number "${fromFilename}" to "${toFilename}"`.infoColor())
           await this.fsUtils.createSubDirectoryIfNecessary(path.join(this.configInstance.projectRootPath, toFilename))
           table.accumulator(fromFilename, toFilename)
           promises.push(this.git.mv(fromFilename, toFilename))
@@ -667,7 +607,7 @@ export default abstract class extends Command {
       }
     }
 
-    await this.deleteEmptySubDirectories()
+    await this.fsUtils.deleteEmptySubDirectories(this.configInstance.projectRootPath)
 
     table.show('Adding digits to files')
     await Promise.all(promises)
@@ -675,21 +615,21 @@ export default abstract class extends Command {
   }
 }
 
-export interface MarkupObj {
-  filename: string
-  paragraph?: number
-  type: string
-  value: string | number
-  computed: boolean
-}
+// export interface MarkupObj {
+//   filename: string
+//   paragraph?: number
+//   type: string
+//   value: string | number
+//   computed: boolean
+// }
 
-interface MarkupByFile {
-  [filename: string]: [
-    {
-      paragraph?: number
-      type: string
-      value: string | number
-      computed: boolean
-    }
-  ]
-}
+// interface MarkupByFile {
+//   [filename: string]: [
+//     {
+//       paragraph?: number
+//       type: string
+//       value: string | number
+//       computed: boolean
+//     }
+//   ]
+// }

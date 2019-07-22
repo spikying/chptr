@@ -2,7 +2,7 @@ import { flags } from '@oclif/command'
 import { cli } from 'cli-ux'
 import * as path from 'path'
 
-import { QueryBuilder } from '../queries'
+import { QueryBuilder } from '../ui-utils'
 
 import { d, sanitizeFileName, stringifyNumber } from './base'
 import Command from './initialized-base'
@@ -130,8 +130,8 @@ export default class Rename extends Command {
   }
   
   private async replaceTitleInMarkdown(actualFile: string, newTitle: string): Promise<boolean> {
-    const initialContent = await this.readFileContent(actualFile)
-    const replacedContent = initialContent.replace(this.titleRegex, `\n# ${newTitle}\n`)
+    const initialContent = await this.fsUtils.readFileContent(actualFile)
+    const replacedContent = initialContent.replace(this.markupUtils.titleRegex, `\n# ${newTitle}\n`)
     if (initialContent !== replacedContent) {
       await this.fsUtils.writeFile(actualFile, replacedContent)
       return true
@@ -140,7 +140,7 @@ export default class Rename extends Command {
   }
 
   private async replaceTitleInObject(metadataFile: string, newTitle: string): Promise<boolean> {
-    const initialContent = await this.readFileContent(metadataFile)
+    const initialContent = await this.fsUtils.readFileContent(metadataFile)
     const obj = JSON.parse(initialContent)
     const extractedMarkup = obj.extracted
 
@@ -157,14 +157,8 @@ export default class Rename extends Command {
   }
 
   private async extractTitleFromFile(chapterFile: string): Promise<string | null> {
-    const initialContent = await this.readFileContent(path.join(this.configInstance.projectRootPath, chapterFile))
-    //  const match = this.titleRegex.exec(initialContent)
-    // if (match) {
-    //   return match[1]
-    // } else {
-    //   return null
-    // }
-    return this.extractTitleFromString(initialContent)
+    const initialContent = await this.fsUtils.readFileContent(path.join(this.configInstance.projectRootPath, chapterFile))
+    return this.markupUtils.extractTitleFromString(initialContent)
   }
 
 }

@@ -1,5 +1,4 @@
 import { Command, flags } from '@oclif/command'
-import { cli } from 'cli-ux'
 import * as deb from 'debug'
 import * as latinize from 'latinize'
 import * as notifier from 'node-notifier'
@@ -102,66 +101,7 @@ export default abstract class extends Command {
     }
   }
 
-  public async getTempDir(): Promise<{ tempDir: string; removeTempDir(): Promise<void> }> {
-    let tempDir = ''
-    try {
-      const tempPrefix = 'temp'
-      tempDir = await this.fsUtils.mkdtemp(path.join(this._rootPath, tempPrefix))
-      debug(`Created temp dir: ${tempDir}`)
-    } catch (err) {
-      cli.error(err.toString().errorColor())
-      cli.exit(1)
-    }
 
-    const delDirFct = this.fsUtils.deleteDir
-    const removeTempDir = async function() {
-      try {
-        debug(`Deleting temp dir: ${tempDir}`)
-        await delDirFct(tempDir)
-      } catch (err) {
-        cli.error(err.toString().errorColor())
-        cli.exit(1)
-      }
-    }
-
-    return { tempDir, removeTempDir }
-  }
-
-  public tableize(col1: string, col2: string) {
-    const moves: { from: string; to: string }[] = []
-    const accumulator = function(from: string, to: string) {
-      moves.push({ from, to })
-    }
-    const accumulatorArray = function(arr: { from: string; to: string }[]) {
-      for (const line of arr) {
-        accumulator(line.from, line.to)
-      }
-    }
-
-    const show = (title?: string) => {
-      if (moves.length > 0) {
-        if (title) {
-          cli.info(`${title.actionStartColor()}... ${'done'.actionStopColor()}`.color('white'))
-        }
-
-        cli.table(moves.map(o => ({ from: o.from.resultNormalColor(), to: o.to.resultHighlighColor() })), {
-          from: {
-            header: col1.infoColor(),
-            minWidth: 30
-          },
-          ' ->': {
-            get: () => ''
-          },
-          to: {
-            header: col2.infoColor()
-          }
-        })
-      }
-    }
-
-    const returnObj = { accumulator, show, accumulatorArray }
-    return returnObj
-  }
 
 
   
@@ -190,8 +130,8 @@ export const sanitizeFileName = function(original: string, keepFolders = false):
   return latinized
 }
 
-const sanitize_url = require('@braintree/sanitize-url').sanitizeUrl
 export const sanitizeUrl = function(original: string): string {
+  const sanitize_url = require('@braintree/sanitize-url').sanitizeUrl
   const sanitized = sanitize_url(original)
   if (sanitized === 'about:blank') {
     return ''

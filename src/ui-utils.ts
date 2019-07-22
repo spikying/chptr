@@ -1,22 +1,23 @@
+import { cli } from 'cli-ux';
 import * as d from 'debug'
 import inquirer = require('inquirer')
 
 import { sanitizeFileName, sanitizeUrl } from './commands/base'
 
-const debug = d('queries')
+const debug = d('ui-utils')
 
-export const getFilenameFromInput = async (msg?: string, defaultValue?: string) => {
-  const responses: any = await inquirer.prompt([
-    {
-      name: 'name',
-      message: msg || 'What name do you want as a filename?',
-      type: 'input',
-      default: defaultValue || 'chapter',
-      filter: sanitizeFileName
-    }
-  ])
-  return responses.name
-}
+// export const getFilenameFromInput = async (msg?: string, defaultValue?: string) => {
+//   const responses: any = await inquirer.prompt([
+//     {
+//       name: 'name',
+//       message: msg || 'What name do you want as a filename?',
+//       type: 'input',
+//       default: defaultValue || 'chapter',
+//       filter: sanitizeFileName
+//     }
+//   ])
+//   return responses.name
+// }
 
 export class QueryBuilder {
   private readonly allQueries: object[] = []
@@ -41,6 +42,19 @@ export class QueryBuilder {
       return {}
     }
   }
+
+  // public async getFilenameFromInput(msg?: string, defaultValue?: string): Promise<string> {
+  //   const responses: any = await inquirer.prompt([
+  //     {
+  //       name: 'name',
+  //       message: msg || 'What name do you want as a filename?',
+  //       type: 'input',
+  //       default: defaultValue || 'chapter',
+  //       filter: sanitizeFileName
+  //     }
+  //   ])
+  //   return responses.name
+  // }
 
   public filename(msg?: string, defaultValue?: string): object {
     const obj = {
@@ -116,4 +130,40 @@ export class QueryBuilder {
 
     return obj
   }
+}
+
+export const tableize = function(col1: string, col2: string) {
+  const moves: { from: string; to: string }[] = []
+  const accumulator = function(from: string, to: string) {
+    moves.push({ from, to })
+  }
+  const accumulatorArray = function(arr: { from: string; to: string }[]) {
+    for (const line of arr) {
+      accumulator(line.from, line.to)
+    }
+  }
+
+  const show = (title?: string) => {
+    if (moves.length > 0) {
+      if (title) {
+        cli.info(`${title.actionStartColor()}... ${'done'.actionStopColor()}`.color('white'))
+      }
+
+      cli.table(moves.map(o => ({ from: o.from.resultNormalColor(), to: o.to.resultHighlighColor() })), {
+        from: {
+          header: col1.infoColor(),
+          minWidth: 30
+        },
+        ' ->': {
+          get: () => ''
+        },
+        to: {
+          header: col2.infoColor()
+        }
+      })
+    }
+  }
+
+  const returnObj = { accumulator, show, accumulatorArray }
+  return returnObj
 }

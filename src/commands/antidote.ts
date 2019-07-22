@@ -3,7 +3,7 @@ import { cli } from 'cli-ux'
 import * as glob from 'glob'
 import * as path from 'path'
 
-import { QueryBuilder } from '../queries'
+import { QueryBuilder } from '../ui-utils'
 
 import { d } from './base'
 import Command from './initialized-base'
@@ -107,8 +107,8 @@ export default class Antidote extends Command {
 
   private processContentForAntidote(initialContent: string): string {
     try {
-      const re = new RegExp(this.sentenceBreakChar + '\r?\n', 'gm')
-      const replacedContent = initialContent.replace(re, this.sentenceBreakChar + '  ').replace(/\n/gm, '\r\n')
+      const re = new RegExp(this.markupUtils.sentenceBreakChar + '\r?\n', 'gm')
+      const replacedContent = initialContent.replace(re, this.markupUtils.sentenceBreakChar + '  ').replace(/\n/gm, '\r\n')
       debug(`Processed antidote content: \n${replacedContent.substring(0, 250)}`)
 
       return replacedContent
@@ -130,13 +130,13 @@ export default class Antidote extends Command {
 
   private async processFileBackFromAntidote(filepath: string): Promise<void> {
     try {
-      const initialContent = await this.readFileContent(filepath)
+      const initialContent = await this.fsUtils.readFileContent(filepath)
 
-      const sentenceRE = new RegExp(this.sentenceBreakChar + '  ', 'gm')
-      const paragraphRE = new RegExp('(' + this.paragraphBreakChar + '{{\\d+}}\\n)\\n', 'gm')
+      const sentenceRE = new RegExp(this.markupUtils.sentenceBreakChar + '  ', 'gm')
+      const paragraphRE = new RegExp('(' + this.markupUtils.paragraphBreakChar + '{{\\d+}}\\n)\\n', 'gm')
       let replacedContent = this.removeTripleEnters(
         initialContent
-          .replace(sentenceRE, this.sentenceBreakChar + '\n')
+          .replace(sentenceRE, this.markupUtils.sentenceBreakChar + '\n')
           .replace(/\r\n/gm, '\n\n')
           .replace(/^\uFEFF\n\n# /g, '\n# ') // un-BOM the file
           .replace(paragraphRE, '$1')
@@ -154,7 +154,7 @@ export default class Antidote extends Command {
 
   private async processUTF8BOMandContent(filepath: string): Promise<void> {
     try {
-      const initialContent = await this.readFileContent(filepath)
+      const initialContent = await this.fsUtils.readFileContent(filepath)
 
       let replacedContent = initialContent
       if (initialContent.charCodeAt(0) !== 65279) {

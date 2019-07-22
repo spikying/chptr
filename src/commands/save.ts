@@ -3,7 +3,7 @@ import { cli } from 'cli-ux'
 import * as minimatch from 'minimatch'
 import * as path from 'path'
 
-import { QueryBuilder } from '../queries'
+import { QueryBuilder } from '../ui-utils'
 
 import { d } from './base'
 import Command from './initialized-base'
@@ -116,8 +116,8 @@ export default class Save extends Command {
   private async UpdateSingleMetadata(chapterFile: string) {
     cli.action.start('Extracting single metadata'.actionStartColor())
 
-    const markupObjArr = await this.extractMarkup(chapterFile)
-    const { markupByFile } = this.objectifyMarkupArray(markupObjArr)
+    const markupObjArr = await this.markupUtils.extractMarkup(chapterFile)
+    const { markupByFile } = this.markupUtils.objectifyMarkupArray(markupObjArr)
     const modifiedMetadataFiles = await this.writeMetadataInEachFile(markupByFile)
     const modifiedFile = modifiedMetadataFiles[0]
 
