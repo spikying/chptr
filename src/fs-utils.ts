@@ -133,7 +133,6 @@ export class FsUtils {
     return { tempDir, removeTempDir }
   }
 
-  
   public async readFileContent(filepath: string): Promise<string> {
     try {
       const buff = await this.readFileBuffer(filepath)
@@ -144,23 +143,36 @@ export class FsUtils {
     }
   }
 
-  
-public sanitizeFileName (original: string, keepFolders = false): string {
-  if (keepFolders) {
-    original = original.replace(/[\/\\]/g, '\u2029')
+  public sanitizeFileName(original: string, keepFolders = false): string {
+    if (keepFolders) {
+      original = original.replace(/[\/\\]/g, '\u2029')
+    }
+    const sanitized = sanitize(original).replace(/\u2029/g, path.sep)
+    const latinized = latinize(sanitized)
+    return latinized
   }
-  const sanitized = sanitize(original).replace(/\u2029/g, path.sep)
-  const latinized = latinize(sanitized)
-  return latinized
-}
 
-public sanitizeUrl (original: string): string {
-  const sanitize_url = require('@braintree/sanitize-url').sanitizeUrl
-  const sanitized = sanitize_url(original)
-  if (sanitized === 'about:blank') {
-    return ''
+  public sanitizeUrl(original: string): string {
+    const sanitize_url = require('@braintree/sanitize-url').sanitizeUrl
+    const sanitized = sanitize_url(original)
+    if (sanitized === 'about:blank') {
+      return ''
+    }
+    return sanitized
   }
-  return sanitized
-}
+
+  public numDigits(x: number, buffer = 2): number {
+    return Math.max(Math.floor(Math.log10(Math.abs(x + buffer))), 0) + 1
+  }
+
+  public stringifyNumber(x: number, digits: number): string {
+    const s = x.toString()
+    const zeroes = Math.max(digits - s.length, 0)
+    if (zeroes > 0) {
+      return '0'.repeat(zeroes).concat(s)
+    } else {
+      return s
+    }
+  }
 
 }

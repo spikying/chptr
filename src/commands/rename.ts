@@ -78,9 +78,9 @@ export default class Rename extends Command {
       await this.statistics.updateStackStatistics(isAtNumbering)
       const digits = this.statistics.getMinDigits(isAtNumbering)
       const expectedFiles = [
-        this.configInstance.chapterFileNameFromParameters(this.statistics.stringifyNumber(num, digits), newNameForFile, isAtNumbering),
-        this.configInstance.summaryFileNameFromParameters(this.statistics.stringifyNumber(num, digits), newNameForFile, isAtNumbering),
-        this.configInstance.metadataFileNameFromParameters(this.statistics.stringifyNumber(num, digits), newNameForFile, isAtNumbering)
+        this.configInstance.chapterFileNameFromParameters(this.fsUtils.stringifyNumber(num, digits), newNameForFile, isAtNumbering),
+        this.configInstance.summaryFileNameFromParameters(this.fsUtils.stringifyNumber(num, digits), newNameForFile, isAtNumbering),
+        this.configInstance.metadataFileNameFromParameters(this.fsUtils.stringifyNumber(num, digits), newNameForFile, isAtNumbering)
       ]
       this.error(`Missing a file within this list:${expectedFiles.map(f => `\n    ${f}`)}`.errorColor())
       this.exit(0)
@@ -91,19 +91,19 @@ export default class Rename extends Command {
     const didUpdateChapter = {
       filename: chapterFile,
       title: await this.replaceTitleInMarkdown(chapterFile, newName),
-      newFileName: this.configInstance.chapterFileNameFromParameters(this.statistics.stringifyNumber(num, digits), newNameForFile, isAtNumbering),
+      newFileName: this.configInstance.chapterFileNameFromParameters(this.fsUtils.stringifyNumber(num, digits), newNameForFile, isAtNumbering),
       rename: ''
     }
     const didUpdateSummary = {
       filename: summaryFile,
       title: await this.replaceTitleInMarkdown(summaryFile, newName),
-      newFileName: this.configInstance.summaryFileNameFromParameters(this.statistics.stringifyNumber(num, digits), newNameForFile, isAtNumbering),
+      newFileName: this.configInstance.summaryFileNameFromParameters(this.fsUtils.stringifyNumber(num, digits), newNameForFile, isAtNumbering),
       rename: ''
     }
     const didUpdateMetadata = {
       filename: metadataFile,
       title: await this.replaceTitleInObject(metadataFile, newName),
-      newFileName: this.configInstance.metadataFileNameFromParameters(this.statistics.stringifyNumber(num, digits), newNameForFile, isAtNumbering),
+      newFileName: this.configInstance.metadataFileNameFromParameters(this.fsUtils.stringifyNumber(num, digits), newNameForFile, isAtNumbering),
       rename: ''
     }
     const didUpdates = [didUpdateChapter, didUpdateSummary, didUpdateMetadata]

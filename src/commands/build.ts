@@ -195,7 +195,10 @@ export default class Build extends Command {
 
       const pandocRuns: Promise<void>[] = []
       const allOutputFilePath: string[] = []
-      const buildDirectory = await this.getBuildDirectoryAndCreateIfNecessary()
+
+
+      const buildDirectory = this.configInstance.buildDirectory
+      await this.fsUtils.createSubDirectoryIfNecessary(path.join(buildDirectory, 'config.file'))      
 
       for (const filetype of outputFiletype) {
         // outputFiletype.forEach(filetype => {
@@ -328,7 +331,7 @@ export default class Build extends Command {
         }
       }
 
-      const modifiedMetadataFiles = await this.writeMetadataInEachFile(markupByFile)
+      const modifiedMetadataFiles = await this.markupUtils.writeMetadataInEachFile(markupByFile)
       table.accumulatorArray(modifiedMetadataFiles.map(val => ({ from: this.configInstance.mapFileToBeRelativeToRootPath(val.file), to: val.diff })))
       // markupFilenamesPretty = modifiedMetadataFiles.reduce((previous, current) => `${previous}\n    ${current}`,'')
     })

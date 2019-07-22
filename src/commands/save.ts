@@ -118,7 +118,7 @@ export default class Save extends Command {
 
     const markupObjArr = await this.markupUtils.extractMarkup(chapterFile)
     const { markupByFile } = this.markupUtils.objectifyMarkupArray(markupObjArr)
-    const modifiedMetadataFiles = await this.writeMetadataInEachFile(markupByFile)
+    const modifiedMetadataFiles = await this.markupUtils.writeMetadataInEachFile(markupByFile)
     const modifiedFile = modifiedMetadataFiles[0]
 
     cli.action.stop(`updated ${modifiedFile.file} with ${modifiedFile.diff}`.actionStopColor())

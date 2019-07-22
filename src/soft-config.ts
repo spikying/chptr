@@ -451,6 +451,29 @@ date: ${moment().format('D MMMM YYYY')}
     return this.fsUtils.getAllFilesForWildcards(wildcards, this.projectRootPath)
   }
 
+  //TODO: make aware of which filetype it is and use real patterns for cases where the number is repeated
+  public renumberedFilename(filename: string, newFilenumber: number, digits: number, atNumbering: boolean): string {
+    //Identify if it's a chapter, summary or metadata
+    const isChapter = this.chapterRegex(true).test(filename) || this.chapterRegex(false).test(filename)
+    const isSummary = this.summaryRegex(true).test(filename) || this.summaryRegex(false).test(filename)
+    const isMetadata = this.metadataRegex(true).test(filename) || this.metadataRegex(false).test(filename)
+
+    debug(`filename: ${filename}\nregex: ${this.chapterRegex(atNumbering)}\nisChapter: ${isChapter}`)
+    const total = (isChapter ? 1 : 0) + (isSummary ? 1 : 0) + (isMetadata ? 1 : 0)
+    if (total !== 1) {
+      throw new Error('Filename does not match Chapter, Summary or Metadata pattern and cannot be renamed.')
+    }
+    //
+    if (isChapter) {
+      const matches = this.chapterRegex(atNumbering).exec(filename)
+      const name = matches ? matches[2] : ''
+      debug(`return ${this.chapterFileNameFromParameters(this.fsUtils.stringifyNumber(newFilenumber, digits), name, atNumbering)}`)
+      return this.chapterFileNameFromParameters(this.fsUtils.stringifyNumber(newFilenumber, digits), name, atNumbering)
+    }
+
+    const re = new RegExp(/^(.*?)(@?\d+)(.*)$/)
+    return filename.replace(re, '$1' + (atNumbering ? '@' : '') + this.fsUtils.stringifyNumber(newFilenumber, digits) + '$3')
+  }
 
 
   private wildcardWithNumber(pattern: string, num: number, atNumbering: boolean): string {

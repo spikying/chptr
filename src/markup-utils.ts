@@ -1,27 +1,29 @@
-import { cli } from 'cli-ux';
+import { cli } from 'cli-ux'
 import * as d from 'debug'
 import { applyChange, diff, observableDiff } from 'deep-diff'
+import * as JsDiff from 'diff'
 import * as path from 'path'
 
-import { FsUtils } from './fs-utils';
-import { SoftConfig } from './soft-config';
-import { tableize } from './ui-utils';
+import { FsUtils } from './fs-utils'
+import { SoftConfig } from './soft-config'
+import { tableize } from './ui-utils'
 
 const debug = d('markup-utils')
 
 export class MarkupUtils {
-      // https://unicode.org/reports/tr29/#Sentence_Boundaries
+  // https://unicode.org/reports/tr29/#Sentence_Boundaries
   public readonly sentenceBreakChar = '\u2028' // '\u000D'// '\u200D' // '\u2028'
   public readonly paragraphBreakChar = '\u2029'
   public titleRegex = /^\n# (.*?)\n/
 
-    readonly fsUtils: FsUtils
-    readonly configInstance: SoftConfig
+  readonly fsUtils: FsUtils
+  readonly configInstance: SoftConfig
 
-    constructor(configInstance: SoftConfig) {
-        this.fsUtils = new FsUtils
-        this.configInstance = configInstance
-    }
+  constructor(configInstance: SoftConfig) {
+    this.fsUtils = new FsUtils()
+    this.configInstance = configInstance
+  }
+
   public async extractMarkup(chapterFilepath: string): Promise<MarkupObj[]> {
     const resultArray: MarkupObj[] = []
     try {
@@ -91,6 +93,59 @@ export class MarkupUtils {
       }
     })
     return { markupByFile, markupByType }
+  }
+
+  public async writeMetadataInEachFile(markupByFile: any): Promise<{ file: string; diff: string }[]> {
+    const modifiedFiles: { file: string; diff: string }[] = []
+
+    for (const file of Object.keys(markupByFile)) {
+      const extractedMarkup: any = {}
+      const computedMarkup: any = {}
+      const markupArray = markupByFile[file]
+      markupArray.forEach((markup: MarkupObj) => {
+        if (markup.computed) {
+          computedMarkup[markup.type] = markup.value
+        } else {
+          if (extractedMarkup[markup.type]) {
+            if (!Array.isArray(extractedMarkup[markup.type])) {
+              extractedMarkup[markup.type] = [extractedMarkup[markup.type]]
+            }
+            extractedMarkup[markup.type].push(markup.value)
+          } else {
+            extractedMarkup[markup.type] = markup.value
+          }
+        }
+      })
+
+      const num = this.configInstance.extractNumber(file)
+      const isAt = this.configInstance.isAtNumbering(file)
+
+      const metadataFilename = await this.configInstance.getMetadataFilenameFromParameters(num, isAt)
+      const metadataFilePath = path.join(this.configInstance.projectRootPath, metadataFilename)
+      const initialContent = await this.fsUtils.readFileContent(metadataFilePath)
+
+      const obj = JSON.parse(initialContent)
+      obj.extracted = extractedMarkup
+      obj.computed = computedMarkup
+
+      const updatedContent = JSON.stringify(obj, null, 4)
+      if (initialContent !== updatedContent) {
+        await this.fsUtils.writeFile(metadataFilePath, updatedContent)
+        //todo: move to deep-diff?
+        modifiedFiles.push({
+          file: metadataFilePath,
+          diff: JsDiff.diffJson(JSON.parse(initialContent), JSON.parse(updatedContent))
+            .map(d => {
+              let s = d.added ? `++ ${d.value.trim()}` : ''
+              s += d.removed ? `-- ${d.value.trim()}` : ''
+              return s
+            })
+            .filter(s => s.length > 0)
+            .join('; ')
+        })
+      }
+    }
+    return modifiedFiles
   }
 
   public cleanMarkupContent(initialContent: string): string {
