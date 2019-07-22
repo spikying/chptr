@@ -74,4 +74,5 @@ export class FsUtils {
       cli.info(`Created ${fullPathName.resultHighlighColor()}`.resultNormalColor())
     }
   }
+  
 }

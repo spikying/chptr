@@ -2,7 +2,7 @@ import * as d from 'debug'
 import * as path from 'path'
 
 import { numDigits, stringifyNumber } from './commands/base'
-import { FsUtils } from './fs-utils';
+import { FsUtils } from './fs-utils'
 import { SoftConfig } from './soft-config'
 
 const debug = d('config:context')
@@ -36,7 +36,7 @@ export class Context {
   constructor(configInstance: SoftConfig) {
     debug(`New Context instance`)
     this.configInstance = configInstance
-    this.fsUtils = new FsUtils
+    this.fsUtils = new FsUtils()
   }
 
   public mapFileToBeRelativeToRootPath(file: string): string {
@@ -51,16 +51,17 @@ export class Context {
   // TODO: send back to soft-config?
   // TODO: refactor to feed same private function different wildcard arrays
   public async getAllFilesForChapter(num: number, isAtNumbered: boolean): Promise<string[]> {
-    const files: string[] = []
+    // const files: string[] = []
     const wildcards = [
       this.configInstance.chapterWildcardWithNumber(num, isAtNumbered),
       this.configInstance.metadataWildcardWithNumber(num, isAtNumbered),
       this.configInstance.summaryWildcardWithNumber(num, isAtNumbered)
     ]
-    for (const wildcard of wildcards) {
-      files.push(...(await this.fsUtils.globPromise(path.join(this.configInstance.projectRootPath, wildcard))))
-    }
-    return files
+    return this.getAllFilesForWildcards(wildcards)
+    // for (const wildcard of wildcards) {
+    //   files.push(...(await this.fsUtils.globPromise(path.join(this.configInstance.projectRootPath, wildcard))))
+    // }
+    // return files
   }
 
   public async getAllFilesForPattern(pattern: string): Promise<string[]> {
@@ -69,27 +70,30 @@ export class Context {
   }
 
   public async getAllMetadataFiles(): Promise<string[]> {
-    const files: string[] = []
+    // const files: string[] = []
     const wildcards = [this.configInstance.metadataWildcard(true), this.configInstance.metadataWildcard(false)]
-    for (const wildcard of wildcards) {
-      files.push(...(await this.fsUtils.globPromise(path.join(this.configInstance.projectRootPath, wildcard))))
-    }
-    return files
+    // for (const wildcard of wildcards) {
+    //   files.push(...(await this.fsUtils.globPromise(path.join(this.configInstance.projectRootPath, wildcard))))
+    // }
+    // return files
+    return this.getAllFilesForWildcards(wildcards)
   }
 
   public async getAllFilesForOneType(isAtNumbered: boolean, refresh = false): Promise<string[]> {
     const existingFiles = isAtNumbered ? this._allAtNumberedFiles : this._allNormalFiles
 
     if (existingFiles === null || refresh) {
-      const files: string[] = []
+      // const files: string[] = []
       const wildcards = [
         this.configInstance.chapterWildcard(isAtNumbered),
         this.configInstance.metadataWildcard(isAtNumbered),
         this.configInstance.summaryWildcard(isAtNumbered)
       ]
-      for (const wildcard of wildcards) {
-        files.push(...(await this.fsUtils.globPromise(path.join(this.configInstance.projectRootPath, wildcard))))
-      }
+      const files = await this.getAllFilesForWildcards(wildcards)
+
+      // for (const wildcard of wildcards) {
+      //   files.push(...(await this.fsUtils.globPromise(path.join(this.configInstance.projectRootPath, wildcard))))
+      // }
 
       if (isAtNumbered) {
         this._allAtNumberedFiles = files
@@ -180,10 +184,11 @@ export class Context {
   }
 
   public async getMetadataFilenameFromParameters(num: number, atNumbering: boolean): Promise<string> {
-    const files = await this.fsUtils.globPromise(path.join(this.configInstance.projectRootPath, this.configInstance.metadataWildcardWithNumber(num, atNumbering)))
+    const files = await this.fsUtils.globPromise(
+      path.join(this.configInstance.projectRootPath, this.configInstance.metadataWildcardWithNumber(num, atNumbering))
+    )
     return files[0]
   }
-
 
   public async updateStackStatistics(atNumbers: boolean): Promise<void> {
     const files = await this.getAllNovelFiles()
@@ -230,8 +235,6 @@ export class Context {
     }
   }
 
-  
-  //TODO: make all other functions use this one
   private async getAllFilesForWildcards(wildcards: string[]): Promise<string[]> {
     const files: string[] = []
     for (const wildcard of wildcards) {
