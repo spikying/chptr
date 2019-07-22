@@ -1,11 +1,11 @@
 import * as d from 'debug'
-import * as fs from 'fs'
 import * as path from 'path'
 
-import { globPromise, numDigits, stringifyNumber } from './commands/base'
+import { numDigits, stringifyNumber } from './commands/base'
+import { FsUtils } from './fs-utils';
 import { SoftConfig } from './soft-config'
 
-const debug = d('context')
+const debug = d('config:context')
 
 interface NovelStatistics {
   atNumberStack: StackStatistics
@@ -25,6 +25,7 @@ const nullStackStats: StackStatistics = {
 //TODO: move functions where they belong: base.ts, initialized-base.ts, softConfig?
 export class Context {
   private readonly configInstance: SoftConfig
+  private readonly fsUtils: FsUtils
 
   // private _allNovelFiles: string[] | null = null
   private _allNormalFiles: string[] | null = null
@@ -35,6 +36,7 @@ export class Context {
   constructor(configInstance: SoftConfig) {
     debug(`New Context instance`)
     this.configInstance = configInstance
+    this.fsUtils = new FsUtils
   }
 
   public mapFileToBeRelativeToRootPath(file: string): string {
@@ -56,7 +58,7 @@ export class Context {
       this.configInstance.summaryWildcardWithNumber(num, isAtNumbered)
     ]
     for (const wildcard of wildcards) {
-      files.push(...(await globPromise(path.join(this.configInstance.projectRootPath, wildcard))))
+      files.push(...(await this.fsUtils.globPromise(path.join(this.configInstance.projectRootPath, wildcard))))
     }
     return files
   }
@@ -70,7 +72,7 @@ export class Context {
     const files: string[] = []
     const wildcards = [this.configInstance.metadataWildcard(true), this.configInstance.metadataWildcard(false)]
     for (const wildcard of wildcards) {
-      files.push(...(await globPromise(path.join(this.configInstance.projectRootPath, wildcard))))
+      files.push(...(await this.fsUtils.globPromise(path.join(this.configInstance.projectRootPath, wildcard))))
     }
     return files
   }
@@ -86,7 +88,7 @@ export class Context {
         this.configInstance.summaryWildcard(isAtNumbered)
       ]
       for (const wildcard of wildcards) {
-        files.push(...(await globPromise(path.join(this.configInstance.projectRootPath, wildcard))))
+        files.push(...(await this.fsUtils.globPromise(path.join(this.configInstance.projectRootPath, wildcard))))
       }
 
       if (isAtNumbered) {
@@ -178,18 +180,10 @@ export class Context {
   }
 
   public async getMetadataFilenameFromParameters(num: number, atNumbering: boolean): Promise<string> {
-    const files = await globPromise(path.join(this.configInstance.projectRootPath, this.configInstance.metadataWildcardWithNumber(num, atNumbering)))
+    const files = await this.fsUtils.globPromise(path.join(this.configInstance.projectRootPath, this.configInstance.metadataWildcardWithNumber(num, atNumbering)))
     return files[0]
   }
 
-  // TODO : make async / await
-  public getBuildDirectory(): string {
-    const buildDirectory = path.join(this.configInstance.projectRootPath, this.configInstance.buildDirectory)
-    if (!fs.existsSync(buildDirectory)) {
-      fs.mkdirSync(buildDirectory)
-    }
-    return buildDirectory
-  }
 
   public async updateStackStatistics(atNumbers: boolean): Promise<void> {
     const files = await this.getAllNovelFiles()
@@ -241,7 +235,7 @@ export class Context {
   private async getAllFilesForWildcards(wildcards: string[]): Promise<string[]> {
     const files: string[] = []
     for (const wildcard of wildcards) {
-      files.push(...(await globPromise(path.join(this.configInstance.projectRootPath, wildcard))))
+      files.push(...(await this.fsUtils.globPromise(path.join(this.configInstance.projectRootPath, wildcard))))
     }
     return files
   }

@@ -5,7 +5,7 @@ import * as path from 'path'
 
 import { QueryBuilder } from '../queries'
 
-import { copyFile, d, moveFile, writeFile } from './base'
+import { d } from './base'
 import Command from './initialized-base'
 
 const debug = d('command:antidote')
@@ -54,7 +54,7 @@ export default class Antidote extends Command {
     const antidoteFilePath = this.hardConfig.antidotePathName(chapterFileName)
 
     cli.action.start(`Launching Antidote with ${antidoteFilePath}`.actionStartColor())
-    await copyFile(basicFilePath, antidoteFilePath)
+    await this.fsUtils.copyFile(basicFilePath, antidoteFilePath)
     await this.processUTF8BOMandContent(antidoteFilePath)
     // await this.processFileBack(antidoteFilePath)
     // await this.processFile(antidoteFilePath)
@@ -75,7 +75,7 @@ export default class Antidote extends Command {
     await this.processFileBackFromAntidote(antidoteFilePath)
     // await this.processFileBack(antidoteFilePath)
     // await this.processFile(antidoteFilePath)
-    await moveFile(antidoteFilePath, basicFilePath)
+    await this.fsUtils.moveFile(antidoteFilePath, basicFilePath)
 
     if (queryResponses2.message !== 'cancel') {
       const toStageFiles = await this.GetGitListOfStageableFiles(chapterNumber, isAtNumber)
@@ -145,7 +145,7 @@ export default class Antidote extends Command {
       replacedContent = this.processContent(this.processContentBack(replacedContent))
 
       debug(`Processed back antidote content: \n${replacedContent.substring(0, 250)}`)
-      await writeFile(filepath, replacedContent)
+      await this.fsUtils.writeFile(filepath, replacedContent)
     } catch (err) {
       this.error(err.toString().errorColor())
       this.exit(1)
@@ -163,7 +163,7 @@ export default class Antidote extends Command {
 
       replacedContent = await this.processContentForAntidote(this.processContent(this.processContentBack(replacedContent)))
 
-      await writeFile(filepath, replacedContent)
+      await this.fsUtils.writeFile(filepath, replacedContent)
     } catch (err) {
       this.error(err.toString().errorColor())
       this.exit(1)

@@ -201,6 +201,8 @@ OPTIONS
 
   -r, --gitRemote=gitRemote  Git address of remote repository.
 
+  -s, --style=YAML|JSON5|    Config files in JSON5 or YAML?
+
 ALIASES
   $ chptr setup
 ```

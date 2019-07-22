@@ -4,7 +4,7 @@ import * as path from 'path'
 
 import { QueryBuilder } from '../queries'
 
-import { d, globPromise, sanitizeFileName, stringifyNumber, writeFile } from './base'
+import { d, sanitizeFileName, stringifyNumber } from './base'
 import Command from './initialized-base'
 
 const debug = d('command:rename')
@@ -61,13 +61,13 @@ export default class Rename extends Command {
 
     cli.action.start('Renaming files'.actionStartColor())
 
-    const chapterFile = (await globPromise(
+    const chapterFile = (await this.fsUtils.globPromise(
       path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcardWithNumber(num, isAtNumbering))
     ))[0]
-    const summaryFile = (await globPromise(
+    const summaryFile = (await this.fsUtils.globPromise(
       path.join(this.configInstance.projectRootPath, this.configInstance.summaryWildcardWithNumber(num, isAtNumbering))
     ))[0]
-    const metadataFile = (await globPromise(
+    const metadataFile = (await this.fsUtils.globPromise(
       path.join(this.configInstance.projectRootPath, this.configInstance.metadataWildcardWithNumber(num, isAtNumbering))
     ))[0]
 
@@ -133,7 +133,7 @@ export default class Rename extends Command {
     const initialContent = await this.readFileContent(actualFile)
     const replacedContent = initialContent.replace(this.titleRegex, `\n# ${newTitle}\n`)
     if (initialContent !== replacedContent) {
-      await writeFile(actualFile, replacedContent)
+      await this.fsUtils.writeFile(actualFile, replacedContent)
       return true
     }
     return false
@@ -149,7 +149,7 @@ export default class Rename extends Command {
     const updatedContent = JSON.stringify(obj, null, 4)
 
     if (initialContent !== updatedContent) {
-      await writeFile(metadataFile, updatedContent)
+      await this.fsUtils.writeFile(metadataFile, updatedContent)
       return true
     } else {
       return false

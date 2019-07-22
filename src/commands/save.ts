@@ -5,7 +5,7 @@ import * as path from 'path'
 
 import { QueryBuilder } from '../queries'
 
-import { d, fileExists } from './base'
+import { d } from './base'
 import Command from './initialized-base'
 
 const debug = d('command:save')
@@ -81,7 +81,7 @@ export default class Save extends Command {
 
     if (toStageFiles.length === 0) {
       const filepath = path.join(this.configInstance.projectRootPath, flags.filename || '')
-      if (flags.filename && (await fileExists(filepath))) {
+      if (flags.filename && (await this.fsUtils.fileExists(filepath))) {
         if (flags.track) {
           toStageFiles.push(this.context.mapFileToBeRelativeToRootPath(filepath))
         } else {

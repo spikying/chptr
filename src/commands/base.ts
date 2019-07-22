@@ -1,56 +1,19 @@
 import { Command, flags } from '@oclif/command'
 import { cli } from 'cli-ux'
 import * as deb from 'debug'
-import * as fs from 'fs'
-import * as glob from 'glob'
 import * as latinize from 'latinize'
 import * as notifier from 'node-notifier'
 import * as path from 'path'
 import * as sanitize from 'sanitize-filename'
 import * as simplegit from 'simple-git/promise'
-import { promisify } from 'util'
+// import { promisify } from 'util'
 
+import { FsUtils } from '../fs-utils';
 import { HardConfig } from '../hard-config'
 
-export const readFileBuffer = promisify(fs.readFile)
-export const writeInFile = promisify(fs.write)
-export const copyFile = promisify(fs.copyFile)
-export const moveFile = promisify(fs.rename)
-export const listFiles = promisify(glob)
-export const createDir = promisify(fs.mkdir)
-export const deleteDir = promisify(fs.rmdir)
-export const deleteFile = promisify(fs.unlink)
-export const mkdtemp = promisify(fs.mkdtemp)
-export const fileStat = async function(path: fs.PathLike): Promise<{ path: fs.PathLike; stats: fs.Stats }> {
-  return new Promise((resolve, reject) => {
-    fs.stat(path, (err, stats) => {
-      if (err) {
-        reject(err)
-      } else {
-        resolve({ path, stats })
-      }
-    })
-  })
-}
-
-export const fileExists = async function(path: fs.PathLike): Promise<boolean> {
-  return new Promise(resolve => {
-    fs.access(path, err => {
-      if (err) {
-        resolve(false)
-      } else {
-        resolve(true)
-      }
-    })
-  })
-}
-export const writeFile = async function(path: string, data: string) {
-  const wf = promisify(fs.writeFile)
-  return wf(path, data, 'utf8')
-}
-export const globPromise = promisify(glob)
 
 export const d = deb
+
 const chalk: any = require('chalk')
 String.prototype.color = function(colorName: string) {
   return chalk[colorName](this)
@@ -89,6 +52,9 @@ export default abstract class extends Command {
   public get hardConfig(): HardConfig {
     return this._hardConfig as HardConfig
   }
+  public get fsUtils(): FsUtils{
+    return this._fsUtils as FsUtils
+  }
 
   static flags = {
     help: flags.help({ char: 'h' }),
@@ -108,6 +74,7 @@ export default abstract class extends Command {
   private _rootPath = ''
   private _git: simplegit.SimpleGit | undefined
   private _hardConfig: HardConfig | undefined
+  private _fsUtils: FsUtils | undefined
 
   async init() {
     debug('Base init')
@@ -115,6 +82,7 @@ export default abstract class extends Command {
     const dir = path.join(flags.path as string)
     this._rootPath = dir
     this._hardConfig = new HardConfig(dir)
+    this._fsUtils = new FsUtils()
   }
 
   async catch(err: Error) {
@@ -138,17 +106,18 @@ export default abstract class extends Command {
     let tempDir = ''
     try {
       const tempPrefix = 'temp'
-      tempDir = await mkdtemp(path.join(this._rootPath, tempPrefix))
+      tempDir = await this.fsUtils.mkdtemp(path.join(this._rootPath, tempPrefix))
       debug(`Created temp dir: ${tempDir}`)
     } catch (err) {
       cli.error(err.toString().errorColor())
       cli.exit(1)
     }
 
+    const delDirFct = this.fsUtils.deleteDir
     const removeTempDir = async function() {
       try {
         debug(`Deleting temp dir: ${tempDir}`)
-        await deleteDir(tempDir)
+        await delDirFct(tempDir)
       } catch (err) {
         cli.error(err.toString().errorColor())
         cli.exit(1)
@@ -194,44 +163,8 @@ export default abstract class extends Command {
     return returnObj
   }
 
-  public async createSubDirectoryIfNecessary(fullFilePath: string): Promise<string | null> {
-    const mkdirp = require('mkdirp')
 
-    return new Promise((resolve, reject) => {
-      const directoryPath = path.dirname(fullFilePath)
-      mkdirp(directoryPath, (err:any, made:any) => {
-        if (err) {
-          debug(err)
-          reject(err)
-        }
-        resolve(made)
-      })
-    })
-
-    // const directoryExists = await fileExists(directoryPath)
-    // debug(`directoryPath:${directoryPath}\ndirectoryExists:${directoryExists}`)
-    // if (!directoryExists) {
-    //   try {
-    //     await createDir(directoryPath)
-    //  return directoryPath
-    //   } catch {}
-    // }
-    // return null
-  }
-
-  public async createFile(fullPathName: string, content: string) {
-    await this.createSubDirectoryIfNecessary(fullPathName)
-
-    const createFile = promisify(fs.writeFile)
-    try {
-      await createFile(fullPathName, content, { encoding: 'utf8' })
-    } catch (err) {
-      this.error(err.toString().errorColor())
-      this.exit(1)
-    } finally {
-      cli.info(`Created ${fullPathName.resultHighlighColor()}`.resultNormalColor())
-    }
-  }
+  
 }
 
 export const numDigits = function(x: number, buffer = 2) {

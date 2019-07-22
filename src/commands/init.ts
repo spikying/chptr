@@ -1,13 +1,12 @@
 import { flags } from '@oclif/command'
 import { cli } from 'cli-ux'
-// import * as fs from 'fs'
 import * as path from 'path'
 import * as validator from 'validator'
 
 import { QueryBuilder } from '../queries'
 import { Author, SoftConfig } from '../soft-config'
 
-import Command, { createDir, d, fileExists } from './base'
+import Command, {  d } from './base'
 
 const debug = d('command:init')
 
@@ -72,7 +71,7 @@ export default class Init extends Command {
 
     // Create folder structure, with /config
     try {
-      await createDir(this.hardConfig.configPath)
+      await this.fsUtils.createDir(this.hardConfig.configPath)
       cli.info(`Created directory ${this.hardConfig.configPath.resultHighlighColor()}`.resultNormalColor())
     } catch {
       // If directory already exists, silently swallow the error
@@ -99,8 +98,8 @@ export default class Init extends Command {
       }
     }
 
-    const hasYAMLConfigFile = await fileExists(this.hardConfig.configYAMLFilePath)
-    const hasJSON5ConfigFile = await fileExists(this.hardConfig.configJSON5FilePath)
+    const hasYAMLConfigFile = await this.fsUtils.fileExists(this.hardConfig.configYAMLFilePath)
+    const hasJSON5ConfigFile = await this.fsUtils.fileExists(this.hardConfig.configJSON5FilePath)
     let existingStyle = ''
     if (hasJSON5ConfigFile) {
       existingStyle = 'JSON5'
@@ -224,7 +223,7 @@ export default class Init extends Command {
     const table = this.tableize('file', '')
     for (const operation of allConfigOperations) {
       const forceConfig = forceAll || force === path.basename(operation.fullPathName)
-      if (!forceConfig && (await fileExists(operation.fullPathName))) {
+      if (!forceConfig && (await this.fsUtils.fileExists(operation.fullPathName))) {
         if (!force) {
           table.accumulator(
             `${operation.fullPathName.resultNormalColor()} already exists.`.infoColor(),
@@ -239,7 +238,7 @@ export default class Init extends Command {
     //create files that were validated
     const allConfigPromises: Promise<void>[] = []
     allConfigFiles.forEach(cf => {
-      allConfigPromises.push(this.createFile(cf.fullPathName, cf.content))
+      allConfigPromises.push(this.fsUtils.createFile(cf.fullPathName, cf.content))
     })
     await Promise.all(allConfigPromises)
 

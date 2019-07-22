@@ -5,7 +5,7 @@ import * as path from 'path'
 
 import { QueryBuilder } from '../queries'
 
-import { d, listFiles } from './base'
+import { d } from './base'
 import Command from './initialized-base'
 
 const debug = d('command:delete')
@@ -71,7 +71,7 @@ export default class Delete extends Command {
       //   filePattern = nameOrNumber
       // }
       const pathName = path.join(this.configInstance.projectRootPath, filePattern)
-      toDeleteFiles.push(...(await listFiles(pathName)))
+      toDeleteFiles.push(...(await this.fsUtils.listFiles(pathName)))
     } else {
       // we will delete all files matching the number patterns for chapters, metadata and summary
       const filterNumber = this.context.extractNumber(nameOrNumber)
@@ -88,7 +88,7 @@ export default class Delete extends Command {
 
       for (const gp of globPatterns) {
         const pathName = path.join(this.configInstance.projectRootPath, gp)
-        toDeleteFiles.push(...(await listFiles(pathName)))
+        toDeleteFiles.push(...(await this.fsUtils.listFiles(pathName)))
       }
     }
 

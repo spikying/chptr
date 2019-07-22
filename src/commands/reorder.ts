@@ -3,7 +3,7 @@ import { cli } from 'cli-ux'
 import * as path from 'path'
 import { MoveSummary } from 'simple-git/typings/response'
 
-import { createDir, d, fileExists } from './base'
+import {  d } from './base'
 import Command from './initialized-base'
 
 const debug = d('command:reorder')
@@ -167,10 +167,10 @@ export default class Reorder extends Command {
 
         // TODO: Use this.createSubDirectoryIfNecessary
         const directoryPath = path.dirname(path.join(tempDir, fromFilename))
-        const directoryExists = await fileExists(directoryPath)
+        const directoryExists = await this.fsUtils.fileExists(directoryPath)
         if (!directoryExists) {
           try {
-            await createDir(directoryPath)
+            await this.fsUtils.createDir(directoryPath)
           } catch {}
         }
 
@@ -202,11 +202,11 @@ export default class Reorder extends Command {
 
         // TODO: Use this.createSubDirectoryIfNecessary
         const directoryPath = path.dirname(path.join(this.configInstance.projectRootPath, toFilename))
-        const directoryExists = await fileExists(directoryPath)
+        const directoryExists = await this.fsUtils.fileExists(directoryPath)
         debug(`directoryPath=${directoryPath} directoryExists=${directoryExists}`)
         if (!directoryExists) {
           try {
-            await createDir(directoryPath)
+            await this.fsUtils.createDir(directoryPath)
           } catch {}
         }
 

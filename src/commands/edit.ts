@@ -4,7 +4,7 @@ import * as path from 'path'
 
 import { QueryBuilder } from '../queries'
 
-import { d, globPromise, writeFile } from './base'
+import { d } from './base'
 import Command from './initialized-base'
 
 const debug = d('command:edit')
@@ -67,12 +67,12 @@ export default class Edit extends Command {
 
       if (editType === 'all' || editType === 'chapter') {
         toEditFiles.push(
-          ...(await globPromise(path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcardWithNumber(num, isAtNumbering))))
+          ...(await this.fsUtils.globPromise(path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcardWithNumber(num, isAtNumbering))))
         )
       }
       if (editType === 'all' || editType === 'summary') {
         toEditFiles.push(
-          ...(await globPromise(path.join(this.configInstance.projectRootPath, this.configInstance.summaryWildcardWithNumber(num, isAtNumbering))))
+          ...(await this.fsUtils.globPromise(path.join(this.configInstance.projectRootPath, this.configInstance.summaryWildcardWithNumber(num, isAtNumbering))))
         )
       }
     }
@@ -89,7 +89,7 @@ export default class Edit extends Command {
       try {
       const initialContent = await this.readFileContent(fullPath)
       const replacedContent = await this.processContentBack(initialContent)
-        await writeFile(fullPath, replacedContent)
+        await this.fsUtils.writeFile(fullPath, replacedContent)
       } catch (err) {
         this.error(err.toString().errorColor())
         this.exit(1)

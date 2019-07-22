@@ -10,7 +10,7 @@ import { MoveSummary } from 'simple-git/typings/response'
 import { Context } from '../context'
 import { SoftConfig } from '../soft-config'
 
-import Command, { d, deleteDir, fileExists, globPromise, moveFile, readFileBuffer, sanitizeFileName, writeFile } from './base'
+import Command, { d, sanitizeFileName } from './base'
 const debug = d('command:initialized-base')
 
 export default abstract class extends Command {
@@ -50,9 +50,9 @@ export default abstract class extends Command {
       throw new Error('Directory is not a repository')
     }
 
-    const hasConfigFolder = await fileExists(this.hardConfig.configPath)
-    const hasConfigJSON5File = await fileExists(this.hardConfig.configJSON5FilePath)
-    const hasConfigYAMLFile = await fileExists(this.hardConfig.configYAMLFilePath)
+    const hasConfigFolder = await this.fsUtils.fileExists(this.hardConfig.configPath)
+    const hasConfigJSON5File = await this.fsUtils.fileExists(this.hardConfig.configJSON5FilePath)
+    const hasConfigYAMLFile = await this.fsUtils.fileExists(this.hardConfig.configYAMLFilePath)
 
     if (!hasConfigFolder || !(hasConfigJSON5File || hasConfigYAMLFile)) {
       throw new Error('Directory was not initialized.  Run `init` command.')
@@ -71,11 +71,11 @@ export default abstract class extends Command {
     await this.deleteEmptySubDirectories()
   }
 
+  //TODO: move to fsUtils and put readFileBuffer in private
   public async readFileContent(filepath: string): Promise<string> {
     try {
-      const buff = await readFileBuffer(filepath)
-      const content = await buff.toString('utf8', 0, buff.byteLength)
-      // debug(`Reading filepath: ${filepath}\nContent:\n${content}`)
+      const buff = await this.fsUtils.readFileBuffer(filepath)
+      const content = await buff.toString('utf8', 0, buff.byteLength)      
       return content
     } catch {
       return ''
@@ -185,7 +185,7 @@ export default abstract class extends Command {
   public async processChapterFilesBeforeSaving(toStageFiles: string[]): Promise<void> {
     for (const filename of toStageFiles) {
       const fullPath = path.join(this.configInstance.projectRootPath, filename)
-      const exists = await fileExists(fullPath)
+      const exists = await this.fsUtils.fileExists(fullPath)
       if (
         exists &&
         (this.configInstance.chapterRegex(false).test(this.context.mapFileToBeRelativeToRootPath(fullPath)) ||
@@ -194,7 +194,7 @@ export default abstract class extends Command {
         try {
           const initialContent = await this.readFileContent(fullPath)
           const replacedContent = this.processContent(this.processContentBack(initialContent))
-          await writeFile(fullPath, replacedContent)
+          await this.fsUtils.writeFile(fullPath, replacedContent)
         } catch (err) {
           this.error(err.toString().errorColor())
           this.exit(1)
@@ -293,14 +293,14 @@ export default abstract class extends Command {
       const metadataFilename = await this.context.getMetadataFilenameFromParameters(num, isAt)
       const metadataFilePath = path.join(this.configInstance.projectRootPath, metadataFilename)
       const initialContent = await this.readFileContent(metadataFilePath)
-      
+
       const obj = JSON.parse(initialContent)
       obj.extracted = extractedMarkup
       obj.computed = computedMarkup
 
       const updatedContent = JSON.stringify(obj, null, 4)
       if (initialContent !== updatedContent) {
-        await writeFile(metadataFilePath, updatedContent)
+        await this.fsUtils.writeFile(metadataFilePath, updatedContent)
         //todo: move to deep-diff?
         modifiedFiles.push({
           file: metadataFilePath,
@@ -366,7 +366,7 @@ export default abstract class extends Command {
     for (const b of [true, false]) {
       const wildcards = [this.configInstance.chapterWildcard(b), this.configInstance.metadataWildcard(b), this.configInstance.summaryWildcard(b)]
       for (const wildcard of wildcards) {
-        const files = await globPromise(path.join(this.configInstance.projectRootPath, wildcard))
+        const files = await this.fsUtils.globPromise(path.join(this.configInstance.projectRootPath, wildcard))
 
         const organizedFiles: any[] = []
         for (const file of files) {
@@ -414,11 +414,11 @@ export default abstract class extends Command {
 
   public async deleteEmptySubDirectories(): Promise<string[]> {
     // debug(`configInstance=${JSON.stringify(this.configInstance, null, 2)}`)
-    const allDirs = await globPromise('**/', { cwd: this.configInstance.projectRootPath })
+    const allDirs = await this.fsUtils.globPromise('**/', { cwd: this.configInstance.projectRootPath })
     // debug(`allDirs=${allDirs}`)
     const emptyDirs: string[] = []
     for (const subDir of allDirs) {
-      const filesOfSubDir = await globPromise('**', { cwd: path.join(this.configInstance.projectRootPath, subDir) })
+      const filesOfSubDir = await this.fsUtils.globPromise('**', { cwd: path.join(this.configInstance.projectRootPath, subDir) })
       // debug(`subDir=${subDir} filesOfSubDir=${filesOfSubDir}`)
       if (filesOfSubDir.length === 0) {
         emptyDirs.push(subDir)
@@ -426,7 +426,7 @@ export default abstract class extends Command {
     }
     // debug(`EmptyDirs=${emptyDirs}`)
     for (const subDir of emptyDirs) {
-      await deleteDir(path.join(this.configInstance.projectRootPath, subDir))
+      await this.fsUtils.deleteDir(path.join(this.configInstance.projectRootPath, subDir))
     }
     return emptyDirs
   }
@@ -456,7 +456,7 @@ export default abstract class extends Command {
           })
           // debug(`diffs=${JSON.stringify(diffs)}`)
           // debug(`modified obj = ${JSON.stringify(replacedObj)}`)
-          await writeFile(file, JSON.stringify(replacedObj, null, 4))
+          await this.fsUtils.writeFile(file, JSON.stringify(replacedObj, null, 4))
         }
       } catch (err) {
         debug(err.toString().errorColor())
@@ -506,7 +506,7 @@ export default abstract class extends Command {
 
         // debug(`num:${num} name:${name} file:${file}\nrootedFile:${rootedFile} renamedFile:${renamedFile}`)
 
-        await this.createSubDirectoryIfNecessary(path.join(this.configInstance.projectRootPath, renamedFile))
+        await this.fsUtils.createSubDirectoryIfNecessary(path.join(this.configInstance.projectRootPath, renamedFile))
 
         result = true
         movePromises.push(this.git.mv(rootedFile, renamedFile))
@@ -516,6 +516,14 @@ export default abstract class extends Command {
     await Promise.all(movePromises)
     return result
   }
+
+  public async getBuildDirectoryAndCreateIfNecessary(): Promise<string> {
+    const buildDirectory = this.configInstance.buildDirectory
+    
+    await this.fsUtils.createSubDirectoryIfNecessary(path.join(this.configInstance.buildDirectory, 'config.file') )
+    return buildDirectory
+  }
+
 
   public async MoveToNewBuildDirectory(): Promise<void> {
     const { lastConfigObj, actualConfigObj } = await this.getLastAndActualConfigObjects()
@@ -537,18 +545,18 @@ export default abstract class extends Command {
     })
 
     if (oldDir !== newDir) {
-      const files = await globPromise(path.join(this.configInstance.projectRootPath, oldDir, '**/*.*'))
+      const files = await this.fsUtils.globPromise(path.join(this.configInstance.projectRootPath, oldDir, '**/*.*'))
       debug(`move to new build dir : files=${files}`)
-      await this.createSubDirectoryIfNecessary(path.join(this.configInstance.projectRootPath, newDir, 'futureBuildDir.txt'))
+      await this.fsUtils.createSubDirectoryIfNecessary(path.join(this.configInstance.projectRootPath, newDir, 'futureBuildDir.txt'))
 
       for (const file of files) {
         const newFile = path.relative(path.join(this.configInstance.projectRootPath, oldDir), file)
-        await moveFile(file, path.join(this.configInstance.projectRootPath, newDir, newFile))
+        await this.fsUtils.moveFile(file, path.join(this.configInstance.projectRootPath, newDir, newFile))
       }
 
       const gitIgnoreContent = await this.readFileContent(this.hardConfig.gitignoreFilePath)
       const newGitIgnoreContent = gitIgnoreContent.replace(oldDir, newDir.replace(/\\/g, '/'))
-      await writeFile(this.hardConfig.gitignoreFilePath, newGitIgnoreContent)
+      await this.fsUtils.writeFile(this.hardConfig.gitignoreFilePath, newGitIgnoreContent)
     }
   }
 
@@ -575,7 +583,7 @@ export default abstract class extends Command {
       const oldReadmeContent = await this.readFileContent(this.hardConfig.readmeFilePath)
       if (oldTitle === (await this.extractTitleFromString(oldReadmeContent))) {
         const newReadmeContent = oldReadmeContent.replace(this.titleRegex, `\n# ${newTitle}\n`)
-        await writeFile(this.hardConfig.readmeFilePath, newReadmeContent)
+        await this.fsUtils.writeFile(this.hardConfig.readmeFilePath, newReadmeContent)
       }
     }
   }
@@ -656,7 +664,7 @@ export default abstract class extends Command {
         // )
         if (fromFilename !== toFilename) {
           // debug(`renaming with new file number "${fromFilename}" to "${toFilename}"`.infoColor())
-          await this.createSubDirectoryIfNecessary(path.join(this.configInstance.projectRootPath, toFilename))
+          await this.fsUtils.createSubDirectoryIfNecessary(path.join(this.configInstance.projectRootPath, toFilename))
           table.accumulator(fromFilename, toFilename)
           promises.push(this.git.mv(fromFilename, toFilename))
           hasMadeChanges = true

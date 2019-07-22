@@ -1,14 +1,13 @@
 import { flags } from '@oclif/command'
 import { exec } from 'child_process'
 import cli from 'cli-ux'
-import * as fs from 'fs'
 import * as moment from 'moment'
 import * as path from 'path'
 import { file as tmpFile } from 'tmp-promise'
 
 import { QueryBuilder } from '../queries'
 
-import { createDir, d, globPromise, sanitizeFileName, writeFile, writeInFile } from './base'
+import {  d,  sanitizeFileName } from './base'
 import Command, { MarkupObj } from './initialized-base'
 
 const debug = d('command:build')
@@ -91,22 +90,22 @@ export default class Build extends Command {
     debug(`temp files = ${tmpMDfile.path} and ${tmpMDfileTex.path}`)
 
     try {
-      await createDir(this.configInstance.buildDirectory)
+      await this.fsUtils.createDir(this.configInstance.buildDirectory)
     } catch {}
 
     try {
-      const originalChapterFilesArray = (await globPromise(path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcard(false)))).sort()
+      const originalChapterFilesArray = (await this.fsUtils.globPromise(path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcard(false)))).sort()
 
       const allChapterFilesArray = originalChapterFilesArray.concat(
-        await globPromise(path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcard(true)))
+        await this.fsUtils.globPromise(path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcard(true)))
       )
 
       await this.extractGlobalMetadata(allChapterFilesArray, outputFile)
 
       cli.info('Extracting metadata for all chapters files'.actionStartColor())
 
-      const allMetadataFilesArray = (await globPromise(path.join(this.configInstance.projectRootPath, this.configInstance.metadataWildcard(false)))).concat(
-        await globPromise(path.join(this.configInstance.projectRootPath, this.configInstance.metadataWildcard(true)))
+      const allMetadataFilesArray = (await this.fsUtils.globPromise(path.join(this.configInstance.projectRootPath, this.configInstance.metadataWildcard(false)))).concat(
+        await this.fsUtils.globPromise(path.join(this.configInstance.projectRootPath, this.configInstance.metadataWildcard(true)))
       )
 
       const metaExtractPromises: Promise<MetaObj[]>[] = []
@@ -134,7 +133,7 @@ export default class Build extends Command {
             csvContent += `${m.date};${chapterNumber};${m.diff}\n`
           })
           const writingRateFilePath = path.join(this.configInstance.buildDirectory, 'writingRate.csv')
-          await writeFile(writingRateFilePath, csvContent)
+          await this.fsUtils.writeFile(writingRateFilePath, csvContent)
           cli.action.stop(`Created ${writingRateFilePath}`.actionStopColor())
         }
 
@@ -184,16 +183,17 @@ export default class Build extends Command {
         fullOriginalContent += '\n' + (await this.readFileContent(file))
       }
       const fullCleanedOrTransformedContent = removeMarkup ? this.cleanMarkupContent(fullOriginalContent) : this.transformMarkupContent(fullOriginalContent)
-      await writeInFile(tmpMDfile.fd, fullCleanedOrTransformedContent)
-      await writeInFile(tmpMDfileTex.fd, fullCleanedOrTransformedContent.replace(/^\*\s?\*\s?\*$/gm, '\\asterism'))
+      await this.fsUtils.writeInFile(tmpMDfile.fd, fullCleanedOrTransformedContent)
+      await this.fsUtils.writeInFile(tmpMDfileTex.fd, fullCleanedOrTransformedContent.replace(/^\*\s?\*\s?\*$/gm, '\\asterism'))
 
       let chapterFiles = '"' + tmpMDfile.path + '" '
 
       const pandocRuns: Promise<void>[] = []
       const allOutputFilePath: string[] = []
-      const buildDirectory = this.context.getBuildDirectory()
+      const buildDirectory = await this.getBuildDirectoryAndCreateIfNecessary()
 
-      outputFiletype.forEach(filetype => {
+      for (const filetype of outputFiletype) {
+      // outputFiletype.forEach(filetype => {
         const fullOutputFilePath = path.join(buildDirectory, outputFile + '.' + filetype)
         allOutputFilePath.push(fullOutputFilePath)
 
@@ -205,7 +205,7 @@ export default class Build extends Command {
 
         if (filetype === 'docx') {
           const referenceDocFullPath = path.join(this.hardConfig.configPath, 'reference.docx')
-          if (fs.existsSync(referenceDocFullPath)) {
+          if (await this.fsUtils.fileExists(referenceDocFullPath)) {
             pandocArgs = pandocArgs.concat([`--reference-docx="${referenceDocFullPath}"`])
           } else {
             this.warn(`For a better output, create an empty styled Word doc at ${referenceDocFullPath}`)
@@ -215,14 +215,14 @@ export default class Build extends Command {
 
         if (filetype === 'html') {
           const templateFullPath = path.join(this.hardConfig.configPath, 'template.html')
-          if (fs.existsSync(templateFullPath)) {
+          if (await this.fsUtils.fileExists(templateFullPath)) {
             pandocArgs = pandocArgs.concat([`--template`, `"${templateFullPath}"`])
           } else {
             this.warn(`For a better output, create an html template at ${templateFullPath}`)
           }
 
           const cssFullPath = path.join(this.hardConfig.configPath, 'template.css')
-          if (fs.existsSync(cssFullPath)) {
+          if (await this.fsUtils.fileExists(cssFullPath)) {
             pandocArgs = pandocArgs.concat([`--css`, `"${cssFullPath}"`])
           } else {
             this.warn(`For a better output, create a css template at ${cssFullPath}`)
@@ -244,7 +244,7 @@ export default class Build extends Command {
           chapterFiles = '"' + tmpMDfileTex.path + '" '
 
           const templateFullPath = path.join(this.hardConfig.configPath, 'template.latex')
-          if (fs.existsSync(templateFullPath)) {
+          if (this.fsUtils.fileExists(templateFullPath)) {
             pandocArgs = pandocArgs.concat([`--template`, `"${templateFullPath}"`])
           } else {
             this.warn(`For a better output, create a latex template at ${templateFullPath}`)
@@ -275,7 +275,7 @@ export default class Build extends Command {
           cli.action.status = 'error'.errorColor()
           this.exit(1)
         }
-      })
+      }
 
       await Promise.all(pandocRuns)
 
@@ -318,7 +318,7 @@ export default class Build extends Command {
         const existingMarkupContent = await this.readFileContent(markup.fullPath)
 
         if (existingMarkupContent !== JSON.stringify(markup.markupObj, null, 4)) {
-          await writeFile(markup.fullPath, JSON.stringify(markup.markupObj, null, 4))
+          await this.fsUtils.writeFile(markup.fullPath, JSON.stringify(markup.markupObj, null, 4))
           table.accumulator(this.context.mapFileToBeRelativeToRootPath(markup.fullPath), 'updated')
         }
       }

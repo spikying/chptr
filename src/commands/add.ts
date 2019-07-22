@@ -4,7 +4,7 @@ import * as path from 'path'
 
 import { getFilenameFromInput } from '../queries'
 
-import { d, listFiles, numDigits, stringifyNumber } from './base'
+import { d, numDigits, stringifyNumber } from './base'
 import Command from './initialized-base'
 
 const debug = d('command:add')
@@ -51,7 +51,7 @@ export default class Add extends Command {
       atNumbering = args.number.substring(0, 1) === '@'
       nextNumber = this.context.extractNumber(args.number)
 
-      const existingFile = await listFiles(
+      const existingFile = await this.fsUtils.listFiles(
         path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcardWithNumber(nextNumber, atNumbering))
       )
 
@@ -95,9 +95,9 @@ export default class Add extends Command {
       cli.action.start('Creating file(s) locally and to repository'.actionStartColor())
 
       const allPromises: Promise<void>[] = []
-      allPromises.push(this.createFile(fullPathMD, filledTemplateData))
-      allPromises.push(this.createFile(fullPathMeta, filledTemplateMeta))
-      allPromises.push(this.createFile(fullPathSummary, filledTemplateData))
+      allPromises.push(this.fsUtils.createFile(fullPathMD, filledTemplateData))
+      allPromises.push(this.fsUtils.createFile(fullPathMeta, filledTemplateMeta))
+      allPromises.push(this.fsUtils.createFile(fullPathSummary, filledTemplateData))
       await Promise.all(allPromises)
       cli.action.stop(
         // `Added\n    ${fullPathMD.resultNormalColor()}\n    ${fullPathSummary.resultNormalColor()}\n    ${fullPathMeta.resultNormalColor()}`.actionStopColor()
