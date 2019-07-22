@@ -2,31 +2,20 @@ import { cli } from 'cli-ux';
 import * as d from 'debug'
 import inquirer = require('inquirer')
 
-import { sanitizeFileName, sanitizeUrl } from './commands/base'
+import { FsUtils } from './fs-utils';
 
 const debug = d('ui-utils')
 
-// export const getFilenameFromInput = async (msg?: string, defaultValue?: string) => {
-//   const responses: any = await inquirer.prompt([
-//     {
-//       name: 'name',
-//       message: msg || 'What name do you want as a filename?',
-//       type: 'input',
-//       default: defaultValue || 'chapter',
-//       filter: sanitizeFileName
-//     }
-//   ])
-//   return responses.name
-// }
-
 export class QueryBuilder {
   private readonly allQueries: object[] = []
+  private readonly fsUtils: FsUtils
 
   constructor(withFuzzyPath = false) {
     debug(`New QueryBuilder instance`)
     if (withFuzzyPath) {
       inquirer.registerPrompt('fuzzypath', require('inquirer-fuzzy-path'))
     }
+    this.fsUtils = new FsUtils()
   }
 
   public add(name: string, params: object) {
@@ -61,7 +50,7 @@ export class QueryBuilder {
       message: msg || 'What name do you want as a filename?',
       type: 'input',
       default: defaultValue || 'chapter',
-      filter: sanitizeFileName
+      filter: this.fsUtils.sanitizeFileName
     }
     return obj
   }
@@ -70,7 +59,7 @@ export class QueryBuilder {
     const obj = {
       message: 'What is the git remote address?',
       type: 'input',
-      filter: sanitizeUrl
+      filter: this.fsUtils.sanitizeUrl
     }
     return obj
   }

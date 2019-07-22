@@ -4,7 +4,7 @@ import * as path from 'path'
 
 import { QueryBuilder } from '../ui-utils'
 
-import { d, numDigits, stringifyNumber } from './base'
+import { d } from './base'
 import Command from './initialized-base'
 
 const debug = d('command:add')
@@ -74,7 +74,7 @@ export default class Add extends Command {
       const highestNumber = this.statistics.getHighestNumber(atNumbering)
       nextNumber = highestNumber === 0 ? this.configInstance.config.numberingInitial : highestNumber + this.configInstance.config.numberingStep
     }
-    const newDigits = numDigits(nextNumber)
+    const newDigits = this.statistics.numDigits(nextNumber)
 
     const emptyFileString = this.configInstance.emptyFileString.toString()
     const filledTemplateData = emptyFileString.replace(/{TITLE}/gim, name)
@@ -85,17 +85,17 @@ export default class Add extends Command {
 
     const fullPathMD = path.join(
       this.configInstance.projectRootPath,
-      this.configInstance.chapterFileNameFromParameters(stringifyNumber(nextNumber, newDigits), name, atNumbering)
+      this.configInstance.chapterFileNameFromParameters(this.statistics.stringifyNumber(nextNumber, newDigits), name, atNumbering)
     )
 
     const fullPathMeta = path.join(
       this.configInstance.projectRootPath,
-      this.configInstance.metadataFileNameFromParameters(stringifyNumber(nextNumber, newDigits), name, atNumbering)
+      this.configInstance.metadataFileNameFromParameters(this.statistics.stringifyNumber(nextNumber, newDigits), name, atNumbering)
     )
 
     const fullPathSummary = path.join(
       this.configInstance.projectRootPath,
-      this.configInstance.summaryFileNameFromParameters(stringifyNumber(nextNumber, newDigits), name, atNumbering)
+      this.configInstance.summaryFileNameFromParameters(this.statistics.stringifyNumber(nextNumber, newDigits), name, atNumbering)
     )
 
     try {

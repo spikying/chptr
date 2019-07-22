@@ -1,6 +1,5 @@
 import * as d from 'debug'
 
-import { numDigits, stringifyNumber } from './commands/base'
 import { FsUtils } from './fs-utils'
 import { SoftConfig } from './soft-config'
 
@@ -30,11 +29,24 @@ export class Statistics {
 
   private readonly _allNovelStatistics: NovelStatistics = { atNumberStack: nullStackStats, normalStack: nullStackStats }
 
-
   constructor(configInstance: SoftConfig) {
     debug(`New Statistics instance`)
     this.configInstance = configInstance
     this.fsUtils = new FsUtils()
+  }
+
+  public numDigits(x: number, buffer = 2): number {
+    return Math.max(Math.floor(Math.log10(Math.abs(x + buffer))), 0) + 1
+  }
+
+  public stringifyNumber(x: number, digits: number): string {
+    const s = x.toString()
+    const zeroes = Math.max(digits - s.length, 0)
+    if (zeroes > 0) {
+      return '0'.repeat(zeroes).concat(s)
+    } else {
+      return s
+    }
   }
 
   public getHighestNumber(atNumberStack: boolean): number {
@@ -106,7 +118,7 @@ export class Statistics {
     const maxNecessaryDigits = files
       .map(value => {
         const matches = fileRegex.exec(this.configInstance.mapFileToBeRelativeToRootPath(value))
-        return matches ? numDigits(parseInt(matches[1], 10)) : 0
+        return matches ? this.numDigits(parseInt(matches[1], 10)) : 0
       })
       .reduce((previous, current) => {
         return Math.max(previous, current)
@@ -118,7 +130,6 @@ export class Statistics {
       maxNecessaryDigits
     }
   }
-
 
   public async getAllFilesForOneType(isAtNumbered: boolean, refresh = false): Promise<string[]> {
     const existingFiles = isAtNumbered ? this._allAtNumberedFiles : this._allNormalFiles
@@ -146,8 +157,6 @@ export class Statistics {
     return (await this.getAllFilesForOneType(true, refresh)).concat(await this.getAllFilesForOneType(false, refresh))
   }
 
-
-  
   //TODO: make aware of which filetype it is and use real patterns for cases where the number is repeated
   public renumberedFilename(filename: string, newFilenumber: number, digits: number, atNumbering: boolean): string {
     //Identify if it's a chapter, summary or metadata
@@ -164,12 +173,11 @@ export class Statistics {
     if (isChapter) {
       const matches = this.configInstance.chapterRegex(atNumbering).exec(filename)
       const name = matches ? matches[2] : ''
-      debug(`return ${this.configInstance.chapterFileNameFromParameters(stringifyNumber(newFilenumber, digits), name, atNumbering)}`)
-      return this.configInstance.chapterFileNameFromParameters(stringifyNumber(newFilenumber, digits), name, atNumbering)
+      debug(`return ${this.configInstance.chapterFileNameFromParameters(this.stringifyNumber(newFilenumber, digits), name, atNumbering)}`)
+      return this.configInstance.chapterFileNameFromParameters(this.stringifyNumber(newFilenumber, digits), name, atNumbering)
     }
 
     const re = new RegExp(/^(.*?)(@?\d+)(.*)$/)
-    return filename.replace(re, '$1' + (atNumbering ? '@' : '') + stringifyNumber(newFilenumber, digits) + '$3')
+    return filename.replace(re, '$1' + (atNumbering ? '@' : '') + this.stringifyNumber(newFilenumber, digits) + '$3')
   }
-
 }

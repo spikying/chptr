@@ -8,7 +8,6 @@ import moment = require('moment')
 import * as path from 'path'
 import * as YAML from 'yaml'
 
-import { sanitizeFileName } from './commands/base'
 import { FsUtils } from './fs-utils';
 import { HardConfig } from './hard-config'
 
@@ -40,9 +39,9 @@ export class SoftConfig {
       //   return this._config as ConfigObject
       // } else {
       const jsonConfig: any = this.configSchema.getProperties() // so we can operate with a plain old JavaScript object and abstract away convict (optional)
-      jsonConfig.chapterPattern = sanitizeFileName(jsonConfig.chapterPattern, true)
-      jsonConfig.metadataPattern = sanitizeFileName(jsonConfig.metadataPattern, true)
-      jsonConfig.summaryPattern = sanitizeFileName(jsonConfig.summaryPattern, true)
+      jsonConfig.chapterPattern = this.fsUtils.sanitizeFileName(jsonConfig.chapterPattern, true)
+      jsonConfig.metadataPattern = this.fsUtils.sanitizeFileName(jsonConfig.metadataPattern, true)
+      jsonConfig.summaryPattern = this.fsUtils.sanitizeFileName(jsonConfig.summaryPattern, true)
       jsonConfig.metadataFields = {
         manual: this._metadataFieldsObj,
         computed: { title: '###', wordCount: 0 },
@@ -459,7 +458,7 @@ date: ${moment().format('D MMMM YYYY')}
   }
 
   private filenameFromParameters(pattern: string, num: string, name: string, atNumbering: boolean): string {
-    return pattern.replace(/NUM/g, (atNumbering ? '@' : '') + num).replace(/NAME/g, sanitizeFileName(name))
+    return pattern.replace(/NUM/g, (atNumbering ? '@' : '') + num).replace(/NAME/g, this.fsUtils.sanitizeFileName(name))
   }
 
   private numberWildcardPortion(atNumbering: boolean, num: number | null = null) {

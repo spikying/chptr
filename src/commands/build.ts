@@ -8,7 +8,7 @@ import { file as tmpFile } from 'tmp-promise'
 import { MarkupObj } from '../markup-utils'
 import { QueryBuilder, tableize } from '../ui-utils'
 
-import { d, sanitizeFileName } from './base'
+import { d } from './base'
 import Command from './initialized-base'
 
 const debug = d('command:build')
@@ -68,7 +68,7 @@ export default class Build extends Command {
     const showWritingRateDetails = wrOption === 'all' || wrOption === 'export'
     const exportWritingRate = wrOption === 'export'
 
-    const outputFileBase = sanitizeFileName(this.configInstance.config.projectTitle)
+    const outputFileBase = this.fsUtils.sanitizeFileName(this.configInstance.config.projectTitle)
     const outputFile = `${flags.datetimestamp ? moment().format('YYYYMMDD.HHmm ') : ''}${outputFileBase}`
 
     let outputFiletype = flags.filetype

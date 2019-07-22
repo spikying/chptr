@@ -2,7 +2,9 @@ import { cli } from 'cli-ux'
 import * as d from 'debug'
 import * as fs from 'fs'
 import * as glob from 'glob'
+import * as latinize from 'latinize'
 import * as path from 'path'
+import * as sanitize from 'sanitize-filename'
 import { promisify } from 'util'
 
 const debug = d('fs-utils')
@@ -141,5 +143,24 @@ export class FsUtils {
       return ''
     }
   }
+
+  
+public sanitizeFileName (original: string, keepFolders = false): string {
+  if (keepFolders) {
+    original = original.replace(/[\/\\]/g, '\u2029')
+  }
+  const sanitized = sanitize(original).replace(/\u2029/g, path.sep)
+  const latinized = latinize(sanitized)
+  return latinized
+}
+
+public sanitizeUrl (original: string): string {
+  const sanitize_url = require('@braintree/sanitize-url').sanitizeUrl
+  const sanitized = sanitize_url(original)
+  if (sanitized === 'about:blank') {
+    return ''
+  }
+  return sanitized
+}
 
 }

@@ -12,7 +12,7 @@ import { SoftConfig } from '../soft-config'
 import { Statistics } from '../statistics'
 import { tableize } from '../ui-utils'
 
-import Command, { d, sanitizeFileName } from './base'
+import Command, { d } from './base'
 const debug = d('command:initialized-base')
 
 export default abstract class extends Command {
@@ -437,7 +437,7 @@ export default abstract class extends Command {
       ) {
         const fileType = d.path && d.path[0]
         const oldPattern = d.lhs
-        const newPattern = sanitizeFileName(d.rhs, true)
+        const newPattern = this.fsUtils.sanitizeFileName(d.rhs, true)
         debug(`fileType=${fileType}, oldPattern=${oldPattern}, newPattern=${newPattern}`)
         oldVsNew.push({ oldPattern, newPattern })
       }
@@ -492,7 +492,7 @@ export default abstract class extends Command {
         }, false)
       ) {
         oldDir = d.lhs
-        newDir = sanitizeFileName(d.rhs, true)
+        newDir = this.fsUtils.sanitizeFileName(d.rhs, true)
       }
     })
 

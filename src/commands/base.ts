@@ -1,15 +1,12 @@
 import { Command, flags } from '@oclif/command'
 import * as deb from 'debug'
-import * as latinize from 'latinize'
 import * as notifier from 'node-notifier'
 import * as path from 'path'
-import * as sanitize from 'sanitize-filename'
 import * as simplegit from 'simple-git/promise'
 // import { promisify } from 'util'
 
-import { FsUtils } from '../fs-utils';
+import { FsUtils } from '../fs-utils'
 import { HardConfig } from '../hard-config'
-
 
 export const d = deb
 
@@ -51,7 +48,7 @@ export default abstract class extends Command {
   public get hardConfig(): HardConfig {
     return this._hardConfig as HardConfig
   }
-  public get fsUtils(): FsUtils{
+  public get fsUtils(): FsUtils {
     return this._fsUtils as FsUtils
   }
 
@@ -100,41 +97,18 @@ export default abstract class extends Command {
       })
     }
   }
-
-
-
-
-  
 }
 
-export const numDigits = function(x: number, buffer = 2) {
-  return Math.max(Math.floor(Math.log10(Math.abs(x + buffer))), 0) + 1
-}
+// export const numDigits = function(x: number, buffer = 2) {
+//   return Math.max(Math.floor(Math.log10(Math.abs(x + buffer))), 0) + 1
+// }
 
-export const stringifyNumber = function(x: number, digits: number): string {
-  const s = x.toString()
-  const zeroes = Math.max(digits - s.length, 0)
-  if (zeroes > 0) {
-    return '0'.repeat(zeroes).concat(s)
-  } else {
-    return s
-  }
-}
-
-export const sanitizeFileName = function(original: string, keepFolders = false): string {
-  if (keepFolders) {
-    original = original.replace(/[\/\\]/g, '\u2029')
-  }
-  const sanitized = sanitize(original).replace(/\u2029/g, path.sep)
-  const latinized = latinize(sanitized)
-  return latinized
-}
-
-export const sanitizeUrl = function(original: string): string {
-  const sanitize_url = require('@braintree/sanitize-url').sanitizeUrl
-  const sanitized = sanitize_url(original)
-  if (sanitized === 'about:blank') {
-    return ''
-  }
-  return sanitized
-}
+// export const stringifyNumber = function(x: number, digits: number): string {
+//   const s = x.toString()
+//   const zeroes = Math.max(digits - s.length, 0)
+//   if (zeroes > 0) {
+//     return '0'.repeat(zeroes).concat(s)
+//   } else {
+//     return s
+//   }
+// }
