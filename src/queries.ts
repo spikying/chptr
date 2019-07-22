@@ -61,7 +61,7 @@ export class QueryBuilder {
     return obj
   }
 
-  public textinput(msg?: string, defaultValue?: string, filter?: (val:string)=>string): object {
+  public textinput(msg?: string, defaultValue?: string, filter?: (val: string) => string): object {
     const obj = {
       message: msg || 'Enter a value',
       type: 'input',
@@ -71,9 +71,19 @@ export class QueryBuilder {
     return obj
   }
 
-  public checkboxinput(choices: string[], msg?: string, defaultValue?: string[]): object {
+  public list(choices: string[], msg?: string, defaultValue?: string): object {
     const obj = {
       message: msg || 'Choose a value',
+      type: 'list',
+      default: defaultValue,
+      choices
+    }
+    return obj
+  }
+
+  public checkboxinput(choices: string[], msg?: string, defaultValue?: string[]): object {
+    const obj = {
+      message: msg || 'Choose one or more values',
       type: 'checkbox',
       default: defaultValue,
       choices

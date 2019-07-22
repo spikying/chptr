@@ -55,7 +55,9 @@ export default class Build extends Command {
   static aliases = ['compile']
   static hidden = false
 
+  //TODO: if config is in YAML, export metadata in YAML?
   async run() {
+    debug('Running Build command')
     const { flags } = this.parse(Build)
 
     const removeMarkup = flags.removemarkup
@@ -362,7 +364,7 @@ export default class Build extends Command {
       const replaced = initial.replace(/(.*){(.*?)\s?:\s?(.*?)} *(.*)$/m, (_full, one, two, three, four) => {
         markupCounter++
         didReplacement = didReplacement || (two && three)
-        return `${one} ~_${two}_~[^${markupCounter}]  ${four}\n\n[^${markupCounter}]: ${three}\n\n`
+        return `${one} ^_${two}: _^[^${markupCounter}]  ${four}\n\n[^${markupCounter}]: ${three}\n\n`
       })
       return { replaced, didReplacement }
     }

@@ -1,5 +1,6 @@
 import * as d from 'debug'
 import * as path from 'path'
+import * as YAML from 'yaml'
 
 const debug = d('config:hard')
 
@@ -41,6 +42,9 @@ export class HardConfig {
   }
   public get metadataFieldsDefaultsJSONString(): string {
     return JSON.stringify(this._metadataFieldsDefaultsObj, null, 4)
+  }
+  public get metadataFieldsDefaultsYAMLString(): string{
+    return YAML.stringify(this._metadataFieldsDefaultsObj)
   }
 
   public templateEmptyFileString = `\n# {TITLE}\n\n`

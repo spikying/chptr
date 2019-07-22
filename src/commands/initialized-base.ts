@@ -2,8 +2,8 @@ import { cli } from 'cli-ux'
 import * as jsonComment from 'comment-json'
 import { applyChange, diff, observableDiff } from 'deep-diff'
 import * as JsDiff from 'diff'
+import yaml = require('js-yaml')
 import * as minimatch from 'minimatch'
-// import * as moment from 'moment'
 import * as path from 'path'
 import { MoveSummary } from 'simple-git/typings/response'
 
@@ -11,7 +11,6 @@ import { Context } from '../context'
 import { SoftConfig } from '../soft-config'
 
 import Command, { d, deleteDir, fileExists, globPromise, moveFile, readFileBuffer, sanitizeFileName, writeFile } from './base'
-
 const debug = d('command:initialized-base')
 
 export default abstract class extends Command {
@@ -38,6 +37,7 @@ export default abstract class extends Command {
   private _actualConfigObj: any
 
   async init() {
+    debug('init of initialized-base')
     await super.init()
 
     const { flags } = this.parse(this.constructor as any)
@@ -51,9 +51,10 @@ export default abstract class extends Command {
     }
 
     const hasConfigFolder = await fileExists(this.hardConfig.configPath)
-    const hasConfigFile = await fileExists(this.hardConfig.configJSON5FilePath)
+    const hasConfigJSON5File = await fileExists(this.hardConfig.configJSON5FilePath)
+    const hasConfigYAMLFile = await fileExists(this.hardConfig.configYAMLFilePath)
 
-    if (!hasConfigFolder || !hasConfigFile) {
+    if (!hasConfigFolder || !(hasConfigJSON5File || hasConfigYAMLFile)) {
       throw new Error('Directory was not initialized.  Run `init` command.')
     }
 
@@ -65,7 +66,7 @@ export default abstract class extends Command {
     await this.deleteEmptySubDirectories()
   }
 
-  public async finally(){
+  public async finally() {
     await super.finally()
     await this.deleteEmptySubDirectories()
   }
@@ -128,7 +129,6 @@ export default abstract class extends Command {
           await this.git.pull()
         }
 
-        // debug(`commitSummary:\n${JSON.stringify(commitSummary)}`)
         const toStagePretty = toStageFiles.map(f => `\n    ${f}`.infoColor())
         cli.action.stop(
           `\nCommited and pushed ${commitSummary.commit.resultHighlighColor()}:\n${message.infoColor()}\nFile${
@@ -291,11 +291,9 @@ export default abstract class extends Command {
       const isAt = this.configInstance.isAtNumbering(file)
 
       const metadataFilename = await this.context.getMetadataFilenameFromParameters(num, isAt)
-      // const metadataFilePath = await this.overwriteMetadata(metadataFilename, extractedMarkup, computedMarkup)
-      // if (metadataFilePath) { modifiedFiles.push(metadataFilePath) }
-
       const metadataFilePath = path.join(this.configInstance.projectRootPath, metadataFilename)
       const initialContent = await this.readFileContent(metadataFilePath)
+      
       const obj = JSON.parse(initialContent)
       obj.extracted = extractedMarkup
       obj.computed = computedMarkup
@@ -415,6 +413,7 @@ export default abstract class extends Command {
   }
 
   public async deleteEmptySubDirectories(): Promise<string[]> {
+    // debug(`configInstance=${JSON.stringify(this.configInstance, null, 2)}`)
     const allDirs = await globPromise('**/', { cwd: this.configInstance.projectRootPath })
     // debug(`allDirs=${allDirs}`)
     const emptyDirs: string[] = []
@@ -574,7 +573,7 @@ export default abstract class extends Command {
 
     if (oldTitle !== newTitle) {
       const oldReadmeContent = await this.readFileContent(this.hardConfig.readmeFilePath)
-      if (oldTitle === await this.extractTitleFromString(oldReadmeContent)) {
+      if (oldTitle === (await this.extractTitleFromString(oldReadmeContent))) {
         const newReadmeContent = oldReadmeContent.replace(this.titleRegex, `\n# ${newTitle}\n`)
         await writeFile(this.hardConfig.readmeFilePath, newReadmeContent)
       }
@@ -586,13 +585,13 @@ export default abstract class extends Command {
 
     // const numberingChanges = []
     const table = this.tableize('Old', 'New')
-    
+
     observableDiff(lastConfigObj, actualConfigObj, d => {
       if (
         d.kind === 'E' &&
         d.path &&
         d.path.reduce((previous, current) => {
-          return previous || current.substring(0,9) === 'numbering'
+          return previous || current.substring(0, 9) === 'numbering'
         }, false)
       ) {
         const numberingType = d.path && d.path[0]
@@ -618,12 +617,20 @@ export default abstract class extends Command {
 
   private async getLastAndActualConfigObjects(): Promise<{ lastConfigObj: any; actualConfigObj: any }> {
     if (!this._lastConfigObj || !this._actualConfigObj) {
-      const lastConfigContent =
-        (await this.git.show([`HEAD:${this.context.mapFileToBeRelativeToRootPath(this.hardConfig.configJSON5FilePath).replace(/\\/, '/')}`])) || '{}'
-      const actualConfigContent = await this.readFileContent(this.hardConfig.configJSON5FilePath)
+      const configFilePath =
+        this.configInstance.configStyle === 'JSON5'
+          ? this.hardConfig.configJSON5FilePath
+          : this.configInstance.configStyle === 'YAML'
+          ? this.hardConfig.configYAMLFilePath
+          : ''
+      const lastConfigContent = (await this.git.show([`HEAD:${this.context.mapFileToBeRelativeToRootPath(configFilePath).replace(/\\/, '/')}`])) || '{}'
 
-      this._lastConfigObj = jsonComment.parse(lastConfigContent, undefined, true)
-      this._actualConfigObj = jsonComment.parse(actualConfigContent, undefined, true)
+      const actualConfigContent = await this.readFileContent(configFilePath)
+
+      this._lastConfigObj =
+        this.configInstance.configStyle === 'JSON5' ? jsonComment.parse(lastConfigContent, undefined, true) : yaml.safeLoad(lastConfigContent)
+      this._actualConfigObj =
+        this.configInstance.configStyle === 'JSON5' ? jsonComment.parse(actualConfigContent, undefined, true) : yaml.safeLoad(actualConfigContent)
     }
 
     return { lastConfigObj: this._lastConfigObj, actualConfigObj: this._actualConfigObj }

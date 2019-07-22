@@ -37,6 +37,12 @@ export default class Init extends Command {
     language: flags.string({
       char: 'l',
       description: 'Language of project'
+    }),
+    style: flags.string({
+      char: 's',
+      description: 'Config files in JSON5 or YAML?',
+      options: ['YAML', 'JSON5', ''],
+      default: ''
     })
   }
 
@@ -57,7 +63,6 @@ export default class Init extends Command {
   static aliases = ['setup']
   // private flagForce = 'false'
 
-  //TODO: allow for YAML config files?
   async run() {
     debug('Running Init command')
     const { args, flags } = this.parse(Init)
@@ -76,7 +81,8 @@ export default class Init extends Command {
     // Prompt config options if necessary
     const queryBuilder = new QueryBuilder()
 
-    const forceConfigJson = forceAll || force === path.basename(this.hardConfig.configJSON5FilePath)
+    const forceConfigFile =
+      forceAll || force === path.basename(this.hardConfig.configJSON5FilePath) || force === path.basename(this.hardConfig.configYAMLFilePath)
 
     const notEmptyString = function(val: string): string {
       if (!val) {
@@ -93,7 +99,18 @@ export default class Init extends Command {
       }
     }
 
-    if (forceConfigJson || !(await fileExists(this.hardConfig.configJSON5FilePath))) {
+    const hasYAMLConfigFile = await fileExists(this.hardConfig.configYAMLFilePath)
+    const hasJSON5ConfigFile = await fileExists(this.hardConfig.configJSON5FilePath)
+    let existingStyle = ''
+    if (hasJSON5ConfigFile) {
+      existingStyle = 'JSON5'
+    } else if (hasYAMLConfigFile) {
+      existingStyle = 'YAML'
+    } else if (!flags.style) {
+      queryBuilder.add('style', queryBuilder.list(['JSON5', 'YAML'], 'Choose a config file style.', 'JSON5'))
+    }
+
+    if (forceConfigFile || (!hasYAMLConfigFile && !hasJSON5ConfigFile)) {
       const options: any = {
         name: {
           arg: args.name,
@@ -145,6 +162,7 @@ export default class Init extends Command {
     const authorName = flags.author || queryResponses.author || ''
     const authorEmail = flags.email || queryResponses.email || ''
     const language = flags.language || queryResponses.language || 'en'
+    const style = existingStyle || flags.style || queryResponses.style
 
     //prepare for creating config files
 
@@ -157,18 +175,6 @@ export default class Init extends Command {
     }
 
     const allConfigOperations = [
-      {
-        fullPathName: this.hardConfig.configJSON5FilePath,
-        content: virginConfigInstance.configDefaultsWithMetaJSON5String(overrideObj)
-      },
-      {
-        fullPathName: this.hardConfig.configYAMLFilePath,
-        content: virginConfigInstance.configDefaultsWithMetaYAMLString(overrideObj)
-      },
-      {
-        fullPathName: this.hardConfig.metadataFieldsJSON5FilePath,
-        content: this.hardConfig.metadataFieldsDefaultsJSONString
-      },
       {
         fullPathName: this.hardConfig.emptyFilePath,
         content: this.hardConfig.templateEmptyFileString
@@ -186,6 +192,32 @@ export default class Init extends Command {
         content: this.hardConfig.templateGitattributesString
       }
     ]
+
+    if (style === 'YAML') {
+      allConfigOperations.push(
+        {
+          fullPathName: this.hardConfig.configYAMLFilePath,
+          content: virginConfigInstance.configDefaultsWithMetaYAMLString(overrideObj)
+        },
+        {
+          fullPathName: this.hardConfig.metadataFieldsYAMLFilePath,
+          content: this.hardConfig.metadataFieldsDefaultsYAMLString
+        }
+      )
+    } else if (style === 'JSON5') {
+      allConfigOperations.push(
+        {
+          fullPathName: this.hardConfig.configJSON5FilePath,
+          content: virginConfigInstance.configDefaultsWithMetaJSON5String(overrideObj)
+        },
+        {
+          fullPathName: this.hardConfig.metadataFieldsJSON5FilePath,
+          content: this.hardConfig.metadataFieldsDefaultsJSONString
+        }
+      )
+    } else {
+      throw new Error('Config style must be JSON5 or YAML')
+    }
 
     //validate which config files to create
     const allConfigFiles: { fullPathName: string; content: string }[] = []
@@ -266,6 +298,7 @@ export default class Init extends Command {
         cli.action.stop(msg.actionStopColor())
       }
     } else {
+      // show why remote was not updated
       const remote = await this.git.getRemotes(true).then(result => {
         return result.find(value => value.name === 'origin')
       })
@@ -276,6 +309,13 @@ export default class Init extends Command {
       )
     }
     table.show('Init operations not done')
+
+    //save other created files
+    await this.git.add('./**/*.*')
+    const commitSummary = await this.git.commit('Init command has created some new files')
+    if (commitSummary.commit) {
+      cli.info(`Commited all available files ${commitSummary.commit.resultHighlighColor()}`)
+    }
 
     cli.info('End of initialization'.infoColor())
   }

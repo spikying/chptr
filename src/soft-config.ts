@@ -4,6 +4,7 @@ import * as Convict from 'convict'
 import * as d from 'debug'
 // import { applyDiff } from 'deep-diff'
 import fs = require('fs')
+import yaml = require('js-yaml');
 import moment = require('moment')
 import * as path from 'path'
 import * as YAML from 'yaml'
@@ -209,40 +210,103 @@ date: ${moment().format('D MMMM YYYY')}
   private readonly rootPath: string
 
   private _emptyFileString = ''
+  private _configStyle = ''
 
+  public get configStyle(): string {
+    if (!this._configStyle) {
+      try {
+        fs.accessSync(this.hardConfig.configJSON5FilePath, fs.constants.R_OK)
+        this._configStyle = 'JSON5'
+      } catch {
+        try {
+          fs.accessSync(this.hardConfig.configYAMLFilePath, fs.constants.R_OK)
+          this._configStyle = 'YAML'
+        } catch (err) {
+          throw new Error(`File ${this.hardConfig.configJSON5FilePath} either doesn't exist or is not readable by process.\n${err}`)
+        }
+      }
+    }
+    return this._configStyle
+  }
   constructor(dirname: string, readFromFile = true) {
     this.hardConfig = new HardConfig(dirname)
     this.rootPath = path.join(dirname)
 
     if (readFromFile) {
-      try {
-        fs.accessSync(this.hardConfig.configJSON5FilePath, fs.constants.R_OK)
-      } catch (err) {
-        throw new Error(`File ${this.hardConfig.configJSON5FilePath} either doesn't exist or is not readable by process.\n${err}`)
-      }
+      // try {
+      //   fs.accessSync(this.hardConfig.configJSON5FilePath, fs.constants.R_OK)
+      //   this._configStyle = 'JSON5'
+      // } catch {
+      //   try {
+      //     fs.accessSync(this.hardConfig.configYAMLFilePath, fs.constants.R_OK)
+      //     this._configStyle = 'YAML'
+      //   } catch (err) {
+      //     throw new Error(`File ${this.hardConfig.configJSON5FilePath} either doesn't exist or is not readable by process.\n${err}`)
+      //   }
+      // }
+
+      // debug(`configStyle=${configStyle}`)
 
       let configFileString = ''
       let metadataFieldsString = ''
+      let objConfig = {}
+
       try {
-        configFileString = loadFileSync(this.hardConfig.configJSON5FilePath)
-        metadataFieldsString = loadFileSync(this.hardConfig.metadataFieldsJSON5FilePath)
+        if (this.configStyle === 'JSON5') {
+          configFileString = loadFileSync(this.hardConfig.configJSON5FilePath)
+          metadataFieldsString = loadFileSync(this.hardConfig.metadataFieldsJSON5FilePath)
+
+          objConfig = jsonComment.parse(configFileString, undefined, true)
+          this._metadataFieldsObj = jsonComment.parse(metadataFieldsString, undefined, false)
+        } else if (this.configStyle === 'YAML') {
+          configFileString = loadFileSync(this.hardConfig.configYAMLFilePath)
+          metadataFieldsString = loadFileSync(this.hardConfig.metadataFieldsYAMLFilePath)
+
+          // const yamlOptions = { keepBlobsInJSON: false, prettyErrors: true }
+          debug(`configFileString:\n${configFileString}`)
+          objConfig = yaml.safeLoad(configFileString)
+          debug(`objConfig = ${JSON.stringify(objConfig)}`)
+          this._metadataFieldsObj = yaml.safeLoad(metadataFieldsString)
+          debug(`_metadataFieldsObj = ${JSON.stringify(this._metadataFieldsObj)}`)
+        } else {
+          throw new Error('config style must be JSON5 or YAML')
+        }
       } catch (err) {
-        throw new Error(`loading config files error: ${err.toString().infoColor()}`.errorColor())
+        debug(err.toString().errorColor())
+        throw new Error(`loading or processing config files error: ${err.toString().infoColor()}`.errorColor())
       }
 
       try {
-        const json5Config = jsonComment.parse(configFileString, undefined, true)
-        this.configSchema.load(json5Config)
+        this.configSchema.load(objConfig)
         this.configSchema.validate({ allowed: 'strict' }) // 'strict' throws error if config does not conform to schema
       } catch (err) {
         throw new Error(`processing config data error: ${err.toString().infoColor()}`.errorColor())
       }
 
-      try {
-        this._metadataFieldsObj = jsonComment.parse(metadataFieldsString, undefined, false)
-      } catch (err) {
-        throw new Error(`processing metadata fields error: ${err.toString().infoColor()}`.errorColor())
-      }
+      //   try {
+      //     this._metadataFieldsObj = jsonComment.parse(metadataFieldsString, undefined, false)
+      //   } catch (err) {
+      //     throw new Error(`processing metadata fields error: ${err.toString().infoColor()}`.errorColor())
+      //   }
+      // } else if (configStyle === 'YAML') {
+      //   //todo: better integrate JSON5 vs YAML flows
+      //   try {
+      //     const yamlConfig = YAML.parse(configFileString)
+
+      //     this.configSchema.load(yamlConfig)
+      //     this.configSchema.validate({ allowed: 'strict' }) // 'strict' throws error if config does not conform to schema
+      //   } catch (err) {
+      //     throw new Error(`processing config data error: ${err.toString().infoColor()}`.errorColor())
+      //   }
+
+      //   try {
+      //     this._metadataFieldsObj = YAML.parse(metadataFieldsString)
+      //   } catch (err) {
+      //     throw new Error(`processing metadata fields error: ${err.toString().infoColor()}`.errorColor())
+      //   }
+      // } else {
+      //   throw new Error ('config style must be JSON5 or YAML')
+      // }
     }
   }
 
@@ -288,7 +352,6 @@ date: ${moment().format('D MMMM YYYY')}
     overrideObj = overrideObj || {}
     const jsonConfig = this.config
     const defaultOverridedConfig: any = {}
-    // applyDiff(jsonConfig, overrideObj)
 
     const props = Object.keys(jsonConfig)
     for (let i = 0; i !== props.length; i++) {
@@ -296,7 +359,7 @@ date: ${moment().format('D MMMM YYYY')}
         defaultOverridedConfig[props[i]] = overrideObj[props[i]] || this.configSchema.default(props[i])
       }
     }
-    debug(`defaultOverridedConfig=${JSON.stringify(defaultOverridedConfig)}`)
+    // debug(`defaultOverridedConfig=${JSON.stringify(defaultOverridedConfig)}`)
 
     const result = new YAML.Document()
     result.version = 'core'
@@ -304,35 +367,12 @@ date: ${moment().format('D MMMM YYYY')}
     result.contents = (YAML.createNode(defaultOverridedConfig) as unknown) as YAML.ast.Seq
 
     for (const n of result.contents.items) {
-      const node = n as unknown as YAML.ast.Pair
-      const prop = node && node.key || '' // && n.keys[0]
-      debug(`prop=${prop} value=${node.value}`)
-      // n.value.commentBefore = this.configSchemaObject[prop].doc
+      const node = (n as unknown) as YAML.ast.Pair
+      const prop = (node && node.key) || ''
       node.commentBefore = this.configSchemaObject[prop.toString()].doc
     }
 
     return String(result)
-
-    /*
-    const result = new YAML.Document()
-    result.version = 'core'
-    result.commentBefore = "Project's configuration options.\nModify as needed and `build` the project after to apply modifications."
-result.contents= YAML.createNode(defaultOverridedConfig)
-    const nodes = YAML.Document.prototype.
-
-    for (let i = 0; i !== props.length; i++) {
-      if (jsonConfig.hasOwnProperty(props[i]) && this.configSchemaObject[props[i]]) {
-        // result.contents.push(`//${this.configSchemaObject[props[i]].doc}`)
-        const o: any = {}
-        o[props[i]] = overrideObj[props[i]] || this.configSchema.default(props[i])
-        const node = YAML.createNode(o) as YAML.ast.Map
-        node.commentBefore = this.configSchemaObject[props[i]].doc
-        nodes.items.push(node)
-      }
-    }
-    result.contents = nodes as YAML.ast.Seq
-    return YAML.stringify(result)
-*/
   }
 
   public chapterWildcard(atNumbering: boolean): string {
