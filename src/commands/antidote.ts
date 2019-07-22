@@ -40,7 +40,7 @@ export default class Antidote extends Command {
     }
     const isAtNumber: boolean = filter.substring(0, 1) === '@'
 
-    const chapterNumber = this.context.extractNumber(filter)
+    const chapterNumber = this.configInstance.extractNumber(filter)
     const chapterFileName = glob.sync(
       path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcardWithNumber(chapterNumber, isAtNumber))
     )[0]

@@ -319,12 +319,12 @@ export default class Build extends Command {
 
         if (existingMarkupContent !== JSON.stringify(markup.markupObj, null, 4)) {
           await this.fsUtils.writeFile(markup.fullPath, JSON.stringify(markup.markupObj, null, 4))
-          table.accumulator(this.context.mapFileToBeRelativeToRootPath(markup.fullPath), 'updated')
+          table.accumulator(this.configInstance.mapFileToBeRelativeToRootPath(markup.fullPath), 'updated')
         }
       }
 
       const modifiedMetadataFiles = await this.writeMetadataInEachFile(markupByFile)
-      table.accumulatorArray(modifiedMetadataFiles.map(val => ({ from: this.context.mapFileToBeRelativeToRootPath(val.file), to: val.diff })))
+      table.accumulatorArray(modifiedMetadataFiles.map(val => ({ from: this.configInstance.mapFileToBeRelativeToRootPath(val.file), to: val.diff })))
       // markupFilenamesPretty = modifiedMetadataFiles.reduce((previous, current) => `${previous}\n    ${current}`,'')
     })
 
@@ -385,7 +385,7 @@ export default class Build extends Command {
   }
 
   private async extractMeta(filepath: string, extractAll: boolean): Promise<MetaObj[]> {
-    const file = this.context.mapFileToBeRelativeToRootPath(filepath)
+    const file = this.configInstance.mapFileToBeRelativeToRootPath(filepath)
     const beginBlock = '########'
     const endFormattedBlock = '------------------------ >8 ------------------------'
     const gitLogArgs = ['log', '-c', '--follow', `--pretty=format:"${beginBlock}%H;%aI;%s${endFormattedBlock}"`]

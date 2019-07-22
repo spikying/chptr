@@ -87,7 +87,7 @@ export default class Track extends Command {
 
     cli.action.start('Tracking file'.actionStartColor())
 
-    const toCommitFiles = [this.context.mapFileToBeRelativeToRootPath(filename)]
+    const toCommitFiles = [this.configInstance.mapFileToBeRelativeToRootPath(filename)]
 
     await this.CommitToGit(`Tracking file ${filename}`, toCommitFiles)
 

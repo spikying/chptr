@@ -7,8 +7,8 @@ import * as minimatch from 'minimatch'
 import * as path from 'path'
 import { MoveSummary } from 'simple-git/typings/response'
 
-import { Context } from '../context'
 import { SoftConfig } from '../soft-config'
+import { Statistics } from '../statistics'
 
 import Command, { d, sanitizeFileName } from './base'
 const debug = d('command:initialized-base')
@@ -17,8 +17,8 @@ export default abstract class extends Command {
   public get configInstance(): SoftConfig {
     return this._configInstance as SoftConfig
   }
-  public get context(): Context {
-    return this._context as Context
+  public get statistics(): Statistics {
+    return this._statistics as Statistics
   }
   static flags = {
     ...Command.flags
@@ -31,7 +31,7 @@ export default abstract class extends Command {
   public titleRegex = /^\n# (.*?)\n/
 
   private _configInstance: SoftConfig | undefined
-  private _context: Context | undefined
+  private _statistics: Statistics | undefined
 
   private _lastConfigObj: any
   private _actualConfigObj: any
@@ -43,7 +43,7 @@ export default abstract class extends Command {
     const { flags } = this.parse(this.constructor as any)
     const dir = path.join(flags.path as string)
     this._configInstance = new SoftConfig(dir)
-    this._context = new Context(this.configInstance)
+    this._statistics = new Statistics(this.configInstance)
 
     const isRepo = await this.git.checkIsRepo()
     if (!isRepo) {
@@ -75,7 +75,7 @@ export default abstract class extends Command {
   public async readFileContent(filepath: string): Promise<string> {
     try {
       const buff = await this.fsUtils.readFileBuffer(filepath)
-      const content = await buff.toString('utf8', 0, buff.byteLength)      
+      const content = await buff.toString('utf8', 0, buff.byteLength)
       return content
     } catch {
       return ''
@@ -188,8 +188,8 @@ export default abstract class extends Command {
       const exists = await this.fsUtils.fileExists(fullPath)
       if (
         exists &&
-        (this.configInstance.chapterRegex(false).test(this.context.mapFileToBeRelativeToRootPath(fullPath)) ||
-          this.configInstance.chapterRegex(true).test(this.context.mapFileToBeRelativeToRootPath(fullPath)))
+        (this.configInstance.chapterRegex(false).test(this.configInstance.mapFileToBeRelativeToRootPath(fullPath)) ||
+          this.configInstance.chapterRegex(true).test(this.configInstance.mapFileToBeRelativeToRootPath(fullPath)))
       ) {
         try {
           const initialContent = await this.readFileContent(fullPath)
@@ -211,7 +211,7 @@ export default abstract class extends Command {
       let regexArray: RegExpExecArray | null
       while ((regexArray = markupRegex.exec(initialContent)) !== null) {
         resultArray.push({
-          filename: this.context.mapFileToBeRelativeToRootPath(chapterFilepath),
+          filename: this.configInstance.mapFileToBeRelativeToRootPath(chapterFilepath),
           paragraph: parseInt(regexArray[1] || '1', 10),
           type: regexArray[2].toLowerCase(),
           value: regexArray[3],
@@ -220,14 +220,14 @@ export default abstract class extends Command {
       }
       const wordCount = this.GetWordCount(initialContent)
       resultArray.push({
-        filename: this.context.mapFileToBeRelativeToRootPath(chapterFilepath),
+        filename: this.configInstance.mapFileToBeRelativeToRootPath(chapterFilepath),
         type: 'wordCount',
         value: wordCount,
         computed: true
       })
       const title = (await this.extractTitleFromString(initialContent)) || '###'
       resultArray.push({
-        filename: this.context.mapFileToBeRelativeToRootPath(chapterFilepath),
+        filename: this.configInstance.mapFileToBeRelativeToRootPath(chapterFilepath),
         type: 'title',
         value: title,
         computed: true
@@ -287,10 +287,10 @@ export default abstract class extends Command {
         }
       })
 
-      const num = this.context.extractNumber(file)
+      const num = this.configInstance.extractNumber(file)
       const isAt = this.configInstance.isAtNumbering(file)
 
-      const metadataFilename = await this.context.getMetadataFilenameFromParameters(num, isAt)
+      const metadataFilename = await this.configInstance.getMetadataFilenameFromParameters(num, isAt)
       const metadataFilePath = path.join(this.configInstance.projectRootPath, metadataFilename)
       const initialContent = await this.readFileContent(metadataFilePath)
 
@@ -343,12 +343,12 @@ export default abstract class extends Command {
 
   public async addDigitsToNecessaryStacks(): Promise<boolean> {
     let didAddDigits = false
-    await this.context.getAllNovelFiles(true)
+    await this.statistics.getAllNovelFiles(true)
     for (const b of [true, false]) {
-      const maxDigits = this.context.getMaxNecessaryDigits(b)
-      const minDigits = this.context.getMinDigits(b)
+      const maxDigits = this.statistics.getMaxNecessaryDigits(b)
+      const minDigits = this.statistics.getMinDigits(b)
       if (minDigits < maxDigits) {
-        didAddDigits = didAddDigits || (await this.addDigitsToFiles(await this.context.getAllFilesForOneType(b, true), maxDigits, b))
+        didAddDigits = didAddDigits || (await this.addDigitsToFiles(await this.statistics.getAllFilesForOneType(b, true), maxDigits, b))
       }
     }
     return didAddDigits
@@ -361,7 +361,7 @@ export default abstract class extends Command {
     const moves: { fromFilename: string; toFilename: string }[] = []
     const movePromises: Promise<MoveSummary>[] = []
     const { tempDir, removeTempDir } = await this.getTempDir()
-    const tempDirForGit = this.context.mapFileToBeRelativeToRootPath(tempDir)
+    const tempDirForGit = this.configInstance.mapFileToBeRelativeToRootPath(tempDir)
 
     for (const b of [true, false]) {
       const wildcards = [this.configInstance.chapterWildcard(b), this.configInstance.metadataWildcard(b), this.configInstance.summaryWildcard(b)]
@@ -370,21 +370,17 @@ export default abstract class extends Command {
 
         const organizedFiles: any[] = []
         for (const file of files) {
-          organizedFiles.push({ number: this.context.extractNumber(file), filename: file })
+          organizedFiles.push({ number: this.configInstance.extractNumber(file), filename: file })
         }
 
-        const destDigits = this.context.getMaxNecessaryDigits(b)
+        const destDigits = this.statistics.getMaxNecessaryDigits(b)
         let currentNumber = this.configInstance.config.numberingInitial
 
         for (const file of organizedFiles.sort((a, b) => a.number - b.number)) {
-          const fromFilename = this.context.mapFileToBeRelativeToRootPath(file.filename)
-          const toFilename = this.context.renumberedFilename(fromFilename, currentNumber, destDigits, b)
-          //   this.context.mapFileToBeRelativeToRootPath(
-          //   path.join(path.dirname(file.filename), this.context.renumberedFilename(file.filename, currentNumber, destDigits, b))
-          // )
+          const fromFilename = this.configInstance.mapFileToBeRelativeToRootPath(file.filename)
+          const toFilename = this.statistics.renumberedFilename(fromFilename, currentNumber, destDigits, b)
 
           if (fromFilename !== toFilename) {
-            // debug(`from: ${fromFilename} to: ${path.join(tempDirForGit, toFilename)}`)
             moves.push({ fromFilename, toFilename })
             table.accumulator(fromFilename, toFilename)
             movePromises.push(this.git.mv(fromFilename, path.join(tempDirForGit, toFilename)))
@@ -432,7 +428,7 @@ export default abstract class extends Command {
   }
 
   public async UpdateAllMetadataFields(): Promise<void> {
-    const allMetadataFiles = await this.context.getAllMetadataFiles()
+    const allMetadataFiles = await this.configInstance.getAllMetadataFiles()
     const table = this.tableize('file', 'changes')
     for (const file of allMetadataFiles) {
       debug(`file=${file}`)
@@ -452,7 +448,7 @@ export default abstract class extends Command {
           const diffs = diff(initialObj.manual, replacedObj.manual) || []
           diffs.map(d => {
             const expl = (d.kind === 'N' ? 'New ' : 'Deleted ') + d.path
-            table.accumulator(this.context.mapFileToBeRelativeToRootPath(file), expl)
+            table.accumulator(this.configInstance.mapFileToBeRelativeToRootPath(file), expl)
           })
           // debug(`diffs=${JSON.stringify(diffs)}`)
           // debug(`modified obj = ${JSON.stringify(replacedObj)}`)
@@ -491,12 +487,12 @@ export default abstract class extends Command {
 
     const movePromises: Promise<MoveSummary>[] = []
     for (const oldAndNew of oldVsNew) {
-      const files = await this.context.getAllFilesForPattern(oldAndNew.oldPattern)
+      const files = await this.configInstance.getAllFilesForPattern(oldAndNew.oldPattern)
       for (const file of files) {
         const reNormal = this.configInstance.patternRegexer(oldAndNew.oldPattern, false)
         const reAtNumber = this.configInstance.patternRegexer(oldAndNew.oldPattern, true)
         const isAtNumber = this.configInstance.isAtNumbering(file)
-        const rootedFile = this.context.mapFileToBeRelativeToRootPath(file)
+        const rootedFile = this.configInstance.mapFileToBeRelativeToRootPath(file)
 
         const num = rootedFile.replace(isAtNumber ? reAtNumber : reNormal, '$1')
         //TODO: get name from metadata file's title?  Here if old pattern has no name, it gives '$2' as a name.
@@ -519,11 +515,10 @@ export default abstract class extends Command {
 
   public async getBuildDirectoryAndCreateIfNecessary(): Promise<string> {
     const buildDirectory = this.configInstance.buildDirectory
-    
-    await this.fsUtils.createSubDirectoryIfNecessary(path.join(this.configInstance.buildDirectory, 'config.file') )
+
+    await this.fsUtils.createSubDirectoryIfNecessary(path.join(this.configInstance.buildDirectory, 'config.file'))
     return buildDirectory
   }
-
 
   public async MoveToNewBuildDirectory(): Promise<void> {
     const { lastConfigObj, actualConfigObj } = await this.getLastAndActualConfigObjects()
@@ -631,7 +626,7 @@ export default abstract class extends Command {
           : this.configInstance.configStyle === 'YAML'
           ? this.hardConfig.configYAMLFilePath
           : ''
-      const lastConfigContent = (await this.git.show([`HEAD:${this.context.mapFileToBeRelativeToRootPath(configFilePath).replace(/\\/, '/')}`])) || '{}'
+      const lastConfigContent = (await this.git.show([`HEAD:${this.configInstance.mapFileToBeRelativeToRootPath(configFilePath).replace(/\\/, '/')}`])) || '{}'
 
       const actualConfigContent = await this.readFileContent(configFilePath)
 
@@ -650,16 +645,16 @@ export default abstract class extends Command {
     const table = this.tableize('from', 'to')
 
     for (const file of files) {
-      const filename = this.context.mapFileToBeRelativeToRootPath(file)
+      const filename = this.configInstance.mapFileToBeRelativeToRootPath(file)
       const atNumbering = this.configInstance.isAtNumbering(filename)
 
       if (atNumbering === atNumberingStack) {
-        const filenumber = this.context.extractNumber(file)
+        const filenumber = this.configInstance.extractNumber(file)
         // debug(`file=${file} filename=${filename} filenumber=${filenumber}`)
-        const fromFilename = filename // this.context.mapFileToBeRelativeToRootPath(path.join(path.dirname(file), filename))
-        const toFilename = //this.context.mapFileToBeRelativeToRootPath(
+        const fromFilename = filename // this.configInstance.mapFileToBeRelativeToRootPath(path.join(path.dirname(file), filename))
+        const toFilename = //this.configInstance.mapFileToBeRelativeToRootPath(
           //path.join(path.dirname(file),
-          this.context.renumberedFilename(filename, filenumber, newDigitNumber, atNumbering)
+          this.statistics.renumberedFilename(filename, filenumber, newDigitNumber, atNumbering)
         //   )
         // )
         if (fromFilename !== toFilename) {

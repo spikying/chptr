@@ -3,17 +3,16 @@ import * as jsonComment from 'comment-json'
 import * as Convict from 'convict'
 import * as d from 'debug'
 // import { applyDiff } from 'deep-diff'
-import fs = require('fs')
-import yaml = require('js-yaml');
+import yaml = require('js-yaml')
 import moment = require('moment')
 import * as path from 'path'
 import * as YAML from 'yaml'
 
 import { sanitizeFileName } from './commands/base'
+import { FsUtils } from './fs-utils';
 import { HardConfig } from './hard-config'
 
 const debug = d('config:soft')
-export const loadFileSync = fs.readFileSync as (path: string) => string
 
 interface ConfigObject {
   chapterPattern: string // | ConfigProperty
@@ -83,7 +82,7 @@ date: ${moment().format('D MMMM YYYY')}
   public get emptyFileString(): string {
     if (!this._emptyFileString) {
       try {
-        const content = loadFileSync(this.hardConfig.emptyFilePath)
+        const content = this.fsUtils.loadFileSync(this.hardConfig.emptyFilePath)
         this._emptyFileString = content
       } catch (err) {
         debug(err)
@@ -208,6 +207,7 @@ date: ${moment().format('D MMMM YYYY')}
   private readonly configSchema = Convict(this.configSchemaObject)
   private readonly hardConfig: HardConfig
   private readonly rootPath: string
+  private readonly fsUtils: FsUtils
 
   private _emptyFileString = ''
   private _configStyle = ''
@@ -215,11 +215,11 @@ date: ${moment().format('D MMMM YYYY')}
   public get configStyle(): string {
     if (!this._configStyle) {
       try {
-        fs.accessSync(this.hardConfig.configJSON5FilePath, fs.constants.R_OK)
+        this.fsUtils.accessSync(this.hardConfig.configJSON5FilePath)
         this._configStyle = 'JSON5'
       } catch {
         try {
-          fs.accessSync(this.hardConfig.configYAMLFilePath, fs.constants.R_OK)
+          this.fsUtils.accessSync(this.hardConfig.configYAMLFilePath)
           this._configStyle = 'YAML'
         } catch (err) {
           throw new Error(`File ${this.hardConfig.configJSON5FilePath} either doesn't exist or is not readable by process.\n${err}`)
@@ -231,36 +231,23 @@ date: ${moment().format('D MMMM YYYY')}
   constructor(dirname: string, readFromFile = true) {
     this.hardConfig = new HardConfig(dirname)
     this.rootPath = path.join(dirname)
+    this.fsUtils = new FsUtils()
 
     if (readFromFile) {
-      // try {
-      //   fs.accessSync(this.hardConfig.configJSON5FilePath, fs.constants.R_OK)
-      //   this._configStyle = 'JSON5'
-      // } catch {
-      //   try {
-      //     fs.accessSync(this.hardConfig.configYAMLFilePath, fs.constants.R_OK)
-      //     this._configStyle = 'YAML'
-      //   } catch (err) {
-      //     throw new Error(`File ${this.hardConfig.configJSON5FilePath} either doesn't exist or is not readable by process.\n${err}`)
-      //   }
-      // }
-
-      // debug(`configStyle=${configStyle}`)
-
       let configFileString = ''
       let metadataFieldsString = ''
       let objConfig = {}
 
       try {
         if (this.configStyle === 'JSON5') {
-          configFileString = loadFileSync(this.hardConfig.configJSON5FilePath)
-          metadataFieldsString = loadFileSync(this.hardConfig.metadataFieldsJSON5FilePath)
+          configFileString = this.fsUtils.loadFileSync(this.hardConfig.configJSON5FilePath)
+          metadataFieldsString = this.fsUtils.loadFileSync(this.hardConfig.metadataFieldsJSON5FilePath)
 
           objConfig = jsonComment.parse(configFileString, undefined, true)
           this._metadataFieldsObj = jsonComment.parse(metadataFieldsString, undefined, false)
         } else if (this.configStyle === 'YAML') {
-          configFileString = loadFileSync(this.hardConfig.configYAMLFilePath)
-          metadataFieldsString = loadFileSync(this.hardConfig.metadataFieldsYAMLFilePath)
+          configFileString = this.fsUtils.loadFileSync(this.hardConfig.configYAMLFilePath)
+          metadataFieldsString = this.fsUtils.loadFileSync(this.hardConfig.metadataFieldsYAMLFilePath)
 
           // const yamlOptions = { keepBlobsInJSON: false, prettyErrors: true }
           debug(`configFileString:\n${configFileString}`)
@@ -282,31 +269,6 @@ date: ${moment().format('D MMMM YYYY')}
       } catch (err) {
         throw new Error(`processing config data error: ${err.toString().infoColor()}`.errorColor())
       }
-
-      //   try {
-      //     this._metadataFieldsObj = jsonComment.parse(metadataFieldsString, undefined, false)
-      //   } catch (err) {
-      //     throw new Error(`processing metadata fields error: ${err.toString().infoColor()}`.errorColor())
-      //   }
-      // } else if (configStyle === 'YAML') {
-      //   //todo: better integrate JSON5 vs YAML flows
-      //   try {
-      //     const yamlConfig = YAML.parse(configFileString)
-
-      //     this.configSchema.load(yamlConfig)
-      //     this.configSchema.validate({ allowed: 'strict' }) // 'strict' throws error if config does not conform to schema
-      //   } catch (err) {
-      //     throw new Error(`processing config data error: ${err.toString().infoColor()}`.errorColor())
-      //   }
-
-      //   try {
-      //     this._metadataFieldsObj = YAML.parse(metadataFieldsString)
-      //   } catch (err) {
-      //     throw new Error(`processing metadata fields error: ${err.toString().infoColor()}`.errorColor())
-      //   }
-      // } else {
-      //   throw new Error ('config style must be JSON5 or YAML')
-      // }
     }
   }
 
@@ -443,6 +405,54 @@ date: ${moment().format('D MMMM YYYY')}
           .replace(/NAME/g, '\\2')
     )
   }
+
+  public mapFileToBeRelativeToRootPath(file: string): string {
+    return path.relative(this.projectRootPath, file)
+  }
+  public mapFilesToBeRelativeToRootPath(files: string[]): string[] {
+    return files.map<string>(filename => {
+      return this.mapFileToBeRelativeToRootPath(filename)
+    })
+  }
+
+  public extractNumber(filename: string): number {
+    const re = new RegExp(this.numbersPattern(false))
+    const match = re.exec(this.mapFileToBeRelativeToRootPath(filename))
+    const fileNumber = match ? parseInt(match[1], 10) : -1
+
+    if (isNaN(fileNumber)) {
+      return -1
+    }
+    return fileNumber
+  }
+
+  public async getMetadataFilenameFromParameters(num: number, atNumbering: boolean): Promise<string> {
+    const files = await this.fsUtils.globPromise(
+      path.join(this.projectRootPath, this.metadataWildcardWithNumber(num, atNumbering))
+    )
+    return files[0]
+  }
+
+  public async getAllFilesForChapter(num: number, isAtNumbered: boolean): Promise<string[]> {
+    const wildcards = [
+      this.chapterWildcardWithNumber(num, isAtNumbered),
+      this.metadataWildcardWithNumber(num, isAtNumbered),
+      this.summaryWildcardWithNumber(num, isAtNumbered)
+    ]
+    return this.fsUtils.getAllFilesForWildcards(wildcards, this.projectRootPath)
+  }
+
+  public async getAllFilesForPattern(pattern: string): Promise<string[]> {
+    const wildcards = [this.wildcardize(pattern, false), this.wildcardize(pattern, true)]
+    return this.fsUtils.getAllFilesForWildcards(wildcards, this.projectRootPath)
+  }
+
+  public async getAllMetadataFiles(): Promise<string[]> {
+    const wildcards = [this.metadataWildcard(true), this.metadataWildcard(false)]
+    return this.fsUtils.getAllFilesForWildcards(wildcards, this.projectRootPath)
+  }
+
+
 
   private wildcardWithNumber(pattern: string, num: number, atNumbering: boolean): string {
     return pattern.replace(/NUM/g, this.numberWildcardPortion(atNumbering, num)).replace(/NAME/g, '*')

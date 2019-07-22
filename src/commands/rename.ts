@@ -56,7 +56,7 @@ export default class Rename extends Command {
     const queryResponses: any = await queryBuilder.responses()
     const chapterId = args.chapterOrFilename || queryResponses.chapterOrFilename || ''
 
-    const num = this.context.extractNumber(chapterId)
+    const num = this.configInstance.extractNumber(chapterId)
     const isAtNumbering = this.configInstance.isAtNumbering(chapterId)
 
     cli.action.start('Renaming files'.actionStartColor())
@@ -75,8 +75,8 @@ export default class Rename extends Command {
     const newNameForFile = sanitizeFileName(newName)
 
     if (!chapterFile || !summaryFile || !metadataFile) {
-      await this.context.updateStackStatistics(isAtNumbering)
-      const digits = this.context.getMinDigits(isAtNumbering)
+      await this.statistics.updateStackStatistics(isAtNumbering)
+      const digits = this.statistics.getMinDigits(isAtNumbering)
       const expectedFiles = [
         this.configInstance.chapterFileNameFromParameters(stringifyNumber(num, digits), newNameForFile, isAtNumbering),
         this.configInstance.summaryFileNameFromParameters(stringifyNumber(num, digits), newNameForFile, isAtNumbering),
@@ -86,7 +86,7 @@ export default class Rename extends Command {
       this.exit(0)
     }
 
-    const digits = this.context.getActualDigitsFromChapterFilename(chapterFile, isAtNumbering)
+    const digits = this.statistics.getActualDigitsFromChapterFilename(chapterFile, isAtNumbering)
 
     const didUpdateChapter = {
       filename: chapterFile,
@@ -109,9 +109,9 @@ export default class Rename extends Command {
     const didUpdates = [didUpdateChapter, didUpdateSummary, didUpdateMetadata]
 
     for (const didUpdate of didUpdates) {
-      if (this.context.mapFileToBeRelativeToRootPath(didUpdate.filename) !== didUpdate.newFileName) {
+      if (this.configInstance.mapFileToBeRelativeToRootPath(didUpdate.filename) !== didUpdate.newFileName) {
         didUpdate.rename = didUpdate.newFileName
-        await this.git.mv(this.context.mapFileToBeRelativeToRootPath(didUpdate.filename), didUpdate.newFileName)
+        await this.git.mv(this.configInstance.mapFileToBeRelativeToRootPath(didUpdate.filename), didUpdate.newFileName)
       }
     }
 

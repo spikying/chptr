@@ -74,7 +74,7 @@ export default class Delete extends Command {
       toDeleteFiles.push(...(await this.fsUtils.listFiles(pathName)))
     } else {
       // we will delete all files matching the number patterns for chapters, metadata and summary
-      const filterNumber = this.context.extractNumber(nameOrNumber)
+      const filterNumber = this.configInstance.extractNumber(nameOrNumber)
       const globPatterns: string[] = []
       // if (deleteType === 'all' || deleteType === 'chapter') {
       globPatterns.push(this.configInstance.chapterWildcardWithNumber(filterNumber, isAtNumber))
@@ -97,7 +97,7 @@ export default class Delete extends Command {
     } else {
       try {
         cli.action.start('Deleting file(s) locally and from repository'.actionStartColor())
-        await this.git.rm(this.context.mapFilesToBeRelativeToRootPath(toDeleteFiles))
+        await this.git.rm(this.configInstance.mapFilesToBeRelativeToRootPath(toDeleteFiles))
         const toDeletePretty = toDeleteFiles.map(f => `\n    ${f}`)
         cli.action.stop(`${toDeletePretty}\nwere deleted`.actionStopColor())
       } catch (err) {

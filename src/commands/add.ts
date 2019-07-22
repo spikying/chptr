@@ -49,7 +49,7 @@ export default class Add extends Command {
 
     if (args.number) {
       atNumbering = args.number.substring(0, 1) === '@'
-      nextNumber = this.context.extractNumber(args.number)
+      nextNumber = this.configInstance.extractNumber(args.number)
 
       const existingFile = await this.fsUtils.listFiles(
         path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcardWithNumber(nextNumber, atNumbering))
@@ -62,9 +62,9 @@ export default class Add extends Command {
     } else {
       atNumbering = flags.atnumbered
 
-      await this.context.updateStackStatistics(atNumbering)
+      await this.statistics.updateStackStatistics(atNumbering)
 
-      const highestNumber = this.context.getHighestNumber(atNumbering)
+      const highestNumber = this.statistics.getHighestNumber(atNumbering)
       nextNumber = highestNumber === 0 ? this.configInstance.config.numberingInitial : highestNumber + this.configInstance.config.numberingStep
     }
     const newDigits = numDigits(nextNumber)
@@ -99,15 +99,12 @@ export default class Add extends Command {
       allPromises.push(this.fsUtils.createFile(fullPathMeta, filledTemplateMeta))
       allPromises.push(this.fsUtils.createFile(fullPathSummary, filledTemplateData))
       await Promise.all(allPromises)
-      cli.action.stop(
-        // `Added\n    ${fullPathMD.resultNormalColor()}\n    ${fullPathSummary.resultNormalColor()}\n    ${fullPathMeta.resultNormalColor()}`.actionStopColor()
-        'done'.actionStopColor()
-      )
+      cli.action.stop('done'.actionStopColor())
 
-      const toStageFiles = this.context.mapFilesToBeRelativeToRootPath([fullPathMD, fullPathMeta, fullPathSummary])
-      const commitMessage = `added ${this.context.mapFileToBeRelativeToRootPath(fullPathMD)}, ${this.context.mapFileToBeRelativeToRootPath(
+      const toStageFiles = this.configInstance.mapFilesToBeRelativeToRootPath([fullPathMD, fullPathMeta, fullPathSummary])
+      const commitMessage = `added ${this.configInstance.mapFileToBeRelativeToRootPath(fullPathMD)}, ${this.configInstance.mapFileToBeRelativeToRootPath(
         fullPathMeta
-      )} and ${this.context.mapFileToBeRelativeToRootPath(fullPathSummary)}`
+      )} and ${this.configInstance.mapFileToBeRelativeToRootPath(fullPathSummary)}`
 
       await this.addDigitsToNecessaryStacks()
       await this.CommitToGit(commitMessage, toStageFiles)

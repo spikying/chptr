@@ -55,7 +55,7 @@ export default class Save extends Command {
     const { args, flags } = this.parse(Save)
 
     const atFilter = flags.number ? flags.number.substring(0, 1) === '@' : false
-    const numberFilter = flags.number ? this.context.extractNumber(flags.number) : undefined
+    const numberFilter = flags.number ? this.configInstance.extractNumber(flags.number) : undefined
 
     const preStageFiles = flags.number ? await this.GetGitListOfStageableFiles(numberFilter, atFilter) : []
 
@@ -83,7 +83,7 @@ export default class Save extends Command {
       const filepath = path.join(this.configInstance.projectRootPath, flags.filename || '')
       if (flags.filename && (await this.fsUtils.fileExists(filepath))) {
         if (flags.track) {
-          toStageFiles.push(this.context.mapFileToBeRelativeToRootPath(filepath))
+          toStageFiles.push(this.configInstance.mapFileToBeRelativeToRootPath(filepath))
         } else {
           const warnMsg =
             `That file is not tracked.  You may want to run "` +

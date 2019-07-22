@@ -1,4 +1,4 @@
-import { cli } from 'cli-ux';
+import { cli } from 'cli-ux'
 import * as d from 'debug'
 import * as fs from 'fs'
 import * as glob from 'glob'
@@ -18,6 +18,11 @@ export class FsUtils {
   public readonly deleteFile = promisify(fs.unlink)
   public readonly mkdtemp = promisify(fs.mkdtemp)
   public readonly globPromise = promisify(glob)
+  public readonly loadFileSync = fs.readFileSync as (path: string) => string
+  public readonly accessSync = function(filePath: string): void {
+    return fs.accessSync(filePath, fs.constants.R_OK)
+  }
+
   public readonly fileStat = async function(path: fs.PathLike): Promise<{ path: fs.PathLike; stats: fs.Stats }> {
     return new Promise((resolve, reject) => {
       fs.stat(path, (err, stats) => {
@@ -74,5 +79,13 @@ export class FsUtils {
       cli.info(`Created ${fullPathName.resultHighlighColor()}`.resultNormalColor())
     }
   }
-  
+
+  public async getAllFilesForWildcards(wildcards: string[], rootPath: string): Promise<string[]> {
+    const files: string[] = []
+    for (const wildcard of wildcards) {
+      files.push(...(await this.globPromise(path.join(rootPath, wildcard))))
+    }
+    return files
+  }
+
 }

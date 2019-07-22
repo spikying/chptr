@@ -62,7 +62,7 @@ export default class Edit extends Command {
     }
 
     for (const id of chapterIds) {
-      const num = this.context.extractNumber(id)
+      const num = this.configInstance.extractNumber(id)
       const isAtNumbering = this.configInstance.isAtNumbering(id)
 
       if (editType === 'all' || editType === 'chapter') {
