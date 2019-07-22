@@ -2,9 +2,11 @@
 import * as jsonComment from 'comment-json'
 import * as Convict from 'convict'
 import * as d from 'debug'
+// import { applyDiff } from 'deep-diff'
 import fs = require('fs')
 import moment = require('moment')
 import * as path from 'path'
+import * as YAML from 'yaml'
 
 import { sanitizeFileName } from './commands/base'
 import { HardConfig } from './hard-config'
@@ -206,7 +208,7 @@ date: ${moment().format('D MMMM YYYY')}
   private readonly hardConfig: HardConfig
   private readonly rootPath: string
 
-  private _emptyFileString=''
+  private _emptyFileString = ''
 
   constructor(dirname: string, readFromFile = true) {
     this.hardConfig = new HardConfig(dirname)
@@ -214,16 +216,16 @@ date: ${moment().format('D MMMM YYYY')}
 
     if (readFromFile) {
       try {
-        fs.accessSync(this.hardConfig.configFilePath, fs.constants.R_OK)
+        fs.accessSync(this.hardConfig.configJSON5FilePath, fs.constants.R_OK)
       } catch (err) {
-        throw new Error(`File ${this.hardConfig.configFilePath} either doesn't exist or is not readable by process.\n${err}`)
+        throw new Error(`File ${this.hardConfig.configJSON5FilePath} either doesn't exist or is not readable by process.\n${err}`)
       }
 
       let configFileString = ''
       let metadataFieldsString = ''
       try {
-        configFileString = loadFileSync(this.hardConfig.configFilePath)
-        metadataFieldsString = loadFileSync(this.hardConfig.metadataFieldsFilePath)
+        configFileString = loadFileSync(this.hardConfig.configJSON5FilePath)
+        metadataFieldsString = loadFileSync(this.hardConfig.metadataFieldsJSON5FilePath)
       } catch (err) {
         throw new Error(`loading config files error: ${err.toString().infoColor()}`.errorColor())
       }
@@ -244,8 +246,8 @@ date: ${moment().format('D MMMM YYYY')}
     }
   }
 
-  public configDefaultsWithMetaString(overrideObj?: object): string {
-    const overrideObj2: any = overrideObj || {}
+  public configDefaultsWithMetaJSON5String(overrideObj: any): string {
+    overrideObj = overrideObj || {}
     const jsonConfig = this.config
     const props = Object.keys(jsonConfig)
 
@@ -263,7 +265,7 @@ date: ${moment().format('D MMMM YYYY')}
         configDefaultsString += props[i]
         configDefaultsString += `"`
         configDefaultsString += `: `
-        let val = overrideObj2[props[i]] || this.configSchema.default(props[i])
+        let val = overrideObj[props[i]] || this.configSchema.default(props[i])
         if (typeof val === 'object') {
           val = JSON.stringify(val)
         } else {
@@ -279,8 +281,58 @@ date: ${moment().format('D MMMM YYYY')}
     }
     configDefaultsString = configDefaultsString.replace(/(.*),\n$/, '$1')
     configDefaultsString += '\n}'
-    debug(`configDefaultsString = ${configDefaultsString}`)
+    // debug(`configDefaultsString = ${configDefaultsString}`)
     return configDefaultsString
+  }
+  public configDefaultsWithMetaYAMLString(overrideObj: any): string {
+    overrideObj = overrideObj || {}
+    const jsonConfig = this.config
+    const defaultOverridedConfig: any = {}
+    // applyDiff(jsonConfig, overrideObj)
+
+    const props = Object.keys(jsonConfig)
+    for (let i = 0; i !== props.length; i++) {
+      if (jsonConfig.hasOwnProperty(props[i]) && this.configSchemaObject[props[i]]) {
+        defaultOverridedConfig[props[i]] = overrideObj[props[i]] || this.configSchema.default(props[i])
+      }
+    }
+    debug(`defaultOverridedConfig=${JSON.stringify(defaultOverridedConfig)}`)
+
+    const result = new YAML.Document()
+    result.version = 'core'
+    result.commentBefore = "Project's configuration options.\nModify as needed and `build` the project after to apply modifications."
+    result.contents = (YAML.createNode(defaultOverridedConfig) as unknown) as YAML.ast.Seq
+
+    for (const n of result.contents.items) {
+      const node = n as unknown as YAML.ast.Pair
+      const prop = node && node.key || '' // && n.keys[0]
+      debug(`prop=${prop} value=${node.value}`)
+      // n.value.commentBefore = this.configSchemaObject[prop].doc
+      node.commentBefore = this.configSchemaObject[prop.toString()].doc
+    }
+
+    return String(result)
+
+    /*
+    const result = new YAML.Document()
+    result.version = 'core'
+    result.commentBefore = "Project's configuration options.\nModify as needed and `build` the project after to apply modifications."
+result.contents= YAML.createNode(defaultOverridedConfig)
+    const nodes = YAML.Document.prototype.
+
+    for (let i = 0; i !== props.length; i++) {
+      if (jsonConfig.hasOwnProperty(props[i]) && this.configSchemaObject[props[i]]) {
+        // result.contents.push(`//${this.configSchemaObject[props[i]].doc}`)
+        const o: any = {}
+        o[props[i]] = overrideObj[props[i]] || this.configSchema.default(props[i])
+        const node = YAML.createNode(o) as YAML.ast.Map
+        node.commentBefore = this.configSchemaObject[props[i]].doc
+        nodes.items.push(node)
+      }
+    }
+    result.contents = nodes as YAML.ast.Seq
+    return YAML.stringify(result)
+*/
   }
 
   public chapterWildcard(atNumbering: boolean): string {
@@ -351,7 +403,6 @@ date: ${moment().format('D MMMM YYYY')}
           .replace(/NAME/g, '\\2')
     )
   }
-
 
   private wildcardWithNumber(pattern: string, num: number, atNumbering: boolean): string {
     return pattern.replace(/NUM/g, this.numberWildcardPortion(atNumbering, num)).replace(/NAME/g, '*')

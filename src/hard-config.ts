@@ -10,15 +10,23 @@ export class HardConfig {
     }
     return this._configPathName
   }
-  public get configFilePath(): string {
+  public get configJSON5FilePath(): string {
     if (!this._configFileName) {
       this._configFileName = path.join(this.configPath, 'config.json5')
     }
     return this._configFileName
   }
-  public get metadataFieldsFilePath(): string {
+  public get configYAMLFilePath(): string {
+    return path.join(this.configPath, 'config.yaml')
+  }
+
+  public get metadataFieldsJSON5FilePath(): string {
     return path.join(this.configPath, 'metadataFields.json5')
   }
+  public get metadataFieldsYAMLFilePath(): string {
+    return path.join(this.configPath, 'metadataFields.yaml')
+  }
+
   public get emptyFilePath(): string {
     return path.join(this.configPath, 'empty.md')
   }
@@ -31,32 +39,32 @@ export class HardConfig {
   public get gitattributesFilePath(): string {
     return path.join(this.rootPath, '.gitattributes')
   }
-  public get metadataFieldsDefaults(): string {
-    const obj = {
-      datetimeRange: '',
-      revisionSteps: {
-        draft: false,
-        language: false,
-        style: {
-          wordRepetitions: false,
-          languageLevel: false
-        },
-        dialogs: false,
-        questAnalysis: false,
-        tenPercentCut: false
-      },
-      characters: [],
-      mainCharacter: '',
-      mainCharacterQuest: '',
-      otherQuest: ''
-    }
-
-    return JSON.stringify(obj, null, 4)
+  public get metadataFieldsDefaultsJSONString(): string {
+    return JSON.stringify(this._metadataFieldsDefaultsObj, null, 4)
   }
-  
+
   public templateEmptyFileString = `\n# {TITLE}\n\n`
-  public templateGitignoreString =  `build/\npandoc*/\n*.antidote\n`
-  public templateGitattributesString =  `autocrlf=false\neol=lf\n* text=auto\n`
+  public templateGitignoreString = `build/\npandoc*/\n*.antidote\n`
+  public templateGitattributesString = `autocrlf=false\neol=lf\n* text=auto\n`
+
+  private readonly _metadataFieldsDefaultsObj = {
+    datetimeRange: '',
+    revisionSteps: {
+      draft: false,
+      language: false,
+      style: {
+        wordRepetitions: false,
+        languageLevel: false
+      },
+      dialogs: false,
+      questAnalysis: false,
+      tenPercentCut: false
+    },
+    characters: [],
+    mainCharacter: '',
+    mainCharacterQuest: '',
+    otherQuest: ''
+  }
 
   private readonly rootPath: string
   private _configPathName = ''
@@ -64,15 +72,6 @@ export class HardConfig {
   constructor(dirname: string) {
     debug('In HardConfig constructor')
     this.rootPath = path.join(dirname)
-    // this.configPathName = path.join(this.rootPath, './config/')
-    // this.configFileName = path.join(this.configPathName, 'config.json5')
-
-    // try {
-    //   const emptyFileString = loadFileSync(this.emptyFilePath)
-    //   this.emptyFileString = emptyFileString
-    // } catch (err) {
-    //   debug(err)
-    // }
   }
 
   public antidotePathName(chapterFilename: string): string {

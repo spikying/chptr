@@ -51,7 +51,7 @@ export default abstract class extends Command {
     }
 
     const hasConfigFolder = await fileExists(this.hardConfig.configPath)
-    const hasConfigFile = await fileExists(this.hardConfig.configFilePath)
+    const hasConfigFile = await fileExists(this.hardConfig.configJSON5FilePath)
 
     if (!hasConfigFolder || !hasConfigFile) {
       throw new Error('Directory was not initialized.  Run `init` command.')
@@ -619,8 +619,8 @@ export default abstract class extends Command {
   private async getLastAndActualConfigObjects(): Promise<{ lastConfigObj: any; actualConfigObj: any }> {
     if (!this._lastConfigObj || !this._actualConfigObj) {
       const lastConfigContent =
-        (await this.git.show([`HEAD:${this.context.mapFileToBeRelativeToRootPath(this.hardConfig.configFilePath).replace(/\\/, '/')}`])) || '{}'
-      const actualConfigContent = await this.readFileContent(this.hardConfig.configFilePath)
+        (await this.git.show([`HEAD:${this.context.mapFileToBeRelativeToRootPath(this.hardConfig.configJSON5FilePath).replace(/\\/, '/')}`])) || '{}'
+      const actualConfigContent = await this.readFileContent(this.hardConfig.configJSON5FilePath)
 
       this._lastConfigObj = jsonComment.parse(lastConfigContent, undefined, true)
       this._actualConfigObj = jsonComment.parse(actualConfigContent, undefined, true)

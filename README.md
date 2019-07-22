@@ -200,6 +200,9 @@ OPTIONS
   -p, --path=path            [default: .] Path where root of project files are
 
   -r, --gitRemote=gitRemote  Git address of remote repository.
+
+ALIASES
+  $ chptr setup
 ```
 
 _See code: [src\commands\init.ts](https://github.com/spikying/chptr/blob/v0.1.0/src\commands\init.ts)_

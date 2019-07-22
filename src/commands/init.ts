@@ -76,7 +76,7 @@ export default class Init extends Command {
     // Prompt config options if necessary
     const queryBuilder = new QueryBuilder()
 
-    const forceConfigJson = forceAll || force === path.basename(this.hardConfig.configFilePath)
+    const forceConfigJson = forceAll || force === path.basename(this.hardConfig.configJSON5FilePath)
 
     const notEmptyString = function(val: string): string {
       if (!val) {
@@ -93,7 +93,7 @@ export default class Init extends Command {
       }
     }
 
-    if (forceConfigJson || !(await fileExists(this.hardConfig.configFilePath))) {
+    if (forceConfigJson || !(await fileExists(this.hardConfig.configJSON5FilePath))) {
       const options: any = {
         name: {
           arg: args.name,
@@ -150,18 +150,24 @@ export default class Init extends Command {
 
     //TODO : VirginConfigInstance's essentials could be moved to HardConfig?
     const virginConfigInstance = new SoftConfig(path.join(flags.path as string), false)
+    const overrideObj = {
+      projectTitle: name,
+      projectAuthor: { name: authorName, email: authorEmail } as Author,
+      projectLang: language
+    }
+
     const allConfigOperations = [
       {
-        fullPathName: this.hardConfig.configFilePath,
-        content: virginConfigInstance.configDefaultsWithMetaString({
-          projectTitle: name,
-          projectAuthor: { name: authorName, email: authorEmail } as Author,
-          projectLang: language
-        })
+        fullPathName: this.hardConfig.configJSON5FilePath,
+        content: virginConfigInstance.configDefaultsWithMetaJSON5String(overrideObj)
       },
       {
-        fullPathName: this.hardConfig.metadataFieldsFilePath,
-        content: this.hardConfig.metadataFieldsDefaults
+        fullPathName: this.hardConfig.configYAMLFilePath,
+        content: virginConfigInstance.configDefaultsWithMetaYAMLString(overrideObj)
+      },
+      {
+        fullPathName: this.hardConfig.metadataFieldsJSON5FilePath,
+        content: this.hardConfig.metadataFieldsDefaultsJSONString
       },
       {
         fullPathName: this.hardConfig.emptyFilePath,
