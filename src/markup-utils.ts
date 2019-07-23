@@ -27,6 +27,9 @@ export class MarkupUtils {
 
   public async extractMarkup(chapterFilepath: string): Promise<MarkupObj[]> {
     const resultArray: MarkupObj[] = []
+
+    debug(`in ExtractMarkup; chapterFilePath=${chapterFilepath}`)
+
     try {
       const initialContent = await this.fsUtils.readFileContent(path.join(this.configInstance.projectRootPath, chapterFilepath))
       const markupRegex = /(?:{{(\d+)}}\n)?.*?{(.*?)\s?:\s?(.*?)}/gm
@@ -59,6 +62,7 @@ export class MarkupUtils {
       cli.exit(1)
     }
 
+    debug(`end of extractMarkup.  result=${JSON.stringify(resultArray)}`)
     return resultArray
   }
 
@@ -103,6 +107,8 @@ export class MarkupUtils {
       const extractedMarkup: any = {}
       const computedMarkup: any = {}
       const markupArray = markupByFile[file]
+      debug(`file: ${file} markupArray=${JSON.stringify(markupArray)}`)
+
       markupArray.forEach((markup: MarkupObj) => {
         if (markup.computed) {
           computedMarkup[markup.type] = markup.value
@@ -121,7 +127,8 @@ export class MarkupUtils {
       const num = this.configInstance.extractNumber(file)
       const isAt = this.configInstance.isAtNumbering(file)
 
-      const metadataFilename = await this.configInstance.getMetadataFilenameFromParameters(num, isAt)
+      //bug: doesn't get filename if pattern has changed.
+      const metadataFilename = await this.configInstance.getMetadataFilenameFromDirectorySearchFromParameters(num, isAt)
       const metadataFilePath = path.join(this.configInstance.projectRootPath, metadataFilename)
       const initialContent = await this.fsUtils.readFileContent(metadataFilePath)
 
@@ -142,6 +149,7 @@ export class MarkupUtils {
           ? yaml.safeDump(updatedObj)
           : ''
       if (initialContent !== updatedContent) {
+        debug(`metadataFilePath=${metadataFilePath} updatedContent=${updatedContent}`)
         await this.fsUtils.writeFile(metadataFilePath, updatedContent)
         //todo: move to deep-diff?
         modifiedFiles.push({

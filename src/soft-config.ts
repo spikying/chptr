@@ -429,10 +429,10 @@ date: ${moment().format('D MMMM YYYY')}
     return fileNumber
   }
 
-  public async getMetadataFilenameFromParameters(num: number, atNumbering: boolean): Promise<string> {
-    //TODO: build a real logic based on config instead of looking for files.  Does not work when changing file pattern.
+  public async getMetadataFilenameFromDirectorySearchFromParameters(num: number, atNumbering: boolean): Promise<string> {
     const files = await this.fsUtils.globPromise(path.join(this.projectRootPath, this.metadataWildcardWithNumber(num, atNumbering)))
-    return files[0]
+    debug(`Getting metadata filename from search: files=${files}`)
+    return files.length>0? files[0]: ''
   }
 
   public async getAllFilesForChapter(num: number, isAtNumbered: boolean): Promise<string[]> {
@@ -445,7 +445,7 @@ date: ${moment().format('D MMMM YYYY')}
   }
 
   public async getAllFilesForPattern(pattern: string): Promise<string[]> {
-    
+
     const wildcards = [this.wildcardize(pattern, false), this.wildcardize(pattern, true)]
     return this.fsUtils.getAllFilesForWildcards(wildcards, this.projectRootPath)
   }
@@ -477,6 +477,15 @@ date: ${moment().format('D MMMM YYYY')}
 
     const re = new RegExp(/^(.*?)(@?\d+)(.*)$/)
     return filename.replace(re, '$1' + (atNumbering ? '@' : '') + this.fsUtils.stringifyNumber(newFilenumber, digits) + '$3')
+  }
+
+  public async getTitleOfChapterFromOldChapterFilename(pattern: string, num: number, isAtNumber: boolean): Promise<string> {
+    const chapterFilePathWildcard = await this.wildcardWithNumber(pattern, num, isAtNumber)
+    const files = await this.fsUtils.getAllFilesForWildcards([chapterFilePathWildcard], this.projectRootPath) || ['']
+
+    const re = this.patternRegexer(pattern, isAtNumber)
+    const chapterMatch = re.exec(this.mapFileToBeRelativeToRootPath(files[0]))
+    return chapterMatch? chapterMatch[2] : ''
   }
 
   private wildcardWithNumber(pattern: string, num: number, atNumbering: boolean): string {

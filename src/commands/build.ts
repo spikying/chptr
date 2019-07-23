@@ -305,17 +305,19 @@ export default class Build extends Command {
 
   private async extractGlobalMetadata(allChapterFilesArray: string[], outputFile: string) {
     cli.action.start('Extracting global metadata'.actionStartColor())
+    debug(`starting extractGlobalMetadata`)
 
     const table = tableize('file', 'diff')
     const extractPromises: Promise<MarkupObj[]>[] = []
     allChapterFilesArray.forEach(cf => {
       extractPromises.push(this.markupUtils.extractMarkup(cf))
     })
+    
     await Promise.all(extractPromises).then(async fullMarkupArray => {
       const flattenedMarkupArray: MarkupObj[] = ([] as MarkupObj[]).concat(...fullMarkupArray)
 
       const { markupByFile, markupByType } = this.markupUtils.objectifyMarkupArray(flattenedMarkupArray)
-
+      
       const markupExt = this.configInstance.configStyle.toLowerCase()
       const allMarkups = [
         { markupObj: markupByFile, fullPath: path.join(this.configInstance.buildDirectory, `${outputFile}.markupByFile.${markupExt}`) },
@@ -323,14 +325,18 @@ export default class Build extends Command {
       ]
 
       for (const markup of allMarkups) {
+        debug(`markup.fullPath=${markup.fullPath}`)
         const existingMarkupContent = await this.fsUtils.readFileContent(markup.fullPath)
+        debug(`up to here in build`)
 
         const comparedString =
           this.configInstance.configStyle === 'JSON5'
             ? JSON.stringify(markup.markupObj, null, 4)
             : this.configInstance.configStyle === 'YAML'
             ? yaml.safeDump(markup.markupObj)
-            : ''
+              : ''
+        
+        debug(`comparedString=${comparedString}`)
         if (existingMarkupContent !== comparedString) {
           await this.fsUtils.writeFile(markup.fullPath, comparedString)
           table.accumulator(this.configInstance.mapFileToBeRelativeToRootPath(markup.fullPath), 'updated')

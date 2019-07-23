@@ -110,10 +110,12 @@ export default abstract class extends Command {
 
     debug(`old vs new: ${JSON.stringify(oldVsNew)}`)
 
+    const oldChapterPattern = lastConfigObj.chapterPattern
+
     const movePromises: Promise<MoveSummary>[] = []
     const movesToDo: { originalFile: string; renamedFile: string }[] = []
     for (const oldAndNew of oldVsNew) {
-      const files = await this.configInstance.getAllFilesForPattern(oldAndNew.oldPattern)
+      const files = (await this.configInstance.getAllFilesForPattern(oldAndNew.oldPattern)) || []
 
       for (const file of files) {
         const reNormal = this.configInstance.patternRegexer(oldAndNew.oldPattern, false)
@@ -126,9 +128,11 @@ export default abstract class extends Command {
         // const name = rootedFile.replace(isAtNumber ? reAtNumber : reNormal, '$2')
         const nameMatch = (isAtNumber ? reAtNumber : reNormal).exec(rootedFile)
         debug(`nameMatch=${JSON.stringify(nameMatch)} nameMatch.length=${nameMatch && nameMatch.length}`)
-        debug(`$2=${nameMatch && nameMatch.length >= 3 ? nameMatch[2]:'---'}`)
+        debug(`$2=${nameMatch && nameMatch.length >= 3 ? nameMatch[2] : '---'}`)
         const name: string =
-          nameMatch && nameMatch.length >= 3 ? nameMatch[2] : await this.getTitleOfChapterFromMetadata(parseInt(num, 10), isAtNumber)
+          nameMatch && nameMatch.length >= 3
+            ? nameMatch[2]
+            : await this.configInstance.getTitleOfChapterFromOldChapterFilename(oldChapterPattern, parseInt(num, 10), isAtNumber)
         debug(`file=${file} num=${num} name=${name}`)
 
         const renamedFile = oldAndNew.newPattern.replace(/NUM/g, (isAtNumber ? '@' : '') + num).replace(/NAME/g, name)
@@ -481,20 +485,5 @@ export default abstract class extends Command {
     table.show('Adding digits to files')
     await Promise.all(promises)
     return hasMadeChanges
-  }
-
-  private async getTitleOfChapterFromMetadata(num: number, isAtNumber: boolean): Promise<string> {
-    const metadataFilePath = await this.configInstance.getMetadataFilenameFromParameters(num, isAtNumber)
-    debug(`metadataFilePath=${metadataFilePath}`)
-    const initialContent = await this.fsUtils.readFileContent(path.join(this.configInstance.projectRootPath, metadataFilePath))
-    const metadata =
-      this.configInstance.configStyle === 'JSON5'
-        ? JSON.parse(initialContent)
-        : this.configInstance.configStyle === 'YAML'
-        ? yaml.safeLoad(initialContent)
-        : {}
-
-    debug(`Getting title.\nmetadataFilePath=${metadataFilePath}\ninitialContent=${initialContent}\nmetadata=${JSON.stringify(metadata)}`)
-    return metadata && metadata.computed && metadata.computed.title
   }
 }
