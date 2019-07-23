@@ -353,6 +353,7 @@ date: ${moment().format('D MMMM YYYY')}
     return this.wildcardWithNumber(this.config.chapterPattern, num, atNumbering)
   }
   public metadataWildcardWithNumber(num: number, atNumbering: boolean): string {
+    debug(`this.config.metadataPattern=${this.config.metadataPattern}`)
     return this.wildcardWithNumber(this.config.metadataPattern, num, atNumbering)
   }
   public summaryWildcardWithNumber(num: number, atNumbering: boolean): string {
@@ -429,6 +430,7 @@ date: ${moment().format('D MMMM YYYY')}
   }
 
   public async getMetadataFilenameFromParameters(num: number, atNumbering: boolean): Promise<string> {
+    //TODO: build a real logic based on config instead of looking for files.  Does not work when changing file pattern.
     const files = await this.fsUtils.globPromise(path.join(this.projectRootPath, this.metadataWildcardWithNumber(num, atNumbering)))
     return files[0]
   }
@@ -443,6 +445,7 @@ date: ${moment().format('D MMMM YYYY')}
   }
 
   public async getAllFilesForPattern(pattern: string): Promise<string[]> {
+    
     const wildcards = [this.wildcardize(pattern, false), this.wildcardize(pattern, true)]
     return this.fsUtils.getAllFilesForWildcards(wildcards, this.projectRootPath)
   }

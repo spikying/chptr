@@ -56,7 +56,6 @@ export default class Build extends Command {
   static aliases = ['compile']
   static hidden = false
 
-  //TODO: if config is in YAML, export metadata in YAML?
   async run() {
     debug('Running Build command')
     const { flags } = this.parse(Build)
