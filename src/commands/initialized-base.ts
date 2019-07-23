@@ -111,7 +111,7 @@ export default abstract class extends Command {
         const name = rootedFile.replace(isAtNumber ? reAtNumber : reNormal, '$2')
         const renamedFile = oldAndNew.newPattern.replace(/NUM/g, (isAtNumber ? '@' : '') + num).replace(/NAME/g, name)
 
-        await this.fsUtils.createSubDirectoryIfNecessary(path.join(this.configInstance.projectRootPath, renamedFile))
+        await this.fsUtils.createSubDirectoryFromFilePathIfNecessary(path.join(this.configInstance.projectRootPath, renamedFile))
 
         result = true
         movePromises.push(this.git.mv(rootedFile, renamedFile))
@@ -144,7 +144,7 @@ export default abstract class extends Command {
     if (oldDir !== newDir) {
       const files = await this.fsUtils.globPromise(path.join(this.configInstance.projectRootPath, oldDir, '**/*.*'))
       debug(`move to new build dir : files=${files}`)
-      await this.fsUtils.createSubDirectoryIfNecessary(path.join(this.configInstance.projectRootPath, newDir, 'futureBuildDir.txt'))
+      await this.fsUtils.createSubDirectoryFromDirectoryPathIfNecessary(path.join(this.configInstance.projectRootPath, newDir))
 
       for (const file of files) {
         const newFile = path.relative(path.join(this.configInstance.projectRootPath, oldDir), file)
@@ -239,6 +239,7 @@ export default abstract class extends Command {
     for (const filename of toStageFiles) {
       const fullPath = path.join(this.configInstance.projectRootPath, filename)
       const exists = await this.fsUtils.fileExists(fullPath)
+      debug(`file exists = ${exists}`)
       if (
         exists &&
         (this.configInstance.chapterRegex(false).test(this.configInstance.mapFileToBeRelativeToRootPath(fullPath)) ||
@@ -257,15 +258,19 @@ export default abstract class extends Command {
   }
 
   //All Git shared operations
-  public async CommitToGit(message: string, toStageFiles?: string[]) {
+  public async CommitToGit(message: string, toStageFiles?: string[], forDeletes = false) {
     toStageFiles = toStageFiles || (await this.GetGitListOfStageableFiles())
-    if (toStageFiles.length > 0) {
+    if (toStageFiles.length > 0 || forDeletes) {
       try {
         cli.action.start('Saving file(s) in repository'.actionStartColor())
 
         await this.processChapterFilesBeforeSaving(toStageFiles)
+        debug(`after processing file`)
 
-        await this.git.add(toStageFiles)
+        if (!forDeletes) {
+          await this.git.add(toStageFiles)
+        }
+        debug(`after adding files`)
         await this.git.addConfig('user.name', this.configInstance.config.projectAuthor.name)
         await this.git.addConfig('user.email', this.configInstance.config.projectAuthor.email)
 
@@ -306,11 +311,13 @@ export default abstract class extends Command {
 
     const unfilteredFileList = (await this.git.diff(['--name-only']))
       .split('\n')
-      .concat(gitStatus.deleted.map(unQuote))
+      // .concat(gitStatus.deleted.map(unQuote))
       .concat(gitStatus.modified.map(unQuote))
       .concat(gitStatus.created.map(unQuote))
       .concat(gitStatus.renamed.map((value: any) => value.to as string).map(unQuote))
       .filter(onlyUnique)
+
+    // debug(`unfilteredFileList=${JSON.stringify(unfilteredFileList)}`)
 
     return unfilteredFileList
       .filter(val => val !== '')
@@ -427,7 +434,7 @@ export default abstract class extends Command {
         const toFilename = this.configInstance.renumberedFilename(filename, filenumber, newDigitNumber, atNumbering)
 
         if (fromFilename !== toFilename) {
-          await this.fsUtils.createSubDirectoryIfNecessary(path.join(this.configInstance.projectRootPath, toFilename))
+          await this.fsUtils.createSubDirectoryFromFilePathIfNecessary(path.join(this.configInstance.projectRootPath, toFilename))
           table.accumulator(fromFilename, toFilename)
           promises.push(this.git.mv(fromFilename, toFilename))
           hasMadeChanges = true

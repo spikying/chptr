@@ -1,6 +1,7 @@
 import { flags } from '@oclif/command'
 import { exec } from 'child_process'
 import cli from 'cli-ux'
+import yaml = require('js-yaml')
 import * as moment from 'moment'
 import * as path from 'path'
 import { file as tmpFile } from 'tmp-promise'
@@ -90,9 +91,8 @@ export default class Build extends Command {
     const tmpMDfileTex = await tmpFile()
     debug(`temp files = ${tmpMDfile.path} and ${tmpMDfileTex.path}`)
 
-    try {
-      await this.fsUtils.createDir(this.configInstance.buildDirectory)
-    } catch {}
+    const buildDirectory = this.configInstance.buildDirectory
+    await this.fsUtils.createSubDirectoryFromDirectoryPathIfNecessary(buildDirectory)
 
     try {
       const originalChapterFilesArray = (await this.fsUtils.globPromise(
@@ -195,10 +195,6 @@ export default class Build extends Command {
 
       const pandocRuns: Promise<void>[] = []
       const allOutputFilePath: string[] = []
-
-
-      const buildDirectory = this.configInstance.buildDirectory
-      await this.fsUtils.createSubDirectoryIfNecessary(path.join(buildDirectory, 'config.file'))      
 
       for (const filetype of outputFiletype) {
         // outputFiletype.forEach(filetype => {
@@ -317,16 +313,23 @@ export default class Build extends Command {
 
       const { markupByFile, markupByType } = this.markupUtils.objectifyMarkupArray(flattenedMarkupArray)
 
+      const markupExt = this.configInstance.configStyle.toLowerCase()
       const allMarkups = [
-        { markupObj: markupByFile, fullPath: path.join(this.configInstance.buildDirectory, `${outputFile}.markupByFile.json`) },
-        { markupObj: markupByType, fullPath: path.join(this.configInstance.buildDirectory, `${outputFile}.markupByType.json`) }
+        { markupObj: markupByFile, fullPath: path.join(this.configInstance.buildDirectory, `${outputFile}.markupByFile.${markupExt}`) },
+        { markupObj: markupByType, fullPath: path.join(this.configInstance.buildDirectory, `${outputFile}.markupByType.${markupExt}`) }
       ]
 
       for (const markup of allMarkups) {
         const existingMarkupContent = await this.fsUtils.readFileContent(markup.fullPath)
 
-        if (existingMarkupContent !== JSON.stringify(markup.markupObj, null, 4)) {
-          await this.fsUtils.writeFile(markup.fullPath, JSON.stringify(markup.markupObj, null, 4))
+        const comparedString =
+          this.configInstance.configStyle === 'JSON5'
+            ? JSON.stringify(markup.markupObj, null, 4)
+            : this.configInstance.configStyle === 'YAML'
+            ? yaml.safeDump(markup.markupObj)
+            : ''
+        if (existingMarkupContent !== comparedString) {
+          await this.fsUtils.writeFile(markup.fullPath, comparedString)
           table.accumulator(this.configInstance.mapFileToBeRelativeToRootPath(markup.fullPath), 'updated')
         }
       }

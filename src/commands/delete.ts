@@ -99,6 +99,12 @@ export default class Delete extends Command {
         cli.action.start('Deleting file(s) locally and from repository'.actionStartColor())
         await this.git.rm(this.configInstance.mapFilesToBeRelativeToRootPath(toDeleteFiles))
         const toDeletePretty = toDeleteFiles.map(f => `\n    ${f}`)
+        await this.CommitToGit(
+          `Removed files: ${JSON.stringify(this.configInstance.mapFilesToBeRelativeToRootPath(toDeleteFiles))}`,
+          undefined,
+          true
+        )
+
         cli.action.stop(`${toDeletePretty}\nwere deleted`.actionStopColor())
       } catch (err) {
         this.error(err.toString().errorColor())
@@ -106,9 +112,8 @@ export default class Delete extends Command {
 
       if (compact) {
         await this.compactFileNumbers()
+        await this.CommitToGit(`Compacted file numbers`)
       }
-
-      await this.CommitToGit(`Removed files: ${JSON.stringify(toDeleteFiles)}${compact ? '\nCompacted file numbers' : ''}`)
     }
   }
 }

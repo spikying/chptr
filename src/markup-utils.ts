@@ -2,6 +2,7 @@ import { cli } from 'cli-ux'
 import * as d from 'debug'
 import { applyChange, diff, observableDiff } from 'deep-diff'
 import * as JsDiff from 'diff'
+import yaml = require('js-yaml')
 import * as path from 'path'
 
 import { FsUtils } from './fs-utils'
@@ -124,17 +125,28 @@ export class MarkupUtils {
       const metadataFilePath = path.join(this.configInstance.projectRootPath, metadataFilename)
       const initialContent = await this.fsUtils.readFileContent(metadataFilePath)
 
-      const obj = JSON.parse(initialContent)
-      obj.extracted = extractedMarkup
-      obj.computed = computedMarkup
+      const initialObj =
+        this.configInstance.configStyle === 'JSON5'
+          ? JSON.parse(initialContent)
+          : this.configInstance.configStyle === 'YAML'
+          ? yaml.safeLoad(initialContent)
+          : {}
+      const updatedObj = JSON.parse(JSON.stringify(initialObj)) //used to create deep copy
+      updatedObj.extracted = extractedMarkup
+      updatedObj.computed = computedMarkup
 
-      const updatedContent = JSON.stringify(obj, null, 4)
+      const updatedContent =
+        this.configInstance.configStyle === 'JSON5'
+          ? JSON.stringify(updatedObj, null, 4)
+          : this.configInstance.configStyle === 'YAML'
+          ? yaml.safeDump(updatedObj)
+          : ''
       if (initialContent !== updatedContent) {
         await this.fsUtils.writeFile(metadataFilePath, updatedContent)
         //todo: move to deep-diff?
         modifiedFiles.push({
           file: metadataFilePath,
-          diff: JsDiff.diffJson(JSON.parse(initialContent), JSON.parse(updatedContent))
+          diff: JsDiff.diffJson(initialObj, updatedObj)
             .map(d => {
               let s = d.added ? `++ ${d.value.trim()}` : ''
               s += d.removed ? `-- ${d.value.trim()}` : ''
@@ -177,8 +189,18 @@ export class MarkupUtils {
       debug(`file=${file}`)
       const initialContent = await this.fsUtils.readFileContent(file)
       try {
-        const initialObj = JSON.parse(initialContent)
-        const replacedObj = JSON.parse(initialContent)
+        const initialObj =
+          this.configInstance.configStyle === 'JSON5'
+            ? JSON.parse(initialContent)
+            : this.configInstance.configStyle === 'YAML'
+            ? yaml.safeLoad(initialContent)
+            : {}
+        const replacedObj =
+          this.configInstance.configStyle === 'JSON5'
+            ? JSON.parse(initialContent)
+            : this.configInstance.configStyle === 'YAML'
+            ? yaml.safeLoad(initialContent)
+            : {}
 
         let changeApplied = false
         observableDiff(replacedObj.manual, this.configInstance.metadataFieldsDefaults, d => {
@@ -193,7 +215,13 @@ export class MarkupUtils {
             const expl = (d.kind === 'N' ? 'New ' : 'Deleted ') + d.path
             table.accumulator(this.configInstance.mapFileToBeRelativeToRootPath(file), expl)
           })
-          await this.fsUtils.writeFile(file, JSON.stringify(replacedObj, null, 4))
+          const outputString =
+            this.configInstance.configStyle === 'JSON5'
+              ? JSON.stringify(replacedObj, null, 4)
+              : this.configInstance.configStyle === 'YAML'
+              ? yaml.safeDump(replacedObj)
+              : ''
+          await this.fsUtils.writeFile(file, outputString)
         }
       } catch (err) {
         debug(err.toString().errorColor())

@@ -8,7 +8,7 @@ import moment = require('moment')
 import * as path from 'path'
 import * as YAML from 'yaml'
 
-import { FsUtils } from './fs-utils';
+import { FsUtils } from './fs-utils'
 import { HardConfig } from './hard-config'
 
 const debug = d('config:soft')
@@ -40,7 +40,7 @@ export class SoftConfig {
       // } else {
       const jsonConfig: any = this.configSchema.getProperties() // so we can operate with a plain old JavaScript object and abstract away convict (optional)
       jsonConfig.chapterPattern = this.fsUtils.sanitizeFileName(jsonConfig.chapterPattern, true)
-      jsonConfig.metadataPattern = this.fsUtils.sanitizeFileName(jsonConfig.metadataPattern, true)
+      jsonConfig.metadataPattern = this.fsUtils.sanitizeFileName(jsonConfig.metadataPattern.replace(/\.<ext>$/, `.${this.configStyle.toLowerCase()}`), true)
       jsonConfig.summaryPattern = this.fsUtils.sanitizeFileName(jsonConfig.summaryPattern, true)
       jsonConfig.metadataFields = {
         manual: this._metadataFieldsObj,
@@ -113,7 +113,7 @@ date: ${moment().format('D MMMM YYYY')}
     },
     metadataPattern: {
       doc:
-        'File naming pattern for metadata files.  Use NUM for chapter number and NAME for optional chapter name.  Optionally use `/` for a folder structure. Defaults to `NUM.metadata.json`.',
+        'File naming pattern for metadata files.  Use NUM for chapter number and NAME for optional chapter name.  Optionally use `/` for a folder structure. Defaults to `NUM.metadata.<ext>` where <ext> will be replaced by either `json5` or `yaml`.',
       format: (val: string) => {
         if (!/^(?=.*NUM).*$/.test(val)) {
           // && !/^$/.test(val)
@@ -426,9 +426,7 @@ date: ${moment().format('D MMMM YYYY')}
   }
 
   public async getMetadataFilenameFromParameters(num: number, atNumbering: boolean): Promise<string> {
-    const files = await this.fsUtils.globPromise(
-      path.join(this.projectRootPath, this.metadataWildcardWithNumber(num, atNumbering))
-    )
+    const files = await this.fsUtils.globPromise(path.join(this.projectRootPath, this.metadataWildcardWithNumber(num, atNumbering)))
     return files[0]
   }
 
@@ -474,7 +472,6 @@ date: ${moment().format('D MMMM YYYY')}
     const re = new RegExp(/^(.*?)(@?\d+)(.*)$/)
     return filename.replace(re, '$1' + (atNumbering ? '@' : '') + this.fsUtils.stringifyNumber(newFilenumber, digits) + '$3')
   }
-
 
   private wildcardWithNumber(pattern: string, num: number, atNumbering: boolean): string {
     return pattern.replace(/NUM/g, this.numberWildcardPortion(atNumbering, num)).replace(/NAME/g, '*')

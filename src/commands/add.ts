@@ -1,5 +1,6 @@
 import { flags } from '@oclif/command'
 import { cli } from 'cli-ux'
+import yaml = require('js-yaml')
 import * as path from 'path'
 
 import { QueryBuilder } from '../ui-utils'
@@ -81,7 +82,12 @@ export default class Add extends Command {
     const metadataObj: any = this.configInstance.config.metadataFields
     metadataObj.computed.title = name
     metadataObj.computed.wordCount = this.markupUtils.GetWordCount(filledTemplateData)
-    const filledTemplateMeta = JSON.stringify(metadataObj, undefined, 4) //.replace(/{TITLE}/gim, name)
+    const filledTemplateMeta =
+      this.configInstance.configStyle === 'JSON5'
+        ? JSON.stringify(metadataObj, undefined, 4)
+        : this.configInstance.configStyle === 'YAML'
+        ? yaml.safeDump(metadataObj)
+        : ''
 
     const fullPathMD = path.join(
       this.configInstance.projectRootPath,

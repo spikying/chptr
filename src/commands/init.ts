@@ -6,7 +6,7 @@ import * as validator from 'validator'
 import { Author, SoftConfig } from '../soft-config'
 import { QueryBuilder, tableize } from '../ui-utils'
 
-import Command, {  d } from './base'
+import Command, { d } from './base'
 
 const debug = d('command:init')
 
@@ -165,7 +165,6 @@ export default class Init extends Command {
 
     //prepare for creating config files
 
-    //TODO : VirginConfigInstance's essentials could be moved to HardConfig?
     const virginConfigInstance = new SoftConfig(path.join(flags.path as string), false)
     const overrideObj = {
       projectTitle: name,

@@ -54,11 +54,10 @@ export class FsUtils {
     return wf(path, data, 'utf8')
   }
 
-  public async createSubDirectoryIfNecessary(fullFilePath: string): Promise<string | null> {
+  public async createSubDirectoryFromDirectoryPathIfNecessary(directoryPath: string): Promise<string | null> {
     const mkdirp = require('mkdirp')
 
     return new Promise((resolve, reject) => {
-      const directoryPath = path.dirname(fullFilePath)
       mkdirp(directoryPath, (err: any, made: any) => {
         if (err) {
           debug(err)
@@ -68,9 +67,25 @@ export class FsUtils {
       })
     })
   }
+  public async createSubDirectoryFromFilePathIfNecessary(fullFilePath: string): Promise<string | null> {
+    const directoryPath = path.dirname(fullFilePath)
+    return this.createSubDirectoryFromDirectoryPathIfNecessary(directoryPath)
+    // const mkdirp = require('mkdirp')
+
+    // return new Promise((resolve, reject) => {
+    //   const directoryPath = path.dirname(fullFilePath)
+    //   mkdirp(directoryPath, (err: any, made: any) => {
+    //     if (err) {
+    //       debug(err)
+    //       reject(err)
+    //     }
+    //     resolve(made)
+    //   })
+    // })
+  }
 
   public async createFile(fullPathName: string, content: string) {
-    await this.createSubDirectoryIfNecessary(fullPathName)
+    await this.createSubDirectoryFromFilePathIfNecessary(fullPathName)
 
     const createFile = promisify(fs.writeFile)
     try {
@@ -174,5 +189,4 @@ export class FsUtils {
       return s
     }
   }
-
 }
