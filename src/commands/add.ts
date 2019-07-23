@@ -73,7 +73,8 @@ export default class Add extends Command {
       await this.statistics.updateStackStatistics(atNumbering)
 
       const highestNumber = this.statistics.getHighestNumber(atNumbering)
-      nextNumber = highestNumber === 0 ? this.configInstance.config.numberingInitial : highestNumber + this.configInstance.config.numberingStep
+      nextNumber =
+        highestNumber === 0 ? this.configInstance.config.numberingInitial : highestNumber + this.configInstance.config.numberingStep
     }
     const newDigits = this.fsUtils.numDigits(nextNumber)
 
@@ -115,9 +116,11 @@ export default class Add extends Command {
       cli.action.stop('done'.actionStopColor())
 
       const toStageFiles = this.configInstance.mapFilesToBeRelativeToRootPath([fullPathMD, fullPathMeta, fullPathSummary])
-      const commitMessage = `added ${this.configInstance.mapFileToBeRelativeToRootPath(fullPathMD)}, ${this.configInstance.mapFileToBeRelativeToRootPath(
-        fullPathMeta
-      )} and ${this.configInstance.mapFileToBeRelativeToRootPath(fullPathSummary)}`
+      const commitMessage = `added ${this.configInstance.mapFileToBeRelativeToRootPath(
+        fullPathMD
+      )}, ${this.configInstance.mapFileToBeRelativeToRootPath(fullPathMeta)} and ${this.configInstance.mapFileToBeRelativeToRootPath(
+        fullPathSummary
+      )}`
 
       await this.addDigitsToNecessaryStacks()
       await this.CommitToGit(commitMessage, toStageFiles)

@@ -354,7 +354,11 @@ export default abstract class extends Command {
     const tempDirForGit = this.configInstance.mapFileToBeRelativeToRootPath(tempDir)
 
     for (const b of [true, false]) {
-      const wildcards = [this.configInstance.chapterWildcard(b), this.configInstance.metadataWildcard(b), this.configInstance.summaryWildcard(b)]
+      const wildcards = [
+        this.configInstance.chapterWildcard(b),
+        this.configInstance.metadataWildcard(b),
+        this.configInstance.summaryWildcard(b)
+      ]
       for (const wildcard of wildcards) {
         const files = await this.fsUtils.globPromise(path.join(this.configInstance.projectRootPath, wildcard))
 
@@ -406,14 +410,19 @@ export default abstract class extends Command {
           : this.configInstance.configStyle === 'YAML'
           ? this.hardConfig.configYAMLFilePath
           : ''
-      const lastConfigContent = (await this.git.show([`HEAD:${this.configInstance.mapFileToBeRelativeToRootPath(configFilePath).replace(/\\/, '/')}`])) || '{}'
+      const lastConfigContent =
+        (await this.git.show([`HEAD:${this.configInstance.mapFileToBeRelativeToRootPath(configFilePath).replace(/\\/, '/')}`])) || '{}'
 
       const actualConfigContent = await this.fsUtils.readFileContent(configFilePath)
 
       this._lastConfigObj =
-        this.configInstance.configStyle === 'JSON5' ? jsonComment.parse(lastConfigContent, undefined, true) : yaml.safeLoad(lastConfigContent)
+        this.configInstance.configStyle === 'JSON5'
+          ? jsonComment.parse(lastConfigContent, undefined, true)
+          : yaml.safeLoad(lastConfigContent)
       this._actualConfigObj =
-        this.configInstance.configStyle === 'JSON5' ? jsonComment.parse(actualConfigContent, undefined, true) : yaml.safeLoad(actualConfigContent)
+        this.configInstance.configStyle === 'JSON5'
+          ? jsonComment.parse(actualConfigContent, undefined, true)
+          : yaml.safeLoad(actualConfigContent)
     }
 
     return { lastConfigObj: this._lastConfigObj, actualConfigObj: this._actualConfigObj }

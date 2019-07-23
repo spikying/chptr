@@ -40,7 +40,10 @@ export class SoftConfig {
       // } else {
       const jsonConfig: any = this.configSchema.getProperties() // so we can operate with a plain old JavaScript object and abstract away convict (optional)
       jsonConfig.chapterPattern = this.fsUtils.sanitizeFileName(jsonConfig.chapterPattern, true)
-      jsonConfig.metadataPattern = this.fsUtils.sanitizeFileName(jsonConfig.metadataPattern.replace(/\.<ext>$/, `.${this.configStyle.toLowerCase()}`), true)
+      jsonConfig.metadataPattern = this.fsUtils.sanitizeFileName(
+        jsonConfig.metadataPattern.replace(/\.<ext>$/, `.${this.configStyle.toLowerCase()}`),
+        true
+      )
       jsonConfig.summaryPattern = this.fsUtils.sanitizeFileName(jsonConfig.summaryPattern, true)
       jsonConfig.metadataFields = {
         manual: this._metadataFieldsObj,

@@ -81,7 +81,9 @@ export default class Init extends Command {
     const queryBuilder = new QueryBuilder()
 
     const forceConfigFile =
-      forceAll || force === path.basename(this.hardConfig.configJSON5FilePath) || force === path.basename(this.hardConfig.configYAMLFilePath)
+      forceAll ||
+      force === path.basename(this.hardConfig.configJSON5FilePath) ||
+      force === path.basename(this.hardConfig.configYAMLFilePath)
 
     const notEmptyString = function(val: string): string {
       if (!val) {
@@ -226,7 +228,9 @@ export default class Init extends Command {
         if (!force) {
           table.accumulator(
             `${operation.fullPathName.resultNormalColor()} already exists.`.infoColor(),
-            `Use option --force=${path.basename(operation.fullPathName)} to overwrite this one or -f, --force=true to overwrite all.`.infoColor()
+            `Use option --force=${path.basename(
+              operation.fullPathName
+            )} to overwrite this one or -f, --force=true to overwrite all.`.infoColor()
           )
         }
       } else {

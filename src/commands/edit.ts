@@ -67,12 +67,16 @@ export default class Edit extends Command {
 
       if (editType === 'all' || editType === 'chapter') {
         toEditFiles.push(
-          ...(await this.fsUtils.globPromise(path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcardWithNumber(num, isAtNumbering))))
+          ...(await this.fsUtils.globPromise(
+            path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcardWithNumber(num, isAtNumbering))
+          ))
         )
       }
       if (editType === 'all' || editType === 'summary') {
         toEditFiles.push(
-          ...(await this.fsUtils.globPromise(path.join(this.configInstance.projectRootPath, this.configInstance.summaryWildcardWithNumber(num, isAtNumbering))))
+          ...(await this.fsUtils.globPromise(
+            path.join(this.configInstance.projectRootPath, this.configInstance.summaryWildcardWithNumber(num, isAtNumbering))
+          ))
         )
       }
     }
@@ -87,8 +91,8 @@ export default class Edit extends Command {
       const fullPath = path.join(this.configInstance.projectRootPath, filename)
 
       try {
-      const initialContent = await this.fsUtils.readFileContent(fullPath)
-      const replacedContent = await this.processContentBack(initialContent)
+        const initialContent = await this.fsUtils.readFileContent(fullPath)
+        const replacedContent = await this.processContentBack(initialContent)
         await this.fsUtils.writeFile(fullPath, replacedContent)
       } catch (err) {
         this.error(err.toString().errorColor())

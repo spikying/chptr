@@ -43,7 +43,7 @@ export class HardConfig {
   public get metadataFieldsDefaultsJSONString(): string {
     return JSON.stringify(this._metadataFieldsDefaultsObj, null, 4)
   }
-  public get metadataFieldsDefaultsYAMLString(): string{
+  public get metadataFieldsDefaultsYAMLString(): string {
     return YAML.stringify(this._metadataFieldsDefaultsObj)
   }
 
@@ -73,7 +73,7 @@ export class HardConfig {
   private readonly rootPath: string
   private _configPathName = ''
   private _configFileName = ''
-  
+
   constructor(dirname: string) {
     debug('In HardConfig constructor')
     this.rootPath = path.join(dirname)

@@ -91,19 +91,31 @@ export default class Rename extends Command {
     const didUpdateChapter = {
       filename: chapterFile,
       title: await this.replaceTitleInMarkdown(chapterFile, newName),
-      newFileName: this.configInstance.chapterFileNameFromParameters(this.fsUtils.stringifyNumber(num, digits), newNameForFile, isAtNumbering),
+      newFileName: this.configInstance.chapterFileNameFromParameters(
+        this.fsUtils.stringifyNumber(num, digits),
+        newNameForFile,
+        isAtNumbering
+      ),
       rename: ''
     }
     const didUpdateSummary = {
       filename: summaryFile,
       title: await this.replaceTitleInMarkdown(summaryFile, newName),
-      newFileName: this.configInstance.summaryFileNameFromParameters(this.fsUtils.stringifyNumber(num, digits), newNameForFile, isAtNumbering),
+      newFileName: this.configInstance.summaryFileNameFromParameters(
+        this.fsUtils.stringifyNumber(num, digits),
+        newNameForFile,
+        isAtNumbering
+      ),
       rename: ''
     }
     const didUpdateMetadata = {
       filename: metadataFile,
       title: await this.replaceTitleInObject(metadataFile, newName),
-      newFileName: this.configInstance.metadataFileNameFromParameters(this.fsUtils.stringifyNumber(num, digits), newNameForFile, isAtNumbering),
+      newFileName: this.configInstance.metadataFileNameFromParameters(
+        this.fsUtils.stringifyNumber(num, digits),
+        newNameForFile,
+        isAtNumbering
+      ),
       rename: ''
     }
     const didUpdates = [didUpdateChapter, didUpdateSummary, didUpdateMetadata]
@@ -128,7 +140,7 @@ export default class Rename extends Command {
     debug(`toCommitFiles = ${JSON.stringify(toCommitFiles)}`)
     await this.CommitToGit(`Renaming chapter ${chapterId} to ${newName}${toRenamePretty}`, toCommitFiles)
   }
-  
+
   private async replaceTitleInMarkdown(actualFile: string, newTitle: string): Promise<boolean> {
     const initialContent = await this.fsUtils.readFileContent(actualFile)
     const replacedContent = initialContent.replace(this.markupUtils.titleRegex, `\n# ${newTitle}\n`)
@@ -160,5 +172,4 @@ export default class Rename extends Command {
     const initialContent = await this.fsUtils.readFileContent(path.join(this.configInstance.projectRootPath, chapterFile))
     return this.markupUtils.extractTitleFromString(initialContent)
   }
-
 }

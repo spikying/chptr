@@ -64,7 +64,8 @@ export default class Save extends Command {
     for (const toStageFile of preStageFiles) {
       const isChapterFile = numberFilter
         ? minimatch(toStageFile, this.configInstance.chapterWildcardWithNumber(numberFilter, atFilter))
-        : minimatch(toStageFile, this.configInstance.chapterWildcard(true)) || minimatch(toStageFile, this.configInstance.chapterWildcard(false))
+        : minimatch(toStageFile, this.configInstance.chapterWildcard(true)) ||
+          minimatch(toStageFile, this.configInstance.chapterWildcard(false))
 
       if (isChapterFile) {
         await this.UpdateSingleMetadata(toStageFile)

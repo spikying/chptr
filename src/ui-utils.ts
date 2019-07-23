@@ -1,8 +1,8 @@
-import { cli } from 'cli-ux';
+import { cli } from 'cli-ux'
 import * as d from 'debug'
 import inquirer = require('inquirer')
 
-import { FsUtils } from './fs-utils';
+import { FsUtils } from './fs-utils'
 
 const debug = d('ui-utils')
 

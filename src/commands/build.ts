@@ -121,7 +121,11 @@ export default class Build extends Command {
 
         const diffByDate: any = {}
 
-        const mappedDiffArray = flattenedMetaArray.map(m => ({ file: m.log.file, date: m.log.date.format('YYYY-MM-DD'), diff: m.wordCountDiff }))
+        const mappedDiffArray = flattenedMetaArray.map(m => ({
+          file: m.log.file,
+          date: m.log.date.format('YYYY-MM-DD'),
+          diff: m.wordCountDiff
+        }))
 
         debug(`mappedArray=${JSON.stringify(mappedDiffArray.filter(d => d.date === moment().format('YYYY-MM-DD')), null, 2)}`)
 
@@ -335,7 +339,9 @@ export default class Build extends Command {
       }
 
       const modifiedMetadataFiles = await this.markupUtils.writeMetadataInEachFile(markupByFile)
-      table.accumulatorArray(modifiedMetadataFiles.map(val => ({ from: this.configInstance.mapFileToBeRelativeToRootPath(val.file), to: val.diff })))
+      table.accumulatorArray(
+        modifiedMetadataFiles.map(val => ({ from: this.configInstance.mapFileToBeRelativeToRootPath(val.file), to: val.diff }))
+      )
       // markupFilenamesPretty = modifiedMetadataFiles.reduce((previous, current) => `${previous}\n    ${current}`,'')
     })
 

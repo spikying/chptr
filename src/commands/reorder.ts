@@ -116,7 +116,9 @@ export default class Reorder extends Command {
         return { fileNumber, newFileNumber, mandatory }
       })
 
-    let currentMandatory = sameAtNumbering ? fileInfoArray.filter(f => f.mandatory)[0] : { fileNumber: null, newFileNumber: destNumber, mandatory: true }
+    let currentMandatory = sameAtNumbering
+      ? fileInfoArray.filter(f => f.mandatory)[0]
+      : { fileNumber: null, newFileNumber: destNumber, mandatory: true }
     const allMandatories = [currentMandatory]
     while (currentMandatory) {
       let nextMandatory = fileInfoArray.filter(f => !f.mandatory && f.fileNumber === currentMandatory.newFileNumber)[0]
@@ -193,7 +195,7 @@ export default class Reorder extends Command {
         const destDigits = this.statistics.getMaxNecessaryDigits(destIsAtNumbering)
 
         const fromFilename = this.configInstance.mapFileToBeRelativeToRootPath(path.join(tempDir, filename))
-        const toFilename = this.statistics.renumberedFilename(filename, newFileNumber, destDigits, destIsAtNumbering)
+        const toFilename = this.configInstance.renumberedFilename(filename, newFileNumber, destDigits, destIsAtNumbering)
 
         // TODO: Use this.createSubDirectoryIfNecessary
         const directoryPath = path.dirname(path.join(this.configInstance.projectRootPath, toFilename))
@@ -222,7 +224,8 @@ export default class Reorder extends Command {
 
     const didAddDigits = await this.addDigitsToNecessaryStacks()
 
-    let commitMessage = `Reordered files from ${(originIsAtNumbering ? '@' : '') + originNumber} to ${(destIsAtNumbering ? '@' : '') + destNumber}`
+    let commitMessage = `Reordered files from ${(originIsAtNumbering ? '@' : '') + originNumber} to ${(destIsAtNumbering ? '@' : '') +
+      destNumber}`
     if (compact) {
       commitMessage += '\nCompacted file numbers'
       await this.compactFileNumbers()
