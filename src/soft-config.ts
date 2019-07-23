@@ -224,7 +224,11 @@ date: ${moment().format('D MMMM YYYY')}
           this.fsUtils.accessSync(this.hardConfig.configYAMLFilePath)
           this._configStyle = 'YAML'
         } catch (err) {
-          throw new Error(`File ${this.hardConfig.configJSON5FilePath} either doesn't exist or is not readable by process.\n${err}`)
+          throw new Error(
+            `File ${this.hardConfig.configJSON5FilePath} or ${
+              this.hardConfig.configYAMLFilePath
+            } either doesn't exist or is not readable by process.\n${err}`
+          )
         }
       }
     }
@@ -390,7 +394,7 @@ date: ${moment().format('D MMMM YYYY')}
 
   public isAtNumbering(filename: string): boolean {
     const re = new RegExp(this.numbersPattern(true))
-    return re.exec(filename) !== null
+    return re.test(filename) || filename === '@end'
   }
 
   public wildcardize(pattern: string, atNumbering: boolean): string {
@@ -432,20 +436,10 @@ date: ${moment().format('D MMMM YYYY')}
   public async getMetadataFilenameFromDirectorySearchFromParameters(num: number, atNumbering: boolean): Promise<string> {
     const files = await this.fsUtils.globPromise(path.join(this.projectRootPath, this.metadataWildcardWithNumber(num, atNumbering)))
     debug(`Getting metadata filename from search: files=${files}`)
-    return files.length>0? files[0]: ''
-  }
-
-  public async getAllFilesForChapter(num: number, isAtNumbered: boolean): Promise<string[]> {
-    const wildcards = [
-      this.chapterWildcardWithNumber(num, isAtNumbered),
-      this.metadataWildcardWithNumber(num, isAtNumbered),
-      this.summaryWildcardWithNumber(num, isAtNumbered)
-    ]
-    return this.fsUtils.getAllFilesForWildcards(wildcards, this.projectRootPath)
+    return files.length > 0 ? files[0] : ''
   }
 
   public async getAllFilesForPattern(pattern: string): Promise<string[]> {
-
     const wildcards = [this.wildcardize(pattern, false), this.wildcardize(pattern, true)]
     return this.fsUtils.getAllFilesForWildcards(wildcards, this.projectRootPath)
   }
@@ -461,15 +455,17 @@ date: ${moment().format('D MMMM YYYY')}
     const isChapter = this.chapterRegex(true).test(filename) || this.chapterRegex(false).test(filename)
     const isSummary = this.summaryRegex(true).test(filename) || this.summaryRegex(false).test(filename)
     const isMetadata = this.metadataRegex(true).test(filename) || this.metadataRegex(false).test(filename)
+    const originIsAtNumber = this.isAtNumbering(filename)
 
     debug(`filename: ${filename}\nregex: ${this.chapterRegex(atNumbering)}\nisChapter: ${isChapter}`)
     const total = (isChapter ? 1 : 0) + (isSummary ? 1 : 0) + (isMetadata ? 1 : 0)
     if (total !== 1) {
       throw new Error('Filename does not match Chapter, Summary or Metadata pattern and cannot be renamed.')
     }
-    //
+
+    //TODO: take care of NAME in other file types too? Or just use the pattern for other files for everything?
     if (isChapter) {
-      const matches = this.chapterRegex(atNumbering).exec(filename)
+      const matches = this.chapterRegex(originIsAtNumber).exec(filename)
       const name = matches ? matches[2] : ''
       debug(`return ${this.chapterFileNameFromParameters(this.fsUtils.stringifyNumber(newFilenumber, digits), name, atNumbering)}`)
       return this.chapterFileNameFromParameters(this.fsUtils.stringifyNumber(newFilenumber, digits), name, atNumbering)
@@ -481,11 +477,11 @@ date: ${moment().format('D MMMM YYYY')}
 
   public async getTitleOfChapterFromOldChapterFilename(pattern: string, num: number, isAtNumber: boolean): Promise<string> {
     const chapterFilePathWildcard = await this.wildcardWithNumber(pattern, num, isAtNumber)
-    const files = await this.fsUtils.getAllFilesForWildcards([chapterFilePathWildcard], this.projectRootPath) || ['']
+    const files = (await this.fsUtils.getAllFilesForWildcards([chapterFilePathWildcard], this.projectRootPath)) || ['']
 
     const re = this.patternRegexer(pattern, isAtNumber)
     const chapterMatch = re.exec(this.mapFileToBeRelativeToRootPath(files[0]))
-    return chapterMatch? chapterMatch[2] : ''
+    return chapterMatch ? chapterMatch[2] : ''
   }
 
   private wildcardWithNumber(pattern: string, num: number, atNumbering: boolean): string {

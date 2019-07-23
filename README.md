@@ -42,6 +42,7 @@ USAGE
 * [`chptr rename [CHAPTERORFILENAME] [NEWNAME]`](#chptr-rename-chapterorfilename-newname)
 * [`chptr reorder ORIGIN DESTINATION`](#chptr-reorder-origin-destination)
 * [`chptr save [MESSAGE]`](#chptr-save-message)
+* [`chptr split ORIGIN`](#chptr-split-origin)
 * [`chptr track [FILENAME]`](#chptr-track-filename)
 
 ## `chptr add [NAME] [NUMBER]`
@@ -284,6 +285,29 @@ ALIASES
 ```
 
 _See code: [src\commands\save.ts](https://github.com/spikying/chptr/blob/v0.1.0/src\commands\save.ts)_
+
+## `chptr split ORIGIN`
+
+Outputs a chapter file for each `# Title level 1` in an original chapter.
+
+```
+USAGE
+  $ chptr split ORIGIN
+
+ARGUMENTS
+  ORIGIN  Chapter number to split
+
+OPTIONS
+  -N, --notify     show a notification box when build is completed.
+  -c, --compact    Compact chapter numbers at the same time
+  -h, --help       show CLI help
+  -p, --path=path  [default: .] Path where root of project files are
+
+ALIASES
+  $ chptr divide
+```
+
+_See code: [src\commands\split.ts](https://github.com/spikying/chptr/blob/v0.1.0/src\commands\split.ts)_
 
 ## `chptr track [FILENAME]`
 

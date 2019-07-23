@@ -430,6 +430,12 @@ export default abstract class extends Command {
     }
   }
 
+  public isEndOfStack (value: string): boolean {
+    const re = new RegExp(/^@?end$/)
+    return re.test(value)
+  }
+
+
   //private functions
   private async getLastAndActualConfigObjects(): Promise<{ lastConfigObj: any; actualConfigObj: any }> {
     if (!this._lastConfigObj || !this._actualConfigObj) {

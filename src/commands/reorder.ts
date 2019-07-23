@@ -20,6 +20,7 @@ export default class Reorder extends Command {
     })
   }
 
+  //TODO: make args not required and prompt user if args are missing
   static args = [
     { name: 'origin', description: 'Chapter number to move', required: true },
     {
@@ -30,7 +31,6 @@ export default class Reorder extends Command {
   ]
 
   static aliases = ['move']
-
   static hidden = false
 
   async run() {
@@ -132,6 +132,7 @@ export default class Reorder extends Command {
       return allMandatories.map(m => m.fileNumber).includes(info.fileNumber)
     })
 
+    //TODO: use getAllFilesForChapter?
     const toRenameFiles = (await this.statistics.getAllFilesForOneType(destIsAtNumbering))
       .filter(file => {
         const fileNumber = this.softConfig.extractNumber(file)
@@ -165,14 +166,7 @@ export default class Reorder extends Command {
         const toFilename = this.softConfig.mapFileToBeRelativeToRootPath(path.join(tempDir, fromFilename))
         debug(`Original file: ${fromFilename} TEMP TO ${toFilename}`)
 
-        // TODO: Use this.createSubDirectoryIfNecessary
-        const directoryPath = path.dirname(path.join(tempDir, fromFilename))
-        const directoryExists = await this.fsUtils.fileExists(directoryPath)
-        if (!directoryExists) {
-          try {
-            await this.fsUtils.createDir(directoryPath)
-          } catch {}
-        }
+        await this.fsUtils.createSubDirectoryFromFilePathIfNecessary(path.join(this.softConfig.projectRootPath, toFilename))
 
         moveTempPromises.push(this.git.mv(fromFilename, toFilename))
       }
@@ -197,15 +191,15 @@ export default class Reorder extends Command {
         const fromFilename = this.softConfig.mapFileToBeRelativeToRootPath(path.join(tempDir, filename))
         const toFilename = this.softConfig.renumberedFilename(filename, newFileNumber, destDigits, destIsAtNumbering)
 
-        // TODO: Use this.createSubDirectoryIfNecessary
-        const directoryPath = path.dirname(path.join(this.softConfig.projectRootPath, toFilename))
-        const directoryExists = await this.fsUtils.fileExists(directoryPath)
-        debug(`directoryPath=${directoryPath} directoryExists=${directoryExists}`)
-        if (!directoryExists) {
-          try {
-            await this.fsUtils.createDir(directoryPath)
-          } catch {}
-        }
+        await this.fsUtils.createSubDirectoryFromFilePathIfNecessary(path.join(this.softConfig.projectRootPath, toFilename))
+        // const directoryPath = path.dirname(path.join(this.softConfig.projectRootPath, toFilename))
+        // const directoryExists = await this.fsUtils.fileExists(directoryPath)
+        // debug(`directoryPath=${directoryPath} directoryExists=${directoryExists}`)
+        // if (!directoryExists) {
+        //   try {
+        //     await this.fsUtils.createDir(directoryPath)
+        //   } catch {}
+        // }
 
         debug(`TEMPed file: ${fromFilename} BACK TO ${toFilename}`)
 
@@ -237,8 +231,4 @@ export default class Reorder extends Command {
     await this.CommitToGit(commitMessage)
   }
 
-  private readonly isEndOfStack = function(value: string): boolean {
-    const re = new RegExp(/^@?end$/)
-    return re.test(value)
-  }
 }

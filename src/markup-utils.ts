@@ -66,7 +66,7 @@ export class MarkupUtils {
     return resultArray
   }
 
-  public async extractTitleFromString(initialContent: string): Promise<string | null> {
+  public extractTitleFromString(initialContent: string): string | null {
     const match = this.titleRegex.exec(initialContent)
     if (match) {
       return match[1]

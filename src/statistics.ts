@@ -72,8 +72,8 @@ export class Statistics {
     }
   }
 
-  public async updateStackStatistics(atNumbers: boolean): Promise<void> {
-    const files = await this.getAllNovelFiles()
+  public async updateStackStatistics(atNumbers: boolean, refresh?:boolean): Promise<void> {
+    const files = await this.getAllNovelFiles(refresh)
     const fileRegex: RegExp = this.softConfig.chapterRegex(atNumbers)
     const index = atNumbers ? 'atNumberStack' : 'normalStack'
 
@@ -116,6 +116,27 @@ export class Statistics {
       maxNecessaryDigits
     }
   }
+
+  // public async GetAllFilesForOneChapter(num: number, isAtNumbered: boolean): Promise<string[]> {
+  //   const wildcards = [
+  //     this.softConfig.chapterWildcardWithNumber(num, isAtNumbered),
+  //     this.softConfig.metadataWildcardWithNumber(num, isAtNumbered),
+  //     this.softConfig.summaryWildcardWithNumber(num, isAtNumbered)
+  //   ]
+  //   const files = await this.fsUtils.getAllFilesForWildcards(wildcards, this.softConfig.projectRootPath)
+  //   return files
+  // }
+  public async getAllFilesForChapter(num: number, isAtNumbered: boolean): Promise<string[]> {
+    const rootPath = this.softConfig.projectRootPath
+    const wildcards = [
+      this.softConfig.chapterWildcardWithNumber(num, isAtNumbered),
+      this.softConfig.metadataWildcardWithNumber(num, isAtNumbered),
+      this.softConfig.summaryWildcardWithNumber(num, isAtNumbered)
+    ]
+    return this.fsUtils.getAllFilesForWildcards(wildcards, rootPath)
+  }
+
+
 
   public async getAllFilesForOneType(isAtNumbered: boolean, refresh = false): Promise<string[]> {
     const existingFiles = isAtNumbered ? this._allAtNumberedFiles : this._allNormalFiles

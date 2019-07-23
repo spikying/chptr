@@ -67,29 +67,22 @@ export default class Delete extends Command {
     if (!isChapterNumberOnly) {
       // we will delete all files matching the name entered
       let filePattern = '**/' + nameOrNumber
-      // if (glob.hasMagic(nameOrNumber)) {
-      //   filePattern = nameOrNumber
-      // }
+
       const pathName = path.join(this.softConfig.projectRootPath, filePattern)
       toDeleteFiles.push(...(await this.fsUtils.listFiles(pathName)))
     } else {
       // we will delete all files matching the number patterns for chapters, metadata and summary
       const filterNumber = this.softConfig.extractNumber(nameOrNumber)
-      const globPatterns: string[] = []
-      // if (deleteType === 'all' || deleteType === 'chapter') {
-      globPatterns.push(this.softConfig.chapterWildcardWithNumber(filterNumber, isAtNumber))
-      // }
-      // if (deleteType === 'all' || deleteType === 'summary') {
-      globPatterns.push(this.softConfig.summaryWildcardWithNumber(filterNumber, isAtNumber))
-      // }
-      // if (deleteType === 'all' || deleteType === 'metadata') {
-      globPatterns.push(this.softConfig.metadataWildcardWithNumber(filterNumber, isAtNumber))
-      // }
+      // const globPatterns: string[] = []
+      // globPatterns.push(this.softConfig.chapterWildcardWithNumber(filterNumber, isAtNumber))
+      // globPatterns.push(this.softConfig.summaryWildcardWithNumber(filterNumber, isAtNumber))
+      // globPatterns.push(this.softConfig.metadataWildcardWithNumber(filterNumber, isAtNumber))
+      toDeleteFiles.push(...(await this.statistics.getAllFilesForChapter(filterNumber, isAtNumber)))
 
-      for (const gp of globPatterns) {
-        const pathName = path.join(this.softConfig.projectRootPath, gp)
-        toDeleteFiles.push(...(await this.fsUtils.listFiles(pathName)))
-      }
+      // for (const gp of globPatterns) {
+      //   const pathName = path.join(this.softConfig.projectRootPath, gp)
+      //   toDeleteFiles.push(...(await this.fsUtils.listFiles(pathName)))
+      // }
     }
 
     if (toDeleteFiles.length === 0) {

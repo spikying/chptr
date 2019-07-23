@@ -51,6 +51,7 @@ export default class Edit extends Command {
       const queryBuilder = new QueryBuilder()
       queryBuilder.add('filter', queryBuilder.textinput('What chapters to put in edit mode? (comma-separated list)', ''))
       const queryResponses: any = await queryBuilder.responses()
+      //TODO: parsing to INT makes it impossible to use @numbering
       chapterIds.push(...queryResponses.filter.split(',').map((v: string) => parseInt(v, 10)))
     } else {
       //loop through all argv[i] to get all chapter numbers.  If first argument contains commas, it's a single argument to split at ','.
