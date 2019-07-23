@@ -62,20 +62,20 @@ export default class Edit extends Command {
     }
 
     for (const id of chapterIds) {
-      const num = this.configInstance.extractNumber(id)
-      const isAtNumbering = this.configInstance.isAtNumbering(id)
+      const num = this.softConfig.extractNumber(id)
+      const isAtNumbering = this.softConfig.isAtNumbering(id)
 
       if (editType === 'all' || editType === 'chapter') {
         toEditFiles.push(
           ...(await this.fsUtils.globPromise(
-            path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcardWithNumber(num, isAtNumbering))
+            path.join(this.softConfig.projectRootPath, this.softConfig.chapterWildcardWithNumber(num, isAtNumbering))
           ))
         )
       }
       if (editType === 'all' || editType === 'summary') {
         toEditFiles.push(
           ...(await this.fsUtils.globPromise(
-            path.join(this.configInstance.projectRootPath, this.configInstance.summaryWildcardWithNumber(num, isAtNumbering))
+            path.join(this.softConfig.projectRootPath, this.softConfig.summaryWildcardWithNumber(num, isAtNumbering))
           ))
         )
       }
@@ -88,7 +88,7 @@ export default class Edit extends Command {
 
     cli.action.start('Reading and processing files'.actionStartColor())
     for (const filename of toEditFiles) {
-      const fullPath = path.join(this.configInstance.projectRootPath, filename)
+      const fullPath = path.join(this.softConfig.projectRootPath, filename)
 
       try {
         const initialContent = await this.fsUtils.readFileContent(fullPath)

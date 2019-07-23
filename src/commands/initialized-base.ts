@@ -15,8 +15,8 @@ import Command, { d } from './base'
 const debug = d('command:initialized-base')
 
 export default abstract class extends Command {
-  public get configInstance(): SoftConfig {
-    return this._configInstance as SoftConfig
+  public get softConfig(): SoftConfig {
+    return this._softConfig as SoftConfig
   }
   public get statistics(): Statistics {
     return this._statistics as Statistics
@@ -30,7 +30,7 @@ export default abstract class extends Command {
   }
   // TODO: put --compact flag here? it's in build, delete and reorder now.
 
-  private _configInstance: SoftConfig | undefined
+  private _softConfig: SoftConfig | undefined
   private _statistics: Statistics | undefined
   private _markupUtils: MarkupUtils | undefined
 
@@ -43,9 +43,9 @@ export default abstract class extends Command {
 
     const { flags } = this.parse(this.constructor as any)
     const dir = path.join(flags.path as string)
-    this._configInstance = new SoftConfig(dir)
-    this._statistics = new Statistics(this.configInstance)
-    this._markupUtils = new MarkupUtils(this._configInstance)
+    this._softConfig = new SoftConfig(dir)
+    this._statistics = new Statistics(this.softConfig)
+    this._markupUtils = new MarkupUtils(this._softConfig)
 
     const isRepo = await this.git.checkIsRepo()
     if (!isRepo) {
@@ -65,12 +65,12 @@ export default abstract class extends Command {
     await this.RenameProjectTitle()
     await this.CheckIfStepOrInitialNumberHaveChanged()
 
-    await this.fsUtils.deleteEmptySubDirectories(this.configInstance.projectRootPath)
+    await this.fsUtils.deleteEmptySubDirectories(this.softConfig.projectRootPath)
   }
 
   public async finally() {
     await super.finally()
-    await this.fsUtils.deleteEmptySubDirectories(this.configInstance.projectRootPath)
+    await this.fsUtils.deleteEmptySubDirectories(this.softConfig.projectRootPath)
   }
 
   //All config watches
@@ -92,8 +92,8 @@ export default abstract class extends Command {
         }, false)
       ) {
         const fileType = d.path && d.path[0]
-        const oldPattern = d.lhs.replace('.<ext>', `.${this.configInstance.configStyle.toLowerCase()}`)
-        const newPattern = this.fsUtils.sanitizeFileName(d.rhs.replace('.<ext>', `.${this.configInstance.configStyle.toLowerCase()}`), true)
+        const oldPattern = d.lhs.replace('.<ext>', `.${this.softConfig.configStyle.toLowerCase()}`)
+        const newPattern = this.fsUtils.sanitizeFileName(d.rhs.replace('.<ext>', `.${this.softConfig.configStyle.toLowerCase()}`), true)
         // const needsName = oldPattern.indexOf('NAME') === -1
         debug(`fileType=${fileType}, oldPattern=${oldPattern}, newPattern=${newPattern}`)
         oldVsNew.push({
@@ -115,13 +115,13 @@ export default abstract class extends Command {
     const movePromises: Promise<MoveSummary>[] = []
     const movesToDo: { originalFile: string; renamedFile: string }[] = []
     for (const oldAndNew of oldVsNew) {
-      const files = (await this.configInstance.getAllFilesForPattern(oldAndNew.oldPattern)) || []
+      const files = (await this.softConfig.getAllFilesForPattern(oldAndNew.oldPattern)) || []
 
       for (const file of files) {
-        const reNormal = this.configInstance.patternRegexer(oldAndNew.oldPattern, false)
-        const reAtNumber = this.configInstance.patternRegexer(oldAndNew.oldPattern, true)
-        const isAtNumber = this.configInstance.isAtNumbering(file)
-        const rootedFile = this.configInstance.mapFileToBeRelativeToRootPath(file)
+        const reNormal = this.softConfig.patternRegexer(oldAndNew.oldPattern, false)
+        const reAtNumber = this.softConfig.patternRegexer(oldAndNew.oldPattern, true)
+        const isAtNumber = this.softConfig.isAtNumbering(file)
+        const rootedFile = this.softConfig.mapFileToBeRelativeToRootPath(file)
         const num = rootedFile.replace(isAtNumber ? reAtNumber : reNormal, '$1')
 
         //TODO: get name from metadata file's title?  Here if old pattern has no name, it gives '$2' as a name.
@@ -132,12 +132,12 @@ export default abstract class extends Command {
         const name: string =
           nameMatch && nameMatch.length >= 3
             ? nameMatch[2]
-            : await this.configInstance.getTitleOfChapterFromOldChapterFilename(oldChapterPattern, parseInt(num, 10), isAtNumber)
+            : await this.softConfig.getTitleOfChapterFromOldChapterFilename(oldChapterPattern, parseInt(num, 10), isAtNumber)
         debug(`file=${file} num=${num} name=${name}`)
 
         const renamedFile = oldAndNew.newPattern.replace(/NUM/g, (isAtNumber ? '@' : '') + num).replace(/NAME/g, name)
 
-        await this.fsUtils.createSubDirectoryFromFilePathIfNecessary(path.join(this.configInstance.projectRootPath, renamedFile))
+        await this.fsUtils.createSubDirectoryFromFilePathIfNecessary(path.join(this.softConfig.projectRootPath, renamedFile))
 
         movesToDo.push({ originalFile: rootedFile, renamedFile })
       }
@@ -171,13 +171,13 @@ export default abstract class extends Command {
     })
 
     if (oldDir !== newDir) {
-      const files = await this.fsUtils.globPromise(path.join(this.configInstance.projectRootPath, oldDir, '**/*.*'))
+      const files = await this.fsUtils.globPromise(path.join(this.softConfig.projectRootPath, oldDir, '**/*.*'))
       debug(`move to new build dir : files=${files}`)
-      await this.fsUtils.createSubDirectoryFromDirectoryPathIfNecessary(path.join(this.configInstance.projectRootPath, newDir))
+      await this.fsUtils.createSubDirectoryFromDirectoryPathIfNecessary(path.join(this.softConfig.projectRootPath, newDir))
 
       for (const file of files) {
-        const newFile = path.relative(path.join(this.configInstance.projectRootPath, oldDir), file)
-        await this.fsUtils.moveFile(file, path.join(this.configInstance.projectRootPath, newDir, newFile))
+        const newFile = path.relative(path.join(this.softConfig.projectRootPath, oldDir), file)
+        await this.fsUtils.moveFile(file, path.join(this.softConfig.projectRootPath, newDir, newFile))
       }
 
       const gitIgnoreContent = await this.fsUtils.readFileContent(this.hardConfig.gitignoreFilePath)
@@ -266,13 +266,13 @@ export default abstract class extends Command {
 
   public async processChapterFilesBeforeSaving(toStageFiles: string[]): Promise<void> {
     for (const filename of toStageFiles) {
-      const fullPath = path.join(this.configInstance.projectRootPath, filename)
+      const fullPath = path.join(this.softConfig.projectRootPath, filename)
       const exists = await this.fsUtils.fileExists(fullPath)
       debug(`file exists = ${exists}`)
       if (
         exists &&
-        (this.configInstance.chapterRegex(false).test(this.configInstance.mapFileToBeRelativeToRootPath(fullPath)) ||
-          this.configInstance.chapterRegex(true).test(this.configInstance.mapFileToBeRelativeToRootPath(fullPath)))
+        (this.softConfig.chapterRegex(false).test(this.softConfig.mapFileToBeRelativeToRootPath(fullPath)) ||
+          this.softConfig.chapterRegex(true).test(this.softConfig.mapFileToBeRelativeToRootPath(fullPath)))
       ) {
         try {
           const initialContent = await this.fsUtils.readFileContent(fullPath)
@@ -300,8 +300,8 @@ export default abstract class extends Command {
           await this.git.add(toStageFiles)
         }
         debug(`after adding files`)
-        await this.git.addConfig('user.name', this.configInstance.config.projectAuthor.name)
-        await this.git.addConfig('user.email', this.configInstance.config.projectAuthor.email)
+        await this.git.addConfig('user.name', this.softConfig.config.projectAuthor.name)
+        await this.git.addConfig('user.email', this.softConfig.config.projectAuthor.email)
 
         const commitSummary = await this.git.commit(message)
         const hasRemote: boolean = await this.git.getRemotes(false).then(result => {
@@ -352,9 +352,9 @@ export default abstract class extends Command {
       .filter(val => val !== '')
       .filter(val => {
         return numberFilter
-          ? minimatch(val, this.configInstance.chapterWildcardWithNumber(numberFilter, atFilter || false)) ||
-              minimatch(val, this.configInstance.metadataWildcardWithNumber(numberFilter, atFilter || false)) ||
-              minimatch(val, this.configInstance.summaryWildcardWithNumber(numberFilter, atFilter || false))
+          ? minimatch(val, this.softConfig.chapterWildcardWithNumber(numberFilter, atFilter || false)) ||
+              minimatch(val, this.softConfig.metadataWildcardWithNumber(numberFilter, atFilter || false)) ||
+              minimatch(val, this.softConfig.summaryWildcardWithNumber(numberFilter, atFilter || false))
           : true
       })
   }
@@ -379,36 +379,36 @@ export default abstract class extends Command {
     const table = tableize('from', 'to')
     const moves: { fromFilename: string; toFilename: string }[] = []
     const movePromises: Promise<MoveSummary>[] = []
-    const { tempDir, removeTempDir } = await this.fsUtils.getTempDir(this.configInstance.projectRootPath)
-    const tempDirForGit = this.configInstance.mapFileToBeRelativeToRootPath(tempDir)
+    const { tempDir, removeTempDir } = await this.fsUtils.getTempDir(this.softConfig.projectRootPath)
+    const tempDirForGit = this.softConfig.mapFileToBeRelativeToRootPath(tempDir)
 
     for (const b of [true, false]) {
       const wildcards = [
-        this.configInstance.chapterWildcard(b),
-        this.configInstance.metadataWildcard(b),
-        this.configInstance.summaryWildcard(b)
+        this.softConfig.chapterWildcard(b),
+        this.softConfig.metadataWildcard(b),
+        this.softConfig.summaryWildcard(b)
       ]
       for (const wildcard of wildcards) {
-        const files = await this.fsUtils.globPromise(path.join(this.configInstance.projectRootPath, wildcard))
+        const files = await this.fsUtils.globPromise(path.join(this.softConfig.projectRootPath, wildcard))
 
         const organizedFiles: any[] = []
         for (const file of files) {
-          organizedFiles.push({ number: this.configInstance.extractNumber(file), filename: file })
+          organizedFiles.push({ number: this.softConfig.extractNumber(file), filename: file })
         }
 
         const destDigits = this.statistics.getMaxNecessaryDigits(b)
-        let currentNumber = this.configInstance.config.numberingInitial
+        let currentNumber = this.softConfig.config.numberingInitial
 
         for (const file of organizedFiles.sort((a, b) => a.number - b.number)) {
-          const fromFilename = this.configInstance.mapFileToBeRelativeToRootPath(file.filename)
-          const toFilename = this.configInstance.renumberedFilename(fromFilename, currentNumber, destDigits, b)
+          const fromFilename = this.softConfig.mapFileToBeRelativeToRootPath(file.filename)
+          const toFilename = this.softConfig.renumberedFilename(fromFilename, currentNumber, destDigits, b)
 
           if (fromFilename !== toFilename) {
             moves.push({ fromFilename, toFilename })
             table.accumulator(fromFilename, toFilename)
             movePromises.push(this.git.mv(fromFilename, path.join(tempDirForGit, toFilename)))
           }
-          currentNumber += this.configInstance.config.numberingStep
+          currentNumber += this.softConfig.config.numberingStep
         }
       }
     }
@@ -434,22 +434,22 @@ export default abstract class extends Command {
   private async getLastAndActualConfigObjects(): Promise<{ lastConfigObj: any; actualConfigObj: any }> {
     if (!this._lastConfigObj || !this._actualConfigObj) {
       const configFilePath =
-        this.configInstance.configStyle === 'JSON5'
+        this.softConfig.configStyle === 'JSON5'
           ? this.hardConfig.configJSON5FilePath
-          : this.configInstance.configStyle === 'YAML'
+          : this.softConfig.configStyle === 'YAML'
           ? this.hardConfig.configYAMLFilePath
           : ''
       const lastConfigContent =
-        (await this.git.show([`HEAD:${this.configInstance.mapFileToBeRelativeToRootPath(configFilePath).replace(/\\/, '/')}`])) || '{}'
+        (await this.git.show([`HEAD:${this.softConfig.mapFileToBeRelativeToRootPath(configFilePath).replace(/\\/, '/')}`])) || '{}'
 
       const actualConfigContent = await this.fsUtils.readFileContent(configFilePath)
 
       this._lastConfigObj =
-        this.configInstance.configStyle === 'JSON5'
+        this.softConfig.configStyle === 'JSON5'
           ? jsonComment.parse(lastConfigContent, undefined, true)
           : yaml.safeLoad(lastConfigContent)
       this._actualConfigObj =
-        this.configInstance.configStyle === 'JSON5'
+        this.softConfig.configStyle === 'JSON5'
           ? jsonComment.parse(actualConfigContent, undefined, true)
           : yaml.safeLoad(actualConfigContent)
     }
@@ -463,16 +463,16 @@ export default abstract class extends Command {
     const table = tableize('from', 'to')
 
     for (const file of files) {
-      const filename = this.configInstance.mapFileToBeRelativeToRootPath(file)
-      const atNumbering = this.configInstance.isAtNumbering(filename)
+      const filename = this.softConfig.mapFileToBeRelativeToRootPath(file)
+      const atNumbering = this.softConfig.isAtNumbering(filename)
 
       if (atNumbering === atNumberingStack) {
-        const filenumber = this.configInstance.extractNumber(file)
+        const filenumber = this.softConfig.extractNumber(file)
         const fromFilename = filename
-        const toFilename = this.configInstance.renumberedFilename(filename, filenumber, newDigitNumber, atNumbering)
+        const toFilename = this.softConfig.renumberedFilename(filename, filenumber, newDigitNumber, atNumbering)
 
         if (fromFilename !== toFilename) {
-          await this.fsUtils.createSubDirectoryFromFilePathIfNecessary(path.join(this.configInstance.projectRootPath, toFilename))
+          await this.fsUtils.createSubDirectoryFromFilePathIfNecessary(path.join(this.softConfig.projectRootPath, toFilename))
           table.accumulator(fromFilename, toFilename)
           promises.push(this.git.mv(fromFilename, toFilename))
           hasMadeChanges = true
@@ -480,7 +480,7 @@ export default abstract class extends Command {
       }
     }
 
-    await this.fsUtils.deleteEmptySubDirectories(this.configInstance.projectRootPath)
+    await this.fsUtils.deleteEmptySubDirectories(this.softConfig.projectRootPath)
 
     table.show('Adding digits to files')
     await Promise.all(promises)

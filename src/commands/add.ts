@@ -57,10 +57,10 @@ export default class Add extends Command {
 
     if (args.number) {
       atNumbering = args.number.substring(0, 1) === '@'
-      nextNumber = this.configInstance.extractNumber(args.number)
+      nextNumber = this.softConfig.extractNumber(args.number)
 
       const existingFile = await this.fsUtils.listFiles(
-        path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcardWithNumber(nextNumber, atNumbering))
+        path.join(this.softConfig.projectRootPath, this.softConfig.chapterWildcardWithNumber(nextNumber, atNumbering))
       )
 
       if (existingFile.length > 0) {
@@ -74,35 +74,35 @@ export default class Add extends Command {
 
       const highestNumber = this.statistics.getHighestNumber(atNumbering)
       nextNumber =
-        highestNumber === 0 ? this.configInstance.config.numberingInitial : highestNumber + this.configInstance.config.numberingStep
+        highestNumber === 0 ? this.softConfig.config.numberingInitial : highestNumber + this.softConfig.config.numberingStep
     }
     const newDigits = this.fsUtils.numDigits(nextNumber)
 
-    const emptyFileString = this.configInstance.emptyFileString.toString()
+    const emptyFileString = this.softConfig.emptyFileString.toString()
     const filledTemplateData = emptyFileString.replace(/{TITLE}/gim, name)
-    const metadataObj: any = this.configInstance.config.metadataFields
+    const metadataObj: any = this.softConfig.config.metadataFields
     metadataObj.computed.title = name
     metadataObj.computed.wordCount = this.markupUtils.GetWordCount(filledTemplateData)
     const filledTemplateMeta =
-      this.configInstance.configStyle === 'JSON5'
+      this.softConfig.configStyle === 'JSON5'
         ? JSON.stringify(metadataObj, undefined, 4)
-        : this.configInstance.configStyle === 'YAML'
+        : this.softConfig.configStyle === 'YAML'
         ? yaml.safeDump(metadataObj)
         : ''
 
     const fullPathMD = path.join(
-      this.configInstance.projectRootPath,
-      this.configInstance.chapterFileNameFromParameters(this.fsUtils.stringifyNumber(nextNumber, newDigits), name, atNumbering)
+      this.softConfig.projectRootPath,
+      this.softConfig.chapterFileNameFromParameters(this.fsUtils.stringifyNumber(nextNumber, newDigits), name, atNumbering)
     )
 
     const fullPathMeta = path.join(
-      this.configInstance.projectRootPath,
-      this.configInstance.metadataFileNameFromParameters(this.fsUtils.stringifyNumber(nextNumber, newDigits), name, atNumbering)
+      this.softConfig.projectRootPath,
+      this.softConfig.metadataFileNameFromParameters(this.fsUtils.stringifyNumber(nextNumber, newDigits), name, atNumbering)
     )
 
     const fullPathSummary = path.join(
-      this.configInstance.projectRootPath,
-      this.configInstance.summaryFileNameFromParameters(this.fsUtils.stringifyNumber(nextNumber, newDigits), name, atNumbering)
+      this.softConfig.projectRootPath,
+      this.softConfig.summaryFileNameFromParameters(this.fsUtils.stringifyNumber(nextNumber, newDigits), name, atNumbering)
     )
 
     try {
@@ -115,10 +115,10 @@ export default class Add extends Command {
       await Promise.all(allPromises)
       cli.action.stop('done'.actionStopColor())
 
-      const toStageFiles = this.configInstance.mapFilesToBeRelativeToRootPath([fullPathMD, fullPathMeta, fullPathSummary])
-      const commitMessage = `added ${this.configInstance.mapFileToBeRelativeToRootPath(
+      const toStageFiles = this.softConfig.mapFilesToBeRelativeToRootPath([fullPathMD, fullPathMeta, fullPathSummary])
+      const commitMessage = `added ${this.softConfig.mapFileToBeRelativeToRootPath(
         fullPathMD
-      )}, ${this.configInstance.mapFileToBeRelativeToRootPath(fullPathMeta)} and ${this.configInstance.mapFileToBeRelativeToRootPath(
+      )}, ${this.softConfig.mapFileToBeRelativeToRootPath(fullPathMeta)} and ${this.softConfig.mapFileToBeRelativeToRootPath(
         fullPathSummary
       )}`
 

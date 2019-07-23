@@ -43,7 +43,7 @@ export default class Track extends Command {
         cli.error(`No file untracked by repository`)
         cli.exit(0)
       }
-      const root = this.configInstance.projectRootPath
+      const root = this.softConfig.projectRootPath
 
       debug(`untrackedGitFiles=${JSON.stringify(untrackedGitFiles, null, 4)}`)
       const toExcludeFiles = function(file: string): boolean {
@@ -74,7 +74,7 @@ export default class Track extends Command {
         debug(`isInUntrackedFiles? ${isInUntrackedFiles}`)
         return !isInUntrackedFiles
       }
-      queryBuilder.add('filename', queryBuilder.fuzzyFilename(this.configInstance.projectRootPath, toExcludeFiles, 'What file to track?'))
+      queryBuilder.add('filename', queryBuilder.fuzzyFilename(this.softConfig.projectRootPath, toExcludeFiles, 'What file to track?'))
     }
 
     const queryResponses: any = await queryBuilder.responses()
@@ -87,7 +87,7 @@ export default class Track extends Command {
 
     cli.action.start('Tracking file'.actionStartColor())
 
-    const toCommitFiles = [this.configInstance.mapFileToBeRelativeToRootPath(filename)]
+    const toCommitFiles = [this.softConfig.mapFileToBeRelativeToRootPath(filename)]
 
     await this.CommitToGit(`Tracking file ${filename}`, toCommitFiles)
 

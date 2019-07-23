@@ -18,11 +18,11 @@ export class MarkupUtils {
   public titleRegex = /^\n# (.*?)\n/
 
   readonly fsUtils: FsUtils
-  readonly configInstance: SoftConfig
+  readonly softConfig: SoftConfig
 
-  constructor(configInstance: SoftConfig) {
+  constructor(softConfig: SoftConfig) {
     this.fsUtils = new FsUtils()
-    this.configInstance = configInstance
+    this.softConfig = softConfig
   }
 
   public async extractMarkup(chapterFilepath: string): Promise<MarkupObj[]> {
@@ -31,12 +31,12 @@ export class MarkupUtils {
     debug(`in ExtractMarkup; chapterFilePath=${chapterFilepath}`)
 
     try {
-      const initialContent = await this.fsUtils.readFileContent(path.join(this.configInstance.projectRootPath, chapterFilepath))
+      const initialContent = await this.fsUtils.readFileContent(path.join(this.softConfig.projectRootPath, chapterFilepath))
       const markupRegex = /(?:{{(\d+)}}\n)?.*?{(.*?)\s?:\s?(.*?)}/gm
       let regexArray: RegExpExecArray | null
       while ((regexArray = markupRegex.exec(initialContent)) !== null) {
         resultArray.push({
-          filename: this.configInstance.mapFileToBeRelativeToRootPath(chapterFilepath),
+          filename: this.softConfig.mapFileToBeRelativeToRootPath(chapterFilepath),
           paragraph: parseInt(regexArray[1] || '1', 10),
           type: regexArray[2].toLowerCase(),
           value: regexArray[3],
@@ -45,14 +45,14 @@ export class MarkupUtils {
       }
       const wordCount = this.GetWordCount(initialContent)
       resultArray.push({
-        filename: this.configInstance.mapFileToBeRelativeToRootPath(chapterFilepath),
+        filename: this.softConfig.mapFileToBeRelativeToRootPath(chapterFilepath),
         type: 'wordCount',
         value: wordCount,
         computed: true
       })
       const title = (await this.extractTitleFromString(initialContent)) || '###'
       resultArray.push({
-        filename: this.configInstance.mapFileToBeRelativeToRootPath(chapterFilepath),
+        filename: this.softConfig.mapFileToBeRelativeToRootPath(chapterFilepath),
         type: 'title',
         value: title,
         computed: true
@@ -124,18 +124,18 @@ export class MarkupUtils {
         }
       })
 
-      const num = this.configInstance.extractNumber(file)
-      const isAt = this.configInstance.isAtNumbering(file)
+      const num = this.softConfig.extractNumber(file)
+      const isAt = this.softConfig.isAtNumbering(file)
 
       //bug: doesn't get filename if pattern has changed.
-      const metadataFilename = await this.configInstance.getMetadataFilenameFromDirectorySearchFromParameters(num, isAt)
-      const metadataFilePath = path.join(this.configInstance.projectRootPath, metadataFilename)
+      const metadataFilename = await this.softConfig.getMetadataFilenameFromDirectorySearchFromParameters(num, isAt)
+      const metadataFilePath = path.join(this.softConfig.projectRootPath, metadataFilename)
       const initialContent = await this.fsUtils.readFileContent(metadataFilePath)
 
       const initialObj =
-        this.configInstance.configStyle === 'JSON5'
+        this.softConfig.configStyle === 'JSON5'
           ? JSON.parse(initialContent)
-          : this.configInstance.configStyle === 'YAML'
+          : this.softConfig.configStyle === 'YAML'
           ? yaml.safeLoad(initialContent)
           : {}
       const updatedObj = JSON.parse(JSON.stringify(initialObj)) //used to create deep copy
@@ -143,9 +143,9 @@ export class MarkupUtils {
       updatedObj.computed = computedMarkup
 
       const updatedContent =
-        this.configInstance.configStyle === 'JSON5'
+        this.softConfig.configStyle === 'JSON5'
           ? JSON.stringify(updatedObj, null, 4)
-          : this.configInstance.configStyle === 'YAML'
+          : this.softConfig.configStyle === 'YAML'
           ? yaml.safeDump(updatedObj)
           : ''
       if (initialContent !== updatedContent) {
@@ -191,42 +191,42 @@ export class MarkupUtils {
   }
 
   public async UpdateAllMetadataFields(): Promise<void> {
-    const allMetadataFiles = await this.configInstance.getAllMetadataFiles()
+    const allMetadataFiles = await this.softConfig.getAllMetadataFiles()
     const table = tableize('file', 'changes')
     for (const file of allMetadataFiles) {
       debug(`file=${file}`)
       const initialContent = await this.fsUtils.readFileContent(file)
       try {
         const initialObj =
-          this.configInstance.configStyle === 'JSON5'
+          this.softConfig.configStyle === 'JSON5'
             ? JSON.parse(initialContent)
-            : this.configInstance.configStyle === 'YAML'
+            : this.softConfig.configStyle === 'YAML'
             ? yaml.safeLoad(initialContent)
             : {}
         const replacedObj =
-          this.configInstance.configStyle === 'JSON5'
+          this.softConfig.configStyle === 'JSON5'
             ? JSON.parse(initialContent)
-            : this.configInstance.configStyle === 'YAML'
+            : this.softConfig.configStyle === 'YAML'
             ? yaml.safeLoad(initialContent)
             : {}
 
         let changeApplied = false
-        observableDiff(replacedObj.manual, this.configInstance.metadataFieldsDefaults, d => {
+        observableDiff(replacedObj.manual, this.softConfig.metadataFieldsDefaults, d => {
           if ((d.kind === 'D' && d.lhs === '') || d.kind === 'N') {
             changeApplied = true
-            applyChange(replacedObj.manual, this.configInstance.metadataFieldsDefaults, d)
+            applyChange(replacedObj.manual, this.softConfig.metadataFieldsDefaults, d)
           }
         })
         if (changeApplied) {
           const diffs = diff(initialObj.manual, replacedObj.manual) || []
           diffs.map(d => {
             const expl = (d.kind === 'N' ? 'New ' : 'Deleted ') + d.path
-            table.accumulator(this.configInstance.mapFileToBeRelativeToRootPath(file), expl)
+            table.accumulator(this.softConfig.mapFileToBeRelativeToRootPath(file), expl)
           })
           const outputString =
-            this.configInstance.configStyle === 'JSON5'
+            this.softConfig.configStyle === 'JSON5'
               ? JSON.stringify(replacedObj, null, 4)
-              : this.configInstance.configStyle === 'YAML'
+              : this.softConfig.configStyle === 'YAML'
               ? yaml.safeDump(replacedObj)
               : ''
           await this.fsUtils.writeFile(file, outputString)

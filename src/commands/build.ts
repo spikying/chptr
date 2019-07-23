@@ -68,7 +68,7 @@ export default class Build extends Command {
     const showWritingRateDetails = wrOption === 'all' || wrOption === 'export'
     const exportWritingRate = wrOption === 'export'
 
-    const outputFileBase = this.fsUtils.sanitizeFileName(this.configInstance.config.projectTitle)
+    const outputFileBase = this.fsUtils.sanitizeFileName(this.softConfig.config.projectTitle)
     const outputFile = `${flags.datetimestamp ? moment().format('YYYYMMDD.HHmm ') : ''}${outputFileBase}`
 
     let outputFiletype = flags.filetype
@@ -90,16 +90,16 @@ export default class Build extends Command {
     const tmpMDfileTex = await tmpFile()
     debug(`temp files = ${tmpMDfile.path} and ${tmpMDfileTex.path}`)
 
-    const buildDirectory = this.configInstance.buildDirectory
+    const buildDirectory = this.softConfig.buildDirectory
     await this.fsUtils.createSubDirectoryFromDirectoryPathIfNecessary(buildDirectory)
 
     try {
       const originalChapterFilesArray = (await this.fsUtils.globPromise(
-        path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcard(false))
+        path.join(this.softConfig.projectRootPath, this.softConfig.chapterWildcard(false))
       )).sort()
 
       const allChapterFilesArray = originalChapterFilesArray.concat(
-        await this.fsUtils.globPromise(path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcard(true)))
+        await this.fsUtils.globPromise(path.join(this.softConfig.projectRootPath, this.softConfig.chapterWildcard(true)))
       )
 
       await this.extractGlobalMetadata(allChapterFilesArray, outputFile)
@@ -107,8 +107,8 @@ export default class Build extends Command {
       cli.info('Extracting metadata for all chapters files'.actionStartColor())
 
       const allMetadataFilesArray = (await this.fsUtils.globPromise(
-        path.join(this.configInstance.projectRootPath, this.configInstance.metadataWildcard(false))
-      )).concat(await this.fsUtils.globPromise(path.join(this.configInstance.projectRootPath, this.configInstance.metadataWildcard(true))))
+        path.join(this.softConfig.projectRootPath, this.softConfig.metadataWildcard(false))
+      )).concat(await this.fsUtils.globPromise(path.join(this.softConfig.projectRootPath, this.softConfig.metadataWildcard(true))))
 
       const metaExtractPromises: Promise<MetaObj[]>[] = []
       allMetadataFilesArray.forEach(m => {
@@ -133,12 +133,12 @@ export default class Build extends Command {
           let csvContent = 'Date;Chapter Number;Word Count Diff\n'
 
           mappedDiffArray.forEach((m: { date: any; file: any; diff: any }) => {
-            const isAtNumbering = this.configInstance.isAtNumbering(m.file)
-            const chapterNumberMatch = this.configInstance.metadataRegex(isAtNumbering).exec(m.file)
+            const isAtNumbering = this.softConfig.isAtNumbering(m.file)
+            const chapterNumberMatch = this.softConfig.metadataRegex(isAtNumbering).exec(m.file)
             const chapterNumber = chapterNumberMatch ? (isAtNumbering ? '@' : '') + chapterNumberMatch[1] : '?'
             csvContent += `${m.date};${chapterNumber};${m.diff}\n`
           })
-          const writingRateFilePath = path.join(this.configInstance.buildDirectory, 'writingRate.csv')
+          const writingRateFilePath = path.join(this.softConfig.buildDirectory, 'writingRate.csv')
           await this.fsUtils.writeFile(writingRateFilePath, csvContent)
           cli.action.stop(`Created ${writingRateFilePath}`.actionStopColor())
         }
@@ -165,8 +165,8 @@ export default class Build extends Command {
             if (showWritingRateDetails) {
               for (const metafile of Object.keys(diffByDate[date])) {
                 if (metafile !== 'total') {
-                  const isAtNumbering = this.configInstance.isAtNumbering(metafile)
-                  const chapterNumberMatch = this.configInstance.metadataRegex(isAtNumbering).exec(metafile)
+                  const isAtNumbering = this.softConfig.isAtNumbering(metafile)
+                  const chapterNumberMatch = this.softConfig.metadataRegex(isAtNumbering).exec(metafile)
                   const chapterNumber = chapterNumberMatch ? (isAtNumbering ? '@' : '') + chapterNumberMatch[1] : '?'
 
                   let wordDiff: string = diffByDate[date][metafile].toString()
@@ -184,7 +184,7 @@ export default class Build extends Command {
 
       cli.action.start('Compiling and generating output files'.actionStartColor())
 
-      let fullOriginalContent = this.configInstance.globalMetadataContent
+      let fullOriginalContent = this.softConfig.globalMetadataContent
       for (const file of originalChapterFilesArray) {
         fullOriginalContent += '\n' + (await this.fsUtils.readFileContent(file))
       }
@@ -312,16 +312,16 @@ export default class Build extends Command {
     allChapterFilesArray.forEach(cf => {
       extractPromises.push(this.markupUtils.extractMarkup(cf))
     })
-    
+
     await Promise.all(extractPromises).then(async fullMarkupArray => {
       const flattenedMarkupArray: MarkupObj[] = ([] as MarkupObj[]).concat(...fullMarkupArray)
 
       const { markupByFile, markupByType } = this.markupUtils.objectifyMarkupArray(flattenedMarkupArray)
-      
-      const markupExt = this.configInstance.configStyle.toLowerCase()
+
+      const markupExt = this.softConfig.configStyle.toLowerCase()
       const allMarkups = [
-        { markupObj: markupByFile, fullPath: path.join(this.configInstance.buildDirectory, `${outputFile}.markupByFile.${markupExt}`) },
-        { markupObj: markupByType, fullPath: path.join(this.configInstance.buildDirectory, `${outputFile}.markupByType.${markupExt}`) }
+        { markupObj: markupByFile, fullPath: path.join(this.softConfig.buildDirectory, `${outputFile}.markupByFile.${markupExt}`) },
+        { markupObj: markupByType, fullPath: path.join(this.softConfig.buildDirectory, `${outputFile}.markupByType.${markupExt}`) }
       ]
 
       for (const markup of allMarkups) {
@@ -330,22 +330,22 @@ export default class Build extends Command {
         debug(`up to here in build`)
 
         const comparedString =
-          this.configInstance.configStyle === 'JSON5'
+          this.softConfig.configStyle === 'JSON5'
             ? JSON.stringify(markup.markupObj, null, 4)
-            : this.configInstance.configStyle === 'YAML'
+            : this.softConfig.configStyle === 'YAML'
             ? yaml.safeDump(markup.markupObj)
               : ''
-        
+
         debug(`comparedString=${comparedString}`)
         if (existingMarkupContent !== comparedString) {
           await this.fsUtils.writeFile(markup.fullPath, comparedString)
-          table.accumulator(this.configInstance.mapFileToBeRelativeToRootPath(markup.fullPath), 'updated')
+          table.accumulator(this.softConfig.mapFileToBeRelativeToRootPath(markup.fullPath), 'updated')
         }
       }
 
       const modifiedMetadataFiles = await this.markupUtils.writeMetadataInEachFile(markupByFile)
       table.accumulatorArray(
-        modifiedMetadataFiles.map(val => ({ from: this.configInstance.mapFileToBeRelativeToRootPath(val.file), to: val.diff }))
+        modifiedMetadataFiles.map(val => ({ from: this.softConfig.mapFileToBeRelativeToRootPath(val.file), to: val.diff }))
       )
       // markupFilenamesPretty = modifiedMetadataFiles.reduce((previous, current) => `${previous}\n    ${current}`,'')
     })
@@ -407,7 +407,7 @@ export default class Build extends Command {
   }
 
   private async extractMeta(filepath: string, extractAll: boolean): Promise<MetaObj[]> {
-    const file = this.configInstance.mapFileToBeRelativeToRootPath(filepath)
+    const file = this.softConfig.mapFileToBeRelativeToRootPath(filepath)
     const beginBlock = '########'
     const endFormattedBlock = '------------------------ >8 ------------------------'
     const gitLogArgs = ['log', '-c', '--follow', `--pretty=format:"${beginBlock}%H;%aI;%s${endFormattedBlock}"`]

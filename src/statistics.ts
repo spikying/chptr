@@ -21,7 +21,7 @@ const nullStackStats: StackStatistics = {
 }
 
 export class Statistics {
-  private readonly configInstance: SoftConfig
+  private readonly softConfig: SoftConfig
   private readonly fsUtils: FsUtils
 
   private _allNormalFiles: string[] | null = null
@@ -29,9 +29,9 @@ export class Statistics {
 
   private readonly _allNovelStatistics: NovelStatistics = { atNumberStack: nullStackStats, normalStack: nullStackStats }
 
-  constructor(configInstance: SoftConfig) {
+  constructor(softConfig: SoftConfig) {
     debug(`New Statistics instance`)
-    this.configInstance = configInstance
+    this.softConfig = softConfig
     this.fsUtils = new FsUtils()
   }
 
@@ -60,21 +60,21 @@ export class Statistics {
   }
 
   public getActualDigitsFromChapterFilename(filename: string, atNumber: boolean): number {
-    const match = this.configInstance.chapterRegex(atNumber).exec(this.configInstance.mapFileToBeRelativeToRootPath(filename))
+    const match = this.softConfig.chapterRegex(atNumber).exec(this.softConfig.mapFileToBeRelativeToRootPath(filename))
     return match ? match[1].length : 1
   }
 
   public getNextFilenumber(previousNumber: number): number {
     if (!previousNumber) {
-      return this.configInstance.config.numberingInitial
+      return this.softConfig.config.numberingInitial
     } else {
-      return previousNumber + this.configInstance.config.numberingStep
+      return previousNumber + this.softConfig.config.numberingStep
     }
   }
 
   public async updateStackStatistics(atNumbers: boolean): Promise<void> {
     const files = await this.getAllNovelFiles()
-    const fileRegex: RegExp = this.configInstance.chapterRegex(atNumbers)
+    const fileRegex: RegExp = this.softConfig.chapterRegex(atNumbers)
     const index = atNumbers ? 'atNumberStack' : 'normalStack'
 
     debug(`files: ${files}\nfileRegex: ${fileRegex}\nindex: ${index}`)
@@ -85,7 +85,7 @@ export class Statistics {
 
     const highestNumber = files
       .map(value => {
-        const matches = fileRegex.exec(this.configInstance.mapFileToBeRelativeToRootPath(value))
+        const matches = fileRegex.exec(this.softConfig.mapFileToBeRelativeToRootPath(value))
         return matches ? parseInt(matches[1], 10) : 0
       })
       .reduce((previous, current) => {
@@ -94,7 +94,7 @@ export class Statistics {
 
     const minDigits = files
       .map(value => {
-        const matches = fileRegex.exec(this.configInstance.mapFileToBeRelativeToRootPath(value))
+        const matches = fileRegex.exec(this.softConfig.mapFileToBeRelativeToRootPath(value))
         return matches ? matches[1].length : 0
       })
       .reduce((previous, current) => {
@@ -103,7 +103,7 @@ export class Statistics {
 
     const maxNecessaryDigits = files
       .map(value => {
-        const matches = fileRegex.exec(this.configInstance.mapFileToBeRelativeToRootPath(value))
+        const matches = fileRegex.exec(this.softConfig.mapFileToBeRelativeToRootPath(value))
         return matches ? this.fsUtils.numDigits(parseInt(matches[1], 10)) : 0
       })
       .reduce((previous, current) => {
@@ -122,11 +122,11 @@ export class Statistics {
 
     if (existingFiles === null || refresh) {
       const wildcards = [
-        this.configInstance.chapterWildcard(isAtNumbered),
-        this.configInstance.metadataWildcard(isAtNumbered),
-        this.configInstance.summaryWildcard(isAtNumbered)
+        this.softConfig.chapterWildcard(isAtNumbered),
+        this.softConfig.metadataWildcard(isAtNumbered),
+        this.softConfig.summaryWildcard(isAtNumbered)
       ]
-      const files = await this.fsUtils.getAllFilesForWildcards(wildcards, this.configInstance.projectRootPath)
+      const files = await this.fsUtils.getAllFilesForWildcards(wildcards, this.softConfig.projectRootPath)
 
       if (isAtNumbered) {
         this._allAtNumberedFiles = files
@@ -142,28 +142,4 @@ export class Statistics {
   public async getAllNovelFiles(refresh = false): Promise<string[]> {
     return (await this.getAllFilesForOneType(true, refresh)).concat(await this.getAllFilesForOneType(false, refresh))
   }
-
-  // //TODO: make aware of which filetype it is and use real patterns for cases where the number is repeated
-  // public renumberedFilename(filename: string, newFilenumber: number, digits: number, atNumbering: boolean): string {
-  //   //Identify if it's a chapter, summary or metadata
-  //   const isChapter = this.configInstance.chapterRegex(true).test(filename) || this.configInstance.chapterRegex(false).test(filename)
-  //   const isSummary = this.configInstance.summaryRegex(true).test(filename) || this.configInstance.summaryRegex(false).test(filename)
-  //   const isMetadata = this.configInstance.metadataRegex(true).test(filename) || this.configInstance.metadataRegex(false).test(filename)
-
-  //   debug(`filename: ${filename}\nregex: ${this.configInstance.chapterRegex(atNumbering)}\nisChapter: ${isChapter}`)
-  //   const total = (isChapter ? 1 : 0) + (isSummary ? 1 : 0) + (isMetadata ? 1 : 0)
-  //   if (total !== 1) {
-  //     throw new Error('Filename does not match Chapter, Summary or Metadata pattern and cannot be renamed.')
-  //   }
-  //   //
-  //   if (isChapter) {
-  //     const matches = this.configInstance.chapterRegex(atNumbering).exec(filename)
-  //     const name = matches ? matches[2] : ''
-  //     debug(`return ${this.configInstance.chapterFileNameFromParameters(this.stringifyNumber(newFilenumber, digits), name, atNumbering)}`)
-  //     return this.configInstance.chapterFileNameFromParameters(this.stringifyNumber(newFilenumber, digits), name, atNumbering)
-  //   }
-
-  //   const re = new RegExp(/^(.*?)(@?\d+)(.*)$/)
-  //   return filename.replace(re, '$1' + (atNumbering ? '@' : '') + this.stringifyNumber(newFilenumber, digits) + '$3')
-  // }
 }

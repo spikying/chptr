@@ -47,16 +47,16 @@ export default class Reorder extends Command {
 
     const originNumber: number = this.isEndOfStack(args.origin)
       ? this.statistics.getHighestNumber(originIsAtNumbering)
-      : this.configInstance.extractNumber(args.origin)
+      : this.softConfig.extractNumber(args.origin)
     const destNumber: number = this.isEndOfStack(args.destination)
       ? this.statistics.getHighestNumber(destIsAtNumbering) === 0
-        ? this.configInstance.config.numberingInitial
-        : this.statistics.getHighestNumber(destIsAtNumbering) + this.configInstance.config.numberingStep
-      : this.configInstance.extractNumber(args.destination)
+        ? this.softConfig.config.numberingInitial
+        : this.statistics.getHighestNumber(destIsAtNumbering) + this.softConfig.config.numberingStep
+      : this.softConfig.extractNumber(args.destination)
 
     const originExists: boolean = files
       .map(value => {
-        return this.configInstance.extractNumber(value) === originNumber && this.configInstance.isAtNumbering(value) === originIsAtNumbering
+        return this.softConfig.extractNumber(value) === originNumber && this.softConfig.isAtNumbering(value) === originIsAtNumbering
       })
       .reduce((previous, current) => {
         return previous || current
@@ -85,7 +85,7 @@ export default class Reorder extends Command {
     const fileInfoArray = [
       ...new Set(
         (await this.statistics.getAllFilesForOneType(destIsAtNumbering)).map(file => {
-          return this.configInstance.extractNumber(file)
+          return this.softConfig.extractNumber(file)
         })
       )
     ] //to make unique
@@ -134,18 +134,18 @@ export default class Reorder extends Command {
 
     const toRenameFiles = (await this.statistics.getAllFilesForOneType(destIsAtNumbering))
       .filter(file => {
-        const fileNumber = this.configInstance.extractNumber(file)
+        const fileNumber = this.softConfig.extractNumber(file)
         return toMoveFiles.map(m => m.fileNumber).includes(fileNumber)
       })
       .map(file => {
-        const fileNumber = this.configInstance.extractNumber(file)
+        const fileNumber = this.softConfig.extractNumber(file)
         const mf = toMoveFiles.filter(m => m.fileNumber === fileNumber)[0]
         return { file, newFileNumber: mf.newFileNumber }
       })
 
     if (!sameAtNumbering) {
       const originFiles = (await this.statistics.getAllFilesForOneType(originIsAtNumbering)).filter(file => {
-        return this.configInstance.extractNumber(file) === originNumber
+        return this.softConfig.extractNumber(file) === originNumber
       })
 
       for (const f of originFiles) {
@@ -156,13 +156,13 @@ export default class Reorder extends Command {
     cli.action.stop('done'.actionStopColor())
     cli.action.start('Moving files to temp directory'.actionStartColor())
 
-    const { tempDir } = await this.fsUtils.getTempDir(this.configInstance.projectRootPath)
+    const { tempDir } = await this.fsUtils.getTempDir(this.softConfig.projectRootPath)
 
     try {
       const moveTempPromises: Promise<MoveSummary>[] = []
       for (const file of toRenameFiles.map(f => f.file)) {
-        const fromFilename = this.configInstance.mapFileToBeRelativeToRootPath(file)
-        const toFilename = this.configInstance.mapFileToBeRelativeToRootPath(path.join(tempDir, fromFilename))
+        const fromFilename = this.softConfig.mapFileToBeRelativeToRootPath(file)
+        const toFilename = this.softConfig.mapFileToBeRelativeToRootPath(path.join(tempDir, fromFilename))
         debug(`Original file: ${fromFilename} TEMP TO ${toFilename}`)
 
         // TODO: Use this.createSubDirectoryIfNecessary
@@ -190,15 +190,15 @@ export default class Reorder extends Command {
     try {
       const moveBackPromises: Promise<MoveSummary>[] = []
       for (const moveItem of toRenameFiles) {
-        const filename = this.configInstance.mapFileToBeRelativeToRootPath(moveItem.file)
+        const filename = this.softConfig.mapFileToBeRelativeToRootPath(moveItem.file)
         const newFileNumber: number = moveItem.newFileNumber
         const destDigits = this.statistics.getMaxNecessaryDigits(destIsAtNumbering)
 
-        const fromFilename = this.configInstance.mapFileToBeRelativeToRootPath(path.join(tempDir, filename))
-        const toFilename = this.configInstance.renumberedFilename(filename, newFileNumber, destDigits, destIsAtNumbering)
+        const fromFilename = this.softConfig.mapFileToBeRelativeToRootPath(path.join(tempDir, filename))
+        const toFilename = this.softConfig.renumberedFilename(filename, newFileNumber, destDigits, destIsAtNumbering)
 
         // TODO: Use this.createSubDirectoryIfNecessary
-        const directoryPath = path.dirname(path.join(this.configInstance.projectRootPath, toFilename))
+        const directoryPath = path.dirname(path.join(this.softConfig.projectRootPath, toFilename))
         const directoryExists = await this.fsUtils.fileExists(directoryPath)
         debug(`directoryPath=${directoryPath} directoryExists=${directoryExists}`)
         if (!directoryExists) {
@@ -218,7 +218,7 @@ export default class Reorder extends Command {
       cli.exit(1)
     }
 
-    await this.fsUtils.deleteEmptySubDirectories(this.configInstance.projectRootPath)
+    await this.fsUtils.deleteEmptySubDirectories(this.softConfig.projectRootPath)
 
     cli.action.stop('done'.actionStopColor())
 

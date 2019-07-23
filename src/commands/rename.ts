@@ -56,19 +56,19 @@ export default class Rename extends Command {
     const queryResponses: any = await queryBuilder.responses()
     const chapterId = args.chapterOrFilename || queryResponses.chapterOrFilename || ''
 
-    const num = this.configInstance.extractNumber(chapterId)
-    const isAtNumbering = this.configInstance.isAtNumbering(chapterId)
+    const num = this.softConfig.extractNumber(chapterId)
+    const isAtNumbering = this.softConfig.isAtNumbering(chapterId)
 
     cli.action.start('Renaming files'.actionStartColor())
 
     const chapterFile = (await this.fsUtils.globPromise(
-      path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcardWithNumber(num, isAtNumbering))
+      path.join(this.softConfig.projectRootPath, this.softConfig.chapterWildcardWithNumber(num, isAtNumbering))
     ))[0]
     const summaryFile = (await this.fsUtils.globPromise(
-      path.join(this.configInstance.projectRootPath, this.configInstance.summaryWildcardWithNumber(num, isAtNumbering))
+      path.join(this.softConfig.projectRootPath, this.softConfig.summaryWildcardWithNumber(num, isAtNumbering))
     ))[0]
     const metadataFile = (await this.fsUtils.globPromise(
-      path.join(this.configInstance.projectRootPath, this.configInstance.metadataWildcardWithNumber(num, isAtNumbering))
+      path.join(this.softConfig.projectRootPath, this.softConfig.metadataWildcardWithNumber(num, isAtNumbering))
     ))[0]
 
     const newName = flags.title ? await this.extractTitleFromFile(chapterFile) : args.newName || queryResponses.newName || 'chapter'
@@ -78,9 +78,9 @@ export default class Rename extends Command {
       await this.statistics.updateStackStatistics(isAtNumbering)
       const digits = this.statistics.getMinDigits(isAtNumbering)
       const expectedFiles = [
-        this.configInstance.chapterFileNameFromParameters(this.fsUtils.stringifyNumber(num, digits), newNameForFile, isAtNumbering),
-        this.configInstance.summaryFileNameFromParameters(this.fsUtils.stringifyNumber(num, digits), newNameForFile, isAtNumbering),
-        this.configInstance.metadataFileNameFromParameters(this.fsUtils.stringifyNumber(num, digits), newNameForFile, isAtNumbering)
+        this.softConfig.chapterFileNameFromParameters(this.fsUtils.stringifyNumber(num, digits), newNameForFile, isAtNumbering),
+        this.softConfig.summaryFileNameFromParameters(this.fsUtils.stringifyNumber(num, digits), newNameForFile, isAtNumbering),
+        this.softConfig.metadataFileNameFromParameters(this.fsUtils.stringifyNumber(num, digits), newNameForFile, isAtNumbering)
       ]
       this.error(`Missing a file within this list:${expectedFiles.map(f => `\n    ${f}`)}`.errorColor())
       this.exit(0)
@@ -91,7 +91,7 @@ export default class Rename extends Command {
     const didUpdateChapter = {
       filename: chapterFile,
       title: await this.replaceTitleInMarkdown(chapterFile, newName),
-      newFileName: this.configInstance.chapterFileNameFromParameters(
+      newFileName: this.softConfig.chapterFileNameFromParameters(
         this.fsUtils.stringifyNumber(num, digits),
         newNameForFile,
         isAtNumbering
@@ -101,7 +101,7 @@ export default class Rename extends Command {
     const didUpdateSummary = {
       filename: summaryFile,
       title: await this.replaceTitleInMarkdown(summaryFile, newName),
-      newFileName: this.configInstance.summaryFileNameFromParameters(
+      newFileName: this.softConfig.summaryFileNameFromParameters(
         this.fsUtils.stringifyNumber(num, digits),
         newNameForFile,
         isAtNumbering
@@ -111,7 +111,7 @@ export default class Rename extends Command {
     const didUpdateMetadata = {
       filename: metadataFile,
       title: await this.replaceTitleInObject(metadataFile, newName),
-      newFileName: this.configInstance.metadataFileNameFromParameters(
+      newFileName: this.softConfig.metadataFileNameFromParameters(
         this.fsUtils.stringifyNumber(num, digits),
         newNameForFile,
         isAtNumbering
@@ -121,9 +121,9 @@ export default class Rename extends Command {
     const didUpdates = [didUpdateChapter, didUpdateSummary, didUpdateMetadata]
 
     for (const didUpdate of didUpdates) {
-      if (this.configInstance.mapFileToBeRelativeToRootPath(didUpdate.filename) !== didUpdate.newFileName) {
+      if (this.softConfig.mapFileToBeRelativeToRootPath(didUpdate.filename) !== didUpdate.newFileName) {
         didUpdate.rename = didUpdate.newFileName
-        await this.git.mv(this.configInstance.mapFileToBeRelativeToRootPath(didUpdate.filename), didUpdate.newFileName)
+        await this.git.mv(this.softConfig.mapFileToBeRelativeToRootPath(didUpdate.filename), didUpdate.newFileName)
       }
     }
 
@@ -169,7 +169,7 @@ export default class Rename extends Command {
   }
 
   private async extractTitleFromFile(chapterFile: string): Promise<string | null> {
-    const initialContent = await this.fsUtils.readFileContent(path.join(this.configInstance.projectRootPath, chapterFile))
+    const initialContent = await this.fsUtils.readFileContent(path.join(this.softConfig.projectRootPath, chapterFile))
     return this.markupUtils.extractTitleFromString(initialContent)
   }
 }

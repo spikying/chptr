@@ -40,9 +40,9 @@ export default class Antidote extends Command {
     }
     const isAtNumber: boolean = filter.substring(0, 1) === '@'
 
-    const chapterNumber = this.configInstance.extractNumber(filter)
+    const chapterNumber = this.softConfig.extractNumber(filter)
     const chapterFileName = glob.sync(
-      path.join(this.configInstance.projectRootPath, this.configInstance.chapterWildcardWithNumber(chapterNumber, isAtNumber))
+      path.join(this.softConfig.projectRootPath, this.softConfig.chapterWildcardWithNumber(chapterNumber, isAtNumber))
     )[0]
 
     if (!chapterFileName) {
@@ -50,7 +50,7 @@ export default class Antidote extends Command {
       this.exit(1)
     }
 
-    const basicFilePath = path.join(this.configInstance.projectRootPath, chapterFileName)
+    const basicFilePath = path.join(this.softConfig.projectRootPath, chapterFileName)
     const antidoteFilePath = this.hardConfig.antidotePathName(chapterFileName)
 
     cli.action.start(`Launching Antidote with ${antidoteFilePath}`.actionStartColor())

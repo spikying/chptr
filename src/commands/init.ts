@@ -167,7 +167,7 @@ export default class Init extends Command {
 
     //prepare for creating config files
 
-    const virginConfigInstance = new SoftConfig(path.join(flags.path as string), false)
+    const virginSoftConfig = new SoftConfig(path.join(flags.path as string), false)
     const overrideObj = {
       projectTitle: name,
       projectAuthor: { name: authorName, email: authorEmail } as Author,
@@ -197,7 +197,7 @@ export default class Init extends Command {
       allConfigOperations.push(
         {
           fullPathName: this.hardConfig.configYAMLFilePath,
-          content: virginConfigInstance.configDefaultsWithMetaYAMLString(overrideObj)
+          content: virginSoftConfig.configDefaultsWithMetaYAMLString(overrideObj)
         },
         {
           fullPathName: this.hardConfig.metadataFieldsYAMLFilePath,
@@ -208,7 +208,7 @@ export default class Init extends Command {
       allConfigOperations.push(
         {
           fullPathName: this.hardConfig.configJSON5FilePath,
-          content: virginConfigInstance.configDefaultsWithMetaJSON5String(overrideObj)
+          content: virginSoftConfig.configDefaultsWithMetaJSON5String(overrideObj)
         },
         {
           fullPathName: this.hardConfig.metadataFieldsJSON5FilePath,

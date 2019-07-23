@@ -58,8 +58,8 @@ export default class Delete extends Command {
 
     const toDeleteFiles: string[] = []
 
-    const numberRegexWithoutAtNumbering = new RegExp('^' + this.configInstance.numbersPattern(false) + '$')
-    const numberRegexWithAtNumbering = new RegExp('^' + this.configInstance.numbersPattern(true) + '$')
+    const numberRegexWithoutAtNumbering = new RegExp('^' + this.softConfig.numbersPattern(false) + '$')
+    const numberRegexWithAtNumbering = new RegExp('^' + this.softConfig.numbersPattern(true) + '$')
 
     const isAtNumber = nameOrNumber.substring(0, 1) === '@'
     const isChapterNumberOnly = numberRegexWithoutAtNumbering.test(nameOrNumber) || numberRegexWithAtNumbering.test(nameOrNumber)
@@ -70,24 +70,24 @@ export default class Delete extends Command {
       // if (glob.hasMagic(nameOrNumber)) {
       //   filePattern = nameOrNumber
       // }
-      const pathName = path.join(this.configInstance.projectRootPath, filePattern)
+      const pathName = path.join(this.softConfig.projectRootPath, filePattern)
       toDeleteFiles.push(...(await this.fsUtils.listFiles(pathName)))
     } else {
       // we will delete all files matching the number patterns for chapters, metadata and summary
-      const filterNumber = this.configInstance.extractNumber(nameOrNumber)
+      const filterNumber = this.softConfig.extractNumber(nameOrNumber)
       const globPatterns: string[] = []
       // if (deleteType === 'all' || deleteType === 'chapter') {
-      globPatterns.push(this.configInstance.chapterWildcardWithNumber(filterNumber, isAtNumber))
+      globPatterns.push(this.softConfig.chapterWildcardWithNumber(filterNumber, isAtNumber))
       // }
       // if (deleteType === 'all' || deleteType === 'summary') {
-      globPatterns.push(this.configInstance.summaryWildcardWithNumber(filterNumber, isAtNumber))
+      globPatterns.push(this.softConfig.summaryWildcardWithNumber(filterNumber, isAtNumber))
       // }
       // if (deleteType === 'all' || deleteType === 'metadata') {
-      globPatterns.push(this.configInstance.metadataWildcardWithNumber(filterNumber, isAtNumber))
+      globPatterns.push(this.softConfig.metadataWildcardWithNumber(filterNumber, isAtNumber))
       // }
 
       for (const gp of globPatterns) {
-        const pathName = path.join(this.configInstance.projectRootPath, gp)
+        const pathName = path.join(this.softConfig.projectRootPath, gp)
         toDeleteFiles.push(...(await this.fsUtils.listFiles(pathName)))
       }
     }
@@ -97,10 +97,10 @@ export default class Delete extends Command {
     } else {
       try {
         cli.action.start('Deleting file(s) locally and from repository'.actionStartColor())
-        await this.git.rm(this.configInstance.mapFilesToBeRelativeToRootPath(toDeleteFiles))
+        await this.git.rm(this.softConfig.mapFilesToBeRelativeToRootPath(toDeleteFiles))
         const toDeletePretty = toDeleteFiles.map(f => `\n    ${f}`)
         await this.CommitToGit(
-          `Removed files: ${JSON.stringify(this.configInstance.mapFilesToBeRelativeToRootPath(toDeleteFiles))}`,
+          `Removed files: ${JSON.stringify(this.softConfig.mapFilesToBeRelativeToRootPath(toDeleteFiles))}`,
           undefined,
           true
         )
