@@ -8,7 +8,6 @@ import Add from './add'
 import { d } from './base'
 import Delete from './delete'
 import Command from './initialized-base'
-import Reorder from './reorder'
 
 const debug = d('command:split')
 
@@ -62,7 +61,8 @@ export default class Split extends Command {
     const atEndNum = this.statistics.getHighestNumber(true)
 
     if (!isAtNumbering || num !== atEndNum) {
-      await Reorder.run([`--path=${flags.path}`, `${isAtNumbering ? '@' : ''}${num}`, '@end'])
+      // await Reorder.run([`--path=${flags.path}`, `${isAtNumbering ? '@' : ''}${num}`, '@end'])
+      await this.reorder(`${isAtNumbering ? '@' : ''}${num}`, '@end')
     }
 
     cli.info('Reading and processing chapter...'.resultNormalColor())
@@ -119,7 +119,8 @@ export default class Split extends Command {
         const addedNumber = addedTempNumbers[i]
         toEditPretty += `\n    inserted chapter ${isAtNumbering ? '@' : ''}${addedNumber}`
 
-        await Reorder.run([`--path=${flags.path}`, `@${addedNumber}`, `${isAtNumbering ? '@' : ''}${num + i}`])
+        // await Reorder.run([`--path=${flags.path}`, `@${addedNumber}`, `${isAtNumbering ? '@' : ''}${num + i}`])
+        await this.reorder(`@${addedNumber}`, `${isAtNumbering ? '@' : ''}${num + i}`)
       }
 
       cli.info(`modified files:${toEditPretty.resultHighlighColor()}`.resultNormalColor())
