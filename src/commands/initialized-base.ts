@@ -334,9 +334,9 @@ export default abstract class extends Command {
 
     const unfilteredFileList = (await this.git.diff(['--name-only']))
       .split('\n')
-      // .concat(gitStatus.deleted.map(unQuote))
+      // .concat(gitStatus.deleted.map(unQuote)) //If they are removed by git.rm it is not necessary to "readd" then
       .concat(gitStatus.modified.map(unQuote))
-      .concat(gitStatus.created.map(unQuote))
+      // .concat(gitStatus.created.map(unQuote)) //They are added manually through Add and Track command
       .concat(gitStatus.renamed.map((value: any) => value.to as string).map(unQuote))
       .filter(onlyUnique)
 

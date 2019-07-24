@@ -15,6 +15,7 @@ const debug = d('command:split')
 export default class Split extends Command {
   static description = 'Outputs a chapter file for each `# Title level 1` in an original chapter.'
 
+  //TODO: actually call compact if flag is on
   static flags = {
     ...Command.flags,
     compact: flags.boolean({
@@ -36,6 +37,7 @@ export default class Split extends Command {
   static aliases = ['divide']
 
   // TODO: extract needed functions from Reorder, Add and Delete so all these operations can be saved a single time.
+  // TODO: update metadata files of splitted files
   async run() {
     debug('In Split command')
     const { args, flags } = this.parse(Split)

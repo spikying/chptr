@@ -153,7 +153,7 @@ export class MarkupUtils {
       if (initialContent !== updatedContent) {
         debug(`metadataFilePath=${metadataFilePath} updatedContent=${updatedContent}`)
         await this.fsUtils.writeFile(metadataFilePath, updatedContent)
-        //todo: move to deep-diff?
+        //todo: move to deep-diff? at least test with yaml config files
         modifiedFiles.push({
           file: metadataFilePath,
           diff: JsDiff.diffJson(initialObj, updatedObj)

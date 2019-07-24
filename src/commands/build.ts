@@ -251,7 +251,7 @@ export default class Build extends Command {
           chapterFiles = '"' + tmpMDfileTex.path + '" '
 
           const templateFullPath = path.join(this.hardConfig.configPath, 'template.latex')
-          if (this.fsUtils.fileExists(templateFullPath)) {
+          if (await this.fsUtils.fileExists(templateFullPath)) {
             pandocArgs = pandocArgs.concat([`--template`, `"${templateFullPath}"`])
           } else {
             this.warn(`For a better output, create a latex template at ${templateFullPath}`)
@@ -334,7 +334,7 @@ export default class Build extends Command {
             ? JSON.stringify(markup.markupObj, null, 4)
             : this.softConfig.configStyle === 'YAML'
             ? yaml.safeDump(markup.markupObj)
-              : ''
+            : ''
 
         debug(`comparedString=${comparedString}`)
         if (existingMarkupContent !== comparedString) {

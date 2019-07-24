@@ -61,10 +61,6 @@ export class SoftConfig {
     return this._metadataFieldsObj
   }
 
-  // public get projectRootPath(): string {
-  //   return this.rootPath
-  // }
-
   public get buildDirectory(): string {
     return path.join(this.rootPath, this.config.buildDirectory)
   }
@@ -74,6 +70,7 @@ export class SoftConfig {
 title: ${this.config.projectTitle}
 author: ${this.config.projectAuthor.name}
 lang: ${this.config.projectLang}
+fontfamily: ${this.config.fontName}
 fontsize: ${this.config.fontSize}
 date: ${moment().format('D MMMM YYYY')}
 ...
@@ -180,14 +177,10 @@ date: ${moment().format('D MMMM YYYY')}
       default: 'en'
     },
     fontName: {
-      //TODO: use parameter?
-      //TODO: make use of it in exports
       doc: 'Font to use for the rendering engines that use it',
       default: ''
     },
     fontSize: {
-      //TODO: use parameter?
-      //TODO: make use of it in exports
       doc: 'Font size for the rendering engines that use it',
       default: '12pt'
     },
