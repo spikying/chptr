@@ -152,7 +152,7 @@ export class FsUtils {
     try {
       const buff = await this.readFileBuffer(filepath)
       const content = await buff.toString('utf8', 0, buff.byteLength)
-      return content
+      return content.replace(/\r\n/g, '\n')
     } catch {
       return ''
     }

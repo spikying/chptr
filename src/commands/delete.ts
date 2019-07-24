@@ -39,7 +39,6 @@ export default class Delete extends Command {
     debug('Running Delete command')
     const { args, flags } = this.parse(Delete)
 
-    // const deleteType = flags.type
     const compact = flags.compact
 
     const queryBuilder = new QueryBuilder()
@@ -73,16 +72,7 @@ export default class Delete extends Command {
     } else {
       // we will delete all files matching the number patterns for chapters, metadata and summary
       const filterNumber = this.softConfig.extractNumber(nameOrNumber)
-      // const globPatterns: string[] = []
-      // globPatterns.push(this.softConfig.chapterWildcardWithNumber(filterNumber, isAtNumber))
-      // globPatterns.push(this.softConfig.summaryWildcardWithNumber(filterNumber, isAtNumber))
-      // globPatterns.push(this.softConfig.metadataWildcardWithNumber(filterNumber, isAtNumber))
       toDeleteFiles.push(...(await this.statistics.getAllFilesForChapter(filterNumber, isAtNumber)))
-
-      // for (const gp of globPatterns) {
-      //   const pathName = path.join(this.softConfig.projectRootPath, gp)
-      //   toDeleteFiles.push(...(await this.fsUtils.listFiles(pathName)))
-      // }
     }
 
     if (toDeleteFiles.length === 0) {

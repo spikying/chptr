@@ -60,6 +60,7 @@ export default abstract class extends Command {
       throw new Error('Directory was not initialized.  Run `init` command.')
     }
 
+
     await this.RenameFilesIfNewPattern()
     await this.MoveToNewBuildDirectory()
     await this.RenameProjectTitle()
@@ -486,10 +487,10 @@ export default abstract class extends Command {
       }
     }
 
+    await Promise.all(promises)
     await this.fsUtils.deleteEmptySubDirectories(this.softConfig.projectRootPath)
 
     table.show('Adding digits to files')
-    await Promise.all(promises)
     return hasMadeChanges
   }
 }
