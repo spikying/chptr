@@ -60,7 +60,6 @@ export default abstract class extends Command {
       throw new Error('Directory was not initialized.  Run `init` command.')
     }
 
-
     await this.RenameFilesIfNewPattern()
     await this.MoveToNewBuildDirectory()
     await this.RenameProjectTitle()
@@ -105,16 +104,12 @@ export default abstract class extends Command {
       }
     })
 
-    //     const needsName = !oldVsNew.map(obj => obj.oldPattern).reduce((previous, oldPattern) => previous && oldPattern.indexOf('NAME') > 0, true)
-    //     if (needsName) {
-    // }
-
     debug(`old vs new: ${JSON.stringify(oldVsNew)}`)
 
     const oldChapterPattern = lastConfigObj.chapterPattern
 
     const movePromises: Promise<MoveSummary>[] = []
-    const movesToDo: { originalFile: string; renamedFile: string }[] = []
+    const movesToExecute: { originalFile: string; renamedFile: string }[] = []
     for (const oldAndNew of oldVsNew) {
       const files = (await this.softConfig.getAllFilesForPattern(oldAndNew.oldPattern)) || []
 
@@ -125,8 +120,6 @@ export default abstract class extends Command {
         const rootedFile = this.softConfig.mapFileToBeRelativeToRootPath(file)
         const num = rootedFile.replace(isAtNumber ? reAtNumber : reNormal, '$1')
 
-        //TODO: get name from metadata file's title?  Here if old pattern has no name, it gives '$2' as a name.
-        // const name = rootedFile.replace(isAtNumber ? reAtNumber : reNormal, '$2')
         const nameMatch = (isAtNumber ? reAtNumber : reNormal).exec(rootedFile)
         debug(`nameMatch=${JSON.stringify(nameMatch)} nameMatch.length=${nameMatch && nameMatch.length}`)
         debug(`$2=${nameMatch && nameMatch.length >= 3 ? nameMatch[2] : '---'}`)
@@ -140,12 +133,12 @@ export default abstract class extends Command {
 
         await this.fsUtils.createSubDirectoryFromFilePathIfNecessary(path.join(this.rootPath, renamedFile))
 
-        movesToDo.push({ originalFile: rootedFile, renamedFile })
+        movesToExecute.push({ originalFile: rootedFile, renamedFile })
       }
     }
-    for (const moveToDo of movesToDo) {
+    for (const moveToExec of movesToExecute) {
       result = true
-      movePromises.push(this.git.mv(moveToDo.originalFile, moveToDo.renamedFile))
+      movePromises.push(this.git.mv(moveToExec.originalFile, moveToExec.renamedFile))
     }
 
     await Promise.all(movePromises)
@@ -384,11 +377,7 @@ export default abstract class extends Command {
     const tempDirForGit = this.softConfig.mapFileToBeRelativeToRootPath(tempDir)
 
     for (const b of [true, false]) {
-      const wildcards = [
-        this.softConfig.chapterWildcard(b),
-        this.softConfig.metadataWildcard(b),
-        this.softConfig.summaryWildcard(b)
-      ]
+      const wildcards = [this.softConfig.chapterWildcard(b), this.softConfig.metadataWildcard(b), this.softConfig.summaryWildcard(b)]
       for (const wildcard of wildcards) {
         const files = await this.fsUtils.globPromise(path.join(this.rootPath, wildcard))
 
@@ -431,11 +420,10 @@ export default abstract class extends Command {
     }
   }
 
-  public isEndOfStack (value: string): boolean {
+  public isEndOfStack(value: string): boolean {
     const re = new RegExp(/^@?end$/)
     return re.test(value)
   }
-
 
   //private functions
   private async getLastAndActualConfigObjects(): Promise<{ lastConfigObj: any; actualConfigObj: any }> {
@@ -452,9 +440,7 @@ export default abstract class extends Command {
       const actualConfigContent = await this.fsUtils.readFileContent(configFilePath)
 
       this._lastConfigObj =
-        this.softConfig.configStyle === 'JSON5'
-          ? jsonComment.parse(lastConfigContent, undefined, true)
-          : yaml.safeLoad(lastConfigContent)
+        this.softConfig.configStyle === 'JSON5' ? jsonComment.parse(lastConfigContent, undefined, true) : yaml.safeLoad(lastConfigContent)
       this._actualConfigObj =
         this.softConfig.configStyle === 'JSON5'
           ? jsonComment.parse(actualConfigContent, undefined, true)

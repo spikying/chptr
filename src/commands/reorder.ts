@@ -3,6 +3,8 @@ import { cli } from 'cli-ux'
 import * as path from 'path'
 import { MoveSummary } from 'simple-git/typings/response'
 
+import { QueryBuilder } from '../ui-utils'
+
 import { d } from './base'
 import Command from './initialized-base'
 
@@ -20,13 +22,12 @@ export default class Reorder extends Command {
     })
   }
 
-  //TODO: make args not required and prompt user if args are missing
   static args = [
-    { name: 'origin', description: 'Chapter number to move', required: true },
+    { name: 'origin', description: 'Chapter number to move', required: false },
     {
       name: 'destination',
       description: 'Number it will become (write `end` or `@end`to put at the end of each stack).',
-      required: true
+      required: false
     }
   ]
 
@@ -40,19 +41,37 @@ export default class Reorder extends Command {
 
     cli.action.start('Analyzing files'.actionStartColor())
 
-    const originIsAtNumbering = args.origin.toString().substring(0, 1) === '@'
-    const destIsAtNumbering = args.destination.toString().substring(0, 1) === '@'
+    const queryBuilder = new QueryBuilder()
+    if (!args.origin) {
+      queryBuilder.add('origin', queryBuilder.textinput('What chapter to use as origin?', ''))
+    }
+    if (!args.destination) {
+      queryBuilder.add('destination', queryBuilder.textinput('What chapter to use as destination?'))
+    }
+    const queryResponses: any = await queryBuilder.responses()
+    const origin = args.origin || queryResponses.origin
+    const destination = args.destination || queryResponses.destination
+
+    if (!origin) {
+      throw new Error('You need to provide an origin chapter')
+    }
+    if (!destination) {
+      throw new Error('You need to provide a destination chapter')
+    }
+
+    const originIsAtNumbering = origin.toString().substring(0, 1) === '@'
+    const destIsAtNumbering = destination.toString().substring(0, 1) === '@'
 
     const files = await this.statistics.getAllNovelFiles()
 
-    const originNumber: number = this.isEndOfStack(args.origin)
+    const originNumber: number = this.isEndOfStack(origin)
       ? this.statistics.getHighestNumber(originIsAtNumbering)
-      : this.softConfig.extractNumber(args.origin)
-    const destNumber: number = this.isEndOfStack(args.destination)
+      : this.softConfig.extractNumber(origin)
+    const destNumber: number = this.isEndOfStack(destination)
       ? this.statistics.getHighestNumber(destIsAtNumbering) === 0
         ? this.softConfig.config.numberingInitial
         : this.statistics.getHighestNumber(destIsAtNumbering) + this.softConfig.config.numberingStep
-      : this.softConfig.extractNumber(args.destination)
+      : this.softConfig.extractNumber(destination)
 
     const originExists: boolean = files
       .map(value => {
@@ -132,7 +151,6 @@ export default class Reorder extends Command {
       return allMandatories.map(m => m.fileNumber).includes(info.fileNumber)
     })
 
-    //TODO: use getAllFilesForChapter?
     const toRenameFiles = (await this.statistics.getAllFilesForOneType(destIsAtNumbering))
       .filter(file => {
         const fileNumber = this.softConfig.extractNumber(file)
@@ -230,5 +248,4 @@ export default class Reorder extends Command {
 
     await this.CommitToGit(commitMessage)
   }
-
 }
