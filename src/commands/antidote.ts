@@ -42,7 +42,7 @@ export default class Antidote extends Command {
 
     const chapterNumber = this.softConfig.extractNumber(filter)
     const chapterFileName = glob.sync(
-      path.join(this.softConfig.projectRootPath, this.softConfig.chapterWildcardWithNumber(chapterNumber, isAtNumber))
+      path.join(this.rootPath, this.softConfig.chapterWildcardWithNumber(chapterNumber, isAtNumber))
     )[0]
 
     if (!chapterFileName) {
@@ -50,7 +50,7 @@ export default class Antidote extends Command {
       this.exit(1)
     }
 
-    const basicFilePath = path.join(this.softConfig.projectRootPath, chapterFileName)
+    const basicFilePath = path.join(this.rootPath, chapterFileName)
     const antidoteFilePath = this.hardConfig.antidotePathName(chapterFileName)
 
     cli.action.start(`Launching Antidote with ${antidoteFilePath}`.actionStartColor())

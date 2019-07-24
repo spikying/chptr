@@ -62,13 +62,13 @@ export default class Rename extends Command {
     cli.action.start('Renaming files'.actionStartColor())
 
     const chapterFile = (await this.fsUtils.globPromise(
-      path.join(this.softConfig.projectRootPath, this.softConfig.chapterWildcardWithNumber(num, isAtNumbering))
+      path.join(this.rootPath, this.softConfig.chapterWildcardWithNumber(num, isAtNumbering))
     ))[0]
     const summaryFile = (await this.fsUtils.globPromise(
-      path.join(this.softConfig.projectRootPath, this.softConfig.summaryWildcardWithNumber(num, isAtNumbering))
+      path.join(this.rootPath, this.softConfig.summaryWildcardWithNumber(num, isAtNumbering))
     ))[0]
     const metadataFile = (await this.fsUtils.globPromise(
-      path.join(this.softConfig.projectRootPath, this.softConfig.metadataWildcardWithNumber(num, isAtNumbering))
+      path.join(this.rootPath, this.softConfig.metadataWildcardWithNumber(num, isAtNumbering))
     ))[0]
 
     const newName = flags.title ? await this.extractTitleFromFile(chapterFile) : args.newName || queryResponses.newName || 'chapter'
@@ -169,7 +169,7 @@ export default class Rename extends Command {
   }
 
   private async extractTitleFromFile(chapterFile: string): Promise<string | null> {
-    const initialContent = await this.fsUtils.readFileContent(path.join(this.softConfig.projectRootPath, chapterFile))
+    const initialContent = await this.fsUtils.readFileContent(path.join(this.rootPath, chapterFile))
     return this.markupUtils.extractTitleFromString(initialContent)
   }
 }

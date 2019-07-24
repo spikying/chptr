@@ -60,7 +60,7 @@ export default class Add extends Command {
       nextNumber = this.softConfig.extractNumber(args.number)
 
       const existingFile = await this.fsUtils.listFiles(
-        path.join(this.softConfig.projectRootPath, this.softConfig.chapterWildcardWithNumber(nextNumber, atNumbering))
+        path.join(this.rootPath, this.softConfig.chapterWildcardWithNumber(nextNumber, atNumbering))
       )
 
       if (existingFile.length > 0) {
@@ -91,17 +91,17 @@ export default class Add extends Command {
         : ''
 
     const fullPathMD = path.join(
-      this.softConfig.projectRootPath,
+      this.rootPath,
       this.softConfig.chapterFileNameFromParameters(this.fsUtils.stringifyNumber(nextNumber, newDigits), name, atNumbering)
     )
 
     const fullPathMeta = path.join(
-      this.softConfig.projectRootPath,
+      this.rootPath,
       this.softConfig.metadataFileNameFromParameters(this.fsUtils.stringifyNumber(nextNumber, newDigits), name, atNumbering)
     )
 
     const fullPathSummary = path.join(
-      this.softConfig.projectRootPath,
+      this.rootPath,
       this.softConfig.summaryFileNameFromParameters(this.fsUtils.stringifyNumber(nextNumber, newDigits), name, atNumbering)
     )
 

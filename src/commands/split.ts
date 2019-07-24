@@ -69,7 +69,7 @@ export default class Split extends Command {
     const stashedNumber = this.statistics.getHighestNumber(true)
     const toEditFiles = await this.fsUtils.globPromise(
       path.join(
-        this.softConfig.projectRootPath,
+        this.rootPath,
         type === 'chapter'
           ? this.softConfig.chapterWildcardWithNumber(stashedNumber, true)
           : type === 'summary'
@@ -106,7 +106,7 @@ export default class Split extends Command {
 
         const newContent = this.processContent(this.processContentBack(titleAndContentPair.join('')))
         debug(`newContent:\n${newContent}`)
-        await this.fsUtils.writeFile(path.join(this.softConfig.projectRootPath, filename), newContent)
+        await this.fsUtils.writeFile(path.join(this.rootPath, filename), newContent)
 
         addedTempNumbers.push(newNumber)
       }

@@ -67,7 +67,11 @@ export default abstract class extends Command {
   }
   static hidden = true
 
-  private _rootPath = ''
+  public get rootPath(): string{
+    return this._rootPath
+  }
+  
+  private _rootPath = '.'
   private _git: simplegit.SimpleGit | undefined
   private _hardConfig: HardConfig | undefined
   private _fsUtils: FsUtils | undefined

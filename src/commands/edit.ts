@@ -68,14 +68,14 @@ export default class Edit extends Command {
       if (editType === 'all' || editType === 'chapter') {
         toEditFiles.push(
           ...(await this.fsUtils.globPromise(
-            path.join(this.softConfig.projectRootPath, this.softConfig.chapterWildcardWithNumber(num, isAtNumbering))
+            path.join(this.rootPath, this.softConfig.chapterWildcardWithNumber(num, isAtNumbering))
           ))
         )
       }
       if (editType === 'all' || editType === 'summary') {
         toEditFiles.push(
           ...(await this.fsUtils.globPromise(
-            path.join(this.softConfig.projectRootPath, this.softConfig.summaryWildcardWithNumber(num, isAtNumbering))
+            path.join(this.rootPath, this.softConfig.summaryWildcardWithNumber(num, isAtNumbering))
           ))
         )
       }
@@ -88,7 +88,7 @@ export default class Edit extends Command {
 
     cli.action.start('Reading and processing files'.actionStartColor())
     for (const filename of toEditFiles) {
-      const fullPath = path.join(this.softConfig.projectRootPath, filename)
+      const fullPath = path.join(this.rootPath, filename)
 
       try {
         const initialContent = await this.fsUtils.readFileContent(fullPath)

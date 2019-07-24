@@ -157,7 +157,7 @@ export default class Reorder extends Command {
     cli.action.stop('done'.actionStopColor())
     cli.action.start('Moving files to temp directory'.actionStartColor())
 
-    const { tempDir } = await this.fsUtils.getTempDir(this.softConfig.projectRootPath)
+    const { tempDir } = await this.fsUtils.getTempDir(this.rootPath)
 
     try {
       const moveTempPromises: Promise<MoveSummary>[] = []
@@ -166,7 +166,7 @@ export default class Reorder extends Command {
         const toFilename = this.softConfig.mapFileToBeRelativeToRootPath(path.join(tempDir, fromFilename))
         debug(`Original file: ${fromFilename} TEMP TO ${toFilename}`)
 
-        await this.fsUtils.createSubDirectoryFromFilePathIfNecessary(path.join(this.softConfig.projectRootPath, toFilename))
+        await this.fsUtils.createSubDirectoryFromFilePathIfNecessary(path.join(this.rootPath, toFilename))
 
         moveTempPromises.push(this.git.mv(fromFilename, toFilename))
       }
@@ -191,8 +191,8 @@ export default class Reorder extends Command {
         const fromFilename = this.softConfig.mapFileToBeRelativeToRootPath(path.join(tempDir, filename))
         const toFilename = this.softConfig.renumberedFilename(filename, newFileNumber, destDigits, destIsAtNumbering)
 
-        await this.fsUtils.createSubDirectoryFromFilePathIfNecessary(path.join(this.softConfig.projectRootPath, toFilename))
-        // const directoryPath = path.dirname(path.join(this.softConfig.projectRootPath, toFilename))
+        await this.fsUtils.createSubDirectoryFromFilePathIfNecessary(path.join(this.rootPath, toFilename))
+        // const directoryPath = path.dirname(path.join(this.rootPath, toFilename))
         // const directoryExists = await this.fsUtils.fileExists(directoryPath)
         // debug(`directoryPath=${directoryPath} directoryExists=${directoryExists}`)
         // if (!directoryExists) {
@@ -212,7 +212,7 @@ export default class Reorder extends Command {
       cli.exit(1)
     }
 
-    await this.fsUtils.deleteEmptySubDirectories(this.softConfig.projectRootPath)
+    await this.fsUtils.deleteEmptySubDirectories(this.rootPath)
 
     cli.action.stop('done'.actionStopColor())
 

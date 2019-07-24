@@ -95,11 +95,11 @@ export default class Build extends Command {
 
     try {
       const originalChapterFilesArray = (await this.fsUtils.globPromise(
-        path.join(this.softConfig.projectRootPath, this.softConfig.chapterWildcard(false))
+        path.join(this.rootPath, this.softConfig.chapterWildcard(false))
       )).sort()
 
       const allChapterFilesArray = originalChapterFilesArray.concat(
-        await this.fsUtils.globPromise(path.join(this.softConfig.projectRootPath, this.softConfig.chapterWildcard(true)))
+        await this.fsUtils.globPromise(path.join(this.rootPath, this.softConfig.chapterWildcard(true)))
       )
 
       await this.extractGlobalMetadata(allChapterFilesArray, outputFile)
@@ -107,8 +107,8 @@ export default class Build extends Command {
       cli.info('Extracting metadata for all chapters files'.actionStartColor())
 
       const allMetadataFilesArray = (await this.fsUtils.globPromise(
-        path.join(this.softConfig.projectRootPath, this.softConfig.metadataWildcard(false))
-      )).concat(await this.fsUtils.globPromise(path.join(this.softConfig.projectRootPath, this.softConfig.metadataWildcard(true))))
+        path.join(this.rootPath, this.softConfig.metadataWildcard(false))
+      )).concat(await this.fsUtils.globPromise(path.join(this.rootPath, this.softConfig.metadataWildcard(true))))
 
       const metaExtractPromises: Promise<MetaObj[]>[] = []
       allMetadataFilesArray.forEach(m => {

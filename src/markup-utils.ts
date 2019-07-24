@@ -18,11 +18,13 @@ export class MarkupUtils {
   public titleRegex = /^\n# (.*?)\n/
 
   readonly fsUtils: FsUtils
+  readonly rootPath: string
   readonly softConfig: SoftConfig
 
-  constructor(softConfig: SoftConfig) {
+  constructor(softConfig: SoftConfig, rootPath: string) {
     this.fsUtils = new FsUtils()
     this.softConfig = softConfig
+    this.rootPath = rootPath
   }
 
   public async extractMarkup(chapterFilepath: string): Promise<MarkupObj[]> {
@@ -31,7 +33,7 @@ export class MarkupUtils {
     debug(`in ExtractMarkup; chapterFilePath=${chapterFilepath}`)
 
     try {
-      const initialContent = await this.fsUtils.readFileContent(path.join(this.softConfig.projectRootPath, chapterFilepath))
+      const initialContent = await this.fsUtils.readFileContent(path.join(this.rootPath, chapterFilepath))
       const markupRegex = /(?:{{(\d+)}}\n)?.*?{(.*?)\s?:\s?(.*?)}/gm
       let regexArray: RegExpExecArray | null
       while ((regexArray = markupRegex.exec(initialContent)) !== null) {
@@ -129,7 +131,7 @@ export class MarkupUtils {
 
       //bug: doesn't get filename if pattern has changed.
       const metadataFilename = await this.softConfig.getMetadataFilenameFromDirectorySearchFromParameters(num, isAt)
-      const metadataFilePath = path.join(this.softConfig.projectRootPath, metadataFilename)
+      const metadataFilePath = path.join(this.rootPath, metadataFilename)
       const initialContent = await this.fsUtils.readFileContent(metadataFilePath)
 
       const initialObj =

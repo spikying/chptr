@@ -22,6 +22,7 @@ const nullStackStats: StackStatistics = {
 
 export class Statistics {
   private readonly softConfig: SoftConfig
+  private readonly rootPath: string
   private readonly fsUtils: FsUtils
 
   private _allNormalFiles: string[] | null = null
@@ -29,9 +30,10 @@ export class Statistics {
 
   private readonly _allNovelStatistics: NovelStatistics = { atNumberStack: nullStackStats, normalStack: nullStackStats }
 
-  constructor(softConfig: SoftConfig) {
+  constructor(softConfig: SoftConfig, rootPath: string) {
     debug(`New Statistics instance`)
     this.softConfig = softConfig
+    this.rootPath = rootPath
     this.fsUtils = new FsUtils()
   }
 
@@ -72,7 +74,7 @@ export class Statistics {
     }
   }
 
-  public async updateStackStatistics(atNumbers: boolean, refresh?:boolean): Promise<void> {
+  public async updateStackStatistics(atNumbers: boolean, refresh?: boolean): Promise<void> {
     const files = await this.getAllNovelFiles(refresh)
     const fileRegex: RegExp = this.softConfig.chapterRegex(atNumbers)
     const index = atNumbers ? 'atNumberStack' : 'normalStack'
@@ -117,26 +119,14 @@ export class Statistics {
     }
   }
 
-  // public async GetAllFilesForOneChapter(num: number, isAtNumbered: boolean): Promise<string[]> {
-  //   const wildcards = [
-  //     this.softConfig.chapterWildcardWithNumber(num, isAtNumbered),
-  //     this.softConfig.metadataWildcardWithNumber(num, isAtNumbered),
-  //     this.softConfig.summaryWildcardWithNumber(num, isAtNumbered)
-  //   ]
-  //   const files = await this.fsUtils.getAllFilesForWildcards(wildcards, this.softConfig.projectRootPath)
-  //   return files
-  // }
   public async getAllFilesForChapter(num: number, isAtNumbered: boolean): Promise<string[]> {
-    const rootPath = this.softConfig.projectRootPath
     const wildcards = [
       this.softConfig.chapterWildcardWithNumber(num, isAtNumbered),
       this.softConfig.metadataWildcardWithNumber(num, isAtNumbered),
       this.softConfig.summaryWildcardWithNumber(num, isAtNumbered)
     ]
-    return this.fsUtils.getAllFilesForWildcards(wildcards, rootPath)
+    return this.fsUtils.getAllFilesForWildcards(wildcards, this.rootPath)
   }
-
-
 
   public async getAllFilesForOneType(isAtNumbered: boolean, refresh = false): Promise<string[]> {
     const existingFiles = isAtNumbered ? this._allAtNumberedFiles : this._allNormalFiles
@@ -147,7 +137,7 @@ export class Statistics {
         this.softConfig.metadataWildcard(isAtNumbered),
         this.softConfig.summaryWildcard(isAtNumbered)
       ]
-      const files = await this.fsUtils.getAllFilesForWildcards(wildcards, this.softConfig.projectRootPath)
+      const files = await this.fsUtils.getAllFilesForWildcards(wildcards, this.rootPath)
 
       if (isAtNumbered) {
         this._allAtNumberedFiles = files

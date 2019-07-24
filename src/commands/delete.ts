@@ -67,7 +67,7 @@ export default class Delete extends Command {
       // we will delete all files matching the name entered
       let filePattern = '**/' + nameOrNumber
 
-      const pathName = path.join(this.softConfig.projectRootPath, filePattern)
+      const pathName = path.join(this.rootPath, filePattern)
       toDeleteFiles.push(...(await this.fsUtils.listFiles(pathName)))
     } else {
       // we will delete all files matching the number patterns for chapters, metadata and summary

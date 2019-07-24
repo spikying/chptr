@@ -81,7 +81,7 @@ export default class Save extends Command {
       : await this.GetGitListOfStageableFiles()
 
     if (toStageFiles.length === 0) {
-      const filepath = path.join(this.softConfig.projectRootPath, flags.filename || '')
+      const filepath = path.join(this.rootPath, flags.filename || '')
       if (flags.filename && (await this.fsUtils.fileExists(filepath))) {
         if (flags.track) {
           toStageFiles.push(this.softConfig.mapFileToBeRelativeToRootPath(filepath))

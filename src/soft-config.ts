@@ -61,9 +61,9 @@ export class SoftConfig {
     return this._metadataFieldsObj
   }
 
-  public get projectRootPath(): string {
-    return this.rootPath
-  }
+  // public get projectRootPath(): string {
+  //   return this.rootPath
+  // }
 
   public get buildDirectory(): string {
     return path.join(this.rootPath, this.config.buildDirectory)
@@ -414,7 +414,7 @@ date: ${moment().format('D MMMM YYYY')}
   }
 
   public mapFileToBeRelativeToRootPath(file: string): string {
-    return path.relative(this.projectRootPath, file)
+    return path.relative(this.rootPath, file)
   }
   public mapFilesToBeRelativeToRootPath(files: string[]): string[] {
     return files.map<string>(filename => {
@@ -434,19 +434,19 @@ date: ${moment().format('D MMMM YYYY')}
   }
 
   public async getMetadataFilenameFromDirectorySearchFromParameters(num: number, atNumbering: boolean): Promise<string> {
-    const files = await this.fsUtils.globPromise(path.join(this.projectRootPath, this.metadataWildcardWithNumber(num, atNumbering)))
+    const files = await this.fsUtils.globPromise(path.join(this.rootPath, this.metadataWildcardWithNumber(num, atNumbering)))
     debug(`Getting metadata filename from search: files=${files}`)
     return files.length > 0 ? files[0] : ''
   }
 
   public async getAllFilesForPattern(pattern: string): Promise<string[]> {
     const wildcards = [this.wildcardize(pattern, false), this.wildcardize(pattern, true)]
-    return this.fsUtils.getAllFilesForWildcards(wildcards, this.projectRootPath)
+    return this.fsUtils.getAllFilesForWildcards(wildcards, this.rootPath)
   }
 
   public async getAllMetadataFiles(): Promise<string[]> {
     const wildcards = [this.metadataWildcard(true), this.metadataWildcard(false)]
-    return this.fsUtils.getAllFilesForWildcards(wildcards, this.projectRootPath)
+    return this.fsUtils.getAllFilesForWildcards(wildcards, this.rootPath)
   }
 
   //TODO: make aware of which filetype it is and use real patterns for cases where the number is repeated
@@ -477,7 +477,7 @@ date: ${moment().format('D MMMM YYYY')}
 
   public async getTitleOfChapterFromOldChapterFilename(pattern: string, num: number, isAtNumber: boolean): Promise<string> {
     const chapterFilePathWildcard = await this.wildcardWithNumber(pattern, num, isAtNumber)
-    const files = (await this.fsUtils.getAllFilesForWildcards([chapterFilePathWildcard], this.projectRootPath)) || ['']
+    const files = (await this.fsUtils.getAllFilesForWildcards([chapterFilePathWildcard], this.rootPath)) || ['']
 
     const re = this.patternRegexer(pattern, isAtNumber)
     const chapterMatch = re.exec(this.mapFileToBeRelativeToRootPath(files[0]))
