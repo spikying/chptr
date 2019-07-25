@@ -1,3 +1,4 @@
+import { CLIError } from '@oclif/errors'
 import { cli } from 'cli-ux'
 import * as path from 'path'
 
@@ -40,8 +41,7 @@ export default class Track extends Command {
       }
 
       if (!untrackedGitFiles) {
-        cli.error(`No file untracked by repository`)
-        cli.exit(0)
+        throw new CLIError(`No file untracked by repository`)
       }
       const root = this.rootPath
 

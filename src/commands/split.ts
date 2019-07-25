@@ -90,7 +90,7 @@ export default class Split extends Command {
     const replacedContents = await this.splitFile(initialContent)
 
     cli.info('Adding new chapters...'.resultNormalColor())
-    try {
+    // try {
       const addedTempNumbers: number[] = []
       for (let i = 0; i < replacedContents.length; i++) {
         const titleAndContentPair = replacedContents[i]
@@ -127,10 +127,10 @@ export default class Split extends Command {
       cli.info(`modified files:${toEditPretty.resultHighlighColor()}`.resultNormalColor())
 
       await Delete.run([`--path=${flags.path}`, `@${stashedNumber}`])
-    } catch (err) {
-      this.error(err.toString().errorColor())
-      this.exit(1)
-    }
+    // } catch (err) {
+    //   this.error(err.toString().errorColor())
+    //   this.exit(1)
+    // }
   }
 
   private splitFile(initialContent: string): string[][] {

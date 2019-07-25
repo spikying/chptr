@@ -1,4 +1,5 @@
 import { flags } from '@oclif/command'
+import { CLIError } from '@oclif/errors'
 import { cli } from 'cli-ux'
 // import * as glob from 'glob'
 import * as path from 'path'
@@ -51,8 +52,7 @@ export default class Delete extends Command {
     const nameOrNumber: any = args.name || queryResponses.name
 
     if (!nameOrNumber) {
-      this.error('Name or number input empty'.errorColor())
-      this.exit(1)
+      throw new CLIError('Name or number input empty'.errorColor())
     }
 
     const toDeleteFiles: string[] = []
@@ -78,7 +78,7 @@ export default class Delete extends Command {
     if (toDeleteFiles.length === 0) {
       cli.warn('No files to delete.'.errorColor())
     } else {
-      try {
+      // try {
         cli.action.start('Deleting file(s) locally and from repository'.actionStartColor())
         await this.git.rm(this.softConfig.mapFilesToBeRelativeToRootPath(toDeleteFiles))
         const toDeletePretty = toDeleteFiles.map(f => `\n    ${f}`)
@@ -89,9 +89,9 @@ export default class Delete extends Command {
         )
 
         cli.action.stop(`${toDeletePretty}\nwere deleted`.actionStopColor())
-      } catch (err) {
-        this.error(err.toString().errorColor())
-      }
+      // } catch (err) {
+      //   this.error(err.toString().errorColor())
+      // }
 
       if (compact) {
         await this.compactFileNumbers()

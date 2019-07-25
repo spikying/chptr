@@ -1,3 +1,4 @@
+import { CLIError } from '@oclif/errors'
 import { cli } from 'cli-ux'
 import * as d from 'debug'
 import * as fs from 'fs'
@@ -51,7 +52,15 @@ export class FsUtils {
   }
   public readonly writeFile = async function(path: string, data: string) {
     const wf = promisify(fs.writeFile)
-    return wf(path, data, 'utf8')
+    const triedWF = (path: string, data: string) => {
+      try {
+        return wf(path, data, 'utf8')
+      } catch (err) {
+        throw new CLIError(err.toString().errorColor())
+      }
+    }
+    return triedWF(path, data)
+    // return wf(path, data, 'utf8')
   }
 
   public async createSubDirectoryFromDirectoryPathIfNecessary(directoryPath: string): Promise<string | null> {
@@ -91,11 +100,9 @@ export class FsUtils {
     try {
       await createFile(fullPathName, content, { encoding: 'utf8' })
     } catch (err) {
-      cli.error(err.toString().errorColor())
-      cli.exit(1)
-    } finally {
-      cli.info(`Created ${fullPathName.resultHighlighColor()}`.resultNormalColor())
+      throw new CLIError(err.toString().errorColor())
     }
+    cli.info(`Created ${fullPathName.resultHighlighColor()}`.resultNormalColor())
   }
 
   public async getAllFilesForWildcards(wildcards: string[], rootPath: string): Promise<string[]> {
@@ -130,8 +137,7 @@ export class FsUtils {
       tempDir = await this.mkdtemp(path.join(rootPath, tempPrefix))
       debug(`Created temp dir: ${tempDir}`)
     } catch (err) {
-      cli.error(err.toString().errorColor())
-      cli.exit(1)
+      throw new CLIError(err.toString().errorColor())
     }
 
     const delDirFct = this.deleteDir
@@ -140,8 +146,7 @@ export class FsUtils {
         debug(`Deleting temp dir: ${tempDir}`)
         await delDirFct(tempDir)
       } catch (err) {
-        cli.error(err.toString().errorColor())
-        cli.exit(1)
+        throw new CLIError(err.toString().errorColor())
       }
     }
 
@@ -151,9 +156,12 @@ export class FsUtils {
   public async readFileContent(filepath: string): Promise<string> {
     try {
       const buff = await this.readFileBuffer(filepath)
-      const content = await buff.toString('utf8', 0, buff.byteLength)
-      return content.replace(/\r\n/g, '\n')
-    } catch {
+      const content = (await buff.toString('utf8', 0, buff.byteLength))
+        .replace(/^\uFEFF/, '\n') // un-BOM the file
+        .replace(/\r\n/g, '\n')
+      return content
+    } catch (err) {
+      debug(err.toString().errorColor())
       return ''
     }
   }

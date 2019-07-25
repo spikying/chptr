@@ -1,4 +1,5 @@
 import { flags } from '@oclif/command'
+import { CLIError } from '@oclif/errors'
 import { cli } from 'cli-ux'
 import yaml = require('js-yaml')
 import * as path from 'path'
@@ -64,8 +65,7 @@ export default class Add extends Command {
       )
 
       if (existingFile.length > 0) {
-        this.error(`File ${existingFile[0]} already exists`.errorColor())
-        this.exit(1)
+        throw new CLIError(`File ${existingFile[0]} already exists`.errorColor())
       }
     } else {
       atNumbering = flags.atnumbered
@@ -73,8 +73,7 @@ export default class Add extends Command {
       await this.statistics.updateStackStatistics(atNumbering)
 
       const highestNumber = this.statistics.getHighestNumber(atNumbering)
-      nextNumber =
-        highestNumber === 0 ? this.softConfig.config.numberingInitial : highestNumber + this.softConfig.config.numberingStep
+      nextNumber = highestNumber === 0 ? this.softConfig.config.numberingInitial : highestNumber + this.softConfig.config.numberingStep
     }
     const newDigits = this.fsUtils.numDigits(nextNumber)
 
@@ -105,7 +104,7 @@ export default class Add extends Command {
       this.softConfig.summaryFileNameFromParameters(this.fsUtils.stringifyNumber(nextNumber, newDigits), name, atNumbering)
     )
 
-    try {
+    // try {
       cli.action.start('Creating file(s) locally and to repository'.actionStartColor())
 
       const allPromises: Promise<void>[] = []
@@ -124,8 +123,8 @@ export default class Add extends Command {
 
       await this.addDigitsToNecessaryStacks()
       await this.CommitToGit(commitMessage, toStageFiles)
-    } catch (err) {
-      this.error(err.toString().errorColor())
-    }
+    // } catch (err) {
+    //   this.error(err.toString().errorColor())
+    // }
   }
 }

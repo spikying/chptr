@@ -17,7 +17,7 @@ export class MarkupUtils {
   public readonly paragraphBreakChar = '\u2029'
   public titleRegex = /^\n# (.*?)\n/
 
-private readonly propRegex = /(?:{{(\d+)}}\n)?.*?(?<!{){([^:,.!\n{}]+?)}(?!})/gm
+  private readonly propRegex = /(?:{{(\d+)}}\n)?.*?(?<!{){([^:,.!\n{}]+?)}(?!})/gm
   // private readonly propRegex = /(?<!{){([^:,.!\n{}]+?)}(?!})/gm
 
   private readonly fsUtils: FsUtils
@@ -79,8 +79,6 @@ private readonly propRegex = /(?:{{(\d+)}}\n)?.*?(?<!{){([^:,.!\n{}]+?)}(?!})/gm
 
     cli.action.stop(`done`.actionStopColor())
     table.show()
-
-
   }
 
   public async extractMarkup(chapterFilepath: string): Promise<MarkupObj[]> {
@@ -88,13 +86,13 @@ private readonly propRegex = /(?:{{(\d+)}}\n)?.*?(?<!{){([^:,.!\n{}]+?)}(?!})/gm
 
     debug(`in ExtractMarkup; chapterFilePath=${chapterFilepath}`)
 
-    try {
+    // try {
       const initialContent = await this.fsUtils.readFileContent(path.join(this.rootPath, chapterFilepath))
       const markupRegex = /(?:{{(\d+)}}\n)?.*?{([^}]*?)\s?:\s?(.*?)}/gm
       let regexArray: RegExpExecArray | null
       let paraCounter = 1
       while ((regexArray = markupRegex.exec(initialContent)) !== null) {
-        paraCounter = regexArray[1]? parseInt(regexArray[1] , 10): paraCounter
+        paraCounter = regexArray[1] ? parseInt(regexArray[1], 10) : paraCounter
         resultArray.push({
           filename: this.softConfig.mapFileToBeRelativeToRootPath(chapterFilepath),
           paragraph: paraCounter,
@@ -105,7 +103,7 @@ private readonly propRegex = /(?:{{(\d+)}}\n)?.*?(?<!{){([^:,.!\n{}]+?)}(?!})/gm
       }
       paraCounter = 1
       while ((regexArray = this.propRegex.exec(initialContent)) !== null) {
-        paraCounter = regexArray[1]? parseInt(regexArray[1] , 10): paraCounter
+        paraCounter = regexArray[1] ? parseInt(regexArray[1], 10) : paraCounter
         resultArray.push({
           filename: this.softConfig.mapFileToBeRelativeToRootPath(chapterFilepath),
           paragraph: paraCounter,
@@ -128,10 +126,9 @@ private readonly propRegex = /(?:{{(\d+)}}\n)?.*?(?<!{){([^:,.!\n{}]+?)}(?!})/gm
         value: title,
         computed: true
       })
-    } catch (err) {
-      cli.error(err.toString().errorColor())
-      cli.exit(1)
-    }
+    // } catch (err) {
+    //   throw new CLIError(err.toString().errorColor())
+    // }
 
     debug(`end of extractMarkup.  result=${JSON.stringify(resultArray)}`)
     return resultArray

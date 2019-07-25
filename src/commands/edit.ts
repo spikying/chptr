@@ -51,7 +51,7 @@ export default class Edit extends Command {
       const queryBuilder = new QueryBuilder()
       queryBuilder.add('filter', queryBuilder.textinput('What chapters to put in edit mode? (comma-separated list)', ''))
       const queryResponses: any = await queryBuilder.responses()
-      chapterIds.push(...queryResponses.filter.split(',')) 
+      chapterIds.push(...queryResponses.filter.split(','))
     } else {
       //loop through all argv[i] to get all chapter numbers.  If first argument contains commas, it's a single argument to split at ','.
       if (argv[0].split(',').length > 1) {
@@ -90,14 +90,14 @@ export default class Edit extends Command {
     for (const filename of toEditFiles) {
       const fullPath = path.join(this.rootPath, filename)
 
-      try {
+      // try {
         const initialContent = await this.fsUtils.readFileContent(fullPath)
         const replacedContent = await this.processContentBack(initialContent)
         await this.fsUtils.writeFile(fullPath, replacedContent)
-      } catch (err) {
-        this.error(err.toString().errorColor())
-        this.exit(1)
-      }
+      // } catch (err) {
+      //   this.error(err.toString().errorColor())
+      //   this.exit(1)
+      // }
     }
     const toEditPretty = toEditFiles.map(f => `\n    ${f}`)
     cli.action.stop(`modified file${toEditFiles.length > 1 ? 's' : ''}:${toEditPretty}`.actionStopColor())

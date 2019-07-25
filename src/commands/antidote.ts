@@ -1,3 +1,4 @@
+import { CLIError } from '@oclif/errors'
 import { exec } from 'child_process'
 import { cli } from 'cli-ux'
 import * as glob from 'glob'
@@ -44,8 +45,7 @@ export default class Antidote extends Command {
     const chapterFileName = glob.sync(path.join(this.rootPath, this.softConfig.chapterWildcardWithNumber(chapterNumber, isAtNumber)))[0]
 
     if (!chapterFileName) {
-      this.error(`No chapter was found with input ${filter}`.errorColor())
-      this.exit(1)
+      throw new CLIError(`No chapter was found with input ${filter}`.errorColor())
     }
 
     const basicFilePath = path.join(this.rootPath, chapterFileName)
@@ -127,49 +127,41 @@ export default class Antidote extends Command {
   }
 
   private async processPostAntidote(filepath: string): Promise<void> {
-    try {
-      const initialContent = await this.fsUtils.readFileContent(filepath)
+    const initialContent = await this.fsUtils.readFileContent(filepath)
 
-      // const sentenceRE = new RegExp(this.markupUtils.sentenceBreakChar + '  ', 'gm')
-      // const paragraphRE = new RegExp('(' + this.markupUtils.paragraphBreakChar + '{{\\d+}}\\n)\\n', 'gm')
-      let replacedContent = this.removeTripleEnters(
+    // const sentenceRE = new RegExp(this.markupUtils.sentenceBreakChar + '  ', 'gm')
+    // const paragraphRE = new RegExp('(' + this.markupUtils.paragraphBreakChar + '{{\\d+}}\\n)\\n', 'gm')
+    let replacedContent = this.removeTripleEnters(
+      '\n' +
         initialContent
           // .replace(sentenceRE, this.markupUtils.sentenceBreakChar + '\n')
           .replace(/\n/gm, '\r\n')
           .replace(/\r\n/gm, '\n\n')
-          .replace(/^\uFEFF/, '\n') // un-BOM the file
           // .replace(paragraphRE, '$1')
-          .replace(/^\n{2,}/, '\n') // first line
-          .replace(/([.!?…}"])$/, '$1\n') // last line
-      )
-      replacedContent = this.processContent(this.processContentBack(replacedContent))
+          // .replace(/^\uFEFF/, '\n') // un-BOM the file
+          .concat('\n') // add an enter at the end
+          .replace(/\n{2,}$/, '\n') // make sure there is only one enter at the end
+          .replace(/^\n{2,}/, '\n') // make sure there is an enter before then first line
+    )
+    replacedContent = this.processContent(this.processContentBack(replacedContent))
 
-      debug(`Processed back antidote content: \n${replacedContent.substring(0, 250)}`)
-      await this.fsUtils.writeFile(filepath, replacedContent)
-    } catch (err) {
-      this.error(err.toString().errorColor())
-      this.exit(1)
-    }
+    debug(`Processed back antidote content: \n${replacedContent.substring(0, 250)}`)
+    await this.fsUtils.writeFile(filepath, replacedContent)
   }
 
   private async processPreAntidote(filepath: string): Promise<void> {
-    try {
-      const initialContent = await this.fsUtils.readFileContent(filepath)
+    const initialContent = await this.fsUtils.readFileContent(filepath)
 
-      let replacedContent = initialContent
-      if (initialContent.charCodeAt(0) !== 65279) {
-        replacedContent = String.fromCharCode(65279) + initialContent
-      }
-
-      replacedContent = this.processContentBack(replacedContent)
-
-      // const re = new RegExp(this.markupUtils.sentenceBreakChar + '\r?\n', 'gm')
-      //  replacedContent = replacedContent.replace(re, this.markupUtils.sentenceBreakChar + '  ').replace(/\n/gm, '\r\n')
-
-      await this.fsUtils.writeFile(filepath, replacedContent)
-    } catch (err) {
-      this.error(err.toString().errorColor())
-      this.exit(1)
+    let replacedContent = initialContent
+    if (initialContent.charCodeAt(0) !== 65279) {
+      replacedContent = String.fromCharCode(65279) + initialContent
     }
+
+    replacedContent = this.processContentBack(replacedContent)
+
+    // const re = new RegExp(this.markupUtils.sentenceBreakChar + '\r?\n', 'gm')
+    //  replacedContent = replacedContent.replace(re, this.markupUtils.sentenceBreakChar + '  ').replace(/\n/gm, '\r\n')
+
+    await this.fsUtils.writeFile(filepath, replacedContent)
   }
 }

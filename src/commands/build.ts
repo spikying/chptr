@@ -1,4 +1,5 @@
 import { flags } from '@oclif/command'
+import { CLIError } from '@oclif/errors'
 import { exec } from 'child_process'
 import cli from 'cli-ux'
 import * as moment from 'moment'
@@ -274,13 +275,13 @@ export default class Build extends Command {
 
         pandocArgs = [chapterFiles, '--smart', '--standalone', '-o', `"${fullOutputFilePath}"`].concat(pandocArgs)
 
-        try {
-          pandocRuns.push(this.runPandoc(pandocArgs))
-        } catch (err) {
-          this.error(err.toString().errorColor())
-          cli.action.status = 'error'.errorColor()
-          this.exit(1)
-        }
+        // try {
+        pandocRuns.push(this.runPandoc(pandocArgs))
+        // } catch (err) {
+        //   this.error(err.toString().errorColor())
+        //   cli.action.status = 'error'.errorColor()
+        //   this.exit(1)
+        // }
       }
 
       await Promise.all(pandocRuns)
@@ -293,9 +294,10 @@ export default class Build extends Command {
         await this.CommitToGit('Compacted file numbers')
       }
     } catch (err) {
-      cli.action.status = 'error'.errorColor()
-      this.error(err.toString().errorColor())
-      this.exit(1)
+      // cli.action.status = 'error'.errorColor()
+      // this.error(err.toString().errorColor())
+      // this.exit(1)
+      throw new CLIError(err.toString().errorColor())
     } finally {
       await tmpMDfile.cleanup()
       await tmpMDfileTex.cleanup()
@@ -322,7 +324,6 @@ export default class Build extends Command {
       })
     })
   }
-
 
   private async extractMeta(filepath: string, extractAll: boolean): Promise<MetaObj[]> {
     const file = this.softConfig.mapFileToBeRelativeToRootPath(filepath)

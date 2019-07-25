@@ -269,14 +269,14 @@ export default abstract class extends Command {
         (this.softConfig.chapterRegex(false).test(this.softConfig.mapFileToBeRelativeToRootPath(fullPath)) ||
           this.softConfig.chapterRegex(true).test(this.softConfig.mapFileToBeRelativeToRootPath(fullPath)))
       ) {
-        try {
-          const initialContent = await this.fsUtils.readFileContent(fullPath)
-          const replacedContent = this.processContent(this.processContentBack(initialContent))
-          await this.fsUtils.writeFile(fullPath, replacedContent)
-        } catch (err) {
-          this.error(err.toString().errorColor())
-          this.exit(1)
-        }
+        // try {
+        const initialContent = await this.fsUtils.readFileContent(fullPath)
+        const replacedContent = this.processContent(this.processContentBack(initialContent))
+        await this.fsUtils.writeFile(fullPath, replacedContent)
+        // } catch (err) {
+        //   this.error(err.toString().errorColor())
+        //   this.exit(1)
+        // }
       }
     }
   }
@@ -285,7 +285,7 @@ export default abstract class extends Command {
   public async CommitToGit(message: string, toStageFiles?: string[], forDeletes = false) {
     toStageFiles = toStageFiles || (await this.GetGitListOfStageableFiles())
     if (toStageFiles.length > 0 || forDeletes) {
-      try {
+      // try {
         cli.action.start('Saving file(s) in repository'.actionStartColor())
 
         await this.processChapterFilesBeforeSaving(toStageFiles)
@@ -313,9 +313,9 @@ export default abstract class extends Command {
             toStageFiles.length > 1 ? 's' : ''
           }:${toStagePretty}`.actionStopColor()
         )
-      } catch (err) {
-        this.error(err.toString().errorColor())
-      }
+      // } catch (err) {
+      //   this.error(err.toString().errorColor())
+      // }
     }
   }
 
@@ -456,21 +456,17 @@ export default abstract class extends Command {
         return previous || current
       }, false)
     if (!originExists) {
-      this.error('Origin does not exist'.errorColor())
-      this.exit(1)
+      throw new CLIError('Origin does not exist'.errorColor())
     }
 
     if (originNumber === -1) {
-      this.error('Origin argument is not a number or `end` or `@end`'.errorColor())
-      this.exit(1)
+      throw new CLIError('Origin argument is not a number or `end` or `@end`'.errorColor())
     }
     if (destNumber === -1) {
-      this.error('Destination argument is not a number or `end` or `@end`'.errorColor())
-      this.exit(1)
+      throw new CLIError('Destination argument is not a number or `end` or `@end`'.errorColor())
     }
     if (destNumber === originNumber && originIsAtNumbering === destIsAtNumbering) {
-      this.error('Origin must be different than Destination'.errorColor())
-      this.exit(1)
+      throw new CLIError('Origin must be different than Destination'.errorColor())
     }
 
     const sameAtNumbering = originIsAtNumbering === destIsAtNumbering
@@ -552,50 +548,50 @@ export default abstract class extends Command {
 
     const { tempDir } = await this.fsUtils.getTempDir(this.rootPath)
 
-    try {
-      const moveTempPromises: Promise<MoveSummary>[] = []
-      for (const file of toRenameFiles.map(f => f.file)) {
-        const fromFilename = this.softConfig.mapFileToBeRelativeToRootPath(file)
-        const toFilename = this.softConfig.mapFileToBeRelativeToRootPath(path.join(tempDir, fromFilename))
-        debug(`Original file: ${fromFilename} TEMP TO ${toFilename}`)
+    // try {
+    const moveTempPromises: Promise<MoveSummary>[] = []
+    for (const file of toRenameFiles.map(f => f.file)) {
+      const fromFilename = this.softConfig.mapFileToBeRelativeToRootPath(file)
+      const toFilename = this.softConfig.mapFileToBeRelativeToRootPath(path.join(tempDir, fromFilename))
+      debug(`Original file: ${fromFilename} TEMP TO ${toFilename}`)
 
-        await this.fsUtils.createSubDirectoryFromFilePathIfNecessary(path.join(this.rootPath, toFilename))
+      await this.fsUtils.createSubDirectoryFromFilePathIfNecessary(path.join(this.rootPath, toFilename))
 
-        moveTempPromises.push(this.git.mv(fromFilename, toFilename))
-      }
-      await Promise.all(moveTempPromises)
-
-      cli.action.stop(tempDir.actionStopColor())
-    } catch (err) {
-      cli.error(err.toString().errorColor())
-      cli.exit(1)
+      moveTempPromises.push(this.git.mv(fromFilename, toFilename))
     }
+    await Promise.all(moveTempPromises)
+
+    cli.action.stop(tempDir.actionStopColor())
+    // } catch (err) {
+    //   throw new CLIError(err.toString().errorColor())
+    //   cli.exit(1)
+    // }
 
     cli.action.start('Moving files to their final states'.actionStartColor())
     let fileMovesPretty = ''
 
-    try {
-      const moveBackPromises: Promise<MoveSummary>[] = []
-      for (const moveItem of toRenameFiles) {
-        const filename = this.softConfig.mapFileToBeRelativeToRootPath(moveItem.file)
-        const newFileNumber: number = moveItem.newFileNumber
-        const destDigits = this.statistics.getMaxNecessaryDigits(destIsAtNumbering)
+    // try {
+    const moveBackPromises: Promise<MoveSummary>[] = []
+    for (const moveItem of toRenameFiles) {
+      const filename = this.softConfig.mapFileToBeRelativeToRootPath(moveItem.file)
+      const newFileNumber: number = moveItem.newFileNumber
+      const destDigits = this.statistics.getMaxNecessaryDigits(destIsAtNumbering)
 
-        const fromFilename = this.softConfig.mapFileToBeRelativeToRootPath(path.join(tempDir, filename))
-        const toFilename = this.softConfig.renumberedFilename(filename, newFileNumber, destDigits, destIsAtNumbering)
+      const fromFilename = this.softConfig.mapFileToBeRelativeToRootPath(path.join(tempDir, filename))
+      const toFilename = this.softConfig.renumberedFilename(filename, newFileNumber, destDigits, destIsAtNumbering)
 
-        await this.fsUtils.createSubDirectoryFromFilePathIfNecessary(path.join(this.rootPath, toFilename))
+      await this.fsUtils.createSubDirectoryFromFilePathIfNecessary(path.join(this.rootPath, toFilename))
 
-        debug(`TEMPed file: ${fromFilename} BACK TO ${toFilename}`)
+      debug(`TEMPed file: ${fromFilename} BACK TO ${toFilename}`)
 
-        fileMovesPretty.concat(`\n    renaming from "${fromFilename}" to "${toFilename}"`)
-        moveBackPromises.push(this.git.mv(fromFilename, toFilename))
-      }
-      await Promise.all(moveBackPromises)
-    } catch (err) {
-      cli.error(err.toString().errorColor())
-      cli.exit(1)
+      fileMovesPretty.concat(`\n    renaming from "${fromFilename}" to "${toFilename}"`)
+      moveBackPromises.push(this.git.mv(fromFilename, toFilename))
     }
+    await Promise.all(moveBackPromises)
+    // } catch (err) {
+    //   throw new CLIError(err.toString().errorColor())
+    //   cli.exit(1)
+    // }
 
     await this.fsUtils.deleteEmptySubDirectories(this.rootPath)
 
