@@ -98,7 +98,7 @@ date: ${moment().format('D MMMM YYYY')}
   private readonly configSchemaObject: any = {
     chapterPattern: {
       doc:
-        'File naming pattern for chapter files. Use NUM for chapter number and NAME for chapter name.  Optionally use `/` for a folder structure, e.g. `NUM.NAME.md` or `NUM/NAME.chptr`.  Defaults to `NUM NAME.chptr`.',
+        'File naming pattern for chapter files. Use NUM for chapter number and NAME for chapter name.  Optionally use `/` for a folder structure, e.g. `NUM.NAME.md` or `NUM/NAME.chptr`.',
       format: (val: string) => {
         if (!/^(?=.*NUM)(?=.*NAME).*$/.test(val)) {
           throw new Error('Must have NUM and NAME in pattern')
@@ -113,7 +113,7 @@ date: ${moment().format('D MMMM YYYY')}
     },
     metadataPattern: {
       doc:
-        'File naming pattern for metadata files.  Use NUM for chapter number and NAME for optional chapter name.  Optionally use `/` for a folder structure. Defaults to `NUM.metadata.<ext>` where <ext> will be replaced by either `json5` or `yaml`.',
+        'File naming pattern for metadata files.  Use NUM for chapter number and NAME for optional chapter name.  Optionally use `/` for a folder structure. Filename extension .<ext> will be replaced by either `.json5` or `.yaml`.',
       format: (val: string) => {
         if (!/^(?=.*NUM).*$/.test(val)) {
           // && !/^$/.test(val)
@@ -131,7 +131,7 @@ date: ${moment().format('D MMMM YYYY')}
     },
     summaryPattern: {
       doc:
-        'File naming pattern for summary files.  Use NUM for chapter number and NAME for optional chapter name.  Optionally use `/` for a folder structure. Defaults to `NUM.summary.md`.',
+        'File naming pattern for summary files.  Use NUM for chapter number and NAME for optional chapter name.  Optionally use `/` for a folder structure.',
       format: (val: string) => {
         if (!/^(?=.*NUM).*$/.test(val)) {
           // && !/^$/.test(val)

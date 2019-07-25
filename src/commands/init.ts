@@ -12,6 +12,22 @@ import Command, { d } from './base'
 const debug = d('command:init')
 
 export default class Init extends Command {
+  static readonly directoryStructureList = [
+    { id: '/', chapterPattern: 'NUM NAME.chptr', summaryPattern: 'NUM.summary.md', metadataPattern: 'NUM.metadata.<ext>' },
+    {
+      id: 'chapters/',
+      chapterPattern: 'chapters/NUM NAME.chptr',
+      summaryPattern: 'chapters/NUM.summary.md',
+      metadataPattern: 'chapters/NUM.metadata.<ext>'
+    },
+    {
+      id: 'chapters/number/',
+      chapterPattern: 'chapters/NUM NAME/chptr.md',
+      summaryPattern: 'chapters/NUM NAME/summary.md',
+      metadataPattern: 'chapters/NUM NAME/metadata.<ext>'
+    }
+  ]
+  static readonly directoryStructureOptions = Init.directoryStructureList.map(d => d.id)
   static description = 'Generates basic config files for a new novel project'
 
   static flags = {
@@ -53,6 +69,12 @@ export default class Init extends Command {
         }
       },
       // options: ['YAML', 'JSON5', ''],
+      default: ''
+    }),
+    directorystructure: flags.string({
+      char: 'd',
+      description: 'Directory structure initially written in config file',
+      options: Init.directoryStructureOptions.concat(['']),
       default: ''
     })
   }
@@ -140,6 +162,10 @@ export default class Init extends Command {
         language: {
           arg: flags.language,
           query: queryBuilder.textinput('What language code do you use? (ex. en, fr, es...)', 'en')
+        },
+        directorystructure: {
+          arg: flags.directorystructure,
+          query: queryBuilder.list(Init.directoryStructureOptions, 'What directory structure do you initially want?', 'chapters/')
         }
       }
 
@@ -176,16 +202,21 @@ export default class Init extends Command {
     const authorEmail = flags.email || queryResponses.email || ''
     const language = flags.language || queryResponses.language || 'en'
     const style = existingStyle || flags.style || queryResponses.style
+    const directorystructure = flags.directorystructure || queryResponses.directorystructure
 
     //prepare for creating config files
 
     const virginSoftConfig = new SoftConfig(path.join(flags.path as string), false)
     virginSoftConfig.configStyle = style
 
+    const directoryOverrides = Init.directoryStructureList
+      .filter(dsl => dsl.id === directorystructure)[0]
+    
     const overrideObj = {
       projectTitle: name,
       projectAuthor: { name: authorName, email: authorEmail } as Author,
-      projectLang: language
+      projectLang: language,
+      ...directoryOverrides
     }
 
     const allConfigOperations = [
