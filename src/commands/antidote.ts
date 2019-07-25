@@ -41,9 +41,7 @@ export default class Antidote extends Command {
     const isAtNumber: boolean = filter.substring(0, 1) === '@'
 
     const chapterNumber = this.softConfig.extractNumber(filter)
-    const chapterFileName = glob.sync(
-      path.join(this.rootPath, this.softConfig.chapterWildcardWithNumber(chapterNumber, isAtNumber))
-    )[0]
+    const chapterFileName = glob.sync(path.join(this.rootPath, this.softConfig.chapterWildcardWithNumber(chapterNumber, isAtNumber)))[0]
 
     if (!chapterFileName) {
       this.error(`No chapter was found with input ${filter}`.errorColor())
@@ -55,7 +53,7 @@ export default class Antidote extends Command {
 
     cli.action.start(`Launching Antidote with ${antidoteFilePath}`.actionStartColor())
     await this.fsUtils.copyFile(basicFilePath, antidoteFilePath)
-    await this.processUTF8BOMandContent(antidoteFilePath)
+    await this.processPreAntidote(antidoteFilePath)
     // await this.processFileBack(antidoteFilePath)
     // await this.processFile(antidoteFilePath)
     // await this.processFileForAntidote(antidoteFilePath)
@@ -72,7 +70,7 @@ export default class Antidote extends Command {
     const queryResponses2: any = await queryBuilder2.responses()
     const message = (queryResponses2.message + '\nPost-Antidote').replace(/"/, '`')
 
-    await this.processFileBackFromAntidote(antidoteFilePath)
+    await this.processPostAntidote(antidoteFilePath)
     // await this.processFileBack(antidoteFilePath)
     // await this.processFile(antidoteFilePath)
     await this.fsUtils.moveFile(antidoteFilePath, basicFilePath)
@@ -105,19 +103,19 @@ export default class Antidote extends Command {
     })
   }
 
-  private processContentForAntidote(initialContent: string): string {
-    try {
-      const re = new RegExp(this.markupUtils.sentenceBreakChar + '\r?\n', 'gm')
-      const replacedContent = initialContent.replace(re, this.markupUtils.sentenceBreakChar + '  ').replace(/\n/gm, '\r\n')
-      debug(`Processed antidote content: \n${replacedContent.substring(0, 250)}`)
+  // private processContentForAntidote(initialContent: string): string {
+  //   try {
+  //     const re = new RegExp(this.markupUtils.sentenceBreakChar + '\r?\n', 'gm')
+  //     const replacedContent = initialContent.replace(re, this.markupUtils.sentenceBreakChar + '  ').replace(/\n/gm, '\r\n')
+  //     debug(`Processed antidote content: \n${replacedContent.substring(0, 250)}`)
 
-      return replacedContent
-    } catch (err) {
-      this.error(err.toString().errorColor())
-      this.exit(1)
-    }
-    return ''
-  }
+  //     return replacedContent
+  //   } catch (err) {
+  //     this.error(err.toString().errorColor())
+  //     this.exit(1)
+  //   }
+  //   return ''
+  // }
 
   private removeTripleEnters(str: string): string {
     const tripleEnterRegEx = /\n\n\n/gm
@@ -128,19 +126,21 @@ export default class Antidote extends Command {
     }
   }
 
-  private async processFileBackFromAntidote(filepath: string): Promise<void> {
+  private async processPostAntidote(filepath: string): Promise<void> {
     try {
       const initialContent = await this.fsUtils.readFileContent(filepath)
 
-      const sentenceRE = new RegExp(this.markupUtils.sentenceBreakChar + '  ', 'gm')
-      const paragraphRE = new RegExp('(' + this.markupUtils.paragraphBreakChar + '{{\\d+}}\\n)\\n', 'gm')
+      // const sentenceRE = new RegExp(this.markupUtils.sentenceBreakChar + '  ', 'gm')
+      // const paragraphRE = new RegExp('(' + this.markupUtils.paragraphBreakChar + '{{\\d+}}\\n)\\n', 'gm')
       let replacedContent = this.removeTripleEnters(
         initialContent
-          .replace(sentenceRE, this.markupUtils.sentenceBreakChar + '\n')
+          // .replace(sentenceRE, this.markupUtils.sentenceBreakChar + '\n')
+          .replace(/\n/gm, '\r\n')
           .replace(/\r\n/gm, '\n\n')
-          .replace(/^\uFEFF\n\n# /g, '\n# ') // un-BOM the file
-          .replace(paragraphRE, '$1')
-          .replace(/([.!?…}"])$/, '$1\n')
+          .replace(/^\uFEFF/, '\n') // un-BOM the file
+          // .replace(paragraphRE, '$1')
+          .replace(/^\n{2,}/, '\n') // first line
+          .replace(/([.!?…}"])$/, '$1\n') // last line
       )
       replacedContent = this.processContent(this.processContentBack(replacedContent))
 
@@ -152,7 +152,7 @@ export default class Antidote extends Command {
     }
   }
 
-  private async processUTF8BOMandContent(filepath: string): Promise<void> {
+  private async processPreAntidote(filepath: string): Promise<void> {
     try {
       const initialContent = await this.fsUtils.readFileContent(filepath)
 
@@ -161,7 +161,10 @@ export default class Antidote extends Command {
         replacedContent = String.fromCharCode(65279) + initialContent
       }
 
-      replacedContent = await this.processContentForAntidote(this.processContent(this.processContentBack(replacedContent)))
+      replacedContent = this.processContentBack(replacedContent)
+
+      // const re = new RegExp(this.markupUtils.sentenceBreakChar + '\r?\n', 'gm')
+      //  replacedContent = replacedContent.replace(re, this.markupUtils.sentenceBreakChar + '  ').replace(/\n/gm, '\r\n')
 
       await this.fsUtils.writeFile(filepath, replacedContent)
     } catch (err) {
