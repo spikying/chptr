@@ -207,6 +207,13 @@ date: ${moment().format('D MMMM YYYY')}
   private _emptyFileString = ''
   private _configStyle = ''
 
+  public set configStyle(value: string) {
+    if (value === 'YAML' || value === 'JSON5') {
+      this._configStyle = value
+    } else {
+      throw new Error('Cannot set config style to something else than YAML or JSON5')
+    }
+  }
   public get configStyle(): string {
     if (!this._configStyle) {
       try {
@@ -310,10 +317,13 @@ date: ${moment().format('D MMMM YYYY')}
     return configDefaultsString
   }
   public configDefaultsWithMetaYAMLString(overrideObj: any): string {
+    debug(`in configDefaultsWithMetaYAMLString()`)
+
     overrideObj = overrideObj || {}
     const jsonConfig = this.config
     const defaultOverridedConfig: any = {}
 
+    debug(`before props loop`)
     const props = Object.keys(jsonConfig)
     for (let i = 0; i !== props.length; i++) {
       if (jsonConfig.hasOwnProperty(props[i]) && this.configSchemaObject[props[i]]) {
@@ -321,17 +331,22 @@ date: ${moment().format('D MMMM YYYY')}
       }
     }
     // debug(`defaultOverridedConfig=${JSON.stringify(defaultOverridedConfig)}`)
+    debug(`before YAML.Document()`)
 
     const result = new YAML.Document()
     result.version = 'core'
     result.commentBefore = "Project's configuration options.\nModify as needed and `build` the project after to apply modifications."
     result.contents = (YAML.createNode(defaultOverridedConfig) as unknown) as YAML.ast.Seq
 
+    debug(`before comments adding loop`)
+
     for (const n of result.contents.items) {
       const node = (n as unknown) as YAML.ast.Pair
       const prop = (node && node.key) || ''
       node.commentBefore = this.configSchemaObject[prop.toString()].doc
     }
+
+    debug(`result = ${result}`)
 
     return String(result)
   }

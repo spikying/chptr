@@ -17,14 +17,70 @@ export class MarkupUtils {
   public readonly paragraphBreakChar = '\u2029'
   public titleRegex = /^\n# (.*?)\n/
 
-  readonly fsUtils: FsUtils
-  readonly rootPath: string
-  readonly softConfig: SoftConfig
+private readonly propRegex = /(?:{{(\d+)}}\n)?.*?(?<!{){([^:,.!\n{}]+?)}(?!})/gm
+  // private readonly propRegex = /(?<!{){([^:,.!\n{}]+?)}(?!})/gm
+
+  private readonly fsUtils: FsUtils
+  private readonly rootPath: string
+  private readonly softConfig: SoftConfig
 
   constructor(softConfig: SoftConfig, rootPath: string) {
     this.fsUtils = new FsUtils()
     this.softConfig = softConfig
     this.rootPath = rootPath
+  }
+
+  public async extractGlobalMetadata(allChapterFilesArray: string[], outputFile: string) {
+    cli.action.start('Extracting global metadata'.actionStartColor())
+    debug(`starting extractGlobalMetadata`)
+
+    const table = tableize('file', 'diff')
+    const extractPromises: Promise<MarkupObj[]>[] = []
+    allChapterFilesArray.forEach(cf => {
+      extractPromises.push(this.extractMarkup(cf))
+    })
+
+    await Promise.all(extractPromises).then(async fullMarkupArray => {
+      const flattenedMarkupArray: MarkupObj[] = ([] as MarkupObj[]).concat(...fullMarkupArray)
+
+      const { markupByFile, markupByType } = this.objectifyMarkupArray(flattenedMarkupArray)
+
+      const markupExt = this.softConfig.configStyle.toLowerCase()
+      const allMarkups = [
+        { markupObj: markupByFile, fullPath: path.join(this.softConfig.buildDirectory, `${outputFile}.markupByFile.${markupExt}`) },
+        { markupObj: markupByType, fullPath: path.join(this.softConfig.buildDirectory, `${outputFile}.markupByType.${markupExt}`) }
+      ]
+
+      for (const markup of allMarkups) {
+        debug(`markup.fullPath=${markup.fullPath}`)
+        const existingMarkupContent = await this.fsUtils.readFileContent(markup.fullPath)
+        debug(`up to here in build`)
+
+        const comparedString =
+          this.softConfig.configStyle === 'JSON5'
+            ? JSON.stringify(markup.markupObj, null, 4)
+            : this.softConfig.configStyle === 'YAML'
+            ? yaml.safeDump(markup.markupObj)
+            : ''
+
+        debug(`comparedString=${comparedString}`)
+        if (existingMarkupContent !== comparedString) {
+          await this.fsUtils.writeFile(markup.fullPath, comparedString)
+          table.accumulator(this.softConfig.mapFileToBeRelativeToRootPath(markup.fullPath), 'updated')
+        }
+      }
+
+      const modifiedMetadataFiles = await this.writeMetadataInEachFile(markupByFile)
+      table.accumulatorArray(
+        modifiedMetadataFiles.map(val => ({ from: this.softConfig.mapFileToBeRelativeToRootPath(val.file), to: val.diff }))
+      )
+      // markupFilenamesPretty = modifiedMetadataFiles.reduce((previous, current) => `${previous}\n    ${current}`,'')
+    })
+
+    cli.action.stop(`done`.actionStopColor())
+    table.show()
+
+
   }
 
   public async extractMarkup(chapterFilepath: string): Promise<MarkupObj[]> {
@@ -34,14 +90,27 @@ export class MarkupUtils {
 
     try {
       const initialContent = await this.fsUtils.readFileContent(path.join(this.rootPath, chapterFilepath))
-      const markupRegex = /(?:{{(\d+)}}\n)?.*?{(.*?)\s?:\s?(.*?)}/gm
+      const markupRegex = /(?:{{(\d+)}}\n)?.*?{([^}]*?)\s?:\s?(.*?)}/gm
       let regexArray: RegExpExecArray | null
+      let paraCounter = 1
       while ((regexArray = markupRegex.exec(initialContent)) !== null) {
+        paraCounter = regexArray[1]? parseInt(regexArray[1] , 10): paraCounter
         resultArray.push({
           filename: this.softConfig.mapFileToBeRelativeToRootPath(chapterFilepath),
-          paragraph: parseInt(regexArray[1] || '1', 10),
+          paragraph: paraCounter,
           type: regexArray[2].toLowerCase(),
           value: regexArray[3],
+          computed: false
+        })
+      }
+      paraCounter = 1
+      while ((regexArray = this.propRegex.exec(initialContent)) !== null) {
+        paraCounter = regexArray[1]? parseInt(regexArray[1] , 10): paraCounter
+        resultArray.push({
+          filename: this.softConfig.mapFileToBeRelativeToRootPath(chapterFilepath),
+          paragraph: paraCounter,
+          type: 'prop',
+          value: regexArray[2],
           computed: false
         })
       }
@@ -169,7 +238,6 @@ export class MarkupUtils {
     }
     return modifiedFiles
   }
-
   public cleanMarkupContent(initialContent: string): string {
     const paragraphBreakRegex = new RegExp(this.paragraphBreakChar + '{{\\d+}}\\n', 'g')
     const sentenceBreakRegex = new RegExp(this.sentenceBreakChar + '\\s?', 'g')
@@ -180,6 +248,37 @@ export class MarkupUtils {
       .replace(sentenceBreakRegex, '  ')
       .replace(/^### (.*)$/gm, '* * *')
       .replace(/^\\(.*)$/gm, '_% $1_')
+      .replace(this.propRegex, '$2')
+
+    return replacedContent
+  }
+
+  public transformMarkupContent(initialContent: string): string {
+    const paragraphBreakRegex = new RegExp(this.paragraphBreakChar + '{{(\\d+)}}\\n', 'g')
+    let markupCounter = 0
+
+    const transformInFootnote = function(initial: string): { replaced: string; didReplacement: boolean } {
+      let didReplacement = false
+      const replaced = initial.replace(/(.*){([^}]*?)\s?:\s?(.*?)} *(.*)$/m, (_full, one, two, three, four) => {
+        markupCounter++
+        didReplacement = didReplacement || (two && three)
+        return `${one} ^_${two}: _^[^${markupCounter}]  ${four}\n\n[^${markupCounter}]: ${three}\n\n`
+      })
+      return { replaced, didReplacement }
+    }
+
+    let replacedContent = initialContent
+      .replace(paragraphBreakRegex, '^_($1)_^\t')
+      .replace(/^### (.*)$/gm, '* * *\n\n## $1')
+      .replace(/^\\(.*)$/gm, '_% $1_')
+      .replace(this.propRegex, '**$2**')
+
+    let continueReplacing = true
+    while (continueReplacing) {
+      const { replaced, didReplacement } = transformInFootnote(replacedContent)
+      replacedContent = replaced
+      continueReplacing = didReplacement
+    }
 
     return replacedContent
   }

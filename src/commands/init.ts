@@ -1,4 +1,5 @@
 import { flags } from '@oclif/command'
+import { CLIError } from '@oclif/errors'
 import { cli } from 'cli-ux'
 import * as path from 'path'
 import * as validator from 'validator'
@@ -40,7 +41,18 @@ export default class Init extends Command {
     style: flags.string({
       char: 's',
       description: 'Config files in JSON5 or YAML?',
-      options: ['YAML', 'JSON5', ''],
+      parse: input => {
+        let ucased = input.toUpperCase()
+        if (ucased === 'JSON') {
+          ucased = 'JSON5'
+        }
+        if (ucased === 'YAML' || ucased === 'JSON5' || ucased === '') {
+          return ucased
+        } else {
+          throw new CLIError('Expected `style` flag to be one of: YAML, JSON5')
+        }
+      },
+      // options: ['YAML', 'JSON5', ''],
       default: ''
     })
   }
@@ -87,14 +99,14 @@ export default class Init extends Command {
 
     const notEmptyString = function(val: string): string {
       if (!val) {
-        throw new Error('Must not be empty')
+        throw new CLIError('Must not be empty')
       } else {
         return val
       }
     }
     const emailString = function(val: string): string {
       if (!validator.isEmail(val)) {
-        throw new Error('Must be an email address')
+        throw new CLIError('Must be an email address')
       } else {
         return val
       }
@@ -168,6 +180,8 @@ export default class Init extends Command {
     //prepare for creating config files
 
     const virginSoftConfig = new SoftConfig(path.join(flags.path as string), false)
+    virginSoftConfig.configStyle = style
+
     const overrideObj = {
       projectTitle: name,
       projectAuthor: { name: authorName, email: authorEmail } as Author,
@@ -193,6 +207,7 @@ export default class Init extends Command {
       }
     ]
 
+    debug(`before style operations`)
     if (style === 'YAML') {
       allConfigOperations.push(
         {
@@ -216,12 +231,16 @@ export default class Init extends Command {
         }
       )
     } else {
-      throw new Error('Config style must be JSON5 or YAML')
+      throw new CLIError('Config style must be JSON5 or YAML')
     }
 
-    //validate which config files to create
-    const allConfigFiles: { fullPathName: string; content: string }[] = []
+    debug(`before file validation and creation`)
+
+    //validate which config files to create and create them
+    // const allConfigFiles: { fullPathName: string; content: string }[] = []
     const table = tableize('file', '')
+    const allConfigPromises: Promise<void>[] = []
+
     for (const operation of allConfigOperations) {
       const forceConfig = forceAll || force === path.basename(operation.fullPathName)
       if (!forceConfig && (await this.fsUtils.fileExists(operation.fullPathName))) {
@@ -234,15 +253,15 @@ export default class Init extends Command {
           )
         }
       } else {
-        allConfigFiles.push(operation)
+        // allConfigFiles.push(operation)
+        allConfigPromises.push(this.fsUtils.createFile(operation.fullPathName, operation.content))
       }
     }
 
-    //create files that were validated
-    const allConfigPromises: Promise<void>[] = []
-    allConfigFiles.forEach(cf => {
-      allConfigPromises.push(this.fsUtils.createFile(cf.fullPathName, cf.content))
-    })
+    // //create files that were validated
+    // allConfigFiles.forEach(cf => {
+    //   allConfigPromises.push(this.fsUtils.createFile(cf.fullPathName, cf.content))
+    // })
     await Promise.all(allConfigPromises)
 
     // Create git repo and remote if validated

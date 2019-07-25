@@ -1,4 +1,5 @@
 import { flags } from '@oclif/command'
+import { CLIError } from '@oclif/errors'
 import { cli } from 'cli-ux'
 import * as path from 'path'
 
@@ -81,7 +82,7 @@ export default class Split extends Command {
     )
     const toEditFile = toEditFiles && toEditFiles.length === 1 ? toEditFiles[0] : null
     if (!toEditFile) {
-      throw new Error('There should be one and only one file fitting this pattern.')
+      throw new CLIError('There should be one and only one file fitting this pattern.')
     }
     let toEditPretty = `\n    extracted from file ${this.softConfig.mapFileToBeRelativeToRootPath(toEditFile)}`
 

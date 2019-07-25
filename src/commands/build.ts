@@ -1,12 +1,10 @@
 import { flags } from '@oclif/command'
 import { exec } from 'child_process'
 import cli from 'cli-ux'
-import yaml = require('js-yaml')
 import * as moment from 'moment'
 import * as path from 'path'
 import { file as tmpFile } from 'tmp-promise'
 
-import { MarkupObj } from '../markup-utils'
 import { QueryBuilder, tableize } from '../ui-utils'
 
 import { d } from './base'
@@ -102,7 +100,8 @@ export default class Build extends Command {
         await this.fsUtils.globPromise(path.join(this.rootPath, this.softConfig.chapterWildcard(true)))
       )
 
-      await this.extractGlobalMetadata(allChapterFilesArray, outputFile)
+      await this.markupUtils.extractGlobalMetadata(allChapterFilesArray, outputFile)
+      await this.CommitToGit('Autosave markup updates')
 
       cli.info('Extracting metadata for all chapters files'.actionStartColor())
 
@@ -190,7 +189,7 @@ export default class Build extends Command {
       }
       const fullCleanedOrTransformedContent = removeMarkup
         ? this.markupUtils.cleanMarkupContent(fullOriginalContent)
-        : this.transformMarkupContent(fullOriginalContent)
+        : this.markupUtils.transformMarkupContent(fullOriginalContent)
       await this.fsUtils.writeInFile(tmpMDfile.fd, fullCleanedOrTransformedContent)
       await this.fsUtils.writeInFile(tmpMDfileTex.fd, fullCleanedOrTransformedContent.replace(/^\*\s?\*\s?\*$/gm, '\\asterism'))
 
@@ -303,59 +302,6 @@ export default class Build extends Command {
     }
   }
 
-  private async extractGlobalMetadata(allChapterFilesArray: string[], outputFile: string) {
-    cli.action.start('Extracting global metadata'.actionStartColor())
-    debug(`starting extractGlobalMetadata`)
-
-    const table = tableize('file', 'diff')
-    const extractPromises: Promise<MarkupObj[]>[] = []
-    allChapterFilesArray.forEach(cf => {
-      extractPromises.push(this.markupUtils.extractMarkup(cf))
-    })
-
-    await Promise.all(extractPromises).then(async fullMarkupArray => {
-      const flattenedMarkupArray: MarkupObj[] = ([] as MarkupObj[]).concat(...fullMarkupArray)
-
-      const { markupByFile, markupByType } = this.markupUtils.objectifyMarkupArray(flattenedMarkupArray)
-
-      const markupExt = this.softConfig.configStyle.toLowerCase()
-      const allMarkups = [
-        { markupObj: markupByFile, fullPath: path.join(this.softConfig.buildDirectory, `${outputFile}.markupByFile.${markupExt}`) },
-        { markupObj: markupByType, fullPath: path.join(this.softConfig.buildDirectory, `${outputFile}.markupByType.${markupExt}`) }
-      ]
-
-      for (const markup of allMarkups) {
-        debug(`markup.fullPath=${markup.fullPath}`)
-        const existingMarkupContent = await this.fsUtils.readFileContent(markup.fullPath)
-        debug(`up to here in build`)
-
-        const comparedString =
-          this.softConfig.configStyle === 'JSON5'
-            ? JSON.stringify(markup.markupObj, null, 4)
-            : this.softConfig.configStyle === 'YAML'
-            ? yaml.safeDump(markup.markupObj)
-            : ''
-
-        debug(`comparedString=${comparedString}`)
-        if (existingMarkupContent !== comparedString) {
-          await this.fsUtils.writeFile(markup.fullPath, comparedString)
-          table.accumulator(this.softConfig.mapFileToBeRelativeToRootPath(markup.fullPath), 'updated')
-        }
-      }
-
-      const modifiedMetadataFiles = await this.markupUtils.writeMetadataInEachFile(markupByFile)
-      table.accumulatorArray(
-        modifiedMetadataFiles.map(val => ({ from: this.softConfig.mapFileToBeRelativeToRootPath(val.file), to: val.diff }))
-      )
-      // markupFilenamesPretty = modifiedMetadataFiles.reduce((previous, current) => `${previous}\n    ${current}`,'')
-    })
-
-    cli.action.stop(`done`.actionStopColor())
-    table.show()
-
-    await this.CommitToGit('Autosave markup updates')
-  }
-
   private async runPandoc(options: string[]): Promise<void> {
     return new Promise((resolve, reject) => {
       const command = 'pandoc ' + options.join(' ')
@@ -377,34 +323,6 @@ export default class Build extends Command {
     })
   }
 
-  private transformMarkupContent(initialContent: string): string {
-    const paragraphBreakRegex = new RegExp(this.markupUtils.paragraphBreakChar + '{{(\\d+)}}\\n', 'g')
-    let markupCounter = 0
-
-    const transformInFootnote = function(initial: string): { replaced: string; didReplacement: boolean } {
-      let didReplacement = false
-      const replaced = initial.replace(/(.*){(.*?)\s?:\s?(.*?)} *(.*)$/m, (_full, one, two, three, four) => {
-        markupCounter++
-        didReplacement = didReplacement || (two && three)
-        return `${one} ^_${two}: _^[^${markupCounter}]  ${four}\n\n[^${markupCounter}]: ${three}\n\n`
-      })
-      return { replaced, didReplacement }
-    }
-
-    let replacedContent = initialContent
-      .replace(paragraphBreakRegex, '^_($1)_^\t')
-      .replace(/^### (.*)$/gm, '* * *\n\n## $1')
-      .replace(/^\\(.*)$/gm, '_% $1_')
-
-    let continueReplacing = true
-    while (continueReplacing) {
-      const { replaced, didReplacement } = transformInFootnote(replacedContent)
-      replacedContent = replaced
-      continueReplacing = didReplacement
-    }
-
-    return replacedContent
-  }
 
   private async extractMeta(filepath: string, extractAll: boolean): Promise<MetaObj[]> {
     const file = this.softConfig.mapFileToBeRelativeToRootPath(filepath)

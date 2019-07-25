@@ -1,3 +1,4 @@
+import { CLIError } from '@oclif/errors'
 import { cli } from 'cli-ux'
 import * as jsonComment from 'comment-json'
 import { observableDiff } from 'deep-diff'
@@ -49,7 +50,7 @@ export default abstract class extends Command {
 
     const isRepo = await this.git.checkIsRepo()
     if (!isRepo) {
-      throw new Error('Directory is not a repository')
+      throw new CLIError('Directory is not a repository')
     }
 
     const hasConfigFolder = await this.fsUtils.fileExists(this.hardConfig.configPath)
@@ -57,7 +58,7 @@ export default abstract class extends Command {
     const hasConfigYAMLFile = await this.fsUtils.fileExists(this.hardConfig.configYAMLFilePath)
 
     if (!hasConfigFolder || !(hasConfigJSON5File || hasConfigYAMLFile)) {
-      throw new Error('Directory was not initialized.  Run `init` command.')
+      throw new CLIError('Directory was not initialized.  Run `init` command.')
     }
 
     await this.RenameFilesIfNewPattern()
@@ -427,10 +428,10 @@ export default abstract class extends Command {
 
   public async reorder(origin: string, destination: string): Promise<void> {
     if (!origin) {
-      throw new Error('You need to provide an origin chapter')
+      throw new CLIError('You need to provide an origin chapter')
     }
     if (!destination) {
-      throw new Error('You need to provide a destination chapter')
+      throw new CLIError('You need to provide a destination chapter')
     }
 
     const originIsAtNumbering = origin.toString().substring(0, 1) === '@'

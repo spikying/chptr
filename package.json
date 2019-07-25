@@ -2,7 +2,11 @@
   "name": "chptr",
   "description": "Command Line tool to handle separate Markdown files with special markup notations and export as a complete document.",
   "version": "0.1.0",
-  "author": "spikying @spikying",
+  "author": {
+    "name": "Mathieu Leblanc",
+    "email": "spiky.ing@gmail.com",
+    "url": "https://github.com/spikying"
+  },
   "bin": {
     "chptr": "./bin/run"
   },
@@ -11,6 +15,7 @@
     "@braintree/sanitize-url": "3.1.0",
     "@oclif/command": "1.5.13",
     "@oclif/config": "1.13.0",
+    "@oclif/errors": "1.2.2",
     "@oclif/plugin-help": "2.1.6",
     "@types/comment-json": "1.1.1",
     "@types/convict": "4.2.1",
@@ -83,7 +88,12 @@
   ],
   "homepage": "https://github.com/spikying/chptr",
   "keywords": [
-    "oclif"
+    "oclif",
+    "chptr",
+    "writing",
+    "cli",
+    "pandoc",
+    "markdown"
   ],
   "license": "MIT",
   "main": "lib/index.js",
@@ -94,7 +104,7 @@
       "@oclif/plugin-help"
     ]
   },
-  "repository": "spikying/chptr",
+  "repository": "git@github.com:spikying/chptr.git",
   "scripts": {
     "postpack": "rimraf oclif.manifest.json",
     "posttest": "tslint -p test -t stylish",
@@ -102,14 +112,17 @@
     "test": "nyc --extension .ts mocha --forbid-only \"test/**/*.test.ts\"",
     "version": "oclif-dev readme && git add README.md",
     "pkg": "pkg .",
-    "testbuild": "DEBUG='command:build' ./bin/run.cmd build --path='../testNovel' myNovel",
-    "testreorder": "DEBUG='command:reorder' ./bin/run.cmd reorder 2 1 --path='../testNovel' -d",
     "testadd": "DEBUG='command:add' ./bin/run.cmd add --path='../testNovel'",
-    "testinit": "DEBUG='command:init' ./bin/run.cmd init --path='../testNovel'",
+    "testantidote": "DEBUG='command:antidote' ./bin/run.cmd antidote --path='../testNovel'",
+    "testbuild": "DEBUG='command:build' ./bin/run.cmd build --path='../testNovel'",
     "testdelete": "DEBUG='command:delete' ./bin/run.cmd delete --path='../testNovel'",
-    "testsave": "DEBUG='command:save' ./bin/run.cmd save --path='../testNovel'",
     "testedit": "DEBUG='command:edit' ./bin/run.cmd edit --path='../testNovel'",
-    "testantidote": "DEBUG='command:antidote' ./bin/run.cmd antidote --path='../testNovel'"
+    "testinit": "DEBUG='command:init' ./bin/run.cmd init --path='../testNovel'",
+    "testrename": "DEBUG='command:rename' ./bin/run.cmd rename --path='../testNovel'",
+    "testreorder": "DEBUG='command:reorder' ./bin/run.cmd reorder --path='../testNovel'",
+    "testsave": "DEBUG='command:save' ./bin/run.cmd save --path='../testNovel'",
+    "testsplit": "DEBUG='command:split' ./bin/run.cmd split --path='../testNovel'",
+    "testtrack": "DEBUG='command:track' ./bin/run.cmd track --path='../testNovel'"
   },
   "types": "lib/index.d.ts"
 }
