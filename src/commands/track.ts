@@ -1,7 +1,7 @@
-import { CLIError } from '@oclif/errors'
 import { cli } from 'cli-ux'
 import * as path from 'path'
 
+import { ChptrError } from '../chptr-error'
 import { QueryBuilder } from '../ui-utils'
 
 import { d } from './base'
@@ -41,7 +41,7 @@ export default class Track extends Command {
       }
 
       if (!untrackedGitFiles) {
-        throw new CLIError(`No file untracked by repository`)
+        throw new ChptrError(`No file untracked by repository`, 'track.run', 17)
       }
       const root = this.rootPath
 
@@ -81,8 +81,7 @@ export default class Track extends Command {
     const filename = args.filename || queryResponses.filename || ''
 
     if (!filename) {
-      this.error('No filename to track'.errorColor())
-      this.exit(0)
+      throw new ChptrError('No filename to track', 'track.run', 22)
     }
 
     cli.action.start('Tracking file'.actionStartColor())

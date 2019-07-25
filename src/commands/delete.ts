@@ -1,9 +1,9 @@
 import { flags } from '@oclif/command'
-import { CLIError } from '@oclif/errors'
 import { cli } from 'cli-ux'
 // import * as glob from 'glob'
 import * as path from 'path'
 
+import { ChptrError } from '../chptr-error'
 import { QueryBuilder } from '../ui-utils'
 
 import { d } from './base'
@@ -52,7 +52,7 @@ export default class Delete extends Command {
     const nameOrNumber: any = args.name || queryResponses.name
 
     if (!nameOrNumber) {
-      throw new CLIError('Name or number input empty'.errorColor())
+      throw new ChptrError('Name or number input empty', 'delete.run', 4)
     }
 
     const toDeleteFiles: string[] = []
@@ -79,16 +79,16 @@ export default class Delete extends Command {
       cli.warn('No files to delete.'.errorColor())
     } else {
       // try {
-        cli.action.start('Deleting file(s) locally and from repository'.actionStartColor())
-        await this.git.rm(this.softConfig.mapFilesToBeRelativeToRootPath(toDeleteFiles))
-        const toDeletePretty = toDeleteFiles.map(f => `\n    ${f}`)
-        await this.CommitToGit(
-          `Removed files: ${JSON.stringify(this.softConfig.mapFilesToBeRelativeToRootPath(toDeleteFiles))}`,
-          undefined,
-          true
-        )
+      cli.action.start('Deleting file(s) locally and from repository'.actionStartColor())
+      await this.git.rm(this.softConfig.mapFilesToBeRelativeToRootPath(toDeleteFiles))
+      const toDeletePretty = toDeleteFiles.map(f => `\n    ${f}`)
+      await this.CommitToGit(
+        `Removed files: ${JSON.stringify(this.softConfig.mapFilesToBeRelativeToRootPath(toDeleteFiles))}`,
+        undefined,
+        true
+      )
 
-        cli.action.stop(`${toDeletePretty}\nwere deleted`.actionStopColor())
+      cli.action.stop(`${toDeletePretty}\nwere deleted`.actionStopColor())
       // } catch (err) {
       //   this.error(err.toString().errorColor())
       // }

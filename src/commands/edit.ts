@@ -2,6 +2,7 @@ import { flags } from '@oclif/command'
 import { cli } from 'cli-ux'
 import * as path from 'path'
 
+import { ChptrError } from '../chptr-error'
 import { QueryBuilder } from '../ui-utils'
 
 import { d } from './base'
@@ -67,23 +68,18 @@ export default class Edit extends Command {
 
       if (editType === 'all' || editType === 'chapter') {
         toEditFiles.push(
-          ...(await this.fsUtils.globPromise(
-            path.join(this.rootPath, this.softConfig.chapterWildcardWithNumber(num, isAtNumbering))
-          ))
+          ...(await this.fsUtils.globPromise(path.join(this.rootPath, this.softConfig.chapterWildcardWithNumber(num, isAtNumbering))))
         )
       }
       if (editType === 'all' || editType === 'summary') {
         toEditFiles.push(
-          ...(await this.fsUtils.globPromise(
-            path.join(this.rootPath, this.softConfig.summaryWildcardWithNumber(num, isAtNumbering))
-          ))
+          ...(await this.fsUtils.globPromise(path.join(this.rootPath, this.softConfig.summaryWildcardWithNumber(num, isAtNumbering))))
         )
       }
     }
 
     if (toEditFiles.length === 0) {
-      this.error('No files matching input'.errorColor())
-      this.exit(0)
+      throw new ChptrError('No files matching input', 'edit.run', 20)
     }
 
     cli.action.start('Reading and processing files'.actionStartColor())
@@ -91,9 +87,9 @@ export default class Edit extends Command {
       const fullPath = path.join(this.rootPath, filename)
 
       // try {
-        const initialContent = await this.fsUtils.readFileContent(fullPath)
-        const replacedContent = await this.processContentBack(initialContent)
-        await this.fsUtils.writeFile(fullPath, replacedContent)
+      const initialContent = await this.fsUtils.readFileContent(fullPath)
+      const replacedContent = await this.processContentBack(initialContent)
+      await this.fsUtils.writeFile(fullPath, replacedContent)
       // } catch (err) {
       //   this.error(err.toString().errorColor())
       //   this.exit(1)

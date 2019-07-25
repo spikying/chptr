@@ -1,11 +1,11 @@
 import { flags } from '@oclif/command'
-import { CLIError } from '@oclif/errors'
 import { exec } from 'child_process'
 import cli from 'cli-ux'
 import * as moment from 'moment'
 import * as path from 'path'
 import { file as tmpFile } from 'tmp-promise'
 
+import { ChptrError } from '../chptr-error'
 import { QueryBuilder, tableize } from '../ui-utils'
 
 import { d } from './base'
@@ -297,7 +297,7 @@ export default class Build extends Command {
       // cli.action.status = 'error'.errorColor()
       // this.error(err.toString().errorColor())
       // this.exit(1)
-      throw new CLIError(err.toString().errorColor())
+      throw new ChptrError(err,'build.run', 3)
     } finally {
       await tmpMDfile.cleanup()
       await tmpMDfileTex.cleanup()

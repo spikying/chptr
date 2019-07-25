@@ -1,4 +1,3 @@
-import { CLIError } from '@oclif/errors'
 import { cli } from 'cli-ux'
 import * as d from 'debug'
 import * as fs from 'fs'
@@ -8,6 +7,8 @@ import * as path from 'path'
 import * as sanitize from 'sanitize-filename'
 import { promisify } from 'util'
 
+import { ChptrError } from './chptr-error'
+
 const debug = d('fs-utils')
 
 export class FsUtils {
@@ -15,7 +16,7 @@ export class FsUtils {
   public readonly copyFile = promisify(fs.copyFile)
   public readonly moveFile = promisify(fs.rename)
   public readonly listFiles = promisify(glob)
-  public readonly createDir = promisify(fs.mkdir)
+  // public readonly createDir = promisify(fs.mkdir)
   public readonly deleteDir = promisify(fs.rmdir)
   public readonly deleteFile = promisify(fs.unlink)
   public readonly mkdtemp = promisify(fs.mkdtemp)
@@ -56,7 +57,7 @@ export class FsUtils {
       try {
         return wf(path, data, 'utf8')
       } catch (err) {
-        throw new CLIError(err.toString().errorColor())
+        throw new ChptrError(err, 'fs-utils.writefile', 100)
       }
     }
     return triedWF(path, data)
@@ -100,7 +101,7 @@ export class FsUtils {
     try {
       await createFile(fullPathName, content, { encoding: 'utf8' })
     } catch (err) {
-      throw new CLIError(err.toString().errorColor())
+      throw new ChptrError(err, 'fs-utils.createfile', 101)
     }
     cli.info(`Created ${fullPathName.resultHighlighColor()}`.resultNormalColor())
   }
@@ -137,7 +138,7 @@ export class FsUtils {
       tempDir = await this.mkdtemp(path.join(rootPath, tempPrefix))
       debug(`Created temp dir: ${tempDir}`)
     } catch (err) {
-      throw new CLIError(err.toString().errorColor())
+      throw new ChptrError(err, 'fs-utils.gettempdir', 102)
     }
 
     const delDirFct = this.deleteDir
@@ -146,7 +147,7 @@ export class FsUtils {
         debug(`Deleting temp dir: ${tempDir}`)
         await delDirFct(tempDir)
       } catch (err) {
-        throw new CLIError(err.toString().errorColor())
+        throw new ChptrError(err, 'fs-utils.removetempdir', 103)
       }
     }
 
@@ -162,6 +163,7 @@ export class FsUtils {
       return content
     } catch (err) {
       debug(err.toString().errorColor())
+      cli.warn(`Could not read file content of ${filepath}`.errorColor())
       return ''
     }
   }

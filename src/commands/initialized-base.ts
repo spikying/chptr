@@ -1,4 +1,3 @@
-import { CLIError } from '@oclif/errors'
 import { cli } from 'cli-ux'
 import * as jsonComment from 'comment-json'
 import { observableDiff } from 'deep-diff'
@@ -7,6 +6,7 @@ import * as minimatch from 'minimatch'
 import * as path from 'path'
 import { MoveSummary } from 'simple-git/typings/response'
 
+import { ChptrError } from '../chptr-error'
 import { MarkupUtils } from '../markup-utils'
 import { SoftConfig } from '../soft-config'
 import { Statistics } from '../statistics'
@@ -42,24 +42,20 @@ export default abstract class extends Command {
     debug('init of initialized-base')
     await super.init()
 
+    const isRepo = await this.git.checkIsRepo()
+    const hasConfigFolder = await this.fsUtils.fileExists(this.hardConfig.configPath)
+    const hasConfigJSON5File = await this.fsUtils.fileExists(this.hardConfig.configJSON5FilePath)
+    const hasConfigYAMLFile = await this.fsUtils.fileExists(this.hardConfig.configYAMLFilePath)
+
+    if (!isRepo || !hasConfigFolder || !(hasConfigJSON5File || hasConfigYAMLFile)) {
+      throw new ChptrError('Directory was not initialized.  Run `init` command.', 'initialized-base.init', 9)
+    }
+
     // const { flags } = this.parse(this.constructor as any)
     // const dir = path.join(flags.path as string)
     this._softConfig = new SoftConfig(this.rootPath)
     this._statistics = new Statistics(this.softConfig, this.rootPath)
     this._markupUtils = new MarkupUtils(this.softConfig, this.rootPath)
-
-    const isRepo = await this.git.checkIsRepo()
-    if (!isRepo) {
-      throw new CLIError('Directory is not a repository')
-    }
-
-    const hasConfigFolder = await this.fsUtils.fileExists(this.hardConfig.configPath)
-    const hasConfigJSON5File = await this.fsUtils.fileExists(this.hardConfig.configJSON5FilePath)
-    const hasConfigYAMLFile = await this.fsUtils.fileExists(this.hardConfig.configYAMLFilePath)
-
-    if (!hasConfigFolder || !(hasConfigJSON5File || hasConfigYAMLFile)) {
-      throw new CLIError('Directory was not initialized.  Run `init` command.')
-    }
 
     await this.RenameFilesIfNewPattern()
     await this.MoveToNewBuildDirectory()
@@ -286,33 +282,33 @@ export default abstract class extends Command {
     toStageFiles = toStageFiles || (await this.GetGitListOfStageableFiles())
     if (toStageFiles.length > 0 || forDeletes) {
       // try {
-        cli.action.start('Saving file(s) in repository'.actionStartColor())
+      cli.action.start('Saving file(s) in repository'.actionStartColor())
 
-        await this.processChapterFilesBeforeSaving(toStageFiles)
-        debug(`after processing file`)
+      await this.processChapterFilesBeforeSaving(toStageFiles)
+      debug(`after processing file`)
 
-        if (!forDeletes) {
-          await this.git.add(toStageFiles)
-        }
-        debug(`after adding files`)
-        await this.git.addConfig('user.name', this.softConfig.config.projectAuthor.name)
-        await this.git.addConfig('user.email', this.softConfig.config.projectAuthor.email)
+      if (!forDeletes) {
+        await this.git.add(toStageFiles)
+      }
+      debug(`after adding files`)
+      await this.git.addConfig('user.name', this.softConfig.config.projectAuthor.name)
+      await this.git.addConfig('user.email', this.softConfig.config.projectAuthor.email)
 
-        const commitSummary = await this.git.commit(message)
-        const hasRemote: boolean = await this.git.getRemotes(false).then(result => {
-          return result.find(value => value.name === 'origin') !== undefined
-        })
-        if (hasRemote) {
-          await this.git.push()
-          await this.git.pull()
-        }
+      const commitSummary = await this.git.commit(message)
+      const hasRemote: boolean = await this.git.getRemotes(false).then(result => {
+        return result.find(value => value.name === 'origin') !== undefined
+      })
+      if (hasRemote) {
+        await this.git.push()
+        await this.git.pull()
+      }
 
-        const toStagePretty = toStageFiles.map(f => `\n    ${f}`.infoColor())
-        cli.action.stop(
-          `\nCommited and pushed ${commitSummary.commit.resultHighlighColor()}:\n${message.infoColor()}\nFile${
-            toStageFiles.length > 1 ? 's' : ''
-          }:${toStagePretty}`.actionStopColor()
-        )
+      const toStagePretty = toStageFiles.map(f => `\n    ${f}`.infoColor())
+      cli.action.stop(
+        `\nCommited and pushed ${commitSummary.commit.resultHighlighColor()}:\n${message.infoColor()}\nFile${
+          toStageFiles.length > 1 ? 's' : ''
+        }:${toStagePretty}`.actionStopColor()
+      )
       // } catch (err) {
       //   this.error(err.toString().errorColor())
       // }
@@ -428,10 +424,10 @@ export default abstract class extends Command {
 
   public async reorder(origin: string, destination: string): Promise<void> {
     if (!origin) {
-      throw new CLIError('You need to provide an origin chapter')
+      throw new ChptrError('You need to provide an origin chapter', 'initialized-base.reorder.origin', 10)
     }
     if (!destination) {
-      throw new CLIError('You need to provide a destination chapter')
+      throw new ChptrError('You need to provide a destination chapter', 'initialized-base.reorder.destination', 11)
     }
 
     const originIsAtNumbering = origin.toString().substring(0, 1) === '@'
@@ -456,17 +452,17 @@ export default abstract class extends Command {
         return previous || current
       }, false)
     if (!originExists) {
-      throw new CLIError('Origin does not exist'.errorColor())
+      throw new ChptrError('Origin does not exist', 'initialized-base.reorder.origin', 12)
     }
 
     if (originNumber === -1) {
-      throw new CLIError('Origin argument is not a number or `end` or `@end`'.errorColor())
+      throw new ChptrError('Origin argument is not a number or `end` or `@end`', 'initialized-base.reorder.origin', 13)
     }
     if (destNumber === -1) {
-      throw new CLIError('Destination argument is not a number or `end` or `@end`'.errorColor())
+      throw new ChptrError('Destination argument is not a number or `end` or `@end`', 'initialized-base.reorder.destination', 14)
     }
     if (destNumber === originNumber && originIsAtNumbering === destIsAtNumbering) {
-      throw new CLIError('Origin must be different than Destination'.errorColor())
+      throw new ChptrError('Origin must be different than Destination', 'initialized-base.reorder.originvsdestination', 15)
     }
 
     const sameAtNumbering = originIsAtNumbering === destIsAtNumbering
@@ -563,7 +559,7 @@ export default abstract class extends Command {
 
     cli.action.stop(tempDir.actionStopColor())
     // } catch (err) {
-    //   throw new CLIError(err.toString().errorColor())
+    //   throw new ChptrError(err.toString().errorColor())
     //   cli.exit(1)
     // }
 
@@ -589,7 +585,7 @@ export default abstract class extends Command {
     }
     await Promise.all(moveBackPromises)
     // } catch (err) {
-    //   throw new CLIError(err.toString().errorColor())
+    //   throw new ChptrError(err.toString().errorColor())
     //   cli.exit(1)
     // }
 

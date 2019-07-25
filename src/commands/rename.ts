@@ -2,6 +2,7 @@ import { flags } from '@oclif/command'
 import { cli } from 'cli-ux'
 import * as path from 'path'
 
+import { ChptrError } from '../chptr-error'
 import { QueryBuilder } from '../ui-utils'
 
 import { d } from './base'
@@ -82,8 +83,7 @@ export default class Rename extends Command {
         this.softConfig.summaryFileNameFromParameters(this.fsUtils.stringifyNumber(num, digits), newNameForFile, isAtNumbering),
         this.softConfig.metadataFileNameFromParameters(this.fsUtils.stringifyNumber(num, digits), newNameForFile, isAtNumbering)
       ]
-      this.error(`Missing a file within this list:${expectedFiles.map(f => `\n    ${f}`)}`.errorColor())
-      this.exit(0)
+      throw new ChptrError(`Missing a file within this list:${expectedFiles.map(f => `\n    ${f}`)}`, 'rename.run', 21)
     }
 
     const digits = this.statistics.getActualDigitsFromChapterFilename(chapterFile, isAtNumbering)
@@ -91,31 +91,19 @@ export default class Rename extends Command {
     const didUpdateChapter = {
       filename: chapterFile,
       title: await this.replaceTitleInMarkdown(chapterFile, newName),
-      newFileName: this.softConfig.chapterFileNameFromParameters(
-        this.fsUtils.stringifyNumber(num, digits),
-        newNameForFile,
-        isAtNumbering
-      ),
+      newFileName: this.softConfig.chapterFileNameFromParameters(this.fsUtils.stringifyNumber(num, digits), newNameForFile, isAtNumbering),
       rename: ''
     }
     const didUpdateSummary = {
       filename: summaryFile,
       title: await this.replaceTitleInMarkdown(summaryFile, newName),
-      newFileName: this.softConfig.summaryFileNameFromParameters(
-        this.fsUtils.stringifyNumber(num, digits),
-        newNameForFile,
-        isAtNumbering
-      ),
+      newFileName: this.softConfig.summaryFileNameFromParameters(this.fsUtils.stringifyNumber(num, digits), newNameForFile, isAtNumbering),
       rename: ''
     }
     const didUpdateMetadata = {
       filename: metadataFile,
       title: await this.replaceTitleInObject(metadataFile, newName),
-      newFileName: this.softConfig.metadataFileNameFromParameters(
-        this.fsUtils.stringifyNumber(num, digits),
-        newNameForFile,
-        isAtNumbering
-      ),
+      newFileName: this.softConfig.metadataFileNameFromParameters(this.fsUtils.stringifyNumber(num, digits), newNameForFile, isAtNumbering),
       rename: ''
     }
     const didUpdates = [didUpdateChapter, didUpdateSummary, didUpdateMetadata]

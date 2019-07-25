@@ -1,9 +1,9 @@
 import { flags } from '@oclif/command'
-import { CLIError } from '@oclif/errors'
 import { cli } from 'cli-ux'
 import * as path from 'path'
 import * as validator from 'validator'
 
+import { ChptrError } from '../chptr-error'
 import { Author, SoftConfig } from '../soft-config'
 import { QueryBuilder, tableize } from '../ui-utils'
 
@@ -65,7 +65,7 @@ export default class Init extends Command {
         if (ucased === 'YAML' || ucased === 'JSON5' || ucased === '') {
           return ucased
         } else {
-          throw new CLIError('Expected `style` flag to be one of: YAML, JSON5')
+          throw new ChptrError('Expected `style` flag to be one of: YAML, JSON5', 'init:flags', 5)
         }
       },
       // options: ['YAML', 'JSON5', ''],
@@ -105,10 +105,13 @@ export default class Init extends Command {
 
     // Create folder structure, with /config
     try {
-      await this.fsUtils.createDir(this.hardConfig.configPath)
+      await this.fsUtils.createSubDirectoryFromDirectoryPathIfNecessary(this.hardConfig.configPath)
+
+      // await this.fsUtils.createDir(this.hardConfig.configPath)
       cli.info(`Created directory ${this.hardConfig.configPath.resultHighlighColor()}`.resultNormalColor())
-    } catch {
+    } catch (err) {
       // If directory already exists, silently swallow the error
+      debug(err)
     }
 
     // Prompt config options if necessary
@@ -121,14 +124,14 @@ export default class Init extends Command {
 
     const notEmptyString = function(val: string): string {
       if (!val) {
-        throw new CLIError('Must not be empty')
+        throw new ChptrError('Must not be empty', 'init.run.notemptystring', 6)
       } else {
         return val
       }
     }
     const emailString = function(val: string): string {
       if (!validator.isEmail(val)) {
-        throw new CLIError('Must be an email address')
+        throw new ChptrError('Must be an email address', 'init.run.emailstring', 7)
       } else {
         return val
       }
@@ -209,9 +212,8 @@ export default class Init extends Command {
     const virginSoftConfig = new SoftConfig(path.join(flags.path as string), false)
     virginSoftConfig.configStyle = style
 
-    const directoryOverrides = Init.directoryStructureList
-      .filter(dsl => dsl.id === directorystructure)[0]
-    
+    const directoryOverrides = Init.directoryStructureList.filter(dsl => dsl.id === directorystructure)[0]
+
     const overrideObj = {
       projectTitle: name,
       projectAuthor: { name: authorName, email: authorEmail } as Author,
@@ -262,7 +264,7 @@ export default class Init extends Command {
         }
       )
     } else {
-      throw new CLIError('Config style must be JSON5 or YAML')
+      throw new ChptrError('Config style must be JSON5 or YAML', 'init.run', 8)
     }
 
     debug(`before file validation and creation`)

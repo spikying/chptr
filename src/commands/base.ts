@@ -1,5 +1,4 @@
 import { Command, flags } from '@oclif/command'
-import { CLIError } from '@oclif/errors';
 import * as deb from 'debug'
 import * as notifier from 'node-notifier'
 import * as path from 'path'
@@ -8,7 +7,6 @@ import * as simplegit from 'simple-git/promise'
 import { FsUtils } from '../fs-utils'
 import { HardConfig } from '../hard-config'
 // import { promisify } from 'util'
-
 
 export const d = deb
 
@@ -69,7 +67,7 @@ export default abstract class extends Command {
   }
   static hidden = true
 
-  public get rootPath(): string{
+  public get rootPath(): string {
     return this._rootPath
   }
 
@@ -88,9 +86,9 @@ export default abstract class extends Command {
   }
 
   async catch(err: Error) {
-    throw new CLIError(err.toString().errorColor())
-    // this.error(err.toString().errorColor())
-    // this.exit(1)
+    // throw new ChptrError(err.toString().errorColor())
+    this.error(err.toString())
+    this.exit(1)
   }
 
   async finally() {

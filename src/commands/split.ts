@@ -1,8 +1,8 @@
 import { flags } from '@oclif/command'
-import { CLIError } from '@oclif/errors'
 import { cli } from 'cli-ux'
 import * as path from 'path'
 
+import { ChptrError } from '../chptr-error'
 import { QueryBuilder } from '../ui-utils'
 
 import Add from './add'
@@ -82,7 +82,7 @@ export default class Split extends Command {
     )
     const toEditFile = toEditFiles && toEditFiles.length === 1 ? toEditFiles[0] : null
     if (!toEditFile) {
-      throw new CLIError('There should be one and only one file fitting this pattern.')
+      throw new ChptrError('There should be one and only one file fitting this pattern.', 'split.run', 16)
     }
     let toEditPretty = `\n    extracted from file ${this.softConfig.mapFileToBeRelativeToRootPath(toEditFile)}`
 
@@ -91,42 +91,42 @@ export default class Split extends Command {
 
     cli.info('Adding new chapters...'.resultNormalColor())
     // try {
-      const addedTempNumbers: number[] = []
-      for (let i = 0; i < replacedContents.length; i++) {
-        const titleAndContentPair = replacedContents[i]
-        const name = this.markupUtils.extractTitleFromString(titleAndContentPair[0]) || 'chapter'
+    const addedTempNumbers: number[] = []
+    for (let i = 0; i < replacedContents.length; i++) {
+      const titleAndContentPair = replacedContents[i]
+      const name = this.markupUtils.extractTitleFromString(titleAndContentPair[0]) || 'chapter'
 
-        await Add.run([`--path=${flags.path}`, '-a', name])
+      await Add.run([`--path=${flags.path}`, '-a', name])
 
-        const newNumber = stashedNumber + i + 1
-        const digits = this.fsUtils.numDigits(newNumber)
-        const filename =
-          type === 'chapter'
-            ? this.softConfig.chapterFileNameFromParameters(this.fsUtils.stringifyNumber(newNumber, digits), name, true)
-            : type === 'summary'
-            ? this.softConfig.summaryFileNameFromParameters(this.fsUtils.stringifyNumber(newNumber, digits), name, true)
-            : ''
+      const newNumber = stashedNumber + i + 1
+      const digits = this.fsUtils.numDigits(newNumber)
+      const filename =
+        type === 'chapter'
+          ? this.softConfig.chapterFileNameFromParameters(this.fsUtils.stringifyNumber(newNumber, digits), name, true)
+          : type === 'summary'
+          ? this.softConfig.summaryFileNameFromParameters(this.fsUtils.stringifyNumber(newNumber, digits), name, true)
+          : ''
 
-        const newContent = this.processContent(this.processContentBack(titleAndContentPair.join('')))
-        debug(`newContent:\n${newContent}`)
-        await this.fsUtils.writeFile(path.join(this.rootPath, filename), newContent)
+      const newContent = this.processContent(this.processContentBack(titleAndContentPair.join('')))
+      debug(`newContent:\n${newContent}`)
+      await this.fsUtils.writeFile(path.join(this.rootPath, filename), newContent)
 
-        addedTempNumbers.push(newNumber)
-      }
+      addedTempNumbers.push(newNumber)
+    }
 
-      cli.info('Reinserting newly created chapters...'.resultNormalColor())
+    cli.info('Reinserting newly created chapters...'.resultNormalColor())
 
-      for (let i = 0; i < addedTempNumbers.length; i++) {
-        const addedNumber = addedTempNumbers[i]
-        toEditPretty += `\n    inserted chapter ${isAtNumbering ? '@' : ''}${addedNumber}`
+    for (let i = 0; i < addedTempNumbers.length; i++) {
+      const addedNumber = addedTempNumbers[i]
+      toEditPretty += `\n    inserted chapter ${isAtNumbering ? '@' : ''}${addedNumber}`
 
-        // await Reorder.run([`--path=${flags.path}`, `@${addedNumber}`, `${isAtNumbering ? '@' : ''}${num + i}`])
-        await this.reorder(`@${addedNumber}`, `${isAtNumbering ? '@' : ''}${num + i}`)
-      }
+      // await Reorder.run([`--path=${flags.path}`, `@${addedNumber}`, `${isAtNumbering ? '@' : ''}${num + i}`])
+      await this.reorder(`@${addedNumber}`, `${isAtNumbering ? '@' : ''}${num + i}`)
+    }
 
-      cli.info(`modified files:${toEditPretty.resultHighlighColor()}`.resultNormalColor())
+    cli.info(`modified files:${toEditPretty.resultHighlighColor()}`.resultNormalColor())
 
-      await Delete.run([`--path=${flags.path}`, `@${stashedNumber}`])
+    await Delete.run([`--path=${flags.path}`, `@${stashedNumber}`])
     // } catch (err) {
     //   this.error(err.toString().errorColor())
     //   this.exit(1)

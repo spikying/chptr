@@ -1,4 +1,5 @@
 // https://codingsans.com/blog/node-config-best-practices
+import { cli } from 'cli-ux'
 import * as jsonComment from 'comment-json'
 import * as Convict from 'convict'
 import * as d from 'debug'
@@ -8,6 +9,7 @@ import moment = require('moment')
 import * as path from 'path'
 import * as YAML from 'yaml'
 
+import { ChptrError } from './chptr-error'
 import { FsUtils } from './fs-utils'
 import { HardConfig } from './hard-config'
 
@@ -84,7 +86,9 @@ date: ${moment().format('D MMMM YYYY')}
         const content = this.fsUtils.loadFileSync(this.hardConfig.emptyFilePath)
         this._emptyFileString = content
       } catch (err) {
+        cli.warn(`Could not read from an empty file template at ${this.hardConfig.emptyFilePath}.  Serving default empty file template.`)
         debug(err)
+        return this.hardConfig.templateEmptyFileString
       }
     }
     return this._emptyFileString
@@ -101,12 +105,12 @@ date: ${moment().format('D MMMM YYYY')}
         'File naming pattern for chapter files. Use NUM for chapter number and NAME for chapter name.  Optionally use `/` for a folder structure, e.g. `NUM.NAME.md` or `NUM/NAME.chptr`.',
       format: (val: string) => {
         if (!/^(?=.*NUM)(?=.*NAME).*$/.test(val)) {
-          throw new Error('Must have NUM and NAME in pattern')
+          throw new ChptrError('Must have NUM and NAME in pattern', 'soft-config:configschemaobject:chapterpattern', 300)
         }
         const numPos = val.indexOf('NUM')
         const namePos = val.indexOf('NAME')
         if (namePos < numPos) {
-          throw new Error('First NUM must be before first NAME in pattern')
+          throw new ChptrError('First NUM must be before first NAME in pattern', 'soft-config:configschemaobject:chapterpattern', 301)
         }
       },
       default: 'NUM NAME.chptr'
@@ -117,13 +121,13 @@ date: ${moment().format('D MMMM YYYY')}
       format: (val: string) => {
         if (!/^(?=.*NUM).*$/.test(val)) {
           // && !/^$/.test(val)
-          throw new Error('Must have NUM in pattern')
+          throw new ChptrError('Must have NUM in pattern', 'soft-config:configschemaobject:metadatapattern', 302)
         }
         if (/^(?=.*NAME).*$/.test(val)) {
           const numPos = val.indexOf('NUM')
           const namePos = val.indexOf('NAME')
           if (namePos < numPos) {
-            throw new Error('First NUM must be before first NAME in pattern')
+            throw new ChptrError('First NUM must be before first NAME in pattern', 'soft-config:configschemaobject:metadatapattern', 303)
           }
         }
       },
@@ -135,13 +139,13 @@ date: ${moment().format('D MMMM YYYY')}
       format: (val: string) => {
         if (!/^(?=.*NUM).*$/.test(val)) {
           // && !/^$/.test(val)
-          throw new Error('Must have NUM in pattern')
+          throw new ChptrError('Must have NUM in pattern', 'soft-config:configschemaobject:summarypattern', 304)
         }
         if (/^(?=.*NAME).*$/.test(val)) {
           const numPos = val.indexOf('NUM')
           const namePos = val.indexOf('NAME')
           if (namePos < numPos) {
-            throw new Error('First NUM must be before first NAME in pattern')
+            throw new ChptrError('First NUM must be before first NAME in pattern', 'soft-config:configschemaobject.summarypattern', 305)
           }
         }
       },
@@ -162,7 +166,7 @@ date: ${moment().format('D MMMM YYYY')}
         default: '',
         format: (val: string) => {
           if (val.length === 0) {
-            throw new Error('Must have an author name')
+            throw new ChptrError('Must have an author name', 'soft-config:configschemaobject.author', 306)
           }
         }
       },
@@ -211,7 +215,7 @@ date: ${moment().format('D MMMM YYYY')}
     if (value === 'YAML' || value === 'JSON5') {
       this._configStyle = value
     } else {
-      throw new Error('Cannot set config style to something else than YAML or JSON5')
+      throw new ChptrError('Cannot set config style to something else than YAML or JSON5', 'soft-config:configstyle.set', 306)
     }
   }
   public get configStyle(): string {
@@ -224,10 +228,10 @@ date: ${moment().format('D MMMM YYYY')}
           this.fsUtils.accessSync(this.hardConfig.configYAMLFilePath)
           this._configStyle = 'YAML'
         } catch (err) {
-          throw new Error(
+          throw new ChptrError(
             `File ${this.hardConfig.configJSON5FilePath} or ${
               this.hardConfig.configYAMLFilePath
-            } either doesn't exist or is not readable by process.\n${err}`
+            } either doesn't exist or is not readable by process.\n${err}`, 'soft-config:configstyle.get', 307
           )
         }
       }
@@ -262,18 +266,18 @@ date: ${moment().format('D MMMM YYYY')}
           this._metadataFieldsObj = yaml.safeLoad(metadataFieldsString)
           debug(`_metadataFieldsObj = ${JSON.stringify(this._metadataFieldsObj)}`)
         } else {
-          throw new Error('config style must be JSON5 or YAML')
+          throw new ChptrError('config style must be JSON5 or YAML', 'soft-config:ctor', 308)
         }
       } catch (err) {
         debug(err.toString().errorColor())
-        throw new Error(`loading or processing config files error: ${err.toString().infoColor()}`.errorColor())
+        throw new ChptrError(`loading or processing config files error: ${err.toString().infoColor()}`, 'soft-config.ctor', 200)
       }
 
       try {
         this.configSchema.load(objConfig)
         this.configSchema.validate({ allowed: 'strict' }) // 'strict' throws error if config does not conform to schema
       } catch (err) {
-        throw new Error(`processing config data error: ${err.toString().infoColor()}`.errorColor())
+        throw new ChptrError(`processing config data error: ${err.toString().infoColor()}`, 'soft-config:ctor', 309)
       }
     }
   }
@@ -468,7 +472,7 @@ date: ${moment().format('D MMMM YYYY')}
     debug(`filename: ${filename}\nregex: ${this.chapterRegex(atNumbering)}\nisChapter: ${isChapter}`)
     const total = (isChapter ? 1 : 0) + (isSummary ? 1 : 0) + (isMetadata ? 1 : 0)
     if (total !== 1) {
-      throw new Error('Filename does not match Chapter, Summary or Metadata pattern and cannot be renamed.')
+      throw new ChptrError('Filename does not match Chapter, Summary or Metadata pattern and cannot be renamed.', 'soft-config:renumberedfilename', 310)
     }
 
     //TODO: take care of NAME in other file types too? Or just use the pattern for other files for everything?

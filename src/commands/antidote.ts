@@ -1,9 +1,9 @@
-import { CLIError } from '@oclif/errors'
 import { exec } from 'child_process'
 import { cli } from 'cli-ux'
 import * as glob from 'glob'
 import * as path from 'path'
 
+import { ChptrError } from '../chptr-error'
 import { QueryBuilder } from '../ui-utils'
 
 import { d } from './base'
@@ -45,7 +45,7 @@ export default class Antidote extends Command {
     const chapterFileName = glob.sync(path.join(this.rootPath, this.softConfig.chapterWildcardWithNumber(chapterNumber, isAtNumber)))[0]
 
     if (!chapterFileName) {
-      throw new CLIError(`No chapter was found with input ${filter}`.errorColor())
+      throw new ChptrError(`No chapter was found with input ${filter}`, 'antidote:run', 2)
     }
 
     const basicFilePath = path.join(this.rootPath, chapterFileName)

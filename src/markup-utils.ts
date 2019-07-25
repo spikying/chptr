@@ -5,6 +5,7 @@ import * as JsDiff from 'diff'
 import yaml = require('js-yaml')
 import * as path from 'path'
 
+import { ChptrError } from './chptr-error'
 import { FsUtils } from './fs-utils'
 import { SoftConfig } from './soft-config'
 import { tableize } from './ui-utils'
@@ -87,47 +88,47 @@ export class MarkupUtils {
     debug(`in ExtractMarkup; chapterFilePath=${chapterFilepath}`)
 
     // try {
-      const initialContent = await this.fsUtils.readFileContent(path.join(this.rootPath, chapterFilepath))
-      const markupRegex = /(?:{{(\d+)}}\n)?.*?{([^}]*?)\s?:\s?(.*?)}/gm
-      let regexArray: RegExpExecArray | null
-      let paraCounter = 1
-      while ((regexArray = markupRegex.exec(initialContent)) !== null) {
-        paraCounter = regexArray[1] ? parseInt(regexArray[1], 10) : paraCounter
-        resultArray.push({
-          filename: this.softConfig.mapFileToBeRelativeToRootPath(chapterFilepath),
-          paragraph: paraCounter,
-          type: regexArray[2].toLowerCase(),
-          value: regexArray[3],
-          computed: false
-        })
-      }
-      paraCounter = 1
-      while ((regexArray = this.propRegex.exec(initialContent)) !== null) {
-        paraCounter = regexArray[1] ? parseInt(regexArray[1], 10) : paraCounter
-        resultArray.push({
-          filename: this.softConfig.mapFileToBeRelativeToRootPath(chapterFilepath),
-          paragraph: paraCounter,
-          type: 'prop',
-          value: regexArray[2],
-          computed: false
-        })
-      }
-      const wordCount = this.GetWordCount(initialContent)
+    const initialContent = await this.fsUtils.readFileContent(path.join(this.rootPath, chapterFilepath))
+    const markupRegex = /(?:{{(\d+)}}\n)?.*?{([^}]*?)\s?:\s?(.*?)}/gm
+    let regexArray: RegExpExecArray | null
+    let paraCounter = 1
+    while ((regexArray = markupRegex.exec(initialContent)) !== null) {
+      paraCounter = regexArray[1] ? parseInt(regexArray[1], 10) : paraCounter
       resultArray.push({
         filename: this.softConfig.mapFileToBeRelativeToRootPath(chapterFilepath),
-        type: 'wordCount',
-        value: wordCount,
-        computed: true
+        paragraph: paraCounter,
+        type: regexArray[2].toLowerCase(),
+        value: regexArray[3],
+        computed: false
       })
-      const title = (await this.extractTitleFromString(initialContent)) || '###'
+    }
+    paraCounter = 1
+    while ((regexArray = this.propRegex.exec(initialContent)) !== null) {
+      paraCounter = regexArray[1] ? parseInt(regexArray[1], 10) : paraCounter
       resultArray.push({
         filename: this.softConfig.mapFileToBeRelativeToRootPath(chapterFilepath),
-        type: 'title',
-        value: title,
-        computed: true
+        paragraph: paraCounter,
+        type: 'prop',
+        value: regexArray[2],
+        computed: false
       })
+    }
+    const wordCount = this.GetWordCount(initialContent)
+    resultArray.push({
+      filename: this.softConfig.mapFileToBeRelativeToRootPath(chapterFilepath),
+      type: 'wordCount',
+      value: wordCount,
+      computed: true
+    })
+    const title = (await this.extractTitleFromString(initialContent)) || '###'
+    resultArray.push({
+      filename: this.softConfig.mapFileToBeRelativeToRootPath(chapterFilepath),
+      type: 'title',
+      value: title,
+      computed: true
+    })
     // } catch (err) {
-    //   throw new CLIError(err.toString().errorColor())
+    //   throw new ChptrError(err.toString().errorColor())
     // }
 
     debug(`end of extractMarkup.  result=${JSON.stringify(resultArray)}`)
@@ -330,7 +331,7 @@ export class MarkupUtils {
           await this.fsUtils.writeFile(file, outputString)
         }
       } catch (err) {
-        debug(err.toString().errorColor())
+        throw new ChptrError(`Error in updating all chapter's Metadata files.  ${err}`, 'markup-utils.updateallmetadatafields', 23)
       }
     }
     table.show('Metadata fields updated in files')

@@ -1,9 +1,9 @@
 import { flags } from '@oclif/command'
-import { CLIError } from '@oclif/errors'
 import { cli } from 'cli-ux'
 import yaml = require('js-yaml')
 import * as path from 'path'
 
+import { ChptrError } from '../chptr-error'
 import { QueryBuilder } from '../ui-utils'
 
 import { d } from './base'
@@ -65,7 +65,7 @@ export default class Add extends Command {
       )
 
       if (existingFile.length > 0) {
-        throw new CLIError(`File ${existingFile[0]} already exists`.errorColor())
+        throw new ChptrError(`File ${existingFile[0]} already exists`, 'add.run', 1)
       }
     } else {
       atNumbering = flags.atnumbered
@@ -105,24 +105,24 @@ export default class Add extends Command {
     )
 
     // try {
-      cli.action.start('Creating file(s) locally and to repository'.actionStartColor())
+    cli.action.start('Creating file(s) locally and to repository'.actionStartColor())
 
-      const allPromises: Promise<void>[] = []
-      allPromises.push(this.fsUtils.createFile(fullPathMD, filledTemplateData))
-      allPromises.push(this.fsUtils.createFile(fullPathMeta, filledTemplateMeta))
-      allPromises.push(this.fsUtils.createFile(fullPathSummary, filledTemplateData))
-      await Promise.all(allPromises)
-      cli.action.stop('done'.actionStopColor())
+    const allPromises: Promise<void>[] = []
+    allPromises.push(this.fsUtils.createFile(fullPathMD, filledTemplateData))
+    allPromises.push(this.fsUtils.createFile(fullPathMeta, filledTemplateMeta))
+    allPromises.push(this.fsUtils.createFile(fullPathSummary, filledTemplateData))
+    await Promise.all(allPromises)
+    cli.action.stop('done'.actionStopColor())
 
-      const toStageFiles = this.softConfig.mapFilesToBeRelativeToRootPath([fullPathMD, fullPathMeta, fullPathSummary])
-      const commitMessage = `added ${this.softConfig.mapFileToBeRelativeToRootPath(
-        fullPathMD
-      )}, ${this.softConfig.mapFileToBeRelativeToRootPath(fullPathMeta)} and ${this.softConfig.mapFileToBeRelativeToRootPath(
-        fullPathSummary
-      )}`
+    const toStageFiles = this.softConfig.mapFilesToBeRelativeToRootPath([fullPathMD, fullPathMeta, fullPathSummary])
+    const commitMessage = `added ${this.softConfig.mapFileToBeRelativeToRootPath(
+      fullPathMD
+    )}, ${this.softConfig.mapFileToBeRelativeToRootPath(fullPathMeta)} and ${this.softConfig.mapFileToBeRelativeToRootPath(
+      fullPathSummary
+    )}`
 
-      await this.addDigitsToNecessaryStacks()
-      await this.CommitToGit(commitMessage, toStageFiles)
+    await this.addDigitsToNecessaryStacks()
+    await this.CommitToGit(commitMessage, toStageFiles)
     // } catch (err) {
     //   this.error(err.toString().errorColor())
     // }
