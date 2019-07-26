@@ -2,8 +2,8 @@ import { flags } from '@oclif/command'
 import { cli } from 'cli-ux'
 import * as path from 'path'
 
+import { ChapterId } from '../chapter-id'
 import { ChptrError } from '../chptr-error'
-import { QueryBuilder } from '../ui-utils'
 
 import Add from './add'
 import { d } from './base'
@@ -43,40 +43,46 @@ export default class Split extends Command {
     const { args, flags } = this.parse(Split)
     const type = flags.type
 
-    let chapterId = args.origin
+    const chapterId = await this.checkArgPromptAndExtractChapterId(args.orgin, 'What chapter to split?')
     if (!chapterId) {
-      //no chapter given; must ask for it
-      const queryBuilder = new QueryBuilder()
-      queryBuilder.add('origin', queryBuilder.textinput('What chapter to split?', ''))
-      const queryResponses: any = await queryBuilder.responses()
-      chapterId = queryResponses.origin
+      throw new ChptrError('No chapter found with id given', 'split.run', 45)
     }
+    // let chapterId = args.origin
+    // if (!chapterId) {
+    //   //no chapter given; must ask for it
+    //   const queryBuilder = new QueryBuilder()
+    //   queryBuilder.add('origin', queryBuilder.textinput('What chapter to split?', ''))
+    //   const queryResponses: any = await queryBuilder.responses()
+    //   chapterId = queryResponses.origin
+    // }
 
-    const isAtNumbering = this.softConfig.isAtNumbering(chapterId)
-    await this.statistics.updateStackStatistics(isAtNumbering)
-    const num: number = this.isEndOfStack(chapterId)
-      ? this.statistics.getHighestNumber(isAtNumbering)
-      : this.softConfig.extractNumber(chapterId)
+    // const isAtNumbering = this.softConfig.isAtNumbering(chapterId)
+    // await this.statistics.updateStackStatistics(isAtNumbering)
+    // const num: number = this.isEndOfStack(chapterId)
+    //   ? this.statistics.getHighestNumber(isAtNumbering)
+    //   : this.softConfig.extractNumber(chapterId)
 
     cli.info('Stashing chapter files...'.resultNormalColor())
     const atEndNum = this.statistics.getHighestNumber(true)
 
-    if (!isAtNumbering || num !== atEndNum) {
+    //move file to the end of the atnumber pile unless it's already there
+    if (!chapterId.isAtNumber || chapterId.num !== atEndNum) {
       // await Reorder.run([`--path=${flags.path}`, `${isAtNumbering ? '@' : ''}${num}`, '@end'])
-      await this.reorder(`${isAtNumbering ? '@' : ''}${num}`, '@end')
+      await this.reorder(`${chapterId.toString()}`, '@end')
     }
 
     cli.info('Reading and processing chapter...'.resultNormalColor())
 
     await this.statistics.updateStackStatistics(true, true)
-    const stashedNumber = this.statistics.getHighestNumber(true)
+    // const stashedNumber = this.statistics.getHighestNumber(true)
+    const stashedId = new ChapterId(this.statistics.getHighestNumber(true), true)
     const toEditFiles = await this.fsUtils.globPromise(
       path.join(
         this.rootPath,
         type === 'chapter'
-          ? this.softConfig.chapterWildcardWithNumber(stashedNumber, true)
+          ? this.softConfig.chapterWildcardWithNumber(stashedId)
           : type === 'summary'
-          ? this.softConfig.summaryWildcardWithNumber(stashedNumber, true)
+          ? this.softConfig.summaryWildcardWithNumber(stashedId)
           : ''
       )
     )
@@ -91,42 +97,43 @@ export default class Split extends Command {
 
     cli.info('Adding new chapters...'.resultNormalColor())
     // try {
-    const addedTempNumbers: number[] = []
+    const addedTempIds: ChapterId[] = []
     for (let i = 0; i < replacedContents.length; i++) {
       const titleAndContentPair = replacedContents[i]
       const name = this.markupUtils.extractTitleFromString(titleAndContentPair[0]) || 'chapter'
 
       await Add.run([`--path=${flags.path}`, '-a', name])
 
-      const newNumber = stashedNumber + i + 1
-      const digits = this.fsUtils.numDigits(newNumber)
+      // const newNumber = stashedNumber + i + 1
+      // const digits = this.fsUtils.numDigits(newNumber)
+      const newId = new ChapterId(stashedId.num + i + 1, true)
       const filename =
         type === 'chapter'
-          ? this.softConfig.chapterFileNameFromParameters(this.fsUtils.stringifyNumber(newNumber, digits), name, true)
+          ? this.softConfig.chapterFileNameFromParameters(newId, name)
           : type === 'summary'
-          ? this.softConfig.summaryFileNameFromParameters(this.fsUtils.stringifyNumber(newNumber, digits), name, true)
+          ? this.softConfig.summaryFileNameFromParameters(newId, name)
           : ''
 
       const newContent = this.processContent(this.processContentBack(titleAndContentPair.join('')))
       debug(`newContent:\n${newContent}`)
       await this.fsUtils.writeFile(path.join(this.rootPath, filename), newContent)
 
-      addedTempNumbers.push(newNumber)
+      addedTempIds.push(newId)
     }
 
     cli.info('Reinserting newly created chapters...'.resultNormalColor())
 
-    for (let i = 0; i < addedTempNumbers.length; i++) {
-      const addedNumber = addedTempNumbers[i]
-      toEditPretty += `\n    inserted chapter ${isAtNumbering ? '@' : ''}${addedNumber}`
+    for (let i = 0; i < addedTempIds.length; i++) {
+      const addedId = addedTempIds[i]
+      toEditPretty += `\n    inserted chapter ${addedId.toString()}`
 
       // await Reorder.run([`--path=${flags.path}`, `@${addedNumber}`, `${isAtNumbering ? '@' : ''}${num + i}`])
-      await this.reorder(`@${addedNumber}`, `${isAtNumbering ? '@' : ''}${num + i}`)
+      await this.reorder(addedId.toString(), `${chapterId.isAtNumber ? '@' : ''}${chapterId.num + i}`)
     }
 
     cli.info(`modified files:${toEditPretty.resultHighlighColor()}`.resultNormalColor())
 
-    await Delete.run([`--path=${flags.path}`, `@${stashedNumber}`])
+    await Delete.run([`--path=${flags.path}`, stashedId.toString()])
     // } catch (err) {
     //   this.error(err.toString().errorColor())
     //   this.exit(1)

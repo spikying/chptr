@@ -1,5 +1,7 @@
 import * as d from 'debug'
 
+import { ChapterId } from './chapter-id'
+// import { ChptrError } from './chptr-error'
 import { FsUtils } from './fs-utils'
 import { SoftConfig } from './soft-config'
 
@@ -106,7 +108,13 @@ export class Statistics {
     const maxNecessaryDigits = files
       .map(value => {
         const matches = fileRegex.exec(this.softConfig.mapFileToBeRelativeToRootPath(value))
-        return matches ? this.fsUtils.numDigits(parseInt(matches[1], 10)) : 0
+        if (matches) {
+          const id = new ChapterId(parseInt(matches[1], 10), atNumbers)
+          return id.numDigits()
+        } else {
+          return 0
+        }
+        // return matches ? this.fsUtils.numDigits(parseInt(matches[1], 10)) : 0
       })
       .reduce((previous, current) => {
         return Math.max(previous, current)
@@ -119,13 +127,29 @@ export class Statistics {
     }
   }
 
-  public async getAllFilesForChapter(num: number, isAtNumbered: boolean): Promise<string[]> {
+  public async getAllFilesForChapter(id: ChapterId): Promise<string[]> {
     const wildcards = [
-      this.softConfig.chapterWildcardWithNumber(num, isAtNumbered),
-      this.softConfig.metadataWildcardWithNumber(num, isAtNumbered),
-      this.softConfig.summaryWildcardWithNumber(num, isAtNumbered)
+      this.softConfig.chapterWildcardWithNumber(id),
+      this.softConfig.metadataWildcardWithNumber(id),
+      this.softConfig.summaryWildcardWithNumber(id)
     ]
     return this.fsUtils.getAllFilesForWildcards(wildcards, this.rootPath)
+  }
+
+  public async allFilesForChapterExist(id: ChapterId): Promise<boolean> {
+    const wildcards = [
+      this.softConfig.chapterWildcardWithNumber(id),
+      this.softConfig.metadataWildcardWithNumber(id),
+      this.softConfig.summaryWildcardWithNumber(id)
+    ]
+
+    for (const wildcard of wildcards) {
+      const files = await this.fsUtils.getAllFilesForWildcards([wildcard], this.rootPath)
+      if (files.length !== 1) {
+        return false //throw new ChptrError(`Did not find one and only one file per type in chapter Id ${id}`, 'statistics.allfilesforchapterexist', 33)
+      }
+    }
+    return true
   }
 
   public async getAllFilesForOneType(isAtNumbered: boolean, refresh = false): Promise<string[]> {

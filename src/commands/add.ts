@@ -3,6 +3,7 @@ import { cli } from 'cli-ux'
 import yaml = require('js-yaml')
 import * as path from 'path'
 
+import { ChapterId } from '../chapter-id'
 import { ChptrError } from '../chptr-error'
 import { QueryBuilder } from '../ui-utils'
 
@@ -53,29 +54,41 @@ export default class Add extends Command {
 
     const name: string = args.name || queryResponses.name
 
-    let atNumbering: boolean
-    let nextNumber: number
+    const toStageFiles=    await this.addChapterFiles(name, flags.atnumbered, args.number)
 
-    if (args.number) {
-      atNumbering = args.number.substring(0, 1) === '@'
-      nextNumber = this.softConfig.extractNumber(args.number)
+    const commitMessage = `added\n    ${toStageFiles.join('\n   ')}`
 
-      const existingFile = await this.fsUtils.listFiles(
-        path.join(this.rootPath, this.softConfig.chapterWildcardWithNumber(nextNumber, atNumbering))
-      )
+    await this.addDigitsToNecessaryStacks()
+    await this.CommitToGit(commitMessage, toStageFiles)
+    // } catch (err) {
+    //   this.error(err.toString().errorColor())
+    // }
+  }
+
+  private async addChapterFiles(name: string, atNumbering: boolean, number?: string) {
+        // let atNumbering: boolean
+    // let nextNumber: number
+    let chapterId: ChapterId
+    if (number) {
+      // atNumbering = args.number.substring(0, 1) === '@'
+      // nextNumber = this.softConfig.extractNumber(args.number)
+      chapterId = new ChapterId(this.softConfig.extractNumber(number), this.softConfig.isAtNumbering(number))
+
+      const existingFile = await this.fsUtils.listFiles(path.join(this.rootPath, this.softConfig.chapterWildcardWithNumber(chapterId)))
 
       if (existingFile.length > 0) {
-        throw new ChptrError(`File ${existingFile[0]} already exists`, 'add.run', 1)
+        throw new ChptrError(`File ${existingFile[0]} already exists`, 'add.addchapterfiles', 1)
       }
     } else {
-      atNumbering = flags.atnumbered
-
       await this.statistics.updateStackStatistics(atNumbering)
 
       const highestNumber = this.statistics.getHighestNumber(atNumbering)
-      nextNumber = highestNumber === 0 ? this.softConfig.config.numberingInitial : highestNumber + this.softConfig.config.numberingStep
+      chapterId = new ChapterId(
+        highestNumber === 0 ? this.softConfig.config.numberingInitial : highestNumber + this.softConfig.config.numberingStep,
+        atNumbering
+      )
     }
-    const newDigits = this.fsUtils.numDigits(nextNumber)
+    // const newDigits = chapterId.numDigits(chapterId.num)
 
     const emptyFileString = this.softConfig.emptyFileString.toString()
     const filledTemplateData = emptyFileString.replace(/{TITLE}/gim, name)
@@ -89,42 +102,39 @@ export default class Add extends Command {
         ? yaml.safeDump(metadataObj)
         : ''
 
-    const fullPathMD = path.join(
-      this.rootPath,
-      this.softConfig.chapterFileNameFromParameters(this.fsUtils.stringifyNumber(nextNumber, newDigits), name, atNumbering)
-    )
+    const fullPathsAndData = [
+      {
+        path: path.join(
+          this.rootPath,
+          this.softConfig.chapterFileNameFromParameters(chapterId, name)
+        ),
+        data: filledTemplateData
+      }, {
 
-    const fullPathMeta = path.join(
-      this.rootPath,
-      this.softConfig.metadataFileNameFromParameters(this.fsUtils.stringifyNumber(nextNumber, newDigits), name, atNumbering)
-    )
-
-    const fullPathSummary = path.join(
-      this.rootPath,
-      this.softConfig.summaryFileNameFromParameters(this.fsUtils.stringifyNumber(nextNumber, newDigits), name, atNumbering)
-    )
+        path: path.join(
+          this.rootPath,
+          this.softConfig.metadataFileNameFromParameters(chapterId, name)
+        ), data: filledTemplateMeta
+      }, {
+        path: path.join(
+          this.rootPath,
+          this.softConfig.summaryFileNameFromParameters(chapterId, name)
+        ), data: filledTemplateData
+      }]
 
     // try {
     cli.action.start('Creating file(s) locally and to repository'.actionStartColor())
 
     const allPromises: Promise<void>[] = []
-    allPromises.push(this.fsUtils.createFile(fullPathMD, filledTemplateData))
-    allPromises.push(this.fsUtils.createFile(fullPathMeta, filledTemplateMeta))
-    allPromises.push(this.fsUtils.createFile(fullPathSummary, filledTemplateData))
+    for (const pathAndData of fullPathsAndData) {
+      allPromises.push(this.fsUtils.createFile(pathAndData.path, pathAndData.data))
+    }
+    // allPromises.push(this.fsUtils.createFile(fullPathMD, filledTemplateData))
+    // allPromises.push(this.fsUtils.createFile(fullPathMeta, filledTemplateMeta))
+    // allPromises.push(this.fsUtils.createFile(fullPathSummary, filledTemplateData))
     await Promise.all(allPromises)
     cli.action.stop('done'.actionStopColor())
 
-    const toStageFiles = this.softConfig.mapFilesToBeRelativeToRootPath([fullPathMD, fullPathMeta, fullPathSummary])
-    const commitMessage = `added ${this.softConfig.mapFileToBeRelativeToRootPath(
-      fullPathMD
-    )}, ${this.softConfig.mapFileToBeRelativeToRootPath(fullPathMeta)} and ${this.softConfig.mapFileToBeRelativeToRootPath(
-      fullPathSummary
-    )}`
-
-    await this.addDigitsToNecessaryStacks()
-    await this.CommitToGit(commitMessage, toStageFiles)
-    // } catch (err) {
-    //   this.error(err.toString().errorColor())
-    // }
+    return this.softConfig.mapFilesToBeRelativeToRootPath(fullPathsAndData.map(pad=>pad.path))
   }
 }

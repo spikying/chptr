@@ -9,6 +9,7 @@ import moment = require('moment')
 import * as path from 'path'
 import * as YAML from 'yaml'
 
+import { ChapterId } from './chapter-id'
 import { ChptrError } from './chptr-error'
 import { FsUtils } from './fs-utils'
 import { HardConfig } from './hard-config'
@@ -231,7 +232,9 @@ date: ${moment().format('D MMMM YYYY')}
           throw new ChptrError(
             `File ${this.hardConfig.configJSON5FilePath} or ${
               this.hardConfig.configYAMLFilePath
-            } either doesn't exist or is not readable by process.\n${err}`, 'soft-config:configstyle.get', 307
+            } either doesn't exist or is not readable by process.\n${err}`,
+            'soft-config:configstyle.get',
+            307
           )
         }
       }
@@ -365,27 +368,27 @@ date: ${moment().format('D MMMM YYYY')}
     return this.wildcardize(this.config.summaryPattern, atNumbering)
   }
 
-  public chapterWildcardWithNumber(num: number, atNumbering: boolean): string {
-    return this.wildcardWithNumber(this.config.chapterPattern, num, atNumbering)
+  public chapterWildcardWithNumber(id: ChapterId): string {
+    return this.wildcardWithNumber(this.config.chapterPattern, id)
   }
-  public metadataWildcardWithNumber(num: number, atNumbering: boolean): string {
+  public metadataWildcardWithNumber(id: ChapterId): string {
     debug(`this.config.metadataPattern=${this.config.metadataPattern}`)
-    return this.wildcardWithNumber(this.config.metadataPattern, num, atNumbering)
+    return this.wildcardWithNumber(this.config.metadataPattern, id)
   }
-  public summaryWildcardWithNumber(num: number, atNumbering: boolean): string {
-    return this.wildcardWithNumber(this.config.summaryPattern, num, atNumbering)
-  }
-
-  public chapterFileNameFromParameters(num: string, name: string, atNumbering: boolean): string {
-    return this.filenameFromParameters(this.config.chapterPattern, num, name, atNumbering)
+  public summaryWildcardWithNumber(id: ChapterId): string {
+    return this.wildcardWithNumber(this.config.summaryPattern, id)
   }
 
-  public metadataFileNameFromParameters(num: string, name: string, atNumbering: boolean): string {
-    return this.filenameFromParameters(this.config.metadataPattern, num, name, atNumbering)
+  public chapterFileNameFromParameters(id: ChapterId, name: string): string {
+    return this.filenameFromParameters(this.config.chapterPattern, id, name)
   }
 
-  public summaryFileNameFromParameters(num: string, name: string, atNumbering: boolean): string {
-    return this.filenameFromParameters(this.config.summaryPattern, num, name, atNumbering)
+  public metadataFileNameFromParameters(id: ChapterId, name: string): string {
+    return this.filenameFromParameters(this.config.metadataPattern, id, name)
+  }
+
+  public summaryFileNameFromParameters(id: ChapterId, name: string): string {
+    return this.filenameFromParameters(this.config.summaryPattern, id, name)
   }
 
   public chapterRegex(atNumber: boolean): RegExp {
@@ -445,8 +448,8 @@ date: ${moment().format('D MMMM YYYY')}
     return fileNumber
   }
 
-  public async getMetadataFilenameFromDirectorySearchFromParameters(num: number, atNumbering: boolean): Promise<string> {
-    const files = await this.fsUtils.globPromise(path.join(this.rootPath, this.metadataWildcardWithNumber(num, atNumbering)))
+  public async getMetadataFilenameFromDirectorySearchFromParameters(id: ChapterId): Promise<string> {
+    const files = await this.fsUtils.globPromise(path.join(this.rootPath, this.metadataWildcardWithNumber(id)))
     debug(`Getting metadata filename from search: files=${files}`)
     return files.length > 0 ? files[0] : ''
   }
@@ -472,36 +475,42 @@ date: ${moment().format('D MMMM YYYY')}
     debug(`filename: ${filename}\nregex: ${this.chapterRegex(atNumbering)}\nisChapter: ${isChapter}`)
     const total = (isChapter ? 1 : 0) + (isSummary ? 1 : 0) + (isMetadata ? 1 : 0)
     if (total !== 1) {
-      throw new ChptrError('Filename does not match Chapter, Summary or Metadata pattern and cannot be renamed.', 'soft-config:renumberedfilename', 310)
+      throw new ChptrError(
+        'Filename does not match Chapter, Summary or Metadata pattern and cannot be renamed.',
+        'soft-config:renumberedfilename',
+        310
+      )
     }
+
+    const chapterId= new ChapterId(newFilenumber, atNumbering, digits)
 
     //TODO: take care of NAME in other file types too? Or just use the pattern for other files for everything?
     if (isChapter) {
       const matches = this.chapterRegex(originIsAtNumber).exec(filename)
       const name = matches ? matches[2] : ''
-      debug(`return ${this.chapterFileNameFromParameters(this.fsUtils.stringifyNumber(newFilenumber, digits), name, atNumbering)}`)
-      return this.chapterFileNameFromParameters(this.fsUtils.stringifyNumber(newFilenumber, digits), name, atNumbering)
+      // debug(`return ${this.chapterFileNameFromParameters(this.fsUtils.stringifyNumber(newFilenumber, digits), name, atNumbering)}`)
+      return this.chapterFileNameFromParameters(chapterId, name)
     }
 
     const re = new RegExp(/^(.*?)(@?\d+)(.*)$/)
-    return filename.replace(re, '$1' + (atNumbering ? '@' : '') + this.fsUtils.stringifyNumber(newFilenumber, digits) + '$3')
+    return filename.replace(re, `$1${chapterId.toString()}$3`)
   }
 
-  public async getTitleOfChapterFromOldChapterFilename(pattern: string, num: number, isAtNumber: boolean): Promise<string> {
-    const chapterFilePathWildcard = await this.wildcardWithNumber(pattern, num, isAtNumber)
+  public async getTitleOfChapterFromOldChapterFilename(pattern: string, id: ChapterId): Promise<string> {
+    const chapterFilePathWildcard = await this.wildcardWithNumber(pattern, id)
     const files = (await this.fsUtils.getAllFilesForWildcards([chapterFilePathWildcard], this.rootPath)) || ['']
 
-    const re = this.patternRegexer(pattern, isAtNumber)
+    const re = this.patternRegexer(pattern, id.isAtNumber)
     const chapterMatch = re.exec(this.mapFileToBeRelativeToRootPath(files[0]))
     return chapterMatch ? chapterMatch[2] : ''
   }
 
-  private wildcardWithNumber(pattern: string, num: number, atNumbering: boolean): string {
-    return pattern.replace(/NUM/g, this.numberWildcardPortion(atNumbering, num)).replace(/NAME/g, '*')
+  private wildcardWithNumber(pattern: string, id: ChapterId): string {
+    return pattern.replace(/NUM/g, this.numberWildcardPortion(id.isAtNumber, id.num)).replace(/NAME/g, '*')
   }
 
-  private filenameFromParameters(pattern: string, num: string, name: string, atNumbering: boolean): string {
-    return pattern.replace(/NUM/g, (atNumbering ? '@' : '') + num).replace(/NAME/g, this.fsUtils.sanitizeFileName(name))
+  private filenameFromParameters(pattern: string, id: ChapterId, name: string): string {
+    return pattern.replace(/NUM/g, (id.isAtNumber ? '@' : '') + id.stringifyNumber()).replace(/NAME/g, this.fsUtils.sanitizeFileName(name))
   }
 
   private numberWildcardPortion(atNumbering: boolean, num: number | null = null) {

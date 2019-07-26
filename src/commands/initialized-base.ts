@@ -6,13 +6,15 @@ import * as minimatch from 'minimatch'
 import * as path from 'path'
 import { MoveSummary } from 'simple-git/typings/response'
 
+import { ChapterId } from '../chapter-id'
 import { ChptrError } from '../chptr-error'
 import { MarkupUtils } from '../markup-utils'
 import { SoftConfig } from '../soft-config'
 import { Statistics } from '../statistics'
-import { tableize } from '../ui-utils'
+import { QueryBuilder, tableize } from '../ui-utils'
 
 import Command, { d } from './base'
+
 const debug = d('command:initialized-base')
 
 export default abstract class extends Command {
@@ -115,18 +117,19 @@ export default abstract class extends Command {
         const reAtNumber = this.softConfig.patternRegexer(oldAndNew.oldPattern, true)
         const isAtNumber = this.softConfig.isAtNumbering(file)
         const rootedFile = this.softConfig.mapFileToBeRelativeToRootPath(file)
-        const num = rootedFile.replace(isAtNumber ? reAtNumber : reNormal, '$1')
+        const numAsString = rootedFile.replace(isAtNumber ? reAtNumber : reNormal, '$1')
+        const currentId = new ChapterId(parseInt(numAsString, 10), isAtNumber)
 
-        const nameMatch = (isAtNumber ? reAtNumber : reNormal).exec(rootedFile)
+        const nameMatch = (currentId.isAtNumber ? reAtNumber : reNormal).exec(rootedFile)
         debug(`nameMatch=${JSON.stringify(nameMatch)} nameMatch.length=${nameMatch && nameMatch.length}`)
         debug(`$2=${nameMatch && nameMatch.length >= 3 ? nameMatch[2] : '---'}`)
         const name: string =
           nameMatch && nameMatch.length >= 3
             ? nameMatch[2]
-            : await this.softConfig.getTitleOfChapterFromOldChapterFilename(oldChapterPattern, parseInt(num, 10), isAtNumber)
-        debug(`file=${file} num=${num} name=${name}`)
+            : await this.softConfig.getTitleOfChapterFromOldChapterFilename(oldChapterPattern, currentId)
+        debug(`file=${file} num=${numAsString} name=${name}`)
 
-        const renamedFile = oldAndNew.newPattern.replace(/NUM/g, (isAtNumber ? '@' : '') + num).replace(/NAME/g, name)
+        const renamedFile = oldAndNew.newPattern.replace(/NUM/g, (currentId.isAtNumber ? '@' : '') + numAsString).replace(/NAME/g, name)
 
         await this.fsUtils.createSubDirectoryFromFilePathIfNecessary(path.join(this.rootPath, renamedFile))
 
@@ -315,7 +318,7 @@ export default abstract class extends Command {
     }
   }
 
-  public async GetGitListOfStageableFiles(numberFilter?: number, atFilter?: boolean): Promise<string[]> {
+  public async GetGitListOfStageableFiles(chapterId?: ChapterId): Promise<string[]> {
     const gitStatus = await this.git.status()
 
     const unQuote = function(value: string) {
@@ -342,10 +345,10 @@ export default abstract class extends Command {
     return unfilteredFileList
       .filter(val => val !== '')
       .filter(val => {
-        return numberFilter
-          ? minimatch(val, this.softConfig.chapterWildcardWithNumber(numberFilter, atFilter || false)) ||
-              minimatch(val, this.softConfig.metadataWildcardWithNumber(numberFilter, atFilter || false)) ||
-              minimatch(val, this.softConfig.summaryWildcardWithNumber(numberFilter, atFilter || false))
+        return chapterId
+          ? minimatch(val, this.softConfig.chapterWildcardWithNumber(chapterId)) ||
+              minimatch(val, this.softConfig.metadataWildcardWithNumber(chapterId)) ||
+              minimatch(val, this.softConfig.summaryWildcardWithNumber(chapterId))
           : true
       })
   }
@@ -422,75 +425,122 @@ export default abstract class extends Command {
     return re.test(value)
   }
 
+  public async checkArgPromptAndExtractChapterId(chapterInput: string, promptMsg: string, nextId = false): Promise<ChapterId | null> {
+    if (!chapterInput) {
+      //no chapter given; must ask for it
+      const queryBuilder = new QueryBuilder()
+      queryBuilder.add('chapter', queryBuilder.textinput(promptMsg, ''))
+      const queryResponses: any = await queryBuilder.responses()
+      chapterInput = queryResponses.chapter
+    }
+
+    const isAtNumbering = this.softConfig.isAtNumbering(chapterInput)
+    let num: number
+    if (this.isEndOfStack(chapterInput)) {
+      await this.statistics.updateStackStatistics(isAtNumbering)
+      if (nextId) {
+        num =
+          this.statistics.getHighestNumber(isAtNumbering) === 0
+            ? this.softConfig.config.numberingInitial
+            : this.statistics.getHighestNumber(isAtNumbering) + this.softConfig.config.numberingStep
+      } else {
+        num = this.statistics.getHighestNumber(isAtNumbering)
+      }
+    } else {
+      num = this.softConfig.extractNumber(chapterInput)
+    }
+
+    const chapterId = new ChapterId(num, isAtNumbering)
+    if (await this.statistics.getAllFilesForChapter(chapterId)) {
+      return chapterId
+    } else {
+      return null
+      // throw new ChptrError(`Chapter id ${chapterInput} is not found on disk.`, 'initialized-base.checkpromptandextractchapterid', 30)
+    }
+  }
+
   public async reorder(origin: string, destination: string): Promise<void> {
-    if (!origin) {
-      throw new ChptrError('You need to provide an origin chapter', 'initialized-base.reorder.origin', 10)
+    await this.statistics.getAllNovelFiles()
+
+    const originId = await this.checkArgPromptAndExtractChapterId(origin, 'What chapter to use as origin?')
+
+    const destinationId = await this.checkArgPromptAndExtractChapterId(destination, 'What chapter to use as destination?', true)
+
+    if (!originId) {
+      throw new ChptrError('You need to provide a valid origin chapter', 'initialized-base.reorder.destination', 10)
     }
-    if (!destination) {
-      throw new ChptrError('You need to provide a destination chapter', 'initialized-base.reorder.destination', 11)
-    }
-
-    const originIsAtNumbering = origin.toString().substring(0, 1) === '@'
-    const destIsAtNumbering = destination.toString().substring(0, 1) === '@'
-
-    const files = await this.statistics.getAllNovelFiles()
-
-    const originNumber: number = this.isEndOfStack(origin)
-      ? this.statistics.getHighestNumber(originIsAtNumbering)
-      : this.softConfig.extractNumber(origin)
-    const destNumber: number = this.isEndOfStack(destination)
-      ? this.statistics.getHighestNumber(destIsAtNumbering) === 0
-        ? this.softConfig.config.numberingInitial
-        : this.statistics.getHighestNumber(destIsAtNumbering) + this.softConfig.config.numberingStep
-      : this.softConfig.extractNumber(destination)
-
-    const originExists: boolean = files
-      .map(value => {
-        return this.softConfig.extractNumber(value) === originNumber && this.softConfig.isAtNumbering(value) === originIsAtNumbering
-      })
-      .reduce((previous, current) => {
-        return previous || current
-      }, false)
-    if (!originExists) {
-      throw new ChptrError('Origin does not exist', 'initialized-base.reorder.origin', 12)
+    if (!destinationId) {
+      throw new ChptrError('You need to provide a valid destination chapter', 'initialized-base.reorder.destination', 11)
     }
 
-    if (originNumber === -1) {
-      throw new ChptrError('Origin argument is not a number or `end` or `@end`', 'initialized-base.reorder.origin', 13)
-    }
-    if (destNumber === -1) {
-      throw new ChptrError('Destination argument is not a number or `end` or `@end`', 'initialized-base.reorder.destination', 14)
-    }
-    if (destNumber === originNumber && originIsAtNumbering === destIsAtNumbering) {
+    // const originIsAtNumbering = origin.toString().substring(0, 1) === '@'
+    // const destIsAtNumbering = destination.toString().substring(0, 1) === '@'
+
+    // const files = await this.statistics.getAllNovelFiles()
+
+    // const originNumber: number = this.isEndOfStack(origin)
+    //   ? this.statistics.getHighestNumber(originIsAtNumbering)
+    //   : this.softConfig.extractNumber(origin)
+    // const destNumber: number = this.isEndOfStack(destination)
+    //   ? this.statistics.getHighestNumber(destIsAtNumbering) === 0
+    //     ? this.softConfig.config.numberingInitial
+    //     : this.statistics.getHighestNumber(destIsAtNumbering) + this.softConfig.config.numberingStep
+    //   : this.softConfig.extractNumber(destination)
+
+    // const originExists: boolean = files
+    //   .map(value => {
+    //     return this.softConfig.extractNumber(value) === originNumber && this.softConfig.isAtNumbering(value) === originIsAtNumbering
+    //   })
+    //   .reduce((previous, current) => {
+    //     return previous || current
+    //   }, false)
+    // if (!originExists) {
+    //   throw new ChptrError('Origin does not exist', 'initialized-base.reorder.origin', 12)
+    // }
+
+    // if (originNumber === -1) {
+    //   throw new ChptrError('Origin argument is not a number or `end` or `@end`', 'initialized-base.reorder.origin', 13)
+    // }
+    // if (destNumber === -1) {
+    //   throw new ChptrError('Destination argument is not a number or `end` or `@end`', 'initialized-base.reorder.destination', 14)
+    // }
+
+    //TODO: check if equality goes through .equals of class
+    if (originId === destinationId) {
+      //destNumber === originNumber && originIsAtNumbering === destIsAtNumbering
       throw new ChptrError('Origin must be different than Destination', 'initialized-base.reorder.originvsdestination', 15)
     }
 
-    const sameAtNumbering = originIsAtNumbering === destIsAtNumbering
-    const forwardBump: boolean = sameAtNumbering ? destNumber < originNumber : true
+    const sameAtNumbering = originId.isAtNumber === destinationId.isAtNumber
+    const forwardBump: boolean = sameAtNumbering ? destinationId.num < originId.num : true
 
     const fileInfoArray = [
       ...new Set(
-        (await this.statistics.getAllFilesForOneType(destIsAtNumbering)).map(file => {
+        (await this.statistics.getAllFilesForOneType(destinationId.isAtNumber)).map(file => {
           return this.softConfig.extractNumber(file)
         })
       )
     ] //to make unique
       .filter(fileNumber => {
         if (sameAtNumbering) {
-          if (fileNumber < Math.min(originNumber, destNumber) || fileNumber > Math.max(originNumber, destNumber) || fileNumber < 0) {
+          if (
+            fileNumber < Math.min(originId.num, destinationId.num) ||
+            fileNumber > Math.max(originId.num, destinationId.num) ||
+            fileNumber < 0
+          ) {
             return false
           } else {
             return true
           }
         } else {
-          return fileNumber >= destNumber
+          return fileNumber >= destinationId.num
         }
       })
       .map(fileNumber => {
         let newFileNumber: number
         let mandatory = false
-        if (fileNumber === originNumber && sameAtNumbering) {
-          newFileNumber = destNumber
+        if (fileNumber === originId.num && sameAtNumbering) {
+          newFileNumber = destinationId.num
           mandatory = true
         } else {
           if (forwardBump) {
@@ -504,7 +554,7 @@ export default abstract class extends Command {
 
     let currentMandatory = sameAtNumbering
       ? fileInfoArray.filter(f => f.mandatory)[0]
-      : { fileNumber: null, newFileNumber: destNumber, mandatory: true }
+      : { fileNumber: null, newFileNumber: destinationId.num, mandatory: true }
     const allMandatories = [currentMandatory]
     while (currentMandatory) {
       let nextMandatory = fileInfoArray.filter(f => !f.mandatory && f.fileNumber === currentMandatory.newFileNumber)[0]
@@ -518,7 +568,7 @@ export default abstract class extends Command {
       return allMandatories.map(m => m.fileNumber).includes(info.fileNumber)
     })
 
-    const toRenameFiles = (await this.statistics.getAllFilesForOneType(destIsAtNumbering))
+    const toRenameFiles = (await this.statistics.getAllFilesForOneType(destinationId.isAtNumber))
       .filter(file => {
         const fileNumber = this.softConfig.extractNumber(file)
         return toMoveFiles.map(m => m.fileNumber).includes(fileNumber)
@@ -530,12 +580,12 @@ export default abstract class extends Command {
       })
 
     if (!sameAtNumbering) {
-      const originFiles = (await this.statistics.getAllFilesForOneType(originIsAtNumbering)).filter(file => {
-        return this.softConfig.extractNumber(file) === originNumber
+      const originFiles = (await this.statistics.getAllFilesForOneType(originId.isAtNumber)).filter(file => {
+        return this.softConfig.extractNumber(file) === originId.num
       })
 
       for (const f of originFiles) {
-        toRenameFiles.push({ file: f, newFileNumber: destNumber })
+        toRenameFiles.push({ file: f, newFileNumber: destinationId.num })
       }
     }
 
@@ -571,10 +621,10 @@ export default abstract class extends Command {
     for (const moveItem of toRenameFiles) {
       const filename = this.softConfig.mapFileToBeRelativeToRootPath(moveItem.file)
       const newFileNumber: number = moveItem.newFileNumber
-      const destDigits = this.statistics.getMaxNecessaryDigits(destIsAtNumbering)
+      const destDigits = this.statistics.getMaxNecessaryDigits(destinationId.isAtNumber)
 
       const fromFilename = this.softConfig.mapFileToBeRelativeToRootPath(path.join(tempDir, filename))
-      const toFilename = this.softConfig.renumberedFilename(filename, newFileNumber, destDigits, destIsAtNumbering)
+      const toFilename = this.softConfig.renumberedFilename(filename, newFileNumber, destDigits, destinationId.isAtNumber)
 
       await this.fsUtils.createSubDirectoryFromFilePathIfNecessary(path.join(this.rootPath, toFilename))
 

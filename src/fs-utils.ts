@@ -80,18 +80,7 @@ export class FsUtils {
   public async createSubDirectoryFromFilePathIfNecessary(fullFilePath: string): Promise<string | null> {
     const directoryPath = path.dirname(fullFilePath)
     return this.createSubDirectoryFromDirectoryPathIfNecessary(directoryPath)
-    // const mkdirp = require('mkdirp')
 
-    // return new Promise((resolve, reject) => {
-    //   const directoryPath = path.dirname(fullFilePath)
-    //   mkdirp(directoryPath, (err: any, made: any) => {
-    //     if (err) {
-    //       debug(err)
-    //       reject(err)
-    //     }
-    //     resolve(made)
-    //   })
-    // })
   }
 
   public async createFile(fullPathName: string, content: string) {
@@ -186,17 +175,4 @@ export class FsUtils {
     return sanitized
   }
 
-  public numDigits(x: number, buffer = 2): number {
-    return Math.max(Math.floor(Math.log10(Math.abs(x + buffer))), 0) + 1
-  }
-
-  public stringifyNumber(x: number, digits: number): string {
-    const s = x.toString()
-    const zeroes = Math.max(digits - s.length, 0)
-    if (zeroes > 0) {
-      return '0'.repeat(zeroes).concat(s)
-    } else {
-      return s
-    }
-  }
 }

@@ -5,8 +5,11 @@ const debug = d('errors')
 export class ChptrError extends CLIError {
   constructor(error: string | Error, code: string, exit: number) {
     super(error, { code, exit })
-    debug(`CHPTR ERROR\n  stack:${this.stack}\n  message:${this.message}\n  name: ${this.name}\n  bang: ${this.bang}\n  ${this.code}`)
-
+    debug(
+      `${this.bang} ${'CHPTR ERROR'.errorColor()}\n  message:  ${this.message}\n  number:   ${exit}\n  code:     ${
+        this.code
+      }\n  stack:    ${this.stack}`
+    )
   }
 
   public toString(): string {

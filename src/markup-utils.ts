@@ -5,6 +5,7 @@ import * as JsDiff from 'diff'
 import yaml = require('js-yaml')
 import * as path from 'path'
 
+import { ChapterId } from './chapter-id'
 import { ChptrError } from './chptr-error'
 import { FsUtils } from './fs-utils'
 import { SoftConfig } from './soft-config'
@@ -193,11 +194,12 @@ export class MarkupUtils {
         }
       })
 
-      const num = this.softConfig.extractNumber(file)
-      const isAt = this.softConfig.isAtNumbering(file)
+      // const num = this.softConfig.extractNumber(file)
+      // const isAt = this.softConfig.isAtNumbering(file)
+      const chapterId = new ChapterId(this.softConfig.extractNumber(file), this.softConfig.isAtNumbering(file))
 
       //bug: doesn't get filename if pattern has changed.
-      const metadataFilename = await this.softConfig.getMetadataFilenameFromDirectorySearchFromParameters(num, isAt)
+      const metadataFilename = await this.softConfig.getMetadataFilenameFromDirectorySearchFromParameters(chapterId)
       const metadataFilePath = path.join(this.rootPath, metadataFilename)
       const initialContent = await this.fsUtils.readFileContent(metadataFilePath)
 

@@ -3,6 +3,7 @@ import { cli } from 'cli-ux'
 import * as glob from 'glob'
 import * as path from 'path'
 
+import { ChapterId } from '../chapter-id'
 import { ChptrError } from '../chptr-error'
 import { QueryBuilder } from '../ui-utils'
 
@@ -20,7 +21,7 @@ export default class Antidote extends Command {
 
   static args = [
     {
-      name: 'filter',
+      name: 'chapterId',
       description: 'Chapter number to Antidote.',
       required: false,
       default: ''
@@ -32,20 +33,21 @@ export default class Antidote extends Command {
   async run() {
     const { args } = this.parse(Antidote)
 
-    let filter: string = args.filter
-    if (filter === '') {
+    let chapterIdString: string = args.chapterId
+    if (chapterIdString === '') {
       const queryBuilder = new QueryBuilder()
-      queryBuilder.add('filter', queryBuilder.textinput('What chapter to Antidote?', ''))
+      queryBuilder.add('chapterId', queryBuilder.textinput('What chapter to Antidote?', ''))
       const queryResponses: any = await queryBuilder.responses()
-      filter = queryResponses.filter
+      chapterIdString = queryResponses.chapterId
     }
-    const isAtNumber: boolean = filter.substring(0, 1) === '@'
+    // const isAtNumber: boolean = chapterIdString.substring(0, 1) === '@'
+    // const chapterNumber = this.softConfig.extractNumber(chapterIdString)
+    const chapterId = new ChapterId(this.softConfig.extractNumber(chapterIdString), this.softConfig.isAtNumbering(chapterIdString))
 
-    const chapterNumber = this.softConfig.extractNumber(filter)
-    const chapterFileName = glob.sync(path.join(this.rootPath, this.softConfig.chapterWildcardWithNumber(chapterNumber, isAtNumber)))[0]
+    const chapterFileName = glob.sync(path.join(this.rootPath, this.softConfig.chapterWildcardWithNumber(chapterId)))[0]
 
     if (!chapterFileName) {
-      throw new ChptrError(`No chapter was found with input ${filter}`, 'antidote:run', 2)
+      throw new ChptrError(`No chapter was found with id ${chapterIdString}`, 'antidote:run', 2)
     }
 
     const basicFilePath = path.join(this.rootPath, chapterFileName)
@@ -76,7 +78,7 @@ export default class Antidote extends Command {
     await this.fsUtils.moveFile(antidoteFilePath, basicFilePath)
 
     if (queryResponses2.message !== 'cancel') {
-      const toStageFiles = await this.GetGitListOfStageableFiles(chapterNumber, isAtNumber)
+      const toStageFiles = await this.GetGitListOfStageableFiles(chapterId)
       await this.CommitToGit(message, toStageFiles)
     }
   }

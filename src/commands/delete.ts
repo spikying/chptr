@@ -3,6 +3,7 @@ import { cli } from 'cli-ux'
 // import * as glob from 'glob'
 import * as path from 'path'
 
+import { ChapterId } from '../chapter-id'
 import { ChptrError } from '../chptr-error'
 import { QueryBuilder } from '../ui-utils'
 
@@ -60,7 +61,7 @@ export default class Delete extends Command {
     const numberRegexWithoutAtNumbering = new RegExp('^' + this.softConfig.numbersPattern(false) + '$')
     const numberRegexWithAtNumbering = new RegExp('^' + this.softConfig.numbersPattern(true) + '$')
 
-    const isAtNumber = nameOrNumber.substring(0, 1) === '@'
+    // const isAtNumber = nameOrNumber.substring(0, 1) === '@'
     const isChapterNumberOnly = numberRegexWithoutAtNumbering.test(nameOrNumber) || numberRegexWithAtNumbering.test(nameOrNumber)
 
     if (!isChapterNumberOnly) {
@@ -71,8 +72,9 @@ export default class Delete extends Command {
       toDeleteFiles.push(...(await this.fsUtils.listFiles(pathName)))
     } else {
       // we will delete all files matching the number patterns for chapters, metadata and summary
-      const filterNumber = this.softConfig.extractNumber(nameOrNumber)
-      toDeleteFiles.push(...(await this.statistics.getAllFilesForChapter(filterNumber, isAtNumber)))
+      // const filterNumber = this.softConfig.extractNumber(nameOrNumber)
+      const id = new ChapterId(this.softConfig.extractNumber(nameOrNumber), this.softConfig.isAtNumbering(nameOrNumber))
+      toDeleteFiles.push(...(await this.statistics.getAllFilesForChapter(id)))
     }
 
     if (toDeleteFiles.length === 0) {
