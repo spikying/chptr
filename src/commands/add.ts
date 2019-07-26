@@ -27,7 +27,7 @@ export default class Add extends Command {
   static args = [
     {
       name: 'name',
-      description: 'name of chapter file(s) to add',
+      description: 'name of chapter to add',
       required: false,
       default: ''
     },
@@ -47,7 +47,7 @@ export default class Add extends Command {
 
     const queryBuilder = new QueryBuilder()
     if (!args.name) {
-      queryBuilder.add('name', queryBuilder.filename('What name do you want as a filename?'))
+      queryBuilder.add('name', queryBuilder.textinput('What name do you want as a chapter name?', 'chapter'))
     }
 
     const queryResponses: any = await queryBuilder.responses()
@@ -116,7 +116,13 @@ export default class Add extends Command {
       allPromises.push(this.fsUtils.createFile(pathAndData.path, pathAndData.data))
     }
     await Promise.all(allPromises)
-    cli.action.stop('\n    ' + fullPathsAndData.map(pad => pad.path).join('\n    ').actionStopColor())
+    cli.action.stop(
+      '\n    ' +
+        fullPathsAndData
+          .map(pad => pad.path)
+          .join('\n    ')
+          .actionStopColor()
+    )
 
     return this.softConfig.mapFilesToBeRelativeToRootPath(fullPathsAndData.map(pad => pad.path))
   }

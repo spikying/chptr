@@ -57,58 +57,59 @@ export default class Build extends Command {
 
   async run() {
     debug('Running Build command')
-    const { flags } = this.parse(Build)
-
-    const removeMarkup = flags.removemarkup
-    const compact = flags.compact
-
-    const wrOption = flags.showWritingRate
-    const showWritingRate = wrOption === 'all' || wrOption === 'short' || wrOption === 'export'
-    const showWritingRateDetails = wrOption === 'all' || wrOption === 'export'
-    const exportWritingRate = wrOption === 'export'
-
-    const outputFileBase = this.fsUtils.sanitizeFileName(this.softConfig.config.projectTitle)
-    const outputFile = `${flags.datetimestamp ? moment().format('YYYYMMDD.HHmm ') : ''}${outputFileBase}`
-
-    let outputFiletype = flags.filetype
-    if (!outputFiletype) {
-      const queryBuilder = new QueryBuilder()
-      queryBuilder.add('type', queryBuilder.checkboxinput(Build.exportableFileTypes, 'Which filetype(s) to output?', ['md']))
-      const queryResponses: any = await queryBuilder.responses()
-      outputFiletype = queryResponses.type
-    }
-    if (outputFiletype.indexOf('all') >= 0) {
-      outputFiletype = Build.exportableFileTypes
-    }
-
-    await this.CommitToGit('Autosave before build')
-
-    await this.markupUtils.UpdateAllMetadataFields()
 
     const tmpMDfile = await tmpFile()
     const tmpMDfileTex = await tmpFile()
     debug(`temp files = ${tmpMDfile.path} and ${tmpMDfileTex.path}`)
 
-    const buildDirectory = this.softConfig.buildDirectory
-    await this.fsUtils.createSubDirectoryFromDirectoryPathIfNecessary(buildDirectory)
-
     try {
-      const originalChapterFilesArray = (await this.fsUtils.globPromise(
+      const { flags } = this.parse(Build)
+
+      const removeMarkup = flags.removemarkup
+      const compact = flags.compact
+
+      const wrOption = flags.showWritingRate
+      const showWritingRate = wrOption === 'all' || wrOption === 'short' || wrOption === 'export'
+      const showWritingRateDetails = wrOption === 'all' || wrOption === 'export'
+      const exportWritingRate = wrOption === 'export'
+
+      const outputFile = `${flags.datetimestamp ? moment().format('YYYYMMDD.HHmm ') : ''}${this.fsUtils.sanitizeFileName(
+        this.softConfig.config.projectTitle
+      )}`
+
+      let outputFiletype = flags.filetype
+      if (!outputFiletype) {
+        const queryBuilder = new QueryBuilder()
+        queryBuilder.add('type', queryBuilder.checkboxinput(Build.exportableFileTypes, 'Which filetype(s) to output?', ['md']))
+        const queryResponses: any = await queryBuilder.responses()
+        outputFiletype = queryResponses.type
+      }
+      if (outputFiletype.indexOf('all') >= 0) {
+        outputFiletype = Build.exportableFileTypes
+      }
+
+      await this.CommitToGit('Autosave before build')
+
+      await this.markupUtils.UpdateAllMetadataFieldsFromDefaults()
+
+      await this.fsUtils.createSubDirectoryFromDirectoryPathIfNecessary(this.softConfig.buildDirectory)
+
+      const originalChapterFilesArray = (await this.fsUtils.listFiles(
         path.join(this.rootPath, this.softConfig.chapterWildcard(false))
       )).sort()
 
       const allChapterFilesArray = originalChapterFilesArray.concat(
-        await this.fsUtils.globPromise(path.join(this.rootPath, this.softConfig.chapterWildcard(true)))
+        await this.fsUtils.listFiles(path.join(this.rootPath, this.softConfig.chapterWildcard(true)))
       )
 
-      await this.markupUtils.extractGlobalMetadata(allChapterFilesArray, outputFile)
+      await this.markupUtils.extractAndUpdateGlobalAndChapterMetadata(allChapterFilesArray, outputFile)
       await this.CommitToGit('Autosave markup updates')
 
       cli.info('Extracting metadata for all chapters files'.actionStartColor())
 
-      const allMetadataFilesArray = (await this.fsUtils.globPromise(
+      const allMetadataFilesArray = (await this.fsUtils.listFiles(
         path.join(this.rootPath, this.softConfig.metadataWildcard(false))
-      )).concat(await this.fsUtils.globPromise(path.join(this.rootPath, this.softConfig.metadataWildcard(true))))
+      )).concat(await this.fsUtils.listFiles(path.join(this.rootPath, this.softConfig.metadataWildcard(true))))
 
       const metaExtractPromises: Promise<MetaObj[]>[] = []
       allMetadataFilesArray.forEach(m => {
@@ -201,7 +202,7 @@ export default class Build extends Command {
 
       for (const filetype of outputFiletype) {
         // outputFiletype.forEach(filetype => {
-        const fullOutputFilePath = path.join(buildDirectory, outputFile + '.' + filetype)
+        const fullOutputFilePath = path.join(this.softConfig.buildDirectory, outputFile + '.' + filetype)
         allOutputFilePath.push(fullOutputFilePath)
 
         let pandocArgs: string[] = [] // [chapterFiles, '--smart', '--standalone', '-o', `"${fullOutputFilePath}"`]
@@ -297,7 +298,7 @@ export default class Build extends Command {
       // cli.action.status = 'error'.errorColor()
       // this.error(err.toString().errorColor())
       // this.exit(1)
-      throw new ChptrError(err,'build.run', 3)
+      throw new ChptrError(err, 'build.run', 3)
     } finally {
       await tmpMDfile.cleanup()
       await tmpMDfileTex.cleanup()

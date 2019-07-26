@@ -1,5 +1,5 @@
 import { flags } from '@oclif/command'
-import { cli } from 'cli-ux'
+// import { cli } from 'cli-ux'
 import * as minimatch from 'minimatch'
 import * as path from 'path'
 
@@ -70,7 +70,7 @@ export default class Save extends Command {
         : minimatch(toStageFile, this.softConfig.chapterWildcard(true)) || minimatch(toStageFile, this.softConfig.chapterWildcard(false))
 
       if (isChapterFile) {
-        await this.UpdateSingleMetadata(toStageFile)
+        await this.markupUtils.UpdateSingleMetadata(toStageFile)
       }
     }
     const toStageFiles = chapterIdFilter
@@ -113,14 +113,14 @@ export default class Save extends Command {
     await this.CommitToGit(message, toStageFiles)
   }
 
-  private async UpdateSingleMetadata(chapterFile: string) {
-    cli.action.start('Extracting single metadata'.actionStartColor())
+  // public async UpdateSingleMetadata(chapterFile: string) {
+  //   cli.action.start('Extracting single metadata'.actionStartColor())
 
-    const markupObjArr = await this.markupUtils.extractMarkup(chapterFile)
-    const { markupByFile } = this.markupUtils.objectifyMarkupArray(markupObjArr)
-    const modifiedMetadataFiles = await this.markupUtils.writeMetadataInEachFile(markupByFile)
-    const modifiedFile = modifiedMetadataFiles[0]
+  //   const markupObjArr = await this.markupUtils.extractMarkupFromChapterFile(chapterFile)
+  //   const markupByFile = this.markupUtils.getMarkupByFile(markupObjArr)
+  //   const modifiedMetadataFiles = await this.markupUtils.writeMetadataInEachFile(markupByFile)
+  //   const modifiedFile = modifiedMetadataFiles[0]
 
-    cli.action.stop(`updated ${modifiedFile.file} with ${modifiedFile.diff}`.actionStopColor())
-  }
+  //   cli.action.stop(`updated ${modifiedFile.file} with ${modifiedFile.diff}`.actionStopColor())
+  // }
 }

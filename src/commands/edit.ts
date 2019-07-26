@@ -68,12 +68,12 @@ export default class Edit extends Command {
     )) {
       if (editType === 'all' || editType === 'chapter') {
         toEditFiles.push(
-          ...(await this.fsUtils.globPromise(path.join(this.rootPath, this.softConfig.chapterWildcardWithNumber(id))))
+          ...(await this.fsUtils.listFiles(path.join(this.rootPath, this.softConfig.chapterWildcardWithNumber(id))))
         )
       }
       if (editType === 'all' || editType === 'summary') {
         toEditFiles.push(
-          ...(await this.fsUtils.globPromise(path.join(this.rootPath, this.softConfig.summaryWildcardWithNumber(id))))
+          ...(await this.fsUtils.listFiles(path.join(this.rootPath, this.softConfig.summaryWildcardWithNumber(id))))
         )
       }
     }

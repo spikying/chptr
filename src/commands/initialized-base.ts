@@ -165,7 +165,7 @@ export default abstract class extends Command {
     })
 
     if (oldDir !== newDir) {
-      const files = await this.fsUtils.globPromise(path.join(this.rootPath, oldDir, '**/*.*'))
+      const files = await this.fsUtils.listFiles(path.join(this.rootPath, oldDir, '**/*.*'))
       debug(`move to new build dir : files=${files}`)
       await this.fsUtils.createSubDirectoryFromDirectoryPathIfNecessary(path.join(this.rootPath, newDir))
 
@@ -259,11 +259,12 @@ export default abstract class extends Command {
   }
 
   public async processChapterFilesBeforeSaving(toStageFiles: string[]): Promise<void> {
-    cli.info('Processing files to repository format:'.infoColor())
+    // cli.info('Processing files to repository format:'.infoColor())
+    const table = tableize('', 'file')
     for (const filename of toStageFiles) {
       const fullPath = path.join(this.rootPath, filename)
       const exists = await this.fsUtils.fileExists(fullPath)
-      debug(`file exists = ${exists}`)
+
       if (
         exists &&
         (this.softConfig.chapterRegex(false).test(this.softConfig.mapFileToBeRelativeToRootPath(fullPath)) ||
@@ -273,10 +274,14 @@ export default abstract class extends Command {
       ) {
         const initialContent = await this.fsUtils.readFileContent(fullPath)
         const replacedContent = this.processContent(this.processContentBack(initialContent))
-        await this.fsUtils.writeFile(fullPath, replacedContent)
-        cli.info(`    ${fullPath}`.resultHighlighColor())
+        if (initialContent !== replacedContent) {
+          await this.fsUtils.writeFile(fullPath, replacedContent)
+          table.accumulator('', fullPath)
+          // cli.info(`    ${fullPath}`.resultHighlighColor())
+        }
       }
     }
+    table.show('Processing files to repository format')
   }
 
   //All Git shared operations
@@ -378,7 +383,7 @@ export default abstract class extends Command {
     for (const b of [true, false]) {
       const wildcards = [this.softConfig.chapterWildcard(b), this.softConfig.metadataWildcard(b), this.softConfig.summaryWildcard(b)]
       for (const wildcard of wildcards) {
-        const files = await this.fsUtils.globPromise(path.join(this.rootPath, wildcard))
+        const files = await this.fsUtils.listFiles(path.join(this.rootPath, wildcard))
 
         const organizedFiles: any[] = []
         for (const file of files) {
@@ -425,6 +430,7 @@ export default abstract class extends Command {
   }
 
   public async checkArgPromptAndExtractChapterId(chapterInput: string, promptMsg: string, nextId = false): Promise<ChapterId | null> {
+    debug(`chapterInput = ${chapterInput}`)
     if (!chapterInput) {
       //no chapter given; must ask for it
       const queryBuilder = new QueryBuilder()
@@ -434,6 +440,7 @@ export default abstract class extends Command {
     }
 
     const isAtNumbering = this.softConfig.isAtNumbering(chapterInput)
+    debug(`isAtNumbering in checkArgsPrompt = ${isAtNumbering}`)
     let num: number
     if (this.isEndOfStack(chapterInput)) {
       await this.statistics.updateStackStatistics(isAtNumbering)
@@ -450,7 +457,7 @@ export default abstract class extends Command {
     }
 
     const chapterId = new ChapterId(num, isAtNumbering)
-    if (await this.statistics.getAllFilesForChapter(chapterId)) {
+    if ((await this.statistics.getAllFilesForChapter(chapterId)).length || nextId) {
       return chapterId
     } else {
       return null
@@ -515,7 +522,7 @@ export default abstract class extends Command {
     const sameAtNumbering = originId.isAtNumber === destinationId.isAtNumber
     const forwardBump: boolean = sameAtNumbering ? destinationId.num < originId.num : true
 
-    const fileInfoArray = [
+    const fileNumbersToMoveInDestStack = [
       ...new Set(
         (await this.statistics.getAllFilesForOneType(destinationId.isAtNumber)).map(file => {
           return this.softConfig.extractNumber(file)
@@ -539,10 +546,10 @@ export default abstract class extends Command {
       })
       .map(fileNumber => {
         let newFileNumber: number
-        let mandatory = false
+        let cursor = false
         if (fileNumber === originId.num && sameAtNumbering) {
           newFileNumber = destinationId.num
-          mandatory = true
+          cursor = true
         } else {
           if (forwardBump) {
             newFileNumber = fileNumber + 1
@@ -550,29 +557,29 @@ export default abstract class extends Command {
             newFileNumber = fileNumber - 1
           }
         }
-        return { fileNumber, newFileNumber, mandatory }
+        return { fileNumber, newFileNumber, mandatory: cursor }
       })
 
-    let currentMandatory = sameAtNumbering
-      ? fileInfoArray.filter(f => f.mandatory)[0]
+    let currentCursor = sameAtNumbering
+      ? fileNumbersToMoveInDestStack.filter(f => f.mandatory)[0]
       : { fileNumber: null, newFileNumber: destinationId.num, mandatory: true }
-    const allMandatories = [currentMandatory]
-    while (currentMandatory) {
-      let nextMandatory = fileInfoArray.filter(f => !f.mandatory && f.fileNumber === currentMandatory.newFileNumber)[0]
-      if (nextMandatory) {
-        allMandatories.push(nextMandatory)
+    const allCursors = [currentCursor]
+    while (currentCursor) {
+      let nextCursor = fileNumbersToMoveInDestStack.filter(f => !f.mandatory && f.fileNumber === currentCursor.newFileNumber)[0]
+      if (nextCursor) {
+        allCursors.push(nextCursor)
       }
-      currentMandatory = nextMandatory
+      currentCursor = nextCursor
     }
 
-    const toMoveFiles = fileInfoArray.filter(info => {
-      return allMandatories.map(m => m.fileNumber).includes(info.fileNumber)
+    const toMoveFiles = fileNumbersToMoveInDestStack.filter(info => {
+      return allCursors.map(cur => cur.fileNumber).includes(info.fileNumber)
     })
 
     const toRenameFiles = (await this.statistics.getAllFilesForOneType(destinationId.isAtNumber))
       .filter(file => {
-        const fileNumber = this.softConfig.extractNumber(file)
-        return toMoveFiles.map(m => m.fileNumber).includes(fileNumber)
+        // const fileNumber = this.softConfig.extractNumber(file)
+        return toMoveFiles.map(m => m.fileNumber).includes(this.softConfig.extractNumber(file))
       })
       .map(file => {
         const fileNumber = this.softConfig.extractNumber(file)
@@ -590,7 +597,7 @@ export default abstract class extends Command {
       }
     }
 
-    cli.action.stop('done'.actionStopColor())
+    cli.action.stop(`from ${origin.toString()} to ${destinationId.toString()}`.actionStopColor())
     cli.action.start('Moving files to temp directory'.actionStartColor())
 
     const { tempDir } = await this.fsUtils.getTempDir(this.rootPath)

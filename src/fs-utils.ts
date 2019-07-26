@@ -20,7 +20,6 @@ export class FsUtils {
   public readonly deleteDir = promisify(fs.rmdir)
   public readonly deleteFile = promisify(fs.unlink)
   public readonly mkdtemp = promisify(fs.mkdtemp)
-  public readonly globPromise = promisify(glob)
   public readonly loadFileSync = fs.readFileSync as (path: string) => string
 
   private readonly readFileBuffer = promisify(fs.readFile)
@@ -98,16 +97,16 @@ export class FsUtils {
   public async getAllFilesForWildcards(wildcards: string[], rootPath: string): Promise<string[]> {
     const files: string[] = []
     for (const wildcard of wildcards) {
-      files.push(...(await this.globPromise(path.join(rootPath, wildcard))))
+      files.push(...(await this.listFiles(path.join(rootPath, wildcard))))
     }
     return files
   }
 
   public async deleteEmptySubDirectories(rootPath: string): Promise<string[]> {
-    const allDirs = await this.globPromise('**/', { cwd: rootPath })
+    const allDirs = await this.listFiles('**/', { cwd: rootPath })
     const emptyDirs: string[] = []
     for (const subDir of allDirs) {
-      const filesOfSubDir = await this.globPromise('**', { cwd: path.join(rootPath, subDir) })
+      const filesOfSubDir = await this.listFiles('**', { cwd: path.join(rootPath, subDir) })
       if (filesOfSubDir.length === 0) {
         emptyDirs.push(subDir)
       }

@@ -65,9 +65,9 @@ export default class Rename extends Command {
 
     cli.action.start('Renaming files'.actionStartColor())
 
-    const chapterFile = (await this.fsUtils.globPromise(path.join(this.rootPath, this.softConfig.chapterWildcardWithNumber(chapterId))))[0]
-    const summaryFile = (await this.fsUtils.globPromise(path.join(this.rootPath, this.softConfig.summaryWildcardWithNumber(chapterId))))[0]
-    const metadataFile = (await this.fsUtils.globPromise(
+    const chapterFile = (await this.fsUtils.listFiles(path.join(this.rootPath, this.softConfig.chapterWildcardWithNumber(chapterId))))[0]
+    const summaryFile = (await this.fsUtils.listFiles(path.join(this.rootPath, this.softConfig.summaryWildcardWithNumber(chapterId))))[0]
+    const metadataFile = (await this.fsUtils.listFiles(
       path.join(this.rootPath, this.softConfig.metadataWildcardWithNumber(chapterId))
     ))[0]
 

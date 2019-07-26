@@ -358,6 +358,10 @@ date: ${moment().format('D MMMM YYYY')}
     return String(result)
   }
 
+  public stringifyPerStyle(obj: object): string {
+    return this.configStyle === 'JSON5' ? JSON.stringify(obj, null, 4) : this.configStyle === 'YAML' ? yaml.safeDump(obj) : ''
+  }
+
   public chapterWildcard(atNumbering: boolean): string {
     return this.wildcardize(this.config.chapterPattern, atNumbering)
   }
@@ -449,7 +453,7 @@ date: ${moment().format('D MMMM YYYY')}
   }
 
   public async getMetadataFilenameFromDirectorySearchFromParameters(id: ChapterId): Promise<string> {
-    const files = await this.fsUtils.globPromise(path.join(this.rootPath, this.metadataWildcardWithNumber(id)))
+    const files = await this.fsUtils.listFiles(path.join(this.rootPath, this.metadataWildcardWithNumber(id)))
     debug(`Getting metadata filename from search: files=${files}`)
     return files.length > 0 ? files[0] : ''
   }
@@ -482,7 +486,7 @@ date: ${moment().format('D MMMM YYYY')}
       )
     }
 
-    const chapterId= new ChapterId(newFilenumber, atNumbering, digits)
+    const chapterId = new ChapterId(newFilenumber, atNumbering, digits)
 
     //TODO: take care of NAME in other file types too? Or just use the pattern for other files for everything?
     if (isChapter) {

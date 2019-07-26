@@ -32,20 +32,22 @@ export class MarkupUtils {
     this.rootPath = rootPath
   }
 
-  public async extractGlobalMetadata(allChapterFilesArray: string[], outputFile: string) {
+  public async extractAndUpdateGlobalAndChapterMetadata(allChapterFilesArray: string[], outputFile: string) {
     cli.action.start('Extracting global metadata'.actionStartColor())
     debug(`starting extractGlobalMetadata`)
 
     const table = tableize('file', 'diff')
     const extractPromises: Promise<MarkupObj[]>[] = []
     allChapterFilesArray.forEach(cf => {
-      extractPromises.push(this.extractMarkup(cf))
+      extractPromises.push(this.extractMarkupFromChapterFile(cf))
     })
 
     await Promise.all(extractPromises).then(async fullMarkupArray => {
       const flattenedMarkupArray: MarkupObj[] = ([] as MarkupObj[]).concat(...fullMarkupArray)
 
-      const { markupByFile, markupByType } = this.objectifyMarkupArray(flattenedMarkupArray)
+      // const { markupByFile, markupByType } = this.objectifyMarkupArray(flattenedMarkupArray)
+      const markupByFile = this.getMarkupByFile(flattenedMarkupArray)
+      const markupByType = this.getMarkupByType(flattenedMarkupArray)
 
       const markupExt = this.softConfig.configStyle.toLowerCase()
       const allMarkups = [
@@ -55,18 +57,9 @@ export class MarkupUtils {
 
       for (const markup of allMarkups) {
         debug(`markup.fullPath=${markup.fullPath}`)
-        const existingMarkupContent = await this.fsUtils.readFileContent(markup.fullPath)
-        debug(`up to here in build`)
+        const comparedString = this.softConfig.stringifyPerStyle(markup.markupObj)
 
-        const comparedString =
-          this.softConfig.configStyle === 'JSON5'
-            ? JSON.stringify(markup.markupObj, null, 4)
-            : this.softConfig.configStyle === 'YAML'
-            ? yaml.safeDump(markup.markupObj)
-            : ''
-
-        debug(`comparedString=${comparedString}`)
-        if (existingMarkupContent !== comparedString) {
+        if (await this.contentHasChangedVersusFile(markup.fullPath, comparedString)) {
           await this.fsUtils.writeFile(markup.fullPath, comparedString)
           table.accumulator(this.softConfig.mapFileToBeRelativeToRootPath(markup.fullPath), 'updated')
         }
@@ -76,14 +69,31 @@ export class MarkupUtils {
       table.accumulatorArray(
         modifiedMetadataFiles.map(val => ({ from: this.softConfig.mapFileToBeRelativeToRootPath(val.file), to: val.diff }))
       )
-      // markupFilenamesPretty = modifiedMetadataFiles.reduce((previous, current) => `${previous}\n    ${current}`,'')
     })
 
     cli.action.stop(`done`.actionStopColor())
     table.show()
   }
 
-  public async extractMarkup(chapterFilepath: string): Promise<MarkupObj[]> {
+  public async UpdateSingleMetadata(chapterFile: string) {
+    cli.action.start('Extracting single metadata'.actionStartColor())
+
+    const markupObjArr = await this.extractMarkupFromChapterFile(chapterFile)
+    const markupByFile = this.getMarkupByFile(markupObjArr)
+    const modifiedMetadataFiles = await this.writeMetadataInEachFile(markupByFile)
+    const modifiedFile = modifiedMetadataFiles[0]
+
+    cli.action.stop(`updated ${modifiedFile.file} with ${modifiedFile.diff}`.actionStopColor())
+  }
+
+
+  //TODO: could be private?
+  public async contentHasChangedVersusFile(filepath: string, content: string) {
+    const existingFileContent = await this.fsUtils.readFileContent(filepath)
+    return existingFileContent !== content
+  }
+
+  public async extractMarkupFromChapterFile(chapterFilepath: string): Promise<MarkupObj[]> {
     const resultArray: MarkupObj[] = []
 
     debug(`in ExtractMarkup; chapterFilePath=${chapterFilepath}`)
@@ -145,30 +155,62 @@ export class MarkupUtils {
     }
   }
 
-  public objectifyMarkupArray(flattenedMarkupArray: MarkupObj[]): { markupByFile: MarkupByFile; markupByType: any } {
-    const markupByFile: MarkupByFile = {}
-    const markupByType: any = {}
-
-    flattenedMarkupArray.forEach(markup => {
-      markupByFile[markup.filename] = markupByFile[markup.filename] || []
-      if (markup.computed) {
-        markupByFile[markup.filename].push({ computed: true, type: markup.type, value: markup.value })
-      } else {
-        markupByFile[markup.filename].push({ computed: false, paragraph: markup.paragraph, type: markup.type, value: markup.value })
-      }
-
-      if (!markup.computed) {
-        markupByType[markup.type] = markupByType[markup.type] || []
-        markupByType[markup.type].push({ filename: markup.filename, paragraph: markup.paragraph, value: markup.value })
-      } else {
-        if (markup.type === 'wordCount') {
-          markupByType.totalWordCount = markupByType.totalWordCount || 0
-          markupByType.totalWordCount += markup.value
+  public getMarkupByFile(flattenedMarkupArray: MarkupObj[]): MarkupByFile {
+    return flattenedMarkupArray.reduce(
+      (cumul, markup) => {
+        cumul[markup.filename] = cumul[markup.filename] || []
+        if (markup.computed) {
+          cumul[markup.filename].push({ computed: true, type: markup.type, value: markup.value })
+        } else {
+          cumul[markup.filename].push({ computed: false, paragraph: markup.paragraph, type: markup.type, value: markup.value })
         }
-      }
-    })
-    return { markupByFile, markupByType }
+        return cumul
+      },
+      {} as MarkupByFile
+    )
   }
+  public getMarkupByType(flattenedMarkupArray: MarkupObj[]): any {
+    return flattenedMarkupArray.reduce(
+      (cumul, markup) => {
+        if (!markup.computed) {
+          cumul[markup.type] = cumul[markup.type] || []
+          cumul[markup.type].push({ filename: markup.filename, paragraph: markup.paragraph, value: markup.value })
+        } else {
+          if (markup.type === 'wordCount') {
+            cumul.totalWordCount = cumul.totalWordCount || 0
+            cumul.totalWordCount += markup.value
+          }
+        }
+        return cumul
+      },
+      {} as any
+    )
+  }
+
+  // public objectifyMarkupArray(flattenedMarkupArray: MarkupObj[]): { markupByFile: MarkupByFile; markupByType: any } {
+  //   const markupByFile: MarkupByFile = {}
+  //   const markupByType: any = {}
+
+  //   flattenedMarkupArray.forEach(markup => {
+  //     markupByFile[markup.filename] = markupByFile[markup.filename] || []
+  //     if (markup.computed) {
+  //       markupByFile[markup.filename].push({ computed: true, type: markup.type, value: markup.value })
+  //     } else {
+  //       markupByFile[markup.filename].push({ computed: false, paragraph: markup.paragraph, type: markup.type, value: markup.value })
+  //     }
+
+  //     if (!markup.computed) {
+  //       markupByType[markup.type] = markupByType[markup.type] || []
+  //       markupByType[markup.type].push({ filename: markup.filename, paragraph: markup.paragraph, value: markup.value })
+  //     } else {
+  //       if (markup.type === 'wordCount') {
+  //         markupByType.totalWordCount = markupByType.totalWordCount || 0
+  //         markupByType.totalWordCount += markup.value
+  //       }
+  //     }
+  //   })
+  //   return { markupByFile, markupByType }
+  // }
 
   public async writeMetadataInEachFile(markupByFile: any): Promise<{ file: string; diff: string }[]> {
     const modifiedFiles: { file: string; diff: string }[] = []
@@ -194,8 +236,6 @@ export class MarkupUtils {
         }
       })
 
-      // const num = this.softConfig.extractNumber(file)
-      // const isAt = this.softConfig.isAtNumbering(file)
       const chapterId = new ChapterId(this.softConfig.extractNumber(file), this.softConfig.isAtNumbering(file))
 
       //bug: doesn't get filename if pattern has changed.
@@ -291,7 +331,7 @@ export class MarkupUtils {
     return wordCount
   }
 
-  public async UpdateAllMetadataFields(): Promise<void> {
+  public async UpdateAllMetadataFieldsFromDefaults(): Promise<void> {
     const allMetadataFiles = await this.softConfig.getAllMetadataFiles()
     const table = tableize('file', 'changes')
     for (const file of allMetadataFiles) {
@@ -333,7 +373,11 @@ export class MarkupUtils {
           await this.fsUtils.writeFile(file, outputString)
         }
       } catch (err) {
-        throw new ChptrError(`Error in updating all chapter's Metadata files.  ${err}`, 'markup-utils.updateallmetadatafields', 23)
+        throw new ChptrError(
+          `Error in updating all chapter's Metadata files.  ${err}`,
+          'markup-utils.updateallmetadatafieldsfromdefaults',
+          23
+        )
       }
     }
     table.show('Metadata fields updated in files')
