@@ -55,7 +55,7 @@ export default class Delete extends Command {
 
     if (compact) {
       await this.compactFileNumbers()
-      await this.CommitToGit(`Compacted file numbers`)
+      await this.gitWrapper.CommitToGit(`Compacted file numbers`)
     }
   }
 }

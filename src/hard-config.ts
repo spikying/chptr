@@ -82,4 +82,10 @@ export class HardConfig {
   public antidotePathName(chapterFilename: string): string {
     return path.join(this.rootPath, chapterFilename.replace(/\.\w+$/, '.antidote'))
   }
+
+  public isEndOfStack(value: string): boolean {
+    const re = new RegExp(/^@?end$/)
+    return re.test(value)
+  }
+
 }

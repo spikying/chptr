@@ -136,7 +136,7 @@ export default class Split extends Command {
             : ''
 
         const filepath =path.join(this.rootPath, filename)
-        const newContent = this.processContent(this.processContentBack(titleAndContentPair.join('')))
+        const newContent = this.coreUtils.processContent(titleAndContentPair.join(''))
         debug(`filepath: ${filepath}\nnewContent:\n${newContent}`)
         await this.fsUtils.writeFile(filepath, newContent)
 

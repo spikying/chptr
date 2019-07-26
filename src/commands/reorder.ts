@@ -61,6 +61,6 @@ export default class Reorder extends Command {
       commitMessage += '\nAdded digits to chapter numbers'
     }
 
-    await this.CommitToGit(commitMessage)
+    await this.gitWrapper.CommitToGit(commitMessage)
   }
 }

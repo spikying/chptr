@@ -1,11 +1,12 @@
 import { cli } from 'cli-ux'
 import { observableDiff } from 'deep-diff'
-import * as minimatch from 'minimatch'
 import * as path from 'path'
 import { MoveSummary } from 'simple-git/typings/response'
 
 import { ChapterId } from '../chapter-id'
 import { ChptrError } from '../chptr-error'
+import { CoreUtils } from '../core-utils'
+import { GitWrapper } from '../git-wrapper'
 import { MarkupUtils } from '../markup-utils'
 import { SoftConfig } from '../soft-config'
 import { Statistics } from '../statistics'
@@ -25,6 +26,12 @@ export default abstract class extends Command {
   public get markupUtils(): MarkupUtils {
     return this._markupUtils as MarkupUtils
   }
+  public get gitWrapper(): GitWrapper {
+    return this._gitWrapper as GitWrapper
+  }
+  public get coreUtils(): CoreUtils {
+    return this._coreUtils as CoreUtils
+  }
 
   static flags = {
     ...Command.flags
@@ -35,10 +42,47 @@ export default abstract class extends Command {
   private _softConfig: SoftConfig | undefined
   private _statistics: Statistics | undefined
   private _markupUtils: MarkupUtils | undefined
+  private _gitWrapper: GitWrapper | undefined
+  private _coreUtils: CoreUtils | undefined
 
   private _lastConfigObj: any
   private _actualConfigObj: any
 
+  async init() {
+    debug('init of initialized-base')
+    await super.init()
+
+    const isRepo = await this.git.checkIsRepo()
+    const hasConfigFolder = await this.fsUtils.fileExists(this.hardConfig.configPath)
+    const hasConfigJSON5File = await this.fsUtils.fileExists(this.hardConfig.configJSON5FilePath)
+    const hasConfigYAMLFile = await this.fsUtils.fileExists(this.hardConfig.configYAMLFilePath)
+
+    if (!isRepo || !hasConfigFolder || !(hasConfigJSON5File || hasConfigYAMLFile)) {
+      throw new ChptrError('Directory was not initialized.  Run `init` command.', 'initialized-base.init', 9)
+    }
+
+    // const { flags } = this.parse(this.constructor as any)
+    // const dir = path.join(flags.path as string)
+    this._softConfig = new SoftConfig(this.rootPath)
+    this._statistics = new Statistics(this.softConfig, this.rootPath)
+    this._markupUtils = new MarkupUtils(this.softConfig, this.rootPath)
+    this._gitWrapper = new GitWrapper(this.softConfig, this.rootPath)
+    this._coreUtils = new CoreUtils(this.softConfig, this.rootPath)
+
+    await this.RenameFilesIfNewPattern()
+    await this.MoveToNewBuildDirectory()
+    await this.RenameProjectTitle()
+    await this.CheckIfStepOrInitialNumberHaveChanged()
+
+    await this.fsUtils.deleteEmptySubDirectories(this.rootPath)
+  }
+
+  public async finally() {
+    await super.finally()
+    await this.fsUtils.deleteEmptySubDirectories(this.rootPath)
+  }
+
+  //#region shared core
   public async addChapterFiles(name: string, atNumbering: boolean, number?: string) {
     let chapterId: ChapterId
     if (number) {
@@ -132,7 +176,7 @@ export default abstract class extends Command {
       const toDeletePretty = toDeleteFiles.map(f => `\n    ${f}`)
       cli.action.stop(`${toDeletePretty}\nwere deleted`.actionStopColor())
 
-      await this.CommitToGit(
+      await this.gitWrapper.CommitToGit(
         `Removed files:\n    ${this.softConfig.mapFilesToBeRelativeToRootPath(toDeleteFiles).join('\n    ')}`,
         undefined,
         true
@@ -326,40 +370,9 @@ export default abstract class extends Command {
 
     cli.action.stop('done'.actionStopColor())
   }
+  //#endregion
 
-  async init() {
-    debug('init of initialized-base')
-    await super.init()
-
-    const isRepo = await this.git.checkIsRepo()
-    const hasConfigFolder = await this.fsUtils.fileExists(this.hardConfig.configPath)
-    const hasConfigJSON5File = await this.fsUtils.fileExists(this.hardConfig.configJSON5FilePath)
-    const hasConfigYAMLFile = await this.fsUtils.fileExists(this.hardConfig.configYAMLFilePath)
-
-    if (!isRepo || !hasConfigFolder || !(hasConfigJSON5File || hasConfigYAMLFile)) {
-      throw new ChptrError('Directory was not initialized.  Run `init` command.', 'initialized-base.init', 9)
-    }
-
-    // const { flags } = this.parse(this.constructor as any)
-    // const dir = path.join(flags.path as string)
-    this._softConfig = new SoftConfig(this.rootPath)
-    this._statistics = new Statistics(this.softConfig, this.rootPath)
-    this._markupUtils = new MarkupUtils(this.softConfig, this.rootPath)
-
-    await this.RenameFilesIfNewPattern()
-    await this.MoveToNewBuildDirectory()
-    await this.RenameProjectTitle()
-    await this.CheckIfStepOrInitialNumberHaveChanged()
-
-    await this.fsUtils.deleteEmptySubDirectories(this.rootPath)
-  }
-
-  public async finally() {
-    await super.finally()
-    await this.fsUtils.deleteEmptySubDirectories(this.rootPath)
-  }
-
-  //All config watches
+  //#region config watches
   public async RenameFilesIfNewPattern(): Promise<boolean> {
     let result = false
     const { lastConfigObj, actualConfigObj } = await this.getLastAndActualConfigObjects()
@@ -517,132 +530,80 @@ export default abstract class extends Command {
 
     table.show('Config file has changes.  Run `reorder` or `build` command with `--compact` flag to rename files with new scheme.')
   }
-
-  //All Project Files manipulations
-  public processContent(initialContent: string): string {
-    let paraCounter = 1
-    // \u2028 = line sep  \u200D = zero width joiner
-    const replacedContent = initialContent
-      .replace(/([.!?…}"]) {2}([{A-ZÀ-Ú])/gm, '$1' + this.markupUtils.sentenceBreakChar + '\n$2')
-      .replace(/([.!?…}"])\n{2}([{A-ZÀ-Ú])/gm, (_full, one, two) => {
-        paraCounter++
-        return `${one}\n\n${this.markupUtils.paragraphBreakChar}{{${paraCounter}}}\n${two}`
-      })
-
-    return replacedContent
-  }
-
-  public processContentBack(initialContent: string): string {
-    const sentenceBreakRegex = new RegExp(this.markupUtils.sentenceBreakChar + '\\n', 'g')
-    const paragraphBreakRegex = new RegExp('\\n\\n' + this.markupUtils.paragraphBreakChar + '{{\\d+}}\\n', 'g')
-
-    const replacedContent = initialContent
-      .replace(sentenceBreakRegex, '  ')
-      .replace(paragraphBreakRegex, '\n\n')
-      .replace(/([.!?…}"]) +\n/g, '$1\n')
-      .replace(/\n*$/, '\n')
-
-    return replacedContent
-  }
-
-  public async processChapterFilesBeforeSaving(toStageFiles: string[]): Promise<void> {
-    // cli.info('Processing files to repository format:'.infoColor())
-    const table = tableize('', 'file')
-    for (const filename of toStageFiles) {
-      const fullPath = path.join(this.rootPath, filename)
-      const exists = await this.fsUtils.fileExists(fullPath)
-
-      if (
-        exists &&
-        (this.softConfig.chapterRegex(false).test(this.softConfig.mapFileToBeRelativeToRootPath(fullPath)) ||
-          this.softConfig.chapterRegex(true).test(this.softConfig.mapFileToBeRelativeToRootPath(fullPath)) ||
-          this.softConfig.summaryRegex(false).test(this.softConfig.mapFileToBeRelativeToRootPath(fullPath)) ||
-          this.softConfig.summaryRegex(true).test(this.softConfig.mapFileToBeRelativeToRootPath(fullPath)))
-      ) {
-        const initialContent = await this.fsUtils.readFileContent(fullPath)
-        const replacedContent = this.processContent(this.processContentBack(initialContent))
-        if (initialContent !== replacedContent) {
-          await this.fsUtils.writeFile(fullPath, replacedContent)
-          table.accumulator('', fullPath)
-          // cli.info(`    ${fullPath}`.resultHighlighColor())
-        }
-      }
-    }
-    table.show('Processing files to repository format')
-  }
+  //#endregion
 
   //All Git shared operations
-  public async CommitToGit(message: string, toStageFiles?: string[], forDeletes = false) {
-    toStageFiles = toStageFiles || (await this.GetGitListOfStageableFiles())
-    if (toStageFiles.length > 0 || forDeletes) {
-      // try {
-      cli.action.start('Saving file(s) in repository'.actionStartColor())
+  // public async CommitToGit(message: string, toStageFiles?: string[], forDeletes = false) {
+  //   toStageFiles = toStageFiles || (await this.GetGitListOfStageableFiles())
+  //   if (toStageFiles.length > 0 || forDeletes) {
+  //     // try {
+  //     cli.action.start('Saving file(s) in repository'.actionStartColor())
 
-      await this.processChapterFilesBeforeSaving(toStageFiles)
-      debug(`after processing file`)
+  //     await this.processChapterFilesBeforeSaving(toStageFiles)
+  //     debug(`after processing file`)
 
-      if (!forDeletes) {
-        await this.git.add(toStageFiles)
-      }
-      debug(`after adding files`)
-      await this.git.addConfig('user.name', this.softConfig.config.projectAuthor.name)
-      await this.git.addConfig('user.email', this.softConfig.config.projectAuthor.email)
+  //     if (!forDeletes) {
+  //       await this.git.add(toStageFiles)
+  //     }
+  //     debug(`after adding files`)
+  //     await this.git.addConfig('user.name', this.softConfig.config.projectAuthor.name)
+  //     await this.git.addConfig('user.email', this.softConfig.config.projectAuthor.email)
 
-      const commitSummary = await this.git.commit(message)
-      const hasRemote: boolean = await this.git.getRemotes(false).then(result => {
-        return result.find(value => value.name === 'origin') !== undefined
-      })
-      if (hasRemote) {
-        await this.git.push()
-        await this.git.pull()
-      }
+  //     const commitSummary = await this.git.commit(message)
+  //     const hasRemote: boolean = await this.git.getRemotes(false).then(result => {
+  //       return result.find(value => value.name === 'origin') !== undefined
+  //     })
+  //     if (hasRemote) {
+  //       await this.git.push()
+  //       await this.git.pull()
+  //     }
 
-      const toStagePretty = toStageFiles.map(f => `\n    ${f}`.infoColor())
-      cli.action.stop(
-        `\nCommited and pushed ${commitSummary.commit.resultHighlighColor()}:\n${message.infoColor()}\nFile${
-          toStageFiles.length > 1 ? 's' : ''
-        }:${toStagePretty}`.actionStopColor()
-      )
-      // } catch (err) {
-      //   this.error(err.toString().errorColor())
-      // }
-    }
-  }
+  //     const toStagePretty = toStageFiles.map(f => `\n    ${f}`.infoColor())
+  //     cli.action.stop(
+  //       `\nCommited and pushed ${commitSummary.commit.resultHighlighColor()}:\n${message.infoColor()}\nFile${
+  //         toStageFiles.length > 1 ? 's' : ''
+  //       }:${toStagePretty}`.actionStopColor()
+  //     )
+  //     // } catch (err) {
+  //     //   this.error(err.toString().errorColor())
+  //     // }
+  //   }
+  // }
 
-  public async GetGitListOfStageableFiles(chapterId?: ChapterId): Promise<string[]> {
-    const gitStatus = await this.git.status()
+  // public async GetGitListOfStageableFiles(chapterId?: ChapterId): Promise<string[]> {
+  //   const gitStatus = await this.git.status()
 
-    const unQuote = function(value: string) {
-      if (!value) {
-        return value
-      }
-      return value.replace(/"(.*)"/, '$1')
-    }
+  //   const unQuote = function(value: string) {
+  //     if (!value) {
+  //       return value
+  //     }
+  //     return value.replace(/"(.*)"/, '$1')
+  //   }
 
-    const onlyUnique = function(value: any, index: number, self: any) {
-      return self.indexOf(value) === index
-    }
+  //   const onlyUnique = function(value: any, index: number, self: any) {
+  //     return self.indexOf(value) === index
+  //   }
 
-    const unfilteredFileList = (await this.git.diff(['--name-only']))
-      .split('\n')
-      // .concat(gitStatus.deleted.map(unQuote)) //If they are removed by git.rm it is not necessary to "readd" then
-      .concat(gitStatus.modified.map(unQuote))
-      // .concat(gitStatus.created.map(unQuote)) //They are added manually through Add and Track command
-      .concat(gitStatus.renamed.map((value: any) => value.to as string).map(unQuote))
-      .filter(onlyUnique)
+  //   const unfilteredFileList = (await this.git.diff(['--name-only']))
+  //     .split('\n')
+  //     // .concat(gitStatus.deleted.map(unQuote)) //If they are removed by git.rm it is not necessary to "readd" then
+  //     .concat(gitStatus.modified.map(unQuote))
+  //     // .concat(gitStatus.created.map(unQuote)) //They are added manually through Add and Track command
+  //     .concat(gitStatus.renamed.map((value: any) => value.to as string).map(unQuote))
+  //     .filter(onlyUnique)
 
-    // debug(`unfilteredFileList=${JSON.stringify(unfilteredFileList)}`)
+  //   // debug(`unfilteredFileList=${JSON.stringify(unfilteredFileList)}`)
 
-    return unfilteredFileList
-      .filter(val => val !== '')
-      .filter(val => {
-        return chapterId
-          ? minimatch(val, this.softConfig.chapterWildcardWithNumber(chapterId)) ||
-              minimatch(val, this.softConfig.metadataWildcardWithNumber(chapterId)) ||
-              minimatch(val, this.softConfig.summaryWildcardWithNumber(chapterId))
-          : true
-      })
-  }
+  //   return unfilteredFileList
+  //     .filter(val => val !== '')
+  //     .filter(val => {
+  //       return chapterId
+  //         ? minimatch(val, this.softConfig.chapterWildcardWithNumber(chapterId)) ||
+  //             minimatch(val, this.softConfig.metadataWildcardWithNumber(chapterId)) ||
+  //             minimatch(val, this.softConfig.summaryWildcardWithNumber(chapterId))
+  //         : true
+  //     })
+  // }
 
   //Project file updates
   public async addDigitsToNecessaryStacks(): Promise<boolean> {
@@ -711,10 +672,10 @@ export default abstract class extends Command {
     }
   }
 
-  public isEndOfStack(value: string): boolean {
-    const re = new RegExp(/^@?end$/)
-    return re.test(value)
-  }
+  // public isEndOfStack(value: string): boolean {
+  //   const re = new RegExp(/^@?end$/)
+  //   return re.test(value)
+  // }
 
   public async checkArgPromptAndExtractChapterId(chapterInput: string, promptMsg: string, nextId = false): Promise<ChapterId | null> {
     debug(`chapterInput = ${chapterInput}`)
@@ -729,7 +690,7 @@ export default abstract class extends Command {
     const isAtNumbering = this.softConfig.isAtNumbering(chapterInput)
     debug(`isAtNumbering in checkArgsPrompt = ${isAtNumbering}`)
     let num: number
-    if (this.isEndOfStack(chapterInput)) {
+    if (this.hardConfig.isEndOfStack(chapterInput)) {
       await this.statistics.updateStackStatistics(isAtNumbering)
       if (nextId) {
         num =
@@ -755,22 +716,22 @@ export default abstract class extends Command {
   private async getLastAndActualConfigObjects(): Promise<{ lastConfigObj: any; actualConfigObj: any }> {
     if (!this._lastConfigObj || !this._actualConfigObj) {
       const configFilePath = this.softConfig.configFilePath
-        // this.softConfig.configStyle === 'JSON5'
-        //   ? this.hardConfig.configJSON5FilePath
-        //   : this.softConfig.configStyle === 'YAML'
-        //   ? this.hardConfig.configYAMLFilePath
-        //   : ''
+      // this.softConfig.configStyle === 'JSON5'
+      //   ? this.hardConfig.configJSON5FilePath
+      //   : this.softConfig.configStyle === 'YAML'
+      //   ? this.hardConfig.configYAMLFilePath
+      //   : ''
       const lastConfigContent =
         (await this.git.show([`HEAD:${this.softConfig.mapFileToBeRelativeToRootPath(configFilePath).replace(/\\/, '/')}`])) || '{}'
 
       const actualConfigContent = await this.fsUtils.readFileContent(configFilePath)
 
       this._lastConfigObj = this.softConfig.parsePerStyle(lastConfigContent)
-        // this.softConfig.configStyle === 'JSON5' ? jsonComment.parse(lastConfigContent, undefined, true) : yaml.safeLoad(lastConfigContent)
+      // this.softConfig.configStyle === 'JSON5' ? jsonComment.parse(lastConfigContent, undefined, true) : yaml.safeLoad(lastConfigContent)
       this._actualConfigObj = this.softConfig.parsePerStyle(actualConfigContent)
-        // this.softConfig.configStyle === 'JSON5'
-        //   ? jsonComment.parse(actualConfigContent, undefined, true)
-        //   : yaml.safeLoad(actualConfigContent)
+      // this.softConfig.configStyle === 'JSON5'
+      //   ? jsonComment.parse(actualConfigContent, undefined, true)
+      //   : yaml.safeLoad(actualConfigContent)
     }
 
     return { lastConfigObj: this._lastConfigObj, actualConfigObj: this._actualConfigObj }

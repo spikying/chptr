@@ -71,8 +71,8 @@ export default class Antidote extends Command {
     await this.fsUtils.moveFile(antidoteFilePath, basicFilePath)
 
     if (queryResponses2.message !== 'cancel') {
-      const toStageFiles = await this.GetGitListOfStageableFiles(chapterId)
-      await this.CommitToGit(message, toStageFiles)
+      const toStageFiles = await this.gitWrapper.GetGitListOfStageableFiles(chapterId)
+      await this.gitWrapper.CommitToGit(message, toStageFiles)
     }
   }
 
@@ -118,7 +118,7 @@ export default class Antidote extends Command {
         .replace(/\n{2,}$/, '\n') // make sure there is only one enter at the end
         .replace(/^\n{2,}# /, '\n# ') // make sure there is an enter before the first line
     )
-    replacedContent = this.processContent(this.processContentBack(replacedContent))
+    replacedContent = this.coreUtils.processContent(replacedContent)
 
     debug(`Processed back antidote content: \n${replacedContent.substring(0, 250)}`)
     await this.fsUtils.writeFile(filepath, replacedContent)
@@ -132,7 +132,7 @@ export default class Antidote extends Command {
       replacedContent = String.fromCharCode(65279) + initialContent
     }
 
-    replacedContent = this.processContentBack(replacedContent)
+    replacedContent = this.coreUtils.processContentBack(replacedContent)
 
     await this.fsUtils.writeFile(filepath, replacedContent)
   }
