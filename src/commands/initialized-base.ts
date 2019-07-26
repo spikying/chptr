@@ -465,6 +465,71 @@ export default abstract class extends Command {
     }
   }
 
+  public async addChapterFiles(name: string, atNumbering: boolean, number?: string) {
+    let chapterId: ChapterId
+    if (number) {
+      chapterId = new ChapterId(this.softConfig.extractNumber(number), this.softConfig.isAtNumbering(number))
+
+      const existingFile = await this.fsUtils.listFiles(path.join(this.rootPath, this.softConfig.chapterWildcardWithNumber(chapterId)))
+
+      if (existingFile.length > 0) {
+        throw new ChptrError(`File ${existingFile[0]} already exists`, 'add.addchapterfiles', 1)
+      }
+    } else {
+      await this.statistics.updateStackStatistics(atNumbering)
+
+      const highestNumber = this.statistics.getHighestNumber(atNumbering)
+      chapterId = new ChapterId(
+        highestNumber === 0 ? this.softConfig.config.numberingInitial : highestNumber + this.softConfig.config.numberingStep,
+        atNumbering
+      )
+    }
+
+    const emptyFileString = this.softConfig.emptyFileString.toString()
+    const filledTemplateData = emptyFileString.replace(/{TITLE}/gim, name)
+    const metadataObj: any = this.softConfig.config.metadataFields
+    metadataObj.computed.title = name
+    metadataObj.computed.wordCount = this.markupUtils.GetWordCount(filledTemplateData)
+    const filledTemplateMeta =
+      this.softConfig.configStyle === 'JSON5'
+        ? JSON.stringify(metadataObj, undefined, 4)
+        : this.softConfig.configStyle === 'YAML'
+        ? yaml.safeDump(metadataObj)
+        : ''
+
+    const fullPathsAndData = [
+      {
+        path: path.join(this.rootPath, this.softConfig.chapterFileNameFromParameters(chapterId, name)),
+        data: filledTemplateData
+      },
+      {
+        path: path.join(this.rootPath, this.softConfig.metadataFileNameFromParameters(chapterId, name)),
+        data: filledTemplateMeta
+      },
+      {
+        path: path.join(this.rootPath, this.softConfig.summaryFileNameFromParameters(chapterId, name)),
+        data: filledTemplateData
+      }
+    ]
+
+    cli.action.start('Creating file(s) locally and to repository'.actionStartColor())
+
+    const allPromises: Promise<void>[] = []
+    for (const pathAndData of fullPathsAndData) {
+      allPromises.push(this.fsUtils.createFile(pathAndData.path, pathAndData.data))
+    }
+    await Promise.all(allPromises)
+    cli.action.stop(
+      '\n    ' +
+        fullPathsAndData
+          .map(pad => pad.path)
+          .join('\n    ')
+          .actionStopColor()
+    )
+
+    return this.softConfig.mapFilesToBeRelativeToRootPath(fullPathsAndData.map(pad => pad.path))
+  }
+
   public async reorder(origin: string, destination: string): Promise<void> {
     cli.action.start('Analyzing files'.actionStartColor())
 

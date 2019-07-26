@@ -5,7 +5,6 @@ import * as path from 'path'
 import { ChapterId } from '../chapter-id'
 import { ChptrError } from '../chptr-error'
 
-import Add from './add'
 import { d } from './base'
 import Delete from './delete'
 import Command from './initialized-base'
@@ -70,8 +69,8 @@ export default class Split extends Command {
         type === 'chapter'
           ? this.softConfig.chapterWildcardWithNumber(chapterId)
           : type === 'summary'
-            ? this.softConfig.summaryWildcardWithNumber(chapterId)
-            : ''
+          ? this.softConfig.summaryWildcardWithNumber(chapterId)
+          : ''
       )
     )
     const toAnalyseFile = toAnalyseFiles && toAnalyseFiles.length === 1 ? toAnalyseFiles[0] : null
@@ -83,7 +82,6 @@ export default class Split extends Command {
     const replacedContents = await this.splitContentByTitles(initialContent)
 
     if (replacedContents.length > 1) {
-
       cli.info('Stashing chapter files...'.resultNormalColor())
       const atEndNum = this.statistics.getHighestNumber(true)
 
@@ -121,7 +119,12 @@ export default class Split extends Command {
         const titleAndContentPair = replacedContents[i]
         const name = this.markupUtils.extractTitleFromString(titleAndContentPair[0]) || 'chapter'
 
-        await Add.run([`--path=${flags.path}`, '-a', name])
+        // await Add.run([`--path=${flags.path}`, '-a', name])
+        await this.statistics.getAllNovelFiles(true)
+        const addedFiles = await this.addChapterFiles(name, true)
+        debug(`addedfiles=${addedFiles}`)
+        await this.git.add(addedFiles)
+        cli.info(`Added\n    ${addedFiles.join('\n    ')}`)
 
         // const newNumber = stashedNumber + i + 1
         // const digits = this.fsUtils.numDigits(newNumber)
@@ -130,15 +133,16 @@ export default class Split extends Command {
           type === 'chapter'
             ? this.softConfig.chapterFileNameFromParameters(newId, name)
             : type === 'summary'
-              ? this.softConfig.summaryFileNameFromParameters(newId, name)
-              : ''
+            ? this.softConfig.summaryFileNameFromParameters(newId, name)
+            : ''
 
+        const filepath =path.join(this.rootPath, filename)
         const newContent = this.processContent(this.processContentBack(titleAndContentPair.join('')))
-        debug(`newContent:\n${newContent}`)
-        await this.fsUtils.writeFile(path.join(this.rootPath, filename), newContent)
+        debug(`filepath: ${filepath}\nnewContent:\n${newContent}`)
+        await this.fsUtils.writeFile(filepath, newContent)
 
         if (type === 'chapter') {
-          await this.markupUtils.UpdateSingleMetadata(path.join(this.rootPath, filename))
+          await this.markupUtils.UpdateSingleMetadata(filepath)
         }
 
         addedTempIds.push(newId)
@@ -163,7 +167,7 @@ export default class Split extends Command {
       //   this.exit(1)
       // }
     } else {
-      cli.info(`File with id ${chapterId.toString()} does not have many 1st level titles.  Nothing to split.`)
+      throw new ChptrError(`File with id ${chapterId.toString()} does not have many 1st level titles.  Nothing to split.`, 'split.run', 49)
     }
   }
 
