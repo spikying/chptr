@@ -7,7 +7,7 @@ import { QueryBuilder } from '../ui-utils'
 import { d } from './base'
 import Command from './initialized-base'
 
-const debug = d('command:track')
+const debug = d('track')
 
 export default class Track extends Command {
   static description = 'Add a file to be tracked in repository that is not a chapter, summary or metadata file.'

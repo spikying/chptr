@@ -9,7 +9,7 @@ import { QueryBuilder } from '../ui-utils'
 import { d } from './base'
 import Command from './initialized-base'
 
-const debug = d('command:edit')
+const debug = d('edit')
 
 export default class Edit extends Command {
   static description = 'Adjust sentence and paragraph endings to allow for easier editing.  Commit changes with SAVE command.'

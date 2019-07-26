@@ -10,7 +10,7 @@ import { QueryBuilder } from '../ui-utils'
 import { d } from './base'
 import Command from './initialized-base'
 
-const debug = d('command:save')
+const debug = d('save')
 
 export default class Save extends Command {
   static description = 'Parse modified text files, adjust sentence and paragraph endings, and commit files to repository.'

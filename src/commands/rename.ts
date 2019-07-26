@@ -10,7 +10,7 @@ import { QueryBuilder } from '../ui-utils'
 import { d } from './base'
 import Command from './initialized-base'
 
-const debug = d('command:rename')
+const debug = d('rename')
 
 export default class Rename extends Command {
   static description = 'Modify chapter title in text, metadata and filename or tracked filename'

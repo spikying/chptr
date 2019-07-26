@@ -11,7 +11,7 @@ import { QueryBuilder, tableize } from '../ui-utils'
 import { d } from './base'
 import Command from './initialized-base'
 
-const debug = d('command:build')
+const debug = d('build')
 
 export default class Build extends Command {
   static readonly exportableFileTypes = ['md', 'pdf', 'docx', 'html', 'epub', 'tex']

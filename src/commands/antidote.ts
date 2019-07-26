@@ -9,7 +9,7 @@ import { QueryBuilder } from '../ui-utils'
 import { d } from './base'
 import Command from './initialized-base'
 
-const debug = d('command:antidote')
+const debug = d('antidote')
 
 export default class Antidote extends Command {
   static description = 'Launch Antidote spell-checker for given chapter'

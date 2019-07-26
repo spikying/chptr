@@ -5,7 +5,7 @@ import { QueryBuilder } from '../ui-utils'
 import { d } from './base'
 import Command from './initialized-base'
 
-const debug = d('command:reorder')
+const debug = d('reorder')
 
 export default class Reorder extends Command {
   static description = 'Takes a chapter and modifies its index number to fit another ordering place'

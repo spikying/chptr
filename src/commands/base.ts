@@ -8,7 +8,9 @@ import { FsUtils } from '../fs-utils'
 import { HardConfig } from '../hard-config'
 // import { promisify } from 'util'
 
-export const d = deb
+export const d = (cmdName: string) => {
+  return deb(`chptr:${cmdName}`)
+}
 
 const chalk: any = require('chalk')
 String.prototype.color = function(colorName: string) {

@@ -530,6 +530,42 @@ export default abstract class extends Command {
     return this.softConfig.mapFilesToBeRelativeToRootPath(fullPathsAndData.map(pad => pad.path))
   }
 
+  public async deleteFilesFromRepo(nameOrNumber: string) {
+    const toDeleteFiles: string[] = []
+
+    const numberRegexWithoutAtNumbering = new RegExp('^' + this.softConfig.numbersPattern(false) + '$')
+    const numberRegexWithAtNumbering = new RegExp('^' + this.softConfig.numbersPattern(true) + '$')
+
+    const isChapterNumberOnly = numberRegexWithoutAtNumbering.test(nameOrNumber) || numberRegexWithAtNumbering.test(nameOrNumber)
+
+    if (!isChapterNumberOnly) {
+      // we will delete all files matching the name entered
+      let filePattern = '**/' + nameOrNumber
+
+      const pathName = path.join(this.rootPath, filePattern)
+      toDeleteFiles.push(...(await this.fsUtils.listFiles(pathName)))
+    } else {
+      // we will delete all files matching the number patterns for chapters, metadata and summary
+      const id = new ChapterId(this.softConfig.extractNumber(nameOrNumber), this.softConfig.isAtNumbering(nameOrNumber))
+      toDeleteFiles.push(...(await this.statistics.getAllFilesForChapter(id)))
+    }
+
+    if (toDeleteFiles.length === 0) {
+      cli.warn('No files to delete.'.errorColor())
+    } else {
+      cli.action.start('Deleting file(s) locally and from repository'.actionStartColor())
+      await this.git.rm(this.softConfig.mapFilesToBeRelativeToRootPath(toDeleteFiles))
+      const toDeletePretty = toDeleteFiles.map(f => `\n    ${f}`)
+      cli.action.stop(`${toDeletePretty}\nwere deleted`.actionStopColor())
+
+      await this.CommitToGit(
+        `Removed files:\n    ${this.softConfig.mapFilesToBeRelativeToRootPath(toDeleteFiles).join('\n    ')}`,
+        undefined,
+        true
+      )
+    }
+  }
+
   public async reorder(origin: string, destination: string): Promise<void> {
     cli.action.start('Analyzing files'.actionStartColor())
 

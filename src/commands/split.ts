@@ -6,10 +6,9 @@ import { ChapterId } from '../chapter-id'
 import { ChptrError } from '../chptr-error'
 
 import { d } from './base'
-import Delete from './delete'
 import Command from './initialized-base'
 
-const debug = d('command:split')
+const debug = d('split')
 
 export default class Split extends Command {
   static description = 'Outputs a chapter file for each `# Title level 1` in an original chapter.'
@@ -161,7 +160,9 @@ export default class Split extends Command {
 
       cli.info(`modified files:${toEditPretty.resultHighlighColor()}`.resultNormalColor())
 
-      await Delete.run([`--path=${flags.path}`, stashedId.toString()])
+      // await Delete.run([`--path=${flags.path}`, stashedId.toString()])
+      await this.deleteFilesFromRepo(stashedId.toString())
+
       // } catch (err) {
       //   this.error(err.toString().errorColor())
       //   this.exit(1)

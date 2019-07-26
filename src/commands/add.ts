@@ -7,7 +7,7 @@ import { QueryBuilder } from '../ui-utils'
 import { d } from './base'
 import Command from './initialized-base'
 
-const debug = d('command:add')
+const debug = d('add')
 
 export default class Add extends Command {
   static description = 'Adds a file or set of files as a new chapter, locally and in repository'
