@@ -1,6 +1,5 @@
 import { flags } from '@oclif/command'
 import { cli } from 'cli-ux'
-import yaml = require('js-yaml')
 import * as path from 'path'
 
 import { ChapterId } from '../chapter-id'
@@ -144,12 +143,12 @@ export default class Rename extends Command {
     const initialContent = await this.fsUtils.readFileContent(metadataFile)
     let obj: any
     try {
-      obj =
-        this.softConfig.configStyle === 'JSON5'
-          ? JSON.parse(initialContent)
-          : this.softConfig.configStyle === 'YAML'
-          ? yaml.safeLoad(initialContent)
-          : {}
+      obj = this.softConfig.parsePerStyle(initialContent)
+        // this.softConfig.configStyle === 'JSON5'
+        //   ? JSON.parse(initialContent)
+        //   : this.softConfig.configStyle === 'YAML'
+        //   ? yaml.safeLoad(initialContent)
+        //   : {}
       const extractedMarkup = obj.extracted
       extractedMarkup.title = newTitle
     } catch (err) {
@@ -160,12 +159,12 @@ export default class Rename extends Command {
       )
     }
 
-    const updatedContent =
-      this.softConfig.configStyle === 'JSON5'
-        ? JSON.stringify(obj, null, 4)
-        : this.softConfig.configStyle === 'YAML'
-        ? yaml.safeDump(obj)
-        : ''
+    const updatedContent = this.softConfig.stringifyPerStyle(obj)
+      // this.softConfig.configStyle === 'JSON5'
+      //   ? JSON.stringify(obj, null, 4)
+      //   : this.softConfig.configStyle === 'YAML'
+      //   ? yaml.safeDump(obj)
+      //   : ''
 
     if (initialContent !== updatedContent) {
       await this.fsUtils.writeFile(metadataFile, updatedContent)

@@ -2,7 +2,6 @@ import { cli } from 'cli-ux'
 import * as d from 'debug'
 import { applyChange, diff, observableDiff } from 'deep-diff'
 import * as JsDiff from 'diff'
-import yaml = require('js-yaml')
 import * as path from 'path'
 
 import { ChapterId } from './chapter-id'
@@ -243,22 +242,22 @@ export class MarkupUtils {
       const metadataFilePath = path.join(this.rootPath, metadataFilename)
       const initialContent = await this.fsUtils.readFileContent(metadataFilePath)
 
-      const initialObj =
-        this.softConfig.configStyle === 'JSON5'
-          ? JSON.parse(initialContent)
-          : this.softConfig.configStyle === 'YAML'
-          ? yaml.safeLoad(initialContent)
-          : {}
+      const initialObj = this.softConfig.parsePerStyle(initialContent)
+        // this.softConfig.configStyle === 'JSON5'
+        //   ? JSON.parse(initialContent)
+        //   : this.softConfig.configStyle === 'YAML'
+        //   ? yaml.safeLoad(initialContent)
+        //   : {}
       const updatedObj = JSON.parse(JSON.stringify(initialObj)) //used to create deep copy
       updatedObj.extracted = extractedMarkup
       updatedObj.computed = computedMarkup
 
-      const updatedContent =
-        this.softConfig.configStyle === 'JSON5'
-          ? JSON.stringify(updatedObj, null, 4)
-          : this.softConfig.configStyle === 'YAML'
-          ? yaml.safeDump(updatedObj)
-          : ''
+      const updatedContent = this.softConfig.stringifyPerStyle(updatedObj)
+        // this.softConfig.configStyle === 'JSON5'
+        //   ? JSON.stringify(updatedObj, null, 4)
+        //   : this.softConfig.configStyle === 'YAML'
+        //   ? yaml.safeDump(updatedObj)
+        //   : ''
       if (initialContent !== updatedContent) {
         debug(`metadataFilePath=${metadataFilePath} updatedContent=${updatedContent}`)
         await this.fsUtils.writeFile(metadataFilePath, updatedContent)
@@ -338,18 +337,18 @@ export class MarkupUtils {
       debug(`file=${file}`)
       const initialContent = await this.fsUtils.readFileContent(file)
       try {
-        const initialObj =
-          this.softConfig.configStyle === 'JSON5'
-            ? JSON.parse(initialContent)
-            : this.softConfig.configStyle === 'YAML'
-            ? yaml.safeLoad(initialContent)
-            : {}
-        const replacedObj =
-          this.softConfig.configStyle === 'JSON5'
-            ? JSON.parse(initialContent)
-            : this.softConfig.configStyle === 'YAML'
-            ? yaml.safeLoad(initialContent)
-            : {}
+        const initialObj = this.softConfig.parsePerStyle(initialContent)
+          // this.softConfig.configStyle === 'JSON5'
+          //   ? JSON.parse(initialContent)
+          //   : this.softConfig.configStyle === 'YAML'
+          //   ? yaml.safeLoad(initialContent)
+          //   : {}
+        const replacedObj = this.softConfig.parsePerStyle(initialContent)
+          // this.softConfig.configStyle === 'JSON5'
+          //   ? JSON.parse(initialContent)
+          //   : this.softConfig.configStyle === 'YAML'
+          //   ? yaml.safeLoad(initialContent)
+          //   : {}
 
         let changeApplied = false
         observableDiff(replacedObj.manual, this.softConfig.metadataFieldsDefaults, d => {
@@ -364,12 +363,12 @@ export class MarkupUtils {
             const expl = (d.kind === 'N' ? 'New ' : 'Deleted ') + d.path
             table.accumulator(this.softConfig.mapFileToBeRelativeToRootPath(file), expl)
           })
-          const outputString =
-            this.softConfig.configStyle === 'JSON5'
-              ? JSON.stringify(replacedObj, null, 4)
-              : this.softConfig.configStyle === 'YAML'
-              ? yaml.safeDump(replacedObj)
-              : ''
+          const outputString = this.softConfig.stringifyPerStyle(replacedObj)
+            // this.softConfig.configStyle === 'JSON5'
+            //   ? JSON.stringify(replacedObj, null, 4)
+            //   : this.softConfig.configStyle === 'YAML'
+            //   ? yaml.safeDump(replacedObj)
+            //   : ''
           await this.fsUtils.writeFile(file, outputString)
         }
       } catch (err) {

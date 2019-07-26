@@ -241,6 +241,14 @@ date: ${moment().format('D MMMM YYYY')}
     }
     return this._configStyle
   }
+
+  public get configFilePath(): string {
+    return this.configStyle === 'JSON5'
+      ? this.hardConfig.configJSON5FilePath
+      : this.configStyle === 'YAML'
+      ? this.hardConfig.configYAMLFilePath
+      : ''
+  }
   constructor(dirname: string, readFromFile = true) {
     this.hardConfig = new HardConfig(dirname)
     this.rootPath = path.join(dirname)
@@ -360,6 +368,9 @@ date: ${moment().format('D MMMM YYYY')}
 
   public stringifyPerStyle(obj: object): string {
     return this.configStyle === 'JSON5' ? JSON.stringify(obj, null, 4) : this.configStyle === 'YAML' ? yaml.safeDump(obj) : ''
+  }
+  public parsePerStyle(str: string): any {
+    return this.configStyle === 'JSON5' ? jsonComment.parse(str, undefined, true) : this.configStyle === 'YAML' ? yaml.safeLoad(str) : {}
   }
 
   public chapterWildcard(atNumbering: boolean): string {
