@@ -9,18 +9,17 @@ export class ChapterId {
   constructor(num: number, isAtNumber: boolean, fixedDigits?: number) {
     this.num = num
     this.isAtNumber = isAtNumber
-    this.fixedDigits = fixedDigits || this.numDigits()
+    this.fixedDigits = fixedDigits || this.computeNumDigits()
   }
 
-  public numDigits(buffer = 2): number {
+  public computeNumDigits(): number {
+    const buffer = 2
     return Math.max(Math.floor(Math.log10(Math.abs(this.num + buffer))), 0) + 1
   }
 
-  public stringifyNumber(digits?: number): string {
-    digits = digits || this.fixedDigits
-
+  public stringifyNumber(): string {
     const s = this.num.toString()
-    const zeroes = Math.max(digits - s.length, 0)
+    const zeroes = Math.max(this.fixedDigits - s.length, 0)
     if (zeroes > 0) {
       return '0'.repeat(zeroes).concat(s)
     } else {

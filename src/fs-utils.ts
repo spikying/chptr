@@ -92,7 +92,7 @@ export class FsUtils {
     } catch (err) {
       throw new ChptrError(err, 'fs-utils.createfile', 101)
     }
-    cli.info(`Created ${fullPathName.resultHighlighColor()}`.resultNormalColor())
+    debug(`Created ${fullPathName.resultHighlighColor()}`.resultNormalColor())
   }
 
   public async getAllFilesForWildcards(wildcards: string[], rootPath: string): Promise<string[]> {

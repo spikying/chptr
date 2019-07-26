@@ -66,9 +66,6 @@ export default class Edit extends Command {
     for (const id of chapterIdsString.map(
       (input: string) => new ChapterId(this.softConfig.extractNumber(input), this.softConfig.isAtNumbering(input))
     )) {
-      // const num =id. this.softConfig.extractNumber(id)
-      // const isAtNumbering = this.softConfig.isAtNumbering(id)
-
       if (editType === 'all' || editType === 'chapter') {
         toEditFiles.push(
           ...(await this.fsUtils.globPromise(path.join(this.rootPath, this.softConfig.chapterWildcardWithNumber(id))))
@@ -89,16 +86,11 @@ export default class Edit extends Command {
     for (const filename of toEditFiles) {
       const fullPath = path.join(this.rootPath, filename)
 
-      // try {
       const initialContent = await this.fsUtils.readFileContent(fullPath)
       const replacedContent = await this.processContentBack(initialContent)
       await this.fsUtils.writeFile(fullPath, replacedContent)
-      // } catch (err) {
-      //   this.error(err.toString().errorColor())
-      //   this.exit(1)
-      // }
     }
     const toEditPretty = toEditFiles.map(f => `\n    ${f}`)
-    cli.action.stop(`modified file${toEditFiles.length > 1 ? 's' : ''}:${toEditPretty}`.actionStopColor())
+    cli.action.stop(`${toEditPretty}\n${toEditFiles.length > 1 ? 'were' : 'was'} modified`.actionStopColor())
   }
 }

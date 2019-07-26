@@ -1,5 +1,6 @@
 import { flags } from '@oclif/command'
 import { cli } from 'cli-ux'
+import yaml = require('js-yaml')
 import * as path from 'path'
 
 import { ChapterId } from '../chapter-id'
@@ -76,7 +77,7 @@ export default class Rename extends Command {
     if (!chapterFile || !summaryFile || !metadataFile) {
       await this.statistics.updateStackStatistics(chapterId.isAtNumber)
       // const digits = this.statistics.getMinDigits(chapterId.isAtNumber)
-      chapterId.fixedDigits= this.statistics.getMinDigits(chapterId.isAtNumber)
+      chapterId.fixedDigits = this.statistics.getMinDigits(chapterId.isAtNumber)
       const expectedFiles = [
         this.softConfig.chapterFileNameFromParameters(chapterId, newNameForFile),
         this.softConfig.summaryFileNameFromParameters(chapterId, newNameForFile),
@@ -141,12 +142,30 @@ export default class Rename extends Command {
 
   private async replaceTitleInObject(metadataFile: string, newTitle: string): Promise<boolean> {
     const initialContent = await this.fsUtils.readFileContent(metadataFile)
-    const obj = JSON.parse(initialContent)
-    const extractedMarkup = obj.extracted
+    let obj: any
+    try {
+      obj =
+        this.softConfig.configStyle === 'JSON5'
+          ? JSON.parse(initialContent)
+          : this.softConfig.configStyle === 'YAML'
+          ? yaml.safeLoad(initialContent)
+          : {}
+      const extractedMarkup = obj.extracted
+      extractedMarkup.title = newTitle
+    } catch (err) {
+      throw new ChptrError(
+        `Could not load and extract metadata from ${metadataFile}.  ${err.toString().errorColor()}`,
+        'rename.replacetitleinobject',
+        48
+      )
+    }
 
-    extractedMarkup.title = newTitle
-
-    const updatedContent = JSON.stringify(obj, null, 4)
+    const updatedContent =
+      this.softConfig.configStyle === 'JSON5'
+        ? JSON.stringify(obj, null, 4)
+        : this.softConfig.configStyle === 'YAML'
+        ? yaml.safeDump(obj)
+        : ''
 
     if (initialContent !== updatedContent) {
       await this.fsUtils.writeFile(metadataFile, updatedContent)

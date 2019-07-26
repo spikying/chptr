@@ -259,6 +259,7 @@ export default abstract class extends Command {
   }
 
   public async processChapterFilesBeforeSaving(toStageFiles: string[]): Promise<void> {
+    cli.info('Processing files to repository format:'.infoColor())
     for (const filename of toStageFiles) {
       const fullPath = path.join(this.rootPath, filename)
       const exists = await this.fsUtils.fileExists(fullPath)
@@ -266,16 +267,14 @@ export default abstract class extends Command {
       if (
         exists &&
         (this.softConfig.chapterRegex(false).test(this.softConfig.mapFileToBeRelativeToRootPath(fullPath)) ||
-          this.softConfig.chapterRegex(true).test(this.softConfig.mapFileToBeRelativeToRootPath(fullPath)))
+          this.softConfig.chapterRegex(true).test(this.softConfig.mapFileToBeRelativeToRootPath(fullPath)) ||
+          this.softConfig.summaryRegex(false).test(this.softConfig.mapFileToBeRelativeToRootPath(fullPath)) ||
+          this.softConfig.summaryRegex(true).test(this.softConfig.mapFileToBeRelativeToRootPath(fullPath)))
       ) {
-        // try {
         const initialContent = await this.fsUtils.readFileContent(fullPath)
         const replacedContent = this.processContent(this.processContentBack(initialContent))
         await this.fsUtils.writeFile(fullPath, replacedContent)
-        // } catch (err) {
-        //   this.error(err.toString().errorColor())
-        //   this.exit(1)
-        // }
+        cli.info(`    ${fullPath}`.resultHighlighColor())
       }
     }
   }
@@ -460,6 +459,8 @@ export default abstract class extends Command {
   }
 
   public async reorder(origin: string, destination: string): Promise<void> {
+    cli.action.start('Analyzing files'.actionStartColor())
+
     await this.statistics.getAllNovelFiles()
 
     const originId = await this.checkArgPromptAndExtractChapterId(origin, 'What chapter to use as origin?')

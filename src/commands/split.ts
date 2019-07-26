@@ -36,7 +36,7 @@ export default class Split extends Command {
 
   static aliases = ['divide']
 
-  // TODO: extract needed functions from Reorder, Add and Delete so all these operations can be saved a single time.
+  // TODO: extract needed functions from Reorder, Add and Delete so all these operations can be saved a single time. Make sure everything is commited.
   // TODO: update metadata files of splitted files
   async run() {
     debug('In Split command')

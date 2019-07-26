@@ -54,24 +54,17 @@ export default class Add extends Command {
 
     const name: string = args.name || queryResponses.name
 
-    const toStageFiles=    await this.addChapterFiles(name, flags.atnumbered, args.number)
+    const toStageFiles = await this.addChapterFiles(name, flags.atnumbered, args.number)
 
-    const commitMessage = `added\n    ${toStageFiles.join('\n   ')}`
+    const commitMessage = `added\n    ${toStageFiles.join('\n    ')}`
 
     await this.addDigitsToNecessaryStacks()
     await this.CommitToGit(commitMessage, toStageFiles)
-    // } catch (err) {
-    //   this.error(err.toString().errorColor())
-    // }
   }
 
   private async addChapterFiles(name: string, atNumbering: boolean, number?: string) {
-        // let atNumbering: boolean
-    // let nextNumber: number
     let chapterId: ChapterId
     if (number) {
-      // atNumbering = args.number.substring(0, 1) === '@'
-      // nextNumber = this.softConfig.extractNumber(args.number)
       chapterId = new ChapterId(this.softConfig.extractNumber(number), this.softConfig.isAtNumbering(number))
 
       const existingFile = await this.fsUtils.listFiles(path.join(this.rootPath, this.softConfig.chapterWildcardWithNumber(chapterId)))
@@ -88,7 +81,6 @@ export default class Add extends Command {
         atNumbering
       )
     }
-    // const newDigits = chapterId.numDigits(chapterId.num)
 
     const emptyFileString = this.softConfig.emptyFileString.toString()
     const filledTemplateData = emptyFileString.replace(/{TITLE}/gim, name)
@@ -104,37 +96,28 @@ export default class Add extends Command {
 
     const fullPathsAndData = [
       {
-        path: path.join(
-          this.rootPath,
-          this.softConfig.chapterFileNameFromParameters(chapterId, name)
-        ),
+        path: path.join(this.rootPath, this.softConfig.chapterFileNameFromParameters(chapterId, name)),
         data: filledTemplateData
-      }, {
+      },
+      {
+        path: path.join(this.rootPath, this.softConfig.metadataFileNameFromParameters(chapterId, name)),
+        data: filledTemplateMeta
+      },
+      {
+        path: path.join(this.rootPath, this.softConfig.summaryFileNameFromParameters(chapterId, name)),
+        data: filledTemplateData
+      }
+    ]
 
-        path: path.join(
-          this.rootPath,
-          this.softConfig.metadataFileNameFromParameters(chapterId, name)
-        ), data: filledTemplateMeta
-      }, {
-        path: path.join(
-          this.rootPath,
-          this.softConfig.summaryFileNameFromParameters(chapterId, name)
-        ), data: filledTemplateData
-      }]
-
-    // try {
     cli.action.start('Creating file(s) locally and to repository'.actionStartColor())
 
     const allPromises: Promise<void>[] = []
     for (const pathAndData of fullPathsAndData) {
       allPromises.push(this.fsUtils.createFile(pathAndData.path, pathAndData.data))
     }
-    // allPromises.push(this.fsUtils.createFile(fullPathMD, filledTemplateData))
-    // allPromises.push(this.fsUtils.createFile(fullPathMeta, filledTemplateMeta))
-    // allPromises.push(this.fsUtils.createFile(fullPathSummary, filledTemplateData))
     await Promise.all(allPromises)
-    cli.action.stop('done'.actionStopColor())
+    cli.action.stop('\n    ' + fullPathsAndData.map(pad => pad.path).join('\n    ').actionStopColor())
 
-    return this.softConfig.mapFilesToBeRelativeToRootPath(fullPathsAndData.map(pad=>pad.path))
+    return this.softConfig.mapFilesToBeRelativeToRootPath(fullPathsAndData.map(pad => pad.path))
   }
 }

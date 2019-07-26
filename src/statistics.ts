@@ -110,7 +110,7 @@ export class Statistics {
         const matches = fileRegex.exec(this.softConfig.mapFileToBeRelativeToRootPath(value))
         if (matches) {
           const id = new ChapterId(parseInt(matches[1], 10), atNumbers)
-          return id.numDigits()
+          return id.computeNumDigits()
         } else {
           return 0
         }

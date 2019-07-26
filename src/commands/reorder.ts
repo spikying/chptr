@@ -1,7 +1,4 @@
 import { flags } from '@oclif/command'
-import { cli } from 'cli-ux'
-// import * as path from 'path'
-// import { MoveSummary } from 'simple-git/typings/response'
 
 import { QueryBuilder } from '../ui-utils'
 
@@ -40,8 +37,6 @@ export default class Reorder extends Command {
 
     const compact = flags.compact
 
-    cli.action.start('Analyzing files'.actionStartColor())
-
     const queryBuilder = new QueryBuilder()
     if (!args.origin) {
       queryBuilder.add('origin', queryBuilder.textinput('What chapter to use as origin?', ''))
@@ -68,5 +63,4 @@ export default class Reorder extends Command {
 
     await this.CommitToGit(commitMessage)
   }
-
 }

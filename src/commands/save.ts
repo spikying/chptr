@@ -3,6 +3,8 @@ import { cli } from 'cli-ux'
 import * as minimatch from 'minimatch'
 import * as path from 'path'
 
+import { ChapterId } from '../chapter-id'
+import { ChptrError } from '../chptr-error'
 import { QueryBuilder } from '../ui-utils'
 
 import { d } from './base'
@@ -54,25 +56,25 @@ export default class Save extends Command {
     debug('Running Save command')
     const { args, flags } = this.parse(Save)
 
-    const atFilter = flags.number ? flags.number.substring(0, 1) === '@' : false
-    const numberFilter = flags.number ? this.softConfig.extractNumber(flags.number) : undefined
+    // const atFilter = flags.number ? flags.number.substring(0, 1) === '@' : false
+    // const numberFilter = flags.number ? this.softConfig.extractNumber(flags.number) : undefined
+    const chapterIdFilter = flags.number
+      ? new ChapterId(this.softConfig.extractNumber(flags.number), this.softConfig.isAtNumbering(flags.number))
+      : null
 
-    const preStageFiles = flags.number ? await this.GetGitListOfStageableFiles(numberFilter, atFilter) : []
-
-    debug(`flags.number=${flags.number} numberFilter=${numberFilter} at=${atFilter} preStageFiles=${JSON.stringify(preStageFiles)}`)
+    const preStageFiles = chapterIdFilter ? await this.GetGitListOfStageableFiles(chapterIdFilter) : []
 
     for (const toStageFile of preStageFiles) {
-      const isChapterFile = numberFilter
-        ? minimatch(toStageFile, this.softConfig.chapterWildcardWithNumber(numberFilter, atFilter))
-        : minimatch(toStageFile, this.softConfig.chapterWildcard(true)) ||
-          minimatch(toStageFile, this.softConfig.chapterWildcard(false))
+      const isChapterFile = chapterIdFilter
+        ? minimatch(toStageFile, this.softConfig.chapterWildcardWithNumber(chapterIdFilter))
+        : minimatch(toStageFile, this.softConfig.chapterWildcard(true)) || minimatch(toStageFile, this.softConfig.chapterWildcard(false))
 
       if (isChapterFile) {
         await this.UpdateSingleMetadata(toStageFile)
       }
     }
-    const toStageFiles = flags.number
-      ? await this.GetGitListOfStageableFiles(numberFilter, atFilter)
+    const toStageFiles = chapterIdFilter
+      ? await this.GetGitListOfStageableFiles(chapterIdFilter)
       : flags.filename
       ? (await this.GetGitListOfStageableFiles()).filter(f => {
           debug(`f=${f}, flags.filename=${flags.filename}`)
@@ -92,12 +94,10 @@ export default class Save extends Command {
             `" or add ` +
             `--track`.resultNormalColor() +
             ` flag to this command.`
-          this.warn(warnMsg.infoColor())
-          this.exit(0)
+          throw new ChptrError(warnMsg, 'save.run', 46)
         }
       } else {
-        this.warn('No files to save to repository')
-        this.exit(0)
+        throw new ChptrError('No files to save to repository', 'save.run', 47)
       }
     }
 
@@ -105,11 +105,10 @@ export default class Save extends Command {
     if (!args.message) {
       queryBuilder.add('message', queryBuilder.textinput('Message to use in commit to repository?', ''))
     }
-
     const queryResponses: any = await queryBuilder.responses()
 
     let message: string = args.message || queryResponses.message || 'Modified files:'
-    message += '\n' + `${JSON.stringify(toStageFiles)}`
+    message += '\n    ' + `${toStageFiles.join('\n    ')}`
 
     await this.CommitToGit(message, toStageFiles)
   }

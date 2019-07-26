@@ -40,8 +40,6 @@ export default class Antidote extends Command {
       const queryResponses: any = await queryBuilder.responses()
       chapterIdString = queryResponses.chapterId
     }
-    // const isAtNumber: boolean = chapterIdString.substring(0, 1) === '@'
-    // const chapterNumber = this.softConfig.extractNumber(chapterIdString)
     const chapterId = new ChapterId(this.softConfig.extractNumber(chapterIdString), this.softConfig.isAtNumbering(chapterIdString))
 
     const chapterFileName = glob.sync(path.join(this.rootPath, this.softConfig.chapterWildcardWithNumber(chapterId)))[0]
@@ -56,9 +54,6 @@ export default class Antidote extends Command {
     cli.action.start(`Launching Antidote with ${antidoteFilePath}`.actionStartColor())
     await this.fsUtils.copyFile(basicFilePath, antidoteFilePath)
     await this.processPreAntidote(antidoteFilePath)
-    // await this.processFileBack(antidoteFilePath)
-    // await this.processFile(antidoteFilePath)
-    // await this.processFileForAntidote(antidoteFilePath)
 
     const filePath = `"${path.resolve(antidoteFilePath)}"`
 
@@ -67,14 +62,13 @@ export default class Antidote extends Command {
     cli.action.stop('done'.actionStopColor())
     await cli.anykey('Press any key when Antidote correction is done to continue.'.resultHighlighColor())
 
+    await this.processPostAntidote(antidoteFilePath)
+
     const queryBuilder2 = new QueryBuilder()
     queryBuilder2.add('message', queryBuilder2.textinput('Message to use in commit to repository? Type `cancel` to skip commit step.', ''))
     const queryResponses2: any = await queryBuilder2.responses()
-    const message = (queryResponses2.message + '\nPost-Antidote').replace(/"/, '`')
+    const message = ('Antidote:\n' + queryResponses2.message).replace(/"/, '`')
 
-    await this.processPostAntidote(antidoteFilePath)
-    // await this.processFileBack(antidoteFilePath)
-    // await this.processFile(antidoteFilePath)
     await this.fsUtils.moveFile(antidoteFilePath, basicFilePath)
 
     if (queryResponses2.message !== 'cancel') {
@@ -105,20 +99,6 @@ export default class Antidote extends Command {
     })
   }
 
-  // private processContentForAntidote(initialContent: string): string {
-  //   try {
-  //     const re = new RegExp(this.markupUtils.sentenceBreakChar + '\r?\n', 'gm')
-  //     const replacedContent = initialContent.replace(re, this.markupUtils.sentenceBreakChar + '  ').replace(/\n/gm, '\r\n')
-  //     debug(`Processed antidote content: \n${replacedContent.substring(0, 250)}`)
-
-  //     return replacedContent
-  //   } catch (err) {
-  //     this.error(err.toString().errorColor())
-  //     this.exit(1)
-  //   }
-  //   return ''
-  // }
-
   private removeTripleEnters(str: string): string {
     const tripleEnterRegEx = /\n\n\n/gm
     if (tripleEnterRegEx.test(str)) {
@@ -131,19 +111,13 @@ export default class Antidote extends Command {
   private async processPostAntidote(filepath: string): Promise<void> {
     const initialContent = await this.fsUtils.readFileContent(filepath)
 
-    // const sentenceRE = new RegExp(this.markupUtils.sentenceBreakChar + '  ', 'gm')
-    // const paragraphRE = new RegExp('(' + this.markupUtils.paragraphBreakChar + '{{\\d+}}\\n)\\n', 'gm')
     let replacedContent = this.removeTripleEnters(
-      '\n' +
-        initialContent
-          // .replace(sentenceRE, this.markupUtils.sentenceBreakChar + '\n')
-          .replace(/\n/gm, '\r\n')
-          .replace(/\r\n/gm, '\n\n')
-          // .replace(paragraphRE, '$1')
-          // .replace(/^\uFEFF/, '\n') // un-BOM the file
-          .concat('\n') // add an enter at the end
-          .replace(/\n{2,}$/, '\n') // make sure there is only one enter at the end
-          .replace(/^\n{2,}/, '\n') // make sure there is an enter before then first line
+      ('\n' + initialContent) // enter at the beginning
+        .replace(/\n/gm, '\r\n')
+        .replace(/\r\n/gm, '\n\n')
+        .concat('\n') // add an enter at the end
+        .replace(/\n{2,}$/, '\n') // make sure there is only one enter at the end
+        .replace(/^\n{2,}# /, '\n# ') // make sure there is an enter before the first line
     )
     replacedContent = this.processContent(this.processContentBack(replacedContent))
 
@@ -160,9 +134,6 @@ export default class Antidote extends Command {
     }
 
     replacedContent = this.processContentBack(replacedContent)
-
-    // const re = new RegExp(this.markupUtils.sentenceBreakChar + '\r?\n', 'gm')
-    //  replacedContent = replacedContent.replace(re, this.markupUtils.sentenceBreakChar + '  ').replace(/\n/gm, '\r\n')
 
     await this.fsUtils.writeFile(filepath, replacedContent)
   }

@@ -1,6 +1,5 @@
 import { flags } from '@oclif/command'
 import { cli } from 'cli-ux'
-// import * as glob from 'glob'
 import * as path from 'path'
 
 import { ChapterId } from '../chapter-id'
@@ -44,11 +43,9 @@ export default class Delete extends Command {
     const compact = flags.compact
 
     const queryBuilder = new QueryBuilder()
-
     if (!args.name) {
       queryBuilder.add('name', queryBuilder.textinput('Chapter number or filename to delete?'))
     }
-
     const queryResponses: any = await queryBuilder.responses()
     const nameOrNumber: any = args.name || queryResponses.name
 
@@ -61,7 +58,6 @@ export default class Delete extends Command {
     const numberRegexWithoutAtNumbering = new RegExp('^' + this.softConfig.numbersPattern(false) + '$')
     const numberRegexWithAtNumbering = new RegExp('^' + this.softConfig.numbersPattern(true) + '$')
 
-    // const isAtNumber = nameOrNumber.substring(0, 1) === '@'
     const isChapterNumberOnly = numberRegexWithoutAtNumbering.test(nameOrNumber) || numberRegexWithAtNumbering.test(nameOrNumber)
 
     if (!isChapterNumberOnly) {
@@ -72,7 +68,6 @@ export default class Delete extends Command {
       toDeleteFiles.push(...(await this.fsUtils.listFiles(pathName)))
     } else {
       // we will delete all files matching the number patterns for chapters, metadata and summary
-      // const filterNumber = this.softConfig.extractNumber(nameOrNumber)
       const id = new ChapterId(this.softConfig.extractNumber(nameOrNumber), this.softConfig.isAtNumbering(nameOrNumber))
       toDeleteFiles.push(...(await this.statistics.getAllFilesForChapter(id)))
     }
@@ -80,17 +75,17 @@ export default class Delete extends Command {
     if (toDeleteFiles.length === 0) {
       cli.warn('No files to delete.'.errorColor())
     } else {
-      // try {
       cli.action.start('Deleting file(s) locally and from repository'.actionStartColor())
       await this.git.rm(this.softConfig.mapFilesToBeRelativeToRootPath(toDeleteFiles))
       const toDeletePretty = toDeleteFiles.map(f => `\n    ${f}`)
+      cli.action.stop(`${toDeletePretty}\nwere deleted`.actionStopColor())
+
       await this.CommitToGit(
-        `Removed files: ${JSON.stringify(this.softConfig.mapFilesToBeRelativeToRootPath(toDeleteFiles))}`,
+        `Removed files:\n    ${this.softConfig.mapFilesToBeRelativeToRootPath(toDeleteFiles).join('\n    ')}`,
         undefined,
         true
       )
 
-      cli.action.stop(`${toDeletePretty}\nwere deleted`.actionStopColor())
       // } catch (err) {
       //   this.error(err.toString().errorColor())
       // }
