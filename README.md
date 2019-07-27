@@ -9,6 +9,15 @@ Command Line tool to handle separate Markdown files with special markup notation
 
 It is aimed at helping writing fiction, but could be used for managing any complicated long document.
 
+
+# Table of Contents
+
+<!-- toc -->
+* [chptr](#chptr)
+* [Usage](#usage)
+* [Commands](#commands)
+<!-- tocstop -->
+
 ## Key features
 
 - Wrapping [Git](https://git-scm.com/) basic functions for versionning and remote repository backup
@@ -23,7 +32,7 @@ It is aimed at helping writing fiction, but could be used for managing any compl
   - ```Delete``` chapters
   - ```Reorder``` chapters
   - ```Build``` output and recomputing some metadata
-  - Help with ```[Antidote](https://antidote.info/)``` language checker workflow
+  - Help with ```Antidote``` [language checker](https://antidote.info/) workflow
   - ```Save``` to repository, in sentence-by-line style
   - Put chapters back to ```Edit``` mode, by removing paragraph markup and bringing back file in paragraphs
   - ```Rename``` chapters
@@ -60,12 +69,6 @@ In some future, I wish to do these things:
 * Improve the code structure, code reusability and general code cleanliness
 * Include some other Oclif plugins, if appropriate
 * Move the ```Antidote``` command to a separate plugin
-
-<!-- toc -->
-* [chptr](#chptr)
-* [Usage](#usage)
-* [Commands](#commands)
-<!-- tocstop -->
 
 # Usage
 
