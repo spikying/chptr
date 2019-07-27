@@ -14,6 +14,7 @@ It is aimed at helping writing fiction, but could be used for managing any compl
 
 <!-- toc -->
 * [chptr](#chptr)
+* [Table of Contents](#table-of-contents)
 * [Usage](#usage)
 * [Commands](#commands)
 <!-- tocstop -->
@@ -96,8 +97,8 @@ USAGE
 * [`chptr edit [CHAPTERIDS]`](#chptr-edit-chapterids)
 * [`chptr help [COMMAND]`](#chptr-help-command)
 * [`chptr init [NAME]`](#chptr-init-name)
-* [`chptr rename [CHAPTERORFILENAME] [NEWNAME]`](#chptr-rename-chapterorfilename-newname)
-* [`chptr reorder [ORIGIN] [DESTINATION]`](#chptr-reorder-origin-destination)
+* [`chptr rename [CHAPTERIDORFILENAME] [NEWNAME]`](#chptr-rename-chapteridorfilename-newname)
+* [`chptr reorder [ORIGINID] [DESTINATIONID]`](#chptr-reorder-originid-destinationid)
 * [`chptr save [MESSAGE]`](#chptr-save-message)
 * [`chptr track [FILENAME]`](#chptr-track-filename)
 
@@ -268,17 +269,17 @@ ALIASES
 
 _See code: [src\commands\init.ts](https://github.com/spikying/chptr/blob/v0.1.0/src\commands\init.ts)_
 
-## `chptr rename [CHAPTERORFILENAME] [NEWNAME]`
+## `chptr rename [CHAPTERIDORFILENAME] [NEWNAME]`
 
 Modify chapter title in text, metadata and filename or tracked filename
 
 ```
 USAGE
-  $ chptr rename [CHAPTERORFILENAME] [NEWNAME]
+  $ chptr rename [CHAPTERIDORFILENAME] [NEWNAME]
 
 ARGUMENTS
-  CHAPTERORFILENAME  Chapter number or tracked filename to modify
-  NEWNAME            New chapter name
+  CHAPTERIDORFILENAME  Chapter number or tracked filename to modify
+  NEWNAME              New chapter name
 
 OPTIONS
   -N, --notify     show a notification box when build is completed.
@@ -289,17 +290,17 @@ OPTIONS
 
 _See code: [src\commands\rename.ts](https://github.com/spikying/chptr/blob/v0.1.0/src\commands\rename.ts)_
 
-## `chptr reorder [ORIGIN] [DESTINATION]`
+## `chptr reorder [ORIGINID] [DESTINATIONID]`
 
 Takes a chapter and modifies its index number to fit another ordering place
 
 ```
 USAGE
-  $ chptr reorder [ORIGIN] [DESTINATION]
+  $ chptr reorder [ORIGINID] [DESTINATIONID]
 
 ARGUMENTS
-  ORIGIN       Chapter number to move
-  DESTINATION  Number it will become (write `end` or `@end`to put at the end of each stack).
+  ORIGINID       Chapter number to move
+  DESTINATIONID  Number it will become (write `end` or `@end`to put at the end of each stack).
 
 OPTIONS
   -N, --notify     show a notification box when build is completed.

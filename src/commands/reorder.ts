@@ -20,9 +20,9 @@ export default class Reorder extends Command {
   }
 
   static args = [
-    { name: 'origin', description: 'Chapter number to move', required: false },
+    { name: 'originId', description: 'Chapter number to move', required: false },
     {
-      name: 'destination',
+      name: 'destinationId',
       description: 'Number it will become (write `end` or `@end`to put at the end of each stack).',
       required: false
     }
@@ -38,21 +38,21 @@ export default class Reorder extends Command {
     const compact = flags.compact
 
     const queryBuilder = new QueryBuilder()
-    if (!args.origin) {
-      queryBuilder.add('origin', queryBuilder.textinput('What chapter to use as origin?', ''))
+    if (!args.originId) {
+      queryBuilder.add('originId', queryBuilder.textinput('What chapter to use as origin?', ''))
     }
-    if (!args.destination) {
-      queryBuilder.add('destination', queryBuilder.textinput('What chapter to use as destination?'))
+    if (!args.destinationId) {
+      queryBuilder.add('destinationId', queryBuilder.textinput('What chapter to use as destination?'))
     }
     const queryResponses: any = await queryBuilder.responses()
-    const origin = args.origin || queryResponses.origin
-    const destination = args.destination || queryResponses.destination
+    const originId = args.originId || queryResponses.originId
+    const destinationId = args.destinationId || queryResponses.destinationId
 
-    await this.coreUtils.reorder(origin, destination)
+    await this.coreUtils.reorder(originId, destinationId)
 
     const didAddDigits = await this.coreUtils.addDigitsToNecessaryStacks()
 
-    let commitMessage = `Reordered files from ${origin} to ${destination}`
+    let commitMessage = `Reordered files from ${originId} to ${destinationId}`
     if (compact) {
       commitMessage += '\nCompacted file numbers'
       await this.coreUtils.compactFileNumbers()

@@ -25,7 +25,7 @@ export default class Rename extends Command {
 
   static args = [
     {
-      name: 'chapterOrFilename',
+      name: 'chapterIdOrFilename',
       description: 'Chapter number or tracked filename to modify',
       required: false,
       default: ''
@@ -46,9 +46,9 @@ export default class Rename extends Command {
 
     const queryBuilder = new QueryBuilder()
 
-    if (!args.chapterOrFilename) {
+    if (!args.chapterIdOrFilename) {
       //no chapter given; must ask for it
-      queryBuilder.add('chapterOrFilename', queryBuilder.textinput('What chapter number to rename, or tracked filename?', ''))
+      queryBuilder.add('chapterIdOrFilename', queryBuilder.textinput('What chapter number to rename, or tracked filename?', ''))
     }
 
     if (!args.newName && !flags.title) {
@@ -56,7 +56,7 @@ export default class Rename extends Command {
     }
 
     const queryResponses: any = await queryBuilder.responses()
-    const chapterIdString = args.chapterOrFilename || queryResponses.chapterOrFilename || ''
+    const chapterIdString = args.chapterIdOrFilename || queryResponses.chapterIdOrFilename || ''
 
     // const num = this.softConfig.extractNumber(chapterIdString)
     // const isAtNumbering = this.softConfig.isAtNumbering(chapterIdString)
