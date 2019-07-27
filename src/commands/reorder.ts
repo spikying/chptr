@@ -50,12 +50,12 @@ export default class Reorder extends Command {
 
     await this.coreUtils.reorder(origin, destination)
 
-    const didAddDigits = await this.addDigitsToNecessaryStacks()
+    const didAddDigits = await this.coreUtils.addDigitsToNecessaryStacks()
 
     let commitMessage = `Reordered files from ${origin} to ${destination}`
     if (compact) {
       commitMessage += '\nCompacted file numbers'
-      await this.compactFileNumbers()
+      await this.coreUtils.compactFileNumbers()
     }
     if (didAddDigits) {
       commitMessage += '\nAdded digits to chapter numbers'

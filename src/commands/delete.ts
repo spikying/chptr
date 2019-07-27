@@ -54,7 +54,7 @@ export default class Delete extends Command {
     let commitMsg = await this.coreUtils.deleteFilesFromRepo(nameOrNumber)
 
     if (compact) {
-      await this.compactFileNumbers()
+      await this.coreUtils.compactFileNumbers()
       // await this.gitWrapper.CommitToGit(`Compacted file numbers`)
       commitMsg += `\nCompacted file numbers`
     }

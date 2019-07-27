@@ -1,4 +1,3 @@
-import { cli } from 'cli-ux'
 import { observableDiff } from 'deep-diff'
 import * as path from 'path'
 import * as simplegit from 'simple-git/promise'
@@ -89,7 +88,8 @@ export default abstract class extends Command {
   }
 
   //#region config watches
-  public async RenameFilesIfNewPattern(): Promise<boolean> {
+
+  private async RenameFilesIfNewPattern(): Promise<boolean> {
     let result = false
     const { lastConfigObj, actualConfigObj } = await this.getLastAndActualConfigObjects()
 
@@ -161,7 +161,7 @@ export default abstract class extends Command {
     return result
   }
 
-  public async MoveToNewBuildDirectory(): Promise<void> {
+  private async MoveToNewBuildDirectory(): Promise<void> {
     const { lastConfigObj, actualConfigObj } = await this.getLastAndActualConfigObjects()
 
     let oldDir = ''
@@ -196,7 +196,7 @@ export default abstract class extends Command {
     }
   }
 
-  public async RenameProjectTitle() {
+  private async RenameProjectTitle() {
     const { lastConfigObj, actualConfigObj } = await this.getLastAndActualConfigObjects()
 
     let oldTitle = ''
@@ -224,7 +224,7 @@ export default abstract class extends Command {
     }
   }
 
-  public async CheckIfStepOrInitialNumberHaveChanged() {
+  private async CheckIfStepOrInitialNumberHaveChanged() {
     const { lastConfigObj, actualConfigObj } = await this.getLastAndActualConfigObjects()
 
     const table = tableize('Old', 'New')
@@ -246,152 +246,6 @@ export default abstract class extends Command {
 
     table.show('Config file has changes.  Run `reorder` or `build` command with `--compact` flag to rename files with new scheme.')
   }
-  //#endregion
-
-  //All Git shared operations
-  // public async CommitToGit(message: string, toStageFiles?: string[], forDeletes = false) {
-  //   toStageFiles = toStageFiles || (await this.GetGitListOfStageableFiles())
-  //   if (toStageFiles.length > 0 || forDeletes) {
-  //     // try {
-  //     cli.action.start('Saving file(s) in repository'.actionStartColor())
-
-  //     await this.processChapterFilesBeforeSaving(toStageFiles)
-  //     debug(`after processing file`)
-
-  //     if (!forDeletes) {
-  //       await this.git.add(toStageFiles)
-  //     }
-  //     debug(`after adding files`)
-  //     await this.git.addConfig('user.name', this.softConfig.config.projectAuthor.name)
-  //     await this.git.addConfig('user.email', this.softConfig.config.projectAuthor.email)
-
-  //     const commitSummary = await this.git.commit(message)
-  //     const hasRemote: boolean = await this.git.getRemotes(false).then(result => {
-  //       return result.find(value => value.name === 'origin') !== undefined
-  //     })
-  //     if (hasRemote) {
-  //       await this.git.push()
-  //       await this.git.pull()
-  //     }
-
-  //     const toStagePretty = toStageFiles.map(f => `\n    ${f}`.infoColor())
-  //     cli.action.stop(
-  //       `\nCommited and pushed ${commitSummary.commit.resultHighlighColor()}:\n${message.infoColor()}\nFile${
-  //         toStageFiles.length > 1 ? 's' : ''
-  //       }:${toStagePretty}`.actionStopColor()
-  //     )
-  //     // } catch (err) {
-  //     //   this.error(err.toString().errorColor())
-  //     // }
-  //   }
-  // }
-
-  // public async GetGitListOfStageableFiles(chapterId?: ChapterId): Promise<string[]> {
-  //   const gitStatus = await this.git.status()
-
-  //   const unQuote = function(value: string) {
-  //     if (!value) {
-  //       return value
-  //     }
-  //     return value.replace(/"(.*)"/, '$1')
-  //   }
-
-  //   const onlyUnique = function(value: any, index: number, self: any) {
-  //     return self.indexOf(value) === index
-  //   }
-
-  //   const unfilteredFileList = (await this.git.diff(['--name-only']))
-  //     .split('\n')
-  //     // .concat(gitStatus.deleted.map(unQuote)) //If they are removed by git.rm it is not necessary to "readd" then
-  //     .concat(gitStatus.modified.map(unQuote))
-  //     // .concat(gitStatus.created.map(unQuote)) //They are added manually through Add and Track command
-  //     .concat(gitStatus.renamed.map((value: any) => value.to as string).map(unQuote))
-  //     .filter(onlyUnique)
-
-  //   // debug(`unfilteredFileList=${JSON.stringify(unfilteredFileList)}`)
-
-  //   return unfilteredFileList
-  //     .filter(val => val !== '')
-  //     .filter(val => {
-  //       return chapterId
-  //         ? minimatch(val, this.softConfig.chapterWildcardWithNumber(chapterId)) ||
-  //             minimatch(val, this.softConfig.metadataWildcardWithNumber(chapterId)) ||
-  //             minimatch(val, this.softConfig.summaryWildcardWithNumber(chapterId))
-  //         : true
-  //     })
-  // }
-
-  //Project file updates
-  public async addDigitsToNecessaryStacks(): Promise<boolean> {
-    let didAddDigits = false
-    await this.statistics.getAllNovelFiles(true)
-    for (const b of [true, false]) {
-      const maxDigits = this.statistics.getMaxNecessaryDigits(b)
-      const minDigits = this.statistics.getMinDigits(b)
-      if (minDigits < maxDigits) {
-        didAddDigits = didAddDigits || (await this.addDigitsToFiles(await this.statistics.getAllFilesForOneType(b, true), maxDigits, b))
-      }
-    }
-    return didAddDigits
-  }
-
-  public async compactFileNumbers(): Promise<void> {
-    cli.action.start('Compacting file numbers'.actionStartColor())
-
-    const table = tableize('from', 'to')
-    const moves: { fromFilename: string; toFilename: string }[] = []
-    const movePromises: Promise<MoveSummary>[] = []
-    const { tempDir, removeTempDir } = await this.fsUtils.getTempDir(this.rootPath)
-    const tempDirForGit = this.softConfig.mapFileToBeRelativeToRootPath(tempDir)
-
-    for (const b of [true, false]) {
-      const wildcards = [this.softConfig.chapterWildcard(b), this.softConfig.metadataWildcard(b), this.softConfig.summaryWildcard(b)]
-      for (const wildcard of wildcards) {
-        const files = await this.fsUtils.listFiles(path.join(this.rootPath, wildcard))
-
-        const organizedFiles: any[] = []
-        for (const file of files) {
-          organizedFiles.push({ number: this.softConfig.extractNumber(file), filename: file })
-        }
-
-        const destDigits = this.statistics.getMaxNecessaryDigits(b)
-        let currentNumber = this.softConfig.config.numberingInitial
-
-        for (const file of organizedFiles.sort((a, b) => a.number - b.number)) {
-          const fromFilename = this.softConfig.mapFileToBeRelativeToRootPath(file.filename)
-          const toFilename = this.softConfig.renumberedFilename(fromFilename, currentNumber, destDigits, b)
-
-          if (fromFilename !== toFilename) {
-            moves.push({ fromFilename, toFilename })
-            table.accumulator(fromFilename, toFilename)
-            movePromises.push(this.gitUtils.mv(fromFilename, path.join(tempDirForGit, toFilename)))
-          }
-          currentNumber += this.softConfig.config.numberingStep
-        }
-      }
-    }
-
-    await Promise.all(movePromises)
-    for (const renumbering of moves) {
-      movePromises.push(this.gitUtils.mv(path.join(tempDirForGit, renumbering.toFilename), renumbering.toFilename))
-    }
-    await Promise.all(movePromises)
-
-    await removeTempDir()
-
-    if (moves.length === 0) {
-      cli.action.stop(`no compacting was needed`.actionStopColor())
-    } else {
-      await this.addDigitsToNecessaryStacks()
-      cli.action.stop(`done:`.actionStopColor())
-      table.show()
-    }
-  }
-
-  // public isEndOfStack(value: string): boolean {
-  //   const re = new RegExp(/^@?end$/)
-  //   return re.test(value)
-  // }
 
   //private functions
   private async getLastAndActualConfigObjects(): Promise<{ lastConfigObj: any; actualConfigObj: any }> {
@@ -418,33 +272,5 @@ export default abstract class extends Command {
     return { lastConfigObj: this._lastConfigObj, actualConfigObj: this._actualConfigObj }
   }
 
-  private async addDigitsToFiles(files: string[], newDigitNumber: number, atNumberingStack: boolean): Promise<boolean> {
-    const promises: Promise<MoveSummary>[] = []
-    let hasMadeChanges = false
-    const table = tableize('from', 'to')
-
-    for (const file of files) {
-      const filename = this.softConfig.mapFileToBeRelativeToRootPath(file)
-      const atNumbering = this.softConfig.isAtNumbering(filename)
-
-      if (atNumbering === atNumberingStack) {
-        const filenumber = this.softConfig.extractNumber(file)
-        const fromFilename = filename
-        const toFilename = this.softConfig.renumberedFilename(filename, filenumber, newDigitNumber, atNumbering)
-
-        if (fromFilename !== toFilename) {
-          await this.fsUtils.createSubDirectoryFromFilePathIfNecessary(path.join(this.rootPath, toFilename))
-          table.accumulator(fromFilename, toFilename)
-          promises.push(this.gitUtils.mv(fromFilename, toFilename))
-          hasMadeChanges = true
-        }
-      }
-    }
-
-    await Promise.all(promises)
-    await this.fsUtils.deleteEmptySubDirectories(this.rootPath)
-
-    table.show('Adding digits to files')
-    return hasMadeChanges
-  }
+  //#endregion
 }

@@ -291,7 +291,7 @@ export default class Build extends Command {
       cli.action.stop(allOutputFilePathPretty.actionStopColor())
 
       if (compact) {
-        await this.compactFileNumbers()
+        await this.coreUtils.compactFileNumbers()
         await this.coreUtils.preProcessAndCommitFiles('Compacted file numbers')
       }
     } catch (err) {

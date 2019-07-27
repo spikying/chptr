@@ -55,7 +55,7 @@ export default class Add extends Command {
 
     const commitMessage = `added\n    ${toStageFiles.join('\n    ')}`
 
-    await this.addDigitsToNecessaryStacks()
+    await this.coreUtils.addDigitsToNecessaryStacks()
     await this.coreUtils.preProcessAndCommitFiles(commitMessage, toStageFiles)
   }
 }

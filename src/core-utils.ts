@@ -423,4 +423,102 @@ export class CoreUtils {
       // throw new ChptrError(`Chapter id ${chapterInput} is not found on disk.`, 'initialized-base.checkpromptandextractchapterid', 30)
     }
   }
+
+    //Project file updates
+    public async addDigitsToNecessaryStacks(): Promise<boolean> {
+      let didAddDigits = false
+      await this.statistics.getAllNovelFiles(true)
+      for (const b of [true, false]) {
+        const maxDigits = this.statistics.getMaxNecessaryDigits(b)
+        const minDigits = this.statistics.getMinDigits(b)
+        if (minDigits < maxDigits) {
+          didAddDigits = didAddDigits || (await this.addDigitsToFiles(await this.statistics.getAllFilesForOneType(b, true), maxDigits, b))
+        }
+      }
+      return didAddDigits
+    }
+
+    public async compactFileNumbers(): Promise<void> {
+      cli.action.start('Compacting file numbers'.actionStartColor())
+
+      const table = tableize('from', 'to')
+      const moves: { fromFilename: string; toFilename: string }[] = []
+      const movePromises: Promise<MoveSummary>[] = []
+      const { tempDir, removeTempDir } = await this.fsUtils.getTempDir(this.rootPath)
+      const tempDirForGit = this.softConfig.mapFileToBeRelativeToRootPath(tempDir)
+
+      for (const b of [true, false]) {
+        const wildcards = [this.softConfig.chapterWildcard(b), this.softConfig.metadataWildcard(b), this.softConfig.summaryWildcard(b)]
+        for (const wildcard of wildcards) {
+          const files = await this.fsUtils.listFiles(path.join(this.rootPath, wildcard))
+
+          const organizedFiles: any[] = []
+          for (const file of files) {
+            organizedFiles.push({ number: this.softConfig.extractNumber(file), filename: file })
+          }
+
+          const destDigits = this.statistics.getMaxNecessaryDigits(b)
+          let currentNumber = this.softConfig.config.numberingInitial
+
+          for (const file of organizedFiles.sort((a, b) => a.number - b.number)) {
+            const fromFilename = this.softConfig.mapFileToBeRelativeToRootPath(file.filename)
+            const toFilename = this.softConfig.renumberedFilename(fromFilename, currentNumber, destDigits, b)
+
+            if (fromFilename !== toFilename) {
+              moves.push({ fromFilename, toFilename })
+              table.accumulator(fromFilename, toFilename)
+              movePromises.push(this.gitUtils.mv(fromFilename, path.join(tempDirForGit, toFilename)))
+            }
+            currentNumber += this.softConfig.config.numberingStep
+          }
+        }
+      }
+
+      await Promise.all(movePromises)
+      for (const renumbering of moves) {
+        movePromises.push(this.gitUtils.mv(path.join(tempDirForGit, renumbering.toFilename), renumbering.toFilename))
+      }
+      await Promise.all(movePromises)
+
+      await removeTempDir()
+
+      if (moves.length === 0) {
+        cli.action.stop(`no compacting was needed`.actionStopColor())
+      } else {
+        await this.addDigitsToNecessaryStacks()
+        cli.action.stop(`done:`.actionStopColor())
+        table.show()
+      }
+    }
+
+    private async addDigitsToFiles(files: string[], newDigitNumber: number, atNumberingStack: boolean): Promise<boolean> {
+      const promises: Promise<MoveSummary>[] = []
+      let hasMadeChanges = false
+      const table = tableize('from', 'to')
+
+      for (const file of files) {
+        const filename = this.softConfig.mapFileToBeRelativeToRootPath(file)
+        const atNumbering = this.softConfig.isAtNumbering(filename)
+
+        if (atNumbering === atNumberingStack) {
+          const filenumber = this.softConfig.extractNumber(file)
+          const fromFilename = filename
+          const toFilename = this.softConfig.renumberedFilename(filename, filenumber, newDigitNumber, atNumbering)
+
+          if (fromFilename !== toFilename) {
+            await this.fsUtils.createSubDirectoryFromFilePathIfNecessary(path.join(this.rootPath, toFilename))
+            table.accumulator(fromFilename, toFilename)
+            promises.push(this.gitUtils.mv(fromFilename, toFilename))
+            hasMadeChanges = true
+          }
+        }
+      }
+
+      await Promise.all(promises)
+      await this.fsUtils.deleteEmptySubDirectories(this.rootPath)
+
+      table.show('Adding digits to files')
+      return hasMadeChanges
+    }
+
 }

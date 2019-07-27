@@ -132,7 +132,7 @@ export default class Split extends Command {
       await this.coreUtils.deleteFilesFromRepo(stashedId.toString())
 
       if (compact) {
-        await this.compactFileNumbers()
+        await this.coreUtils.compactFileNumbers()
         commitMsg += `\nCompacted file numbers`
       }
 
