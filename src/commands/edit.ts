@@ -87,7 +87,7 @@ export default class Edit extends Command {
       const fullPath = path.join(this.rootPath, filename)
 
       const initialContent = await this.fsUtils.readFileContent(fullPath)
-      const replacedContent = await this.processContentBack(initialContent)
+      const replacedContent = await this.coreUtils.processContentBack(initialContent)
       await this.fsUtils.writeFile(fullPath, replacedContent)
     }
     const toEditPretty = toEditFiles.map(f => `\n    ${f}`)

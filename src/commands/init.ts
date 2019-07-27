@@ -1,6 +1,7 @@
 import { flags } from '@oclif/command'
 import { cli } from 'cli-ux'
 import * as path from 'path'
+import * as simplegit from 'simple-git/promise'
 import * as validator from 'validator'
 
 import { ChptrError } from '../chptr-error'
@@ -95,6 +96,14 @@ export default class Init extends Command {
 
   static aliases = ['setup']
   // private flagForce = 'false'
+
+  private get git(): simplegit.SimpleGit {
+    if (!this._git) {
+      this._git = simplegit(this.rootPath)
+    }
+    return this._git
+  }
+  private _git: simplegit.SimpleGit | undefined
 
   async run() {
     debug('Running Init command')

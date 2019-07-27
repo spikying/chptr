@@ -51,11 +51,11 @@ export default class Add extends Command {
 
     const name: string = args.name || queryResponses.name
 
-    const toStageFiles = await this.addChapterFiles(name, flags.atnumbered, args.number)
+    const toStageFiles = await this.coreUtils.addChapterFiles(name, flags.atnumbered, args.number)
 
     const commitMessage = `added\n    ${toStageFiles.join('\n    ')}`
 
     await this.addDigitsToNecessaryStacks()
-    await this.CommitToGit(commitMessage, toStageFiles)
+    await this.coreUtils.preProcessAndCommitFiles(commitMessage, toStageFiles)
   }
 }

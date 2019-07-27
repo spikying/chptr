@@ -88,7 +88,7 @@ export default class Build extends Command {
         outputFiletype = Build.exportableFileTypes
       }
 
-      await this.CommitToGit('Autosave before build')
+      await this.coreUtils.preProcessAndCommitFiles('Autosave before build')
 
       await this.markupUtils.UpdateAllMetadataFieldsFromDefaults()
 
@@ -103,7 +103,7 @@ export default class Build extends Command {
       )
 
       await this.markupUtils.extractAndUpdateGlobalAndChapterMetadata(allChapterFilesArray, outputFile)
-      await this.CommitToGit('Autosave markup updates')
+      await this.coreUtils.preProcessAndCommitFiles('Autosave markup updates')
 
       cli.info('Extracting metadata for all chapters files'.actionStartColor())
 
@@ -292,7 +292,7 @@ export default class Build extends Command {
 
       if (compact) {
         await this.compactFileNumbers()
-        await this.CommitToGit('Compacted file numbers')
+        await this.coreUtils.preProcessAndCommitFiles('Compacted file numbers')
       }
     } catch (err) {
       // cli.action.status = 'error'.errorColor()
@@ -327,24 +327,25 @@ export default class Build extends Command {
   }
 
   private async extractMeta(filepath: string, extractAll: boolean): Promise<MetaObj[]> {
-    const file = this.softConfig.mapFileToBeRelativeToRootPath(filepath)
-    const beginBlock = '########'
-    const endFormattedBlock = '------------------------ >8 ------------------------'
-    const gitLogArgs = ['log', '-c', '--follow', `--pretty=format:"${beginBlock}%H;%aI;%s${endFormattedBlock}"`]
-    if (!extractAll) {
-      gitLogArgs.push(`--since="${moment().add(-1, 'week')}"`)
-    }
-    const logListString = (await this.git.raw([...gitLogArgs, file])) || ''
-    const logList = logListString
-      .split(beginBlock)
-      .filter(l => l !== '')
-      .map(l => {
-        const s = l.split(endFormattedBlock)
-        const logArray = s[0].split(';')
-        const log = { file, hash: logArray[0], date: moment(logArray[1]), subject: logArray[2] }
+    // const file = this.softConfig.mapFileToBeRelativeToRootPath(filepath)
+    // const beginBlock = '########'
+    // const endFormattedBlock = '------------------------ >8 ------------------------'
+    // const gitLogArgs = ['log', '-c', '--follow', `--pretty=format:"${beginBlock}%H;%aI;%s${endFormattedBlock}"`]
+    // if (!extractAll) {
+    //   gitLogArgs.push(`--since="${moment().add(-1, 'week')}"`)
+    // }
+    // const logListString = (await this.git.raw([...gitLogArgs, file])) || ''
+    const logListArray = await this.gitUtils.GetGitListOfVersionsOfFile(filepath, extractAll)
 
+    const logList = logListArray
+      // .map(l => {
+      //   const s = l.split(endFormattedBlock)
+      //   const logArray = s[0].split(';')
+      //   const log = { file, hash: logArray[0], date: moment(logArray[1]), subject: logArray[2] }
+      .map(l => {
         const wcRegex = /^([+-])\s*\"wordCount\": (\d+)/
-        const diffArray = s.length === 2 ? s[1].split('\n').filter(n => n !== '' && wcRegex.test(n)) : []
+        // const diffArray = s.length === 2 ? s[1].split('\n').filter(n => n !== '' && wcRegex.test(n)) : []
+        const diffArray = l.content.split('\n').filter(n => n !== '' && wcRegex.test(n)) //|| []
 
         const wordCountDiff = diffArray
           .map(d => {
@@ -355,7 +356,7 @@ export default class Build extends Command {
             return previous + current
           }, 0)
 
-        return { log, wordCountDiff }
+        return { log: l, wordCountDiff }
       })
 
     return logList

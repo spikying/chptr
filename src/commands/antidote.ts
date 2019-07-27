@@ -71,8 +71,8 @@ export default class Antidote extends Command {
     await this.fsUtils.moveFile(antidoteFilePath, basicFilePath)
 
     if (queryResponses2.message !== 'cancel') {
-      const toStageFiles = await this.gitWrapper.GetGitListOfStageableFiles(chapterId)
-      await this.gitWrapper.CommitToGit(message, toStageFiles)
+      const toStageFiles = await this.gitUtils.GetGitListOfStageableFiles(chapterId)
+      await this.coreUtils.preProcessAndCommitFiles(message, toStageFiles)
     }
   }
 

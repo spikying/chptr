@@ -48,7 +48,7 @@ export default class Reorder extends Command {
     const origin = args.origin || queryResponses.origin
     const destination = args.destination || queryResponses.destination
 
-    await this.reorder(origin, destination)
+    await this.coreUtils.reorder(origin, destination)
 
     const didAddDigits = await this.addDigitsToNecessaryStacks()
 
@@ -61,6 +61,6 @@ export default class Reorder extends Command {
       commitMessage += '\nAdded digits to chapter numbers'
     }
 
-    await this.gitWrapper.CommitToGit(commitMessage)
+    await this.coreUtils.preProcessAndCommitFiles(commitMessage)
   }
 }

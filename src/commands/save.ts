@@ -62,7 +62,7 @@ export default class Save extends Command {
       ? new ChapterId(this.softConfig.extractNumber(flags.number), this.softConfig.isAtNumbering(flags.number))
       : null
 
-    const preStageFiles = chapterIdFilter ? await this.gitWrapper.GetGitListOfStageableFiles(chapterIdFilter) : []
+    const preStageFiles = chapterIdFilter ? await this.gitUtils.GetGitListOfStageableFiles(chapterIdFilter) : []
 
     for (const toStageFile of preStageFiles) {
       const isChapterFile = chapterIdFilter
@@ -74,13 +74,13 @@ export default class Save extends Command {
       }
     }
     const toStageFiles = chapterIdFilter
-      ? await this.gitWrapper.GetGitListOfStageableFiles(chapterIdFilter)
+      ? await this.gitUtils.GetGitListOfStageableFiles(chapterIdFilter)
       : flags.filename
-      ? (await this.gitWrapper.GetGitListOfStageableFiles()).filter(f => {
+      ? (await this.gitUtils.GetGitListOfStageableFiles()).filter(f => {
           debug(`f=${f}, flags.filename=${flags.filename}`)
           return minimatch(f, flags.filename || '')
         })
-      : await this.gitWrapper.GetGitListOfStageableFiles()
+      : await this.gitUtils.GetGitListOfStageableFiles()
 
     if (toStageFiles.length === 0) {
       const filepath = path.join(this.rootPath, flags.filename || '')
@@ -110,7 +110,7 @@ export default class Save extends Command {
     let message: string = args.message || queryResponses.message || 'Modified files:'
     message += '\n    ' + `${toStageFiles.join('\n    ')}`
 
-    await this.gitWrapper.CommitToGit(message, toStageFiles)
+    await this.coreUtils.preProcessAndCommitFiles(message, toStageFiles)
   }
 
   // public async UpdateSingleMetadata(chapterFile: string) {

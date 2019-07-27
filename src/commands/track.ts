@@ -34,7 +34,7 @@ export default class Track extends Command {
     const queryBuilder = new QueryBuilder(true)
 
     if (!args.filename) {
-      const untrackedGitFiles = await this.GetGitListOfUntrackedFiles()
+      const untrackedGitFiles = await this.gitUtils.GetGitListOfUntrackedFiles()
       let untrackedGitFilesFlat: string[] = []
       for (const utFile of untrackedGitFiles) {
         untrackedGitFilesFlat.push(...utFile.split('/'))
@@ -61,16 +61,8 @@ export default class Track extends Command {
           return true
         }
 
-        // debug(`untrackedGitFilesFlat=${untrackedGitFilesFlat}`)
-        // debug(`map function = ${mapFile}`)
-        // debug(`mappedFile = ${path.basename(file)}`)
         const isInUntrackedFiles = untrackedGitFilesFlat.indexOf(path.basename(file)) >= 0
-        // .map(unTrackedFile => {
-        //   return unTrackedFile === mapFile(file)
-        // })
-        // .reduce((previous, current) => {
-        //   return previous && current
-        // }, false)
+
         debug(`isInUntrackedFiles? ${isInUntrackedFiles}`)
         return !isInUntrackedFiles
       }
@@ -88,21 +80,9 @@ export default class Track extends Command {
 
     const toCommitFiles = [this.softConfig.mapFileToBeRelativeToRootPath(filename)]
 
-    await this.CommitToGit(`Tracking file ${filename}`, toCommitFiles)
+    await this.coreUtils.preProcessAndCommitFiles(`Tracking file ${filename}`, toCommitFiles)
 
     cli.action.stop('done'.actionStopColor())
   }
 
-  private async GetGitListOfUntrackedFiles(): Promise<string[]> {
-    const gitStatus = await this.git.status()
-
-    const unQuote = function(value: string) {
-      if (!value) {
-        return value
-      }
-      return value.replace(/"(.*)"/, '$1')
-    }
-
-    return gitStatus.not_added.map(unQuote).filter(val => val !== '')
-  }
 }

@@ -111,7 +111,7 @@ export default class Rename extends Command {
     for (const didUpdate of didUpdates) {
       if (this.softConfig.mapFileToBeRelativeToRootPath(didUpdate.filename) !== didUpdate.newFileName) {
         didUpdate.rename = didUpdate.newFileName
-        await this.git.mv(this.softConfig.mapFileToBeRelativeToRootPath(didUpdate.filename), didUpdate.newFileName)
+        await this.gitUtils.mv(this.softConfig.mapFileToBeRelativeToRootPath(didUpdate.filename), didUpdate.newFileName)
       }
     }
 
@@ -124,9 +124,9 @@ export default class Rename extends Command {
     )
     cli.action.stop(toRenamePretty.actionStopColor())
 
-    const toCommitFiles = await this.gitWrapper.GetGitListOfStageableFiles(chapterId)
+    const toCommitFiles = await this.gitUtils.GetGitListOfStageableFiles(chapterId)
     debug(`toCommitFiles = ${JSON.stringify(toCommitFiles)}`)
-    await this.gitWrapper.CommitToGit(`Renaming chapter ${chapterIdString} to ${newName}${toRenamePretty}`, toCommitFiles)
+    await this.coreUtils.preProcessAndCommitFiles(`Renaming chapter ${chapterIdString} to ${newName}${toRenamePretty}`, toCommitFiles)
   }
 
   private async replaceTitleInMarkdown(actualFile: string, newTitle: string): Promise<boolean> {

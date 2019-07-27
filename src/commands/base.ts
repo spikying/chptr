@@ -2,7 +2,7 @@ import { Command, flags } from '@oclif/command'
 import * as deb from 'debug'
 import * as notifier from 'node-notifier'
 import * as path from 'path'
-import * as simplegit from 'simple-git/promise'
+// import * as simplegit from 'simple-git/promise'
 
 import { FsUtils } from '../fs-utils'
 import { HardConfig } from '../hard-config'
@@ -41,12 +41,12 @@ String.prototype.errorColor = function() {
 const debug = d('command:base')
 
 export default abstract class extends Command {
-  public get git(): simplegit.SimpleGit {
-    if (!this._git) {
-      this._git = simplegit(this._rootPath)
-    }
-    return this._git
-  }
+  // public get git(): simplegit.SimpleGit {
+  //   if (!this._git) {
+  //     this._git = simplegit(this._rootPath)
+  //   }
+  //   return this._git
+  // }
   public get hardConfig(): HardConfig {
     return this._hardConfig as HardConfig
   }
@@ -74,7 +74,7 @@ export default abstract class extends Command {
   }
 
   private _rootPath = '.'
-  private _git: simplegit.SimpleGit | undefined
+  // private _git: simplegit.SimpleGit | undefined
   private _hardConfig: HardConfig | undefined
   private _fsUtils: FsUtils | undefined
 
@@ -105,17 +105,3 @@ export default abstract class extends Command {
     }
   }
 }
-
-// export const numDigits = function(x: number, buffer = 2) {
-//   return Math.max(Math.floor(Math.log10(Math.abs(x + buffer))), 0) + 1
-// }
-
-// export const stringifyNumber = function(x: number, digits: number): string {
-//   const s = x.toString()
-//   const zeroes = Math.max(digits - s.length, 0)
-//   if (zeroes > 0) {
-//     return '0'.repeat(zeroes).concat(s)
-//   } else {
-//     return s
-//   }
-// }

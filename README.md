@@ -62,16 +62,14 @@ In some future, I wish to do these things:
 * Move the ```Antidote``` command to a separate plugin
 
 <!-- toc -->
-
-- [chptr](#chptr)
-- [Usage](#usage)
-- [Commands](#commands)
-  <!-- tocstop -->
+* [chptr](#chptr)
+* [Usage](#usage)
+* [Commands](#commands)
+<!-- tocstop -->
 
 # Usage
 
 <!-- usage -->
-
 ```sh-session
 $ npm install -g chptr
 $ chptr COMMAND
@@ -83,24 +81,22 @@ USAGE
   $ chptr COMMAND
 ...
 ```
-
 <!-- usagestop -->
 
 # Commands
 
 <!-- commands -->
-
-- [`chptr add [NAME] [NUMBER]`](#chptr-add-name-number)
-- [`chptr antidote [FILTER]`](#chptr-antidote-filter)
-- [`chptr build`](#chptr-build)
-- [`chptr delete [NAME]`](#chptr-delete-name)
-- [`chptr edit [FILTER]`](#chptr-edit-filter)
-- [`chptr help [COMMAND]`](#chptr-help-command)
-- [`chptr init [NAME]`](#chptr-init-name)
-- [`chptr rename [CHAPTERORFILENAME] [NEWNAME]`](#chptr-rename-chapterorfilename-newname)
-- [`chptr reorder [ORIGIN] [DESTINATION]`](#chptr-reorder-origin-destination)
-- [`chptr save [MESSAGE]`](#chptr-save-message)
-- [`chptr track [FILENAME]`](#chptr-track-filename)
+* [`chptr add [NAME] [NUMBER]`](#chptr-add-name-number)
+* [`chptr antidote [CHAPTERID]`](#chptr-antidote-chapterid)
+* [`chptr build`](#chptr-build)
+* [`chptr delete [NAME]`](#chptr-delete-name)
+* [`chptr edit [CHAPTERIDS]`](#chptr-edit-chapterids)
+* [`chptr help [COMMAND]`](#chptr-help-command)
+* [`chptr init [NAME]`](#chptr-init-name)
+* [`chptr rename [CHAPTERORFILENAME] [NEWNAME]`](#chptr-rename-chapterorfilename-newname)
+* [`chptr reorder [ORIGIN] [DESTINATION]`](#chptr-reorder-origin-destination)
+* [`chptr save [MESSAGE]`](#chptr-save-message)
+* [`chptr track [FILENAME]`](#chptr-track-filename)
 
 ## `chptr add [NAME] [NUMBER]`
 
@@ -111,7 +107,7 @@ USAGE
   $ chptr add [NAME] [NUMBER]
 
 ARGUMENTS
-  NAME    name of chapter file(s) to add
+  NAME    name of chapter to add
 
   NUMBER  force this number to be used, if available.  If this argument is given, the `atnumbered` flag is ignored.
           AtNumbering will be determined by the presence or absence of @ sign.
@@ -125,16 +121,16 @@ OPTIONS
 
 _See code: [src\commands\add.ts](https://github.com/spikying/chptr/blob/v0.1.0/src\commands\add.ts)_
 
-## `chptr antidote [FILTER]`
+## `chptr antidote [CHAPTERID]`
 
 Launch Antidote spell-checker for given chapter
 
 ```
 USAGE
-  $ chptr antidote [FILTER]
+  $ chptr antidote [CHAPTERID]
 
 ARGUMENTS
-  FILTER  Chapter number to Antidote.
+  CHAPTERID  Chapter number to Antidote.
 
 OPTIONS
   -N, --notify     show a notification box when build is completed.
@@ -146,7 +142,7 @@ _See code: [src\commands\antidote.ts](https://github.com/spikying/chptr/blob/v0.
 
 ## `chptr build`
 
-Takes all original Markdown files and outputs a single file without metadata and comments. Handles these output formats: md, pdf, docx, html, epub, tex. Gives some insight into writing rate.
+Takes all original Markdown files and outputs a single file without metadata and comments.  Handles these output formats: md, pdf, docx, html, epub, tex.  Gives some insight into writing rate.
 
 ```
 USAGE
@@ -191,16 +187,16 @@ ALIASES
 
 _See code: [src\commands\delete.ts](https://github.com/spikying/chptr/blob/v0.1.0/src\commands\delete.ts)_
 
-## `chptr edit [FILTER]`
+## `chptr edit [CHAPTERIDS]`
 
-Adjust sentence and paragraph endings to allow for easier editing. Commit changes with SAVE command.
+Adjust sentence and paragraph endings to allow for easier editing.  Commit changes with SAVE command.
 
 ```
 USAGE
-  $ chptr edit [FILTER]
+  $ chptr edit [CHAPTERIDS]
 
 ARGUMENTS
-  FILTER  Chapter number(s) to modify, comma-separated.
+  CHAPTERIDS  Chapter number(s) to modify, comma-separated.
 
 OPTIONS
   -N, --notify                    show a notification box when build is completed.
@@ -244,22 +240,24 @@ ARGUMENTS
   NAME  Name of project
 
 OPTIONS
-  -N, --notify               show a notification box when build is completed.
-  -a, --author=author        Name of author of project
-  -e, --email=email          Email of author of project
+  -N, --notify                                            show a notification box when build is completed.
+  -a, --author=author                                     Name of author of project
+  -d, --directorystructure=/|chapters/|chapters/number/|  Directory structure initially written in config file
+  -e, --email=email                                       Email of author of project
 
-  -f, --force=force          [default: false] Overwrite config files if they exist.  Specify a filename to overwrite
-                             only one; write `true` to overwrite all.
+  -f, --force=force                                       [default: false] Overwrite config files if they exist.
+                                                          Specify a filename to overwrite only one; write `true` to
+                                                          overwrite all.
 
-  -h, --help                 show CLI help
+  -h, --help                                              show CLI help
 
-  -l, --language=language    Language of project
+  -l, --language=language                                 Language of project
 
-  -p, --path=path            [default: .] Path where root of project files are
+  -p, --path=path                                         [default: .] Path where root of project files are
 
-  -r, --gitRemote=gitRemote  Git address of remote repository.
+  -r, --gitRemote=gitRemote                               Git address of remote repository.
 
-  -s, --style=YAML|JSON5|    Config files in JSON5 or YAML?
+  -s, --style=style                                       Config files in JSON5 or YAML?
 
 ALIASES
   $ chptr setup
@@ -361,5 +359,4 @@ OPTIONS
 ```
 
 _See code: [src\commands\track.ts](https://github.com/spikying/chptr/blob/v0.1.0/src\commands\track.ts)_
-
 <!-- commandsstop -->

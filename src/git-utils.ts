@@ -1,32 +1,37 @@
 import { cli } from 'cli-ux'
 import * as d from 'debug'
 import minimatch = require('minimatch')
+import * as moment from 'moment'
 import * as simplegit from 'simple-git/promise'
+import { MoveSummary } from 'simple-git/typings/response'
 
 import { ChapterId } from './chapter-id'
-import { CoreUtils } from './core-utils'
 import { SoftConfig } from './soft-config'
 
-const debug = d('git-wrapper')
+const debug = d('git-utils')
 
-export class GitWrapper {
+export class GitUtils {
   private readonly git: simplegit.SimpleGit
   private readonly softConfig: SoftConfig
-  private readonly coreUtils: CoreUtils
 
   constructor(softConfig: SoftConfig, rootPath: string) {
     this.git = simplegit(rootPath)
     this.softConfig = softConfig
-    this.coreUtils = new CoreUtils(softConfig, rootPath)
   }
 
-  public async CommitToGit(message: string, toStageFiles?: string[], forDeletes = false) {
+  public async CommitToGit(
+    message: string,
+    preProcessingCallback: (files: string[]) => Promise<void>,
+    toStageFiles?: string[],
+    forDeletes = false
+  ) {
     toStageFiles = toStageFiles || (await this.GetGitListOfStageableFiles())
     if (toStageFiles.length > 0 || forDeletes) {
       // try {
       cli.action.start('Saving file(s) in repository'.actionStartColor())
 
-      await this.coreUtils.processChapterFilesBeforeSaving(toStageFiles)
+      // await this.coreUtils.processChapterFilesBeforeSaving(toStageFiles)
+      await preProcessingCallback(toStageFiles)
       debug(`after processing file`)
 
       if (!forDeletes) {
@@ -89,6 +94,71 @@ export class GitWrapper {
               minimatch(val, this.softConfig.metadataWildcardWithNumber(chapterId)) ||
               minimatch(val, this.softConfig.summaryWildcardWithNumber(chapterId))
           : true
+      })
+  }
+
+  public async GetGitListOfUntrackedFiles(): Promise<string[]> {
+    const gitStatus = await this.git.status()
+
+    const unQuote = function(value: string) {
+      if (!value) {
+        return value
+      }
+      return value.replace(/"(.*)"/, '$1')
+    }
+
+    return gitStatus.not_added.map(unQuote).filter(val => val !== '')
+  }
+
+  // public async checkIsRepo(): Promise<boolean> {
+  //   return this.git.checkIsRepo()
+  // }
+
+  public async mv(from: string | string[], to: string): Promise<MoveSummary> {
+    return this.git.mv(from, to)
+  }
+
+  public async rm(paths: string | string[]): Promise<void> {
+    return this.git.rm(paths)
+  }
+
+  public async add(files: string | string[]) {
+    return this.git.add(files)
+  }
+
+  public async showHeadVersionOfFile(filepath: string): Promise<string> {
+    return this.git.show([`HEAD:${this.softConfig.mapFileToBeRelativeToRootPath(filepath).replace(/\\/, '/')}`])
+  }
+
+  // public async raw(commands: string | string[]): Promise<string> {
+  //   return this.git.raw(commands)
+  // }
+  public async GetGitListOfVersionsOfFile(
+    filepath: string,
+    extractAll: boolean
+  ): Promise<
+    {
+      file: string
+      hash: string
+      date: moment.Moment
+      subject: string
+      content: string
+    }[]
+  > {
+    const file = this.softConfig.mapFileToBeRelativeToRootPath(filepath)
+    const beginBlock = '########'
+    const endFormattedBlock = '------------------------ >8 ------------------------'
+    const gitLogArgs = ['log', '-c', '--follow', `--pretty=format:"${beginBlock}%H;%aI;%s${endFormattedBlock}"`]
+    if (!extractAll) {
+      gitLogArgs.push(`--since="${moment().add(-1, 'week')}"`)
+    }
+    return (await this.git.raw([...gitLogArgs, file]))
+      .split(beginBlock)
+      .filter(l => l !== '')
+      .map(l => {
+        const s = l.split(endFormattedBlock)
+        const logArray = s[0].split(';')
+        return { file, hash: logArray[0], date: moment(logArray[1]), subject: logArray[2], content: s[1] || '' }
       })
   }
 }
