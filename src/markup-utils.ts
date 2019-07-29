@@ -125,12 +125,6 @@ export class MarkupUtils {
     return logList
   }
 
-  //TODO: could be private?
-  public async contentHasChangedVersusFile(filepath: string, content: string) {
-    const existingFileContent = await this.fsUtils.readFileContent(filepath)
-    return existingFileContent !== content
-  }
-
   public async extractMarkupFromChapterFile(chapterFilepath: string): Promise<MarkupObj[]> {
     const resultArray: MarkupObj[] = []
 
@@ -419,6 +413,11 @@ export class MarkupUtils {
       }
     }
     table.show('Metadata fields updated in files')
+  }
+
+  private async contentHasChangedVersusFile(filepath: string, content: string) {
+    const existingFileContent = await this.fsUtils.readFileContent(filepath)
+    return existingFileContent !== content
   }
 }
 

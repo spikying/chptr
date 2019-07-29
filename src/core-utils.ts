@@ -111,9 +111,11 @@ export class CoreUtils {
         throw new ChptrError(`File ${existingFile[0]} already exists`, 'add.addchapterfiles', 1)
       }
     } else {
-      await this.statistics.updateStackStatistics(atNumbering)
+      await this.statistics.refreshStats()
+      // await this.statistics.updateStackStatistics(atNumbering)
 
       const highestNumber = this.statistics.getHighestNumber(atNumbering)
+      debug(`highestNumber in add-chapter-files before adding one: ${highestNumber}`)
       chapterId = new ChapterId(
         highestNumber === 0 ? this.softConfig.config.numberingInitial : highestNumber + this.softConfig.config.numberingStep,
         atNumbering
@@ -126,11 +128,6 @@ export class CoreUtils {
     metadataObj.computed.title = name
     metadataObj.computed.wordCount = this.markupUtils.GetWordCount(filledTemplateData)
     const filledTemplateMeta = this.softConfig.stringifyPerStyle(metadataObj)
-    // this.softConfig.configStyle === 'JSON5'
-    //   ? JSON.stringify(metadataObj, undefined, 4)
-    //   : this.softConfig.configStyle === 'YAML'
-    //     ? yaml.safeDump(metadataObj)
-    //     : ''
 
     const fullPathsAndData = [
       {
@@ -202,7 +199,7 @@ export class CoreUtils {
   public async reorder(origin: string, destination: string): Promise<void> {
     cli.action.start('Analyzing files'.actionStartColor())
 
-    await this.statistics.getAllNovelFiles()
+    await this.statistics.refreshStats()
 
     const originId = await this.checkArgPromptAndExtractChapterId(origin, 'What chapter to use as origin?')
 
@@ -214,38 +211,6 @@ export class CoreUtils {
     if (!destinationId) {
       throw new ChptrError('You need to provide a valid destination chapter', 'initialized-base.reorder.destination', 11)
     }
-
-    // const originIsAtNumbering = origin.toString().substring(0, 1) === '@'
-    // const destIsAtNumbering = destination.toString().substring(0, 1) === '@'
-
-    // const files = await this.statistics.getAllNovelFiles()
-
-    // const originNumber: number = this.isEndOfStack(origin)
-    //   ? this.statistics.getHighestNumber(originIsAtNumbering)
-    //   : this.softConfig.extractNumber(origin)
-    // const destNumber: number = this.isEndOfStack(destination)
-    //   ? this.statistics.getHighestNumber(destIsAtNumbering) === 0
-    //     ? this.softConfig.config.numberingInitial
-    //     : this.statistics.getHighestNumber(destIsAtNumbering) + this.softConfig.config.numberingStep
-    //   : this.softConfig.extractNumber(destination)
-
-    // const originExists: boolean = files
-    //   .map(value => {
-    //     return this.softConfig.extractNumber(value) === originNumber && this.softConfig.isAtNumbering(value) === originIsAtNumbering
-    //   })
-    //   .reduce((previous, current) => {
-    //     return previous || current
-    //   }, false)
-    // if (!originExists) {
-    //   throw new ChptrError('Origin does not exist', 'initialized-base.reorder.origin', 12)
-    // }
-
-    // if (originNumber === -1) {
-    //   throw new ChptrError('Origin argument is not a number or `end` or `@end`', 'initialized-base.reorder.origin', 13)
-    // }
-    // if (destNumber === -1) {
-    //   throw new ChptrError('Destination argument is not a number or `end` or `@end`', 'initialized-base.reorder.destination', 14)
-    // }
 
     //TODO: check if equality goes through .equals of class
     if (originId === destinationId) {
@@ -350,10 +315,6 @@ export class CoreUtils {
     await Promise.all(moveTempPromises)
 
     cli.action.stop(tempDir.actionStopColor())
-    // } catch (err) {
-    //   throw new ChptrError(err.toString().errorColor())
-    //   cli.exit(1)
-    // }
 
     cli.action.start('Moving files to their final states'.actionStartColor())
     let fileMovesPretty = ''
@@ -376,10 +337,6 @@ export class CoreUtils {
       moveBackPromises.push(this.gitUtils.mv(fromFilename, toFilename))
     }
     await Promise.all(moveBackPromises)
-    // } catch (err) {
-    //   throw new ChptrError(err.toString().errorColor())
-    //   cli.exit(1)
-    // }
 
     await this.fsUtils.deleteEmptySubDirectories(this.rootPath)
 
@@ -402,7 +359,8 @@ export class CoreUtils {
     debug(`isAtNumbering in checkArgsPrompt = ${isAtNumbering}`)
     let num: number
     if (this.hardConfig.isEndOfStack(chapterInput)) {
-      await this.statistics.updateStackStatistics(isAtNumbering)
+      await this.statistics.refreshStats()
+      // await this.statistics.updateStackStatistics(isAtNumbering)
       if (nextId) {
         num =
           this.statistics.getHighestNumber(isAtNumbering) === 0
@@ -427,7 +385,7 @@ export class CoreUtils {
     //Project file updates
     public async addDigitsToNecessaryStacks(): Promise<boolean> {
       let didAddDigits = false
-      await this.statistics.getAllNovelFiles(true)
+      await this.statistics.refreshStats()
       for (const b of [true, false]) {
         const maxDigits = this.statistics.getMaxNecessaryDigits(b)
         const minDigits = this.statistics.getMinDigits(b)

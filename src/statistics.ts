@@ -76,57 +76,6 @@ export class Statistics {
     }
   }
 
-  public async updateStackStatistics(atNumbers: boolean, refresh?: boolean): Promise<void> {
-    const files = await this.getAllNovelFiles(refresh)
-    const fileRegex: RegExp = this.softConfig.chapterRegex(atNumbers)
-    const index = atNumbers ? 'atNumberStack' : 'normalStack'
-
-    debug(`files: ${files}\nfileRegex: ${fileRegex}\nindex: ${index}`)
-    if (files.length === 0) {
-      this._allNovelStatistics[index] = nullStackStats
-      return
-    }
-
-    const highestNumber = files
-      .map(value => {
-        const matches = fileRegex.exec(this.softConfig.mapFileToBeRelativeToRootPath(value))
-        return matches ? parseInt(matches[1], 10) : 0
-      })
-      .reduce((previous, current) => {
-        return Math.max(previous, current)
-      }, 0)
-
-    const minDigits = files
-      .map(value => {
-        const matches = fileRegex.exec(this.softConfig.mapFileToBeRelativeToRootPath(value))
-        return matches ? matches[1].length : 0
-      })
-      .reduce((previous, current) => {
-        return Math.min(previous, current)
-      }, 1)
-
-    const maxNecessaryDigits = files
-      .map(value => {
-        const matches = fileRegex.exec(this.softConfig.mapFileToBeRelativeToRootPath(value))
-        if (matches) {
-          const id = new ChapterId(parseInt(matches[1], 10), atNumbers)
-          return id.computeNumDigits()
-        } else {
-          return 0
-        }
-        // return matches ? this.fsUtils.numDigits(parseInt(matches[1], 10)) : 0
-      })
-      .reduce((previous, current) => {
-        return Math.max(previous, current)
-      }, 1)
-
-    this._allNovelStatistics[index] = {
-      highestNumber,
-      minDigits,
-      maxNecessaryDigits
-    }
-  }
-
   public async getAllFilesForChapter(id: ChapterId): Promise<string[]> {
     const wildcards = [
       this.softConfig.chapterWildcardWithNumber(id),
@@ -174,7 +123,62 @@ export class Statistics {
 
     return (isAtNumbered ? this._allAtNumberedFiles : this._allNormalFiles) as string[]
   }
-  public async getAllNovelFiles(refresh = false): Promise<string[]> {
-    return (await this.getAllFilesForOneType(true, refresh)).concat(await this.getAllFilesForOneType(false, refresh))
+  public async refreshStats(): Promise<void> {
+    const promises = [this.getAllFilesForOneType(true, true), this.getAllFilesForOneType(false, true)]
+    await Promise.all(promises)
+  }
+  public async getAllNovelFiles(): Promise<string[]> {
+    return (await this.getAllFilesForOneType(true)).concat(await this.getAllFilesForOneType(false))
+  }
+
+  private async updateStackStatistics(atNumbers: boolean): Promise<void> {
+    const files = await this.getAllNovelFiles() //(refresh)
+    const fileRegex: RegExp = this.softConfig.chapterRegex(atNumbers)
+    const index = atNumbers ? 'atNumberStack' : 'normalStack'
+
+    debug(`files: ${files}\nfileRegex: ${fileRegex}\nindex: ${index}`)
+    if (files.length === 0) {
+      this._allNovelStatistics[index] = nullStackStats
+      return
+    }
+
+    const highestNumber = files
+      .map(value => {
+        const matches = fileRegex.exec(this.softConfig.mapFileToBeRelativeToRootPath(value))
+        return matches ? parseInt(matches[1], 10) : 0
+      })
+      .reduce((previous, current) => {
+        return Math.max(previous, current)
+      }, 0)
+
+    const minDigits = files
+      .map(value => {
+        const matches = fileRegex.exec(this.softConfig.mapFileToBeRelativeToRootPath(value))
+        return matches ? matches[1].length : 0
+      })
+      .reduce((previous, current) => {
+        return Math.min(previous, current)
+      }, 1)
+
+    const maxNecessaryDigits = files
+      .map(value => {
+        const matches = fileRegex.exec(this.softConfig.mapFileToBeRelativeToRootPath(value))
+        if (matches) {
+          const id = new ChapterId(parseInt(matches[1], 10), atNumbers)
+          return id.computeNumDigits()
+        } else {
+          return 0
+        }
+        // return matches ? this.fsUtils.numDigits(parseInt(matches[1], 10)) : 0
+      })
+      .reduce((previous, current) => {
+        return Math.max(previous, current)
+      }, 1)
+
+    this._allNovelStatistics[index] = {
+      highestNumber,
+      minDigits,
+      maxNecessaryDigits
+    }
   }
 }

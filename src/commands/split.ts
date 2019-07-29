@@ -77,8 +77,11 @@ export default class Split extends Command {
 
       cli.info('Reading and processing chapter...'.resultNormalColor())
 
-      await this.statistics.updateStackStatistics(true, true)
+      // await this.statistics.updateStackStatistics(true, true)
+      await this.statistics.refreshStats()
       const stashedId = new ChapterId(this.statistics.getHighestNumber(true), true)
+      debug(`stashedId=${stashedId.toString()}`)
+      await cli.anykey()
 
       cli.info('Adding new chapters...'.resultNormalColor())
       commitMsg += `in ${replacedContents.length} parts:`
@@ -89,7 +92,7 @@ export default class Split extends Command {
         const title = this.markupUtils.extractTitleFromString(titleAndContentPair[0]) || 'chapter'
         commitMsg += `\n    ${title}`
 
-        await this.statistics.getAllNovelFiles(true)
+        await this.statistics.refreshStats()
         const addedFiles = await this.coreUtils.addChapterFiles(title, true)
         await this.gitUtils.add(addedFiles)
         cli.info(`Added\n    ${addedFiles.join('\n    ')}`)
@@ -121,7 +124,7 @@ export default class Split extends Command {
         const addedId = addedTempIds[i]
         toEditPretty += `\n    inserted chapter ${addedId.toString()}`
 
-        await this.statistics.getAllNovelFiles(true)
+        await this.statistics.refreshStats()
         await this.coreUtils.reorder(addedId.toString(), `${chapterId.isAtNumber ? '@' : ''}${chapterId.num + i}`)
         commitMsg += `${chapterId.isAtNumber ? '@' : ''}${chapterId.num + i}, `
       }
