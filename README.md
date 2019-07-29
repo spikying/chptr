@@ -43,15 +43,15 @@ It is aimed at helping writing fiction, but could be used for managing any compl
 
 ## Philosophy
 
-That project was (and is still) a personal take on the fiction (and non-fiction) writing softwares. I like to separate content from format[^1], track all references and notes as I write[^2], have precise history of the files with source control[^3], and use the editing software of my choice[^4]. Many other tools exist and have other philosophies, and they fit better for most people. They just don't work so well for me. This is a geeky tool, that I wanted to be simple (even if it is growing to be more than I first expected). It is aimed at me alone, but if you're another geek that thinks like me, enjoy, I hope you like it.
+That project was (and is still) a personal take on the fiction (and non-fiction) writing softwares. I like to separate content from format[1], track all references and notes as I write[2], have precise history of the files with source control[3], and use the editing software of my choice[4]. Many other tools exist and have other philosophies, and they fit better for most people. They just don't work so well for me. This is a geeky tool, that I wanted to be simple (even if it is growing to be more than I first expected). It is aimed at me alone, but if you're another geek that thinks like me, enjoy, I hope you like it.
 
-[^1]: Pandoc does that
+[1]: Pandoc does that
 
-[^2]: The markup format that I use to extend Markdown does that
+[2]: The markup format that I use to extend Markdown does that
 
-[^3]: Git does that
+[3]: Git does that
 
-[^4]: VSCode is nice!
+[4]: VSCode is nice!
 
 - Every file has LF (\n) line endings; CRLF (\r\n) are converted. You can still work on Windows but the original Notepad won't do.
 - Every file is a UTF8 file without BOM. When sending a file to [Antidote](#chptr-antidote-filter), files are converted to UTF8-BOM (because of limitations in that software) and have a .antidote extension added. When the Antidote work is done, that file is processed back to its original extension and the .antidote one is deleted.
