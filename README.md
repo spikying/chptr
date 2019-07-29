@@ -9,15 +9,15 @@ Command Line tool to handle separate Markdown files with special markup notation
 
 It is aimed at helping writing fiction, but could be used for managing any complicated long document.
 
-
 # Table of Contents
 
 <!-- toc -->
-* [chptr](#chptr)
-* [Table of Contents](#table-of-contents)
-* [Usage](#usage)
-* [Commands](#commands)
-<!-- tocstop -->
+
+- [chptr](#chptr)
+- [Table of Contents](#table-of-contents)
+- [Usage](#usage)
+- [Commands](#commands)
+  <!-- tocstop -->
 
 ## Key features
 
@@ -28,27 +28,36 @@ It is aimed at helping writing fiction, but could be used for managing any compl
   - Summary content, in Markdown (.md file)
   - Metadata, in either YAML or JSON5.
 - Commands to
-  - ```Init``` a new project and create a few required files
-  - ```Add``` new chapters
-  - ```Delete``` chapters
-  - ```Reorder``` chapters
-  - ```Build``` output and recomputing some metadata
-  - Help with ```Antidote``` [language checker](https://antidote.info/) workflow
-  - ```Save``` to repository, in sentence-by-line style
-  - Put chapters back to ```Edit``` mode, by removing paragraph markup and bringing back file in paragraphs
-  - ```Rename``` chapters
-  - ```Split``` chapters when many first-level titles are found in them
-  - ```Track``` other files in repository system, for notes-taking
+  - `Init` a new project and create a few required files
+  - `Add` new chapters
+  - `Delete` chapters
+  - `Reorder` chapters
+  - `Build` output and recomputing some metadata
+  - Help with `Antidote` [language checker](https://antidote.info/) workflow
+  - `Save` to repository, in sentence-by-line style
+  - Put chapters back to `Edit` mode, by removing paragraph markup and bringing back file in paragraphs
+  - `Rename` chapters
+  - `Split` chapters when many first-level titles are found in them
+  - `Track` other files in repository system, for notes-taking
+- An extension is available for [Antidote](https://antidote.info/) spell-checker workflow in [Github](https://github.com/spikying/chptr-antidote-plugin) and [npm](https://www.npmjs.com/package/chptr-antidote-plugin)
 
 ## Philosophy
 
-That project was (and is still) a personal take on the fiction (and non-fiction) writing softwares. I like to separate content from format, track all references and notes as I write, have precise history of the files with source control, and use the editing software of my choice. Many other tools exist and have other philosophies, and IMHO, they fit better for most people. They just don't work so well for me. I wanted a simple tool, and this one is growing to be more than I first expected. It is aimed at me alone, but if you're another geek that thinks like me, enjoy, I hope you like it.  The metadata extraction and tracking is a bonus that came along the way.
+That project was (and is still) a personal take on the fiction (and non-fiction) writing softwares. I like to separate content from format[1], track all references and notes as I write[2], have precise history of the files with source control[3], and use the editing software of my choice[4]. Many other tools exist and have other philosophies, and they fit better for most people. They just don't work so well for me. This is a geeky tool, that I wanted to be simple (even if it is growing to be more than I first expected). It is aimed at me alone, but if you're another geek that thinks like me, enjoy, I hope you like it.
+
+[1]: Pandoc does that
+
+[2]: The markup format that I use to extend Markdown does that
+
+[3]: Git does that
+
+[4]: VSCode is nice!
 
 - Every file has LF (\n) line endings; CRLF (\r\n) are converted. You can still work on Windows but the original Notepad won't do.
 - Every file is a UTF8 file without BOM. When sending a file to [Antidote](#chptr-antidote-filter), files are converted to UTF8-BOM (because of limitations in that software) and have a .antidote extension added. When the Antidote work is done, that file is processed back to its original extension and the .antidote one is deleted.
 - Sentences are marked by a sentence termination character _and two spaces_. In the output files, the parsers will take all those double-spaces and convert them to single-spaces. That helps Chptr to identify sentence endings and put them on separate lines before saving them to repository, helping track evolution of the text with Git tools on a sentence-by-sentence basis, instead of paragraph-by-paragraph basis.
-- Metadata written inline has this structure: `{key: possibly long value}`. In the output, this metadata is either kept (and visually reorganized) or removed completely (for eventual outside review and publishing), depending on a `--removemarkup` flag in the ```build``` command. It is parsed and indexed in some metadata files.
-- Characters, places, hints (and possibly any other important things to track) have a special notation too, called **props**: `{Batman} is a superhero in Gotham City.` In this case, the word(s) between the brackets are kept in the output, either with ou without some outlining, depending on the `--removemarkup` flag of the ```build``` command again. They are indexed also in some metadata files to help finding them back easily.
+- Metadata written inline has this structure: `{key: possibly long value}`. In the output, this metadata is either kept (and visually reorganized) or removed completely (for eventual outside review and publishing), depending on a `--removemarkup` flag in the `build` command. It is parsed and indexed in some metadata files.
+- Characters, places, hints (and possibly any other important things to track) have a special notation too, called **props**: `{Batman} is a superhero in Gotham City.` In this case, the word(s) between the brackets are kept in the output, either with ou without some outlining, depending on the `--removemarkup` flag of the `build` command again. They are indexed also in some metadata files to help finding them back easily.
 - Config folder has a few files that can be customized to fit many preferences:
   - YAML vs JSON5
   - Project's title, language, file naming patterns, etc.
@@ -57,23 +66,22 @@ That project was (and is still) a personal take on the fiction (and non-fiction)
 
 ## Prerequisites
 
-To make it work, you'll need to have [Git](https://git-scm.com/) and [Pandoc](https://pandoc.org/) globally installed first (refer to those sites to download and install if needed). Also, [Node](https://nodejs.org) (with it's companion NPM) are necessary to use as explained down here. There are ways to build a standalone executable from there but I won't publish those online, as I expect that if you want to use this tool, you probably already have Node and NPM installed.  Instructions on how to build those executables is described [here](https://oclif.io/docs/releasing#standalone-tarballs).
+To make it work, you'll need to have [Git](https://git-scm.com/) and [Pandoc](https://pandoc.org/) globally installed first (refer to those sites to download and install if needed). Also, [Node](https://nodejs.org) (with it's companion NPM) are necessary to use as explained down here. There are ways to build a standalone executable from there but I won't publish those online, as I expect that if you want to use this tool, you probably already have Node and NPM installed. Instructions on how to build those executables is described [here](https://oclif.io/docs/releasing#standalone-tarballs).
 
 ## Roadmap, todos and warnings
 
-This app doesn't have tests at this point, is not documented and will be liberately refactored as intensely as needed.  **It is not mature at all** but I decided I wouldn't wait until it was to open-source it.
+This app doesn't have tests at this point, is not documented and will be liberately refactored as intensely as needed. **It is not mature at all** but I decided I wouldn't wait until it was to open-source it.
 
 In some future, I wish to do these things:
 
-* Include all sorts of tests
-* Document properly
-* Improve the code structure, code reusability and general code cleanliness
-* Include some other Oclif plugins, if appropriate
-* Move the ```Antidote``` command to a separate plugin
+- Include all sorts of tests
+- Document properly
+- Improve the code structure, code reusability and general code cleanliness
 
 # Usage
 
 <!-- usage -->
+
 ```sh-session
 $ npm install -g chptr
 $ chptr COMMAND
@@ -85,28 +93,30 @@ USAGE
   $ chptr COMMAND
 ...
 ```
+
 <!-- usagestop -->
 
 # Commands
 
 <!-- commands -->
-* [`chptr add [NAME] [NUMBER]`](#chptr-add-name-number)
-* [`chptr build`](#chptr-build)
-* [`chptr build:compact`](#chptr-buildcompact)
-* [`chptr build:metadata`](#chptr-buildmetadata)
-* [`chptr delete [NAME]`](#chptr-delete-name)
-* [`chptr edit [CHAPTERIDS]`](#chptr-edit-chapterids)
-* [`chptr help [COMMAND]`](#chptr-help-command)
-* [`chptr init [NAME]`](#chptr-init-name)
-* [`chptr plugins`](#chptr-plugins)
-* [`chptr plugins:install PLUGIN...`](#chptr-pluginsinstall-plugin)
-* [`chptr plugins:link PLUGIN`](#chptr-pluginslink-plugin)
-* [`chptr plugins:uninstall PLUGIN...`](#chptr-pluginsuninstall-plugin)
-* [`chptr plugins:update`](#chptr-pluginsupdate)
-* [`chptr rename [CHAPTERIDORFILENAME] [NEWNAME]`](#chptr-rename-chapteridorfilename-newname)
-* [`chptr reorder [ORIGINID] [DESTINATIONID]`](#chptr-reorder-originid-destinationid)
-* [`chptr save [MESSAGE]`](#chptr-save-message)
-* [`chptr track [FILENAME]`](#chptr-track-filename)
+
+- [`chptr add [NAME] [NUMBER]`](#chptr-add-name-number)
+- [`chptr build`](#chptr-build)
+- [`chptr build:compact`](#chptr-buildcompact)
+- [`chptr build:metadata`](#chptr-buildmetadata)
+- [`chptr delete [NAME]`](#chptr-delete-name)
+- [`chptr edit [CHAPTERIDS]`](#chptr-edit-chapterids)
+- [`chptr help [COMMAND]`](#chptr-help-command)
+- [`chptr init [NAME]`](#chptr-init-name)
+- [`chptr plugins`](#chptr-plugins)
+- [`chptr plugins:install PLUGIN...`](#chptr-pluginsinstall-plugin)
+- [`chptr plugins:link PLUGIN`](#chptr-pluginslink-plugin)
+- [`chptr plugins:uninstall PLUGIN...`](#chptr-pluginsuninstall-plugin)
+- [`chptr plugins:update`](#chptr-pluginsupdate)
+- [`chptr rename [CHAPTERIDORFILENAME] [NEWNAME]`](#chptr-rename-chapteridorfilename-newname)
+- [`chptr reorder [ORIGINID] [DESTINATIONID]`](#chptr-reorder-originid-destinationid)
+- [`chptr save [MESSAGE]`](#chptr-save-message)
+- [`chptr track [FILENAME]`](#chptr-track-filename)
 
 ## `chptr add [NAME] [NUMBER]`
 
@@ -133,7 +143,7 @@ _See code: [src\commands\add.ts](https://github.com/spikying/chptr/blob/v0.1.0/s
 
 ## `chptr build`
 
-Takes all original Markdown files and outputs a single file without metadata and comments.  Handles these output formats: md, pdf, docx, html, epub, tex.  Gives some insight into writing rate.
+Takes all original Markdown files and outputs a single file without metadata and comments. Handles these output formats: md, pdf, docx, html, epub, tex. Gives some insight into writing rate.
 
 ```
 USAGE
@@ -215,7 +225,7 @@ _See code: [src\commands\delete.ts](https://github.com/spikying/chptr/blob/v0.1.
 
 ## `chptr edit [CHAPTERIDS]`
 
-Adjust sentence and paragraph endings to allow for easier editing.  Commit changes with SAVE command.
+Adjust sentence and paragraph endings to allow for easier editing. Commit changes with SAVE command.
 
 ```
 USAGE
@@ -329,15 +339,15 @@ DESCRIPTION
 
   Installation of a user-installed plugin will override a core plugin.
 
-  e.g. If you have a core plugin that has a 'hello' command, installing a user-installed plugin with a 'hello' command 
-  will override the core plugin implementation. This is useful if a user needs to update core plugin functionality in 
+  e.g. If you have a core plugin that has a 'hello' command, installing a user-installed plugin with a 'hello' command
+  will override the core plugin implementation. This is useful if a user needs to update core plugin functionality in
   the CLI without the need to patch and update the whole CLI.
 
 ALIASES
   $ chptr plugins:add
 
 EXAMPLES
-  $ chptr plugins:install myplugin 
+  $ chptr plugins:install myplugin
   $ chptr plugins:install https://github.com/someuser/someplugin
   $ chptr plugins:install someuser/someplugin
 ```
@@ -362,7 +372,7 @@ OPTIONS
 DESCRIPTION
   Installation of a linked plugin will override a user-installed or core plugin.
 
-  e.g. If you have a user-installed or core plugin that has a 'hello' command, installing a linked plugin with a 'hello' 
+  e.g. If you have a user-installed or core plugin that has a 'hello' command, installing a linked plugin with a 'hello'
   command will override the user-installed or core plugin implementation. This is useful for development work.
 
 EXAMPLE
@@ -502,4 +512,5 @@ OPTIONS
 ```
 
 _See code: [src\commands\track.ts](https://github.com/spikying/chptr/blob/v0.1.0/src\commands\track.ts)_
+
 <!-- commandsstop -->
