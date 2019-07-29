@@ -43,15 +43,7 @@ It is aimed at helping writing fiction, but could be used for managing any compl
 
 ## Philosophy
 
-That project was (and is still) a personal take on the fiction (and non-fiction) writing softwares. I like to separate content from format<sup id="l1">[1](#f1)</sup>, track all references and notes as I write[2], have precise history of the files with source control[3], and use the editing software of my choice[4]. Many other tools exist and have other philosophies, and they fit better for most people. They just don't work so well for me. This is a geeky tool, that I wanted to be simple (even if it is growing to be more than I first expected). It is aimed at me alone, but if you're another geek that thinks like me, enjoy, I hope you like it.
-
-<b id="f1">[1]:</b> Pandoc does that[↩](#l1)
-
-[2]: The markup format that I use to extend Markdown does that
-
-[3]: Git does that
-
-[4]: VSCode is nice!
+That project was (and is still) a personal take on the fiction (and non-fiction) writing softwares. I like to separate content from format<sup id="l1">[1](#f1)</sup>, track all references and notes as I write<sup id="l2">[2](#f2)</sup>, have precise history of the files with source control<sup id="l3">[3](#f3)</sup>, and use the editing software of my choice<sup id="l4">[4](#f4)</sup>. Many other tools exist and have other philosophies, and they fit better for most people. They just don't work so well for me. This is a geeky tool, that I wanted to be simple (even if it is growing to be more than I first expected). It is aimed at me alone, but if you're another geek that thinks like me, enjoy, I hope you like it.
 
 - Every file has LF (\n) line endings; CRLF (\r\n) are converted. You can still work on Windows but the original Notepad won't do.
 - Every file is a UTF8 file without BOM. When sending a file to [Antidote](#chptr-antidote-filter), files are converted to UTF8-BOM (because of limitations in that software) and have a .antidote extension added. When the Antidote work is done, that file is processed back to its original extension and the .antidote one is deleted.
@@ -63,6 +55,14 @@ That project was (and is still) a personal take on the fiction (and non-fiction)
   - Project's title, language, file naming patterns, etc.
   - What to put in an empty (new) chapter
   - What manual fields to track on each chapter's metadata
+
+<b id="f1">[1]:</b> Pandoc does that[↩](#l1)
+
+<b id="f2">[2]:</b> The markup format that I use to extend Markdown does that[↩](#l2)
+
+<b id="f3">[3]:</b> Git does that[↩](#l3)
+
+<b id="f1">[4]:</b> VSCode is nice![↩](#l4)
 
 ## Prerequisites
 
