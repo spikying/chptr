@@ -28,30 +28,30 @@ It is aimed at helping writing fiction, but could be used for managing any compl
   - Summary content, in Markdown (.md file)
   - Metadata, in either YAML or JSON5.
 - Commands to
-  - `Init` a new project and create a few required files
-  - `Add` new chapters
-  - `Delete` chapters
-  - `Reorder` chapters
-  - `Build` output and recomputing some metadata
-  - Help with `Antidote` [language checker](https://antidote.info/) workflow
-  - `Save` to repository, in sentence-by-line style
-  - Put chapters back to `Edit` mode, by removing paragraph markup and bringing back file in paragraphs
-  - `Rename` chapters
-  - `Split` chapters when many first-level titles are found in them
-  - `Track` other files in repository system, for notes-taking
+  - ```Init``` a new project and create a few required files
+  - ```Add``` new chapters
+  - ```Delete``` chapters
+  - ```Reorder``` chapters
+  - ```Build``` output and recomputing some metadata
+  - Help with ```Antidote``` [language checker](https://antidote.info/) workflow
+  - ```Save``` to repository, in sentence-by-line style
+  - Put chapters back to ```Edit``` mode, by removing paragraph markup and bringing back file in paragraphs
+  - ```Rename``` chapters
+  - ```Split``` chapters when many first-level titles are found in them
+  - ```Track``` other files in repository system, for notes-taking
 - An extension is available for [Antidote](https://antidote.info/) spell-checker workflow in [Github](https://github.com/spikying/chptr-antidote-plugin) and [npm](https://www.npmjs.com/package/chptr-antidote-plugin)
 
 ## Philosophy
 
-That project was (and is still) a personal take on the fiction (and non-fiction) writing softwares. I like to separate content from format[1], track all references and notes as I write[2], have precise history of the files with source control[3], and use the editing software of my choice[4]. Many other tools exist and have other philosophies, and they fit better for most people. They just don't work so well for me. This is a geeky tool, that I wanted to be simple (even if it is growing to be more than I first expected). It is aimed at me alone, but if you're another geek that thinks like me, enjoy, I hope you like it.
+That project was (and is still) a personal take on the fiction (and non-fiction) writing softwares. I like to separate content from format[^1], track all references and notes as I write[^2], have precise history of the files with source control[^3], and use the editing software of my choice[^4]. Many other tools exist and have other philosophies, and they fit better for most people. They just don't work so well for me. This is a geeky tool, that I wanted to be simple (even if it is growing to be more than I first expected). It is aimed at me alone, but if you're another geek that thinks like me, enjoy, I hope you like it.
 
-[1]: Pandoc does that
+[^1]: Pandoc does that
 
-[2]: The markup format that I use to extend Markdown does that
+[^2]: The markup format that I use to extend Markdown does that
 
-[3]: Git does that
+[^3]: Git does that
 
-[4]: VSCode is nice!
+[^4]: VSCode is nice!
 
 - Every file has LF (\n) line endings; CRLF (\r\n) are converted. You can still work on Windows but the original Notepad won't do.
 - Every file is a UTF8 file without BOM. When sending a file to [Antidote](#chptr-antidote-filter), files are converted to UTF8-BOM (because of limitations in that software) and have a .antidote extension added. When the Antidote work is done, that file is processed back to its original extension and the .antidote one is deleted.
@@ -74,9 +74,9 @@ This app doesn't have tests at this point, is not documented and will be liberat
 
 In some future, I wish to do these things:
 
-- Include all sorts of tests
-- Document properly
-- Improve the code structure, code reusability and general code cleanliness
+* Include all sorts of tests
+* Document properly
+* Improve the code structure, code reusability and general code cleanliness
 
 # Usage
 
