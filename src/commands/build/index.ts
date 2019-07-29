@@ -206,10 +206,10 @@ export default class Build extends Command {
         const fullOutputFilePath = path.join(this.softConfig.buildDirectory, outputFile + '.' + filetype)
         allOutputFilePath.push(fullOutputFilePath)
 
-        let pandocArgs: string[] = [] // [chapterFiles, '--smart', '--standalone', '-o', `"${fullOutputFilePath}"`]
+        let pandocArgs: string[] = []
 
         if (filetype === 'md') {
-          pandocArgs = pandocArgs.concat(['--number-sections', '--to', 'markdown-raw_html', '--wrap=none', '--atx-headers'])
+          pandocArgs = pandocArgs.concat(['--number-sections', '--to', 'markdown-raw_html+smart', '--wrap=none', '--atx-headers'])
         }
 
         if (filetype === 'docx') {
@@ -219,7 +219,15 @@ export default class Build extends Command {
           } else {
             this.warn(`For a better output, create an empty styled Word doc at ${referenceDocFullPath}`)
           }
-          pandocArgs = pandocArgs.concat(['--toc', '--toc-depth', '2', '--top-level-division=chapter', '--number-sections'])
+          pandocArgs = pandocArgs.concat([
+            '--to',
+            'docx+smart',
+            '--toc',
+            '--toc-depth',
+            '2',
+            '--top-level-division=chapter',
+            '--number-sections'
+          ])
         }
 
         if (filetype === 'html') {
@@ -239,7 +247,7 @@ export default class Build extends Command {
 
           pandocArgs = pandocArgs.concat([
             '--to',
-            'html5',
+            'html5+smart',
             '--toc',
             '--toc-depth',
             '2',
@@ -265,22 +273,45 @@ export default class Build extends Command {
             '2',
             '--top-level-division=chapter',
             '--number-sections',
-            '--latex-engine=xelatex',
+            // '--latex-engine=xelatex',
+            '--pdf-engine=xelatex',
             '--to',
-            'latex+raw_tex'
+            'latex+raw_tex+smart'
           ])
         }
 
         if (filetype === 'epub') {
-          pandocArgs = pandocArgs.concat(['--toc', '--toc-depth', '2', '--top-level-division=chapter', '--number-sections'])
+          pandocArgs = pandocArgs.concat([
+            '--to',
+            'epub+smart',
+            '--toc',
+            '--toc-depth',
+            '2',
+            '--top-level-division=chapter',
+            '--number-sections'
+          ])
         }
 
-        pandocArgs = [chapterFiles, '--smart', '--standalone', '-o', `"${fullOutputFilePath}"`].concat(pandocArgs)
+        pandocArgs = [
+          chapterFiles,
+          // '--smart',
+          '--standalone',
+          '-o',
+          `"${fullOutputFilePath}"`
+        ].concat(pandocArgs)
 
         pandocRuns.push(this.runPandoc(pandocArgs))
       }
 
-      await Promise.all(pandocRuns)
+      await Promise.all(pandocRuns).catch(err => {
+        throw new ChptrError(
+          `Error trying to run Pandoc.  You need to have it installed and accessible globally, with version 2.7.3 minimally.\n${err
+            .toString()
+            .errorColor()}`,
+          'command:build:index',
+          52
+        )
+      })
 
       const allOutputFilePathPretty = allOutputFilePath.reduce((previous, current) => `${previous}\n    ${current}`, '')
       cli.action.stop(allOutputFilePathPretty.actionStopColor())

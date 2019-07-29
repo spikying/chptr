@@ -219,31 +219,6 @@ export class MarkupUtils {
     )
   }
 
-  // public objectifyMarkupArray(flattenedMarkupArray: MarkupObj[]): { markupByFile: MarkupByFile; markupByType: any } {
-  //   const markupByFile: MarkupByFile = {}
-  //   const markupByType: any = {}
-
-  //   flattenedMarkupArray.forEach(markup => {
-  //     markupByFile[markup.filename] = markupByFile[markup.filename] || []
-  //     if (markup.computed) {
-  //       markupByFile[markup.filename].push({ computed: true, type: markup.type, value: markup.value })
-  //     } else {
-  //       markupByFile[markup.filename].push({ computed: false, paragraph: markup.paragraph, type: markup.type, value: markup.value })
-  //     }
-
-  //     if (!markup.computed) {
-  //       markupByType[markup.type] = markupByType[markup.type] || []
-  //       markupByType[markup.type].push({ filename: markup.filename, paragraph: markup.paragraph, value: markup.value })
-  //     } else {
-  //       if (markup.type === 'wordCount') {
-  //         markupByType.totalWordCount = markupByType.totalWordCount || 0
-  //         markupByType.totalWordCount += markup.value
-  //       }
-  //     }
-  //   })
-  //   return { markupByFile, markupByType }
-  // }
-
   public async writeMetadataInEachFile(markupByFile: any): Promise<{ file: string; diff: string }[]> {
     const modifiedFiles: { file: string; diff: string }[] = []
 
@@ -276,21 +251,12 @@ export class MarkupUtils {
       const initialContent = await this.fsUtils.readFileContent(metadataFilePath)
 
       const initialObj = this.softConfig.parsePerStyle(initialContent)
-      // this.softConfig.configStyle === 'JSON5'
-      //   ? JSON.parse(initialContent)
-      //   : this.softConfig.configStyle === 'YAML'
-      //   ? yaml.safeLoad(initialContent)
-      //   : {}
       const updatedObj = JSON.parse(JSON.stringify(initialObj)) //used to create deep copy
       updatedObj.extracted = extractedMarkup
       updatedObj.computed = computedMarkup
 
       const updatedContent = this.softConfig.stringifyPerStyle(updatedObj)
-      // this.softConfig.configStyle === 'JSON5'
-      //   ? JSON.stringify(updatedObj, null, 4)
-      //   : this.softConfig.configStyle === 'YAML'
-      //   ? yaml.safeDump(updatedObj)
-      //   : ''
+
       if (initialContent !== updatedContent) {
         debug(`metadataFilePath=${metadataFilePath} updatedContent=${updatedContent}`)
         await this.fsUtils.writeFile(metadataFilePath, updatedContent)
@@ -327,6 +293,7 @@ export class MarkupUtils {
 
   public transformMarkupContent(initialContent: string): string {
     const paragraphBreakRegex = new RegExp(this.paragraphBreakChar + '{{(\\d+)}}\\n', 'g')
+    const sentenceBreakRegex = new RegExp(this.sentenceBreakChar, 'g')
     let markupCounter = 0
 
     const transformInFootnote = function(initial: string): { replaced: string; didReplacement: boolean } {
@@ -344,6 +311,7 @@ export class MarkupUtils {
       .replace(/^### (.*)$/gm, '* * *\n\n## $1')
       .replace(/^\\(.*)$/gm, '_% $1_')
       .replace(this.propRegex, '**$2**')
+      .replace(sentenceBreakRegex, '')
 
     let continueReplacing = true
     while (continueReplacing) {
