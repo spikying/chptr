@@ -1,4 +1,3 @@
-// todo: make possible to do only parts of Build: metadata, output,
 import { flags } from '@oclif/command'
 import cli from 'cli-ux'
 import * as moment from 'moment'

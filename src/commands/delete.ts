@@ -5,7 +5,7 @@ import { ChptrError } from '../chptr-error'
 import { QueryBuilder } from '../ui-utils'
 
 import { d } from './base'
-import Command from './initialized-base'
+import Command from './compactable-base'
 
 const debug = d('delete')
 

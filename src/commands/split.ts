@@ -6,7 +6,7 @@ import { ChapterId } from '../chapter-id'
 import { ChptrError } from '../chptr-error'
 
 import { d } from './base'
-import Command from './initialized-base'
+import Command from './compactable-base'
 
 const debug = d('split')
 

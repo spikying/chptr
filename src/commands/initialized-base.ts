@@ -37,8 +37,6 @@ export default abstract class extends Command {
     ...Command.flags
   }
 
-  // TODO: put --compact flag here? it's in build, delete, split and reorder now.
-
   private _softConfig: SoftConfig | undefined
   private _statistics: Statistics | undefined
   private _markupUtils: MarkupUtils | undefined

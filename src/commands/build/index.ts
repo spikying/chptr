@@ -13,6 +13,7 @@ import Command from '../compactable-base'
 
 const debug = d('build')
 
+//TODO: make use of all other parts of build directory's Run commands so code is not duplicated
 export default class Build extends Command {
   static readonly exportableFileTypes = ['md', 'pdf', 'docx', 'html', 'epub', 'tex']
 
