@@ -4,39 +4,40 @@ import * as notifier from 'node-notifier'
 import * as path from 'path'
 // import * as simplegit from 'simple-git/promise'
 
-import { FsUtils } from '../fs-utils'
+import { FsUtils} from '../fs-utils'
 import { HardConfig } from '../hard-config'
 // import { promisify } from 'util'
+import '../ui-utils'
 
 export const d = (cmdName: string) => {
   return deb(`chptr:${cmdName}`)
 }
 
-const chalk: any = require('chalk')
-String.prototype.color = function(colorName: string) {
-  return chalk[colorName](this)
-}
-String.prototype.actionStartColor = function() {
-  return chalk.blue(this)
-}
-String.prototype.actionStopColor = function() {
-  return chalk.cyan(this)
-}
-String.prototype.resultHighlighColor = function() {
-  return chalk.yellow(this)
-}
-String.prototype.resultSecondaryColor = function() {
-  return chalk.magenta(this)
-}
-String.prototype.resultNormalColor = function() {
-  return chalk.whiteBright(this)
-}
-String.prototype.infoColor = function() {
-  return chalk.gray(this)
-}
-String.prototype.errorColor = function() {
-  return chalk.redBright(this)
-}
+// const chalk: any = require('chalk')
+// String.prototype.color = function(colorName: string) {
+//   return chalk[colorName](this)
+// }
+// String.prototype.actionStartColor = function() {
+//   return chalk.blue(this)
+// }
+// String.prototype.actionStopColor = function() {
+//   return chalk.cyan(this)
+// }
+// String.prototype.resultHighlighColor = function() {
+//   return chalk.yellow(this)
+// }
+// String.prototype.resultSecondaryColor = function() {
+//   return chalk.magenta(this)
+// }
+// String.prototype.resultNormalColor = function() {
+//   return chalk.whiteBright(this)
+// }
+// String.prototype.infoColor = function() {
+//   return chalk.gray(this)
+// }
+// String.prototype.errorColor = function() {
+//   return chalk.redBright(this)
+// }
 
 const debug = d('command:base')
 

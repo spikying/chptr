@@ -2,11 +2,13 @@ import { cli } from 'cli-ux'
 import * as d from 'debug'
 import { applyChange, diff, observableDiff } from 'deep-diff'
 import * as JsDiff from 'diff'
+import * as moment from 'moment'
 import * as path from 'path'
 
 import { ChapterId } from './chapter-id'
 import { ChptrError } from './chptr-error'
 import { FsUtils } from './fs-utils'
+import { GitUtils } from './git-utils'
 import { SoftConfig } from './soft-config'
 import { tableize } from './ui-utils'
 
@@ -24,11 +26,13 @@ export class MarkupUtils {
   private readonly fsUtils: FsUtils
   private readonly rootPath: string
   private readonly softConfig: SoftConfig
+  private readonly gitUtils: GitUtils
 
   constructor(softConfig: SoftConfig, rootPath: string) {
     this.fsUtils = new FsUtils()
     this.softConfig = softConfig
     this.rootPath = rootPath
+    this.gitUtils = new GitUtils(softConfig, rootPath)
   }
 
   public async extractAndUpdateGlobalAndChapterMetadata(allChapterFilesArray: string[], outputFile: string) {
@@ -85,6 +89,41 @@ export class MarkupUtils {
     cli.action.stop(`updated ${modifiedFile.file} with ${modifiedFile.diff}`.actionStopColor())
   }
 
+  public async extractMeta(filepath: string, extractAll: boolean): Promise<MetaObj[]> {
+    // const file = this.softConfig.mapFileToBeRelativeToRootPath(filepath)
+    // const beginBlock = '########'
+    // const endFormattedBlock = '------------------------ >8 ------------------------'
+    // const gitLogArgs = ['log', '-c', '--follow', `--pretty=format:"${beginBlock}%H;%aI;%s${endFormattedBlock}"`]
+    // if (!extractAll) {
+    //   gitLogArgs.push(`--since="${moment().add(-1, 'week')}"`)
+    // }
+    // const logListString = (await this.git.raw([...gitLogArgs, file])) || ''
+    const logListArray = await this.gitUtils.GetGitListOfVersionsOfFile(filepath, extractAll)
+
+    const logList = logListArray
+      // .map(l => {
+      //   const s = l.split(endFormattedBlock)
+      //   const logArray = s[0].split(';')
+      //   const log = { file, hash: logArray[0], date: moment(logArray[1]), subject: logArray[2] }
+      .map(l => {
+        const wcRegex = /^([+-])\s*\"wordCount\": (\d+)/
+        // const diffArray = s.length === 2 ? s[1].split('\n').filter(n => n !== '' && wcRegex.test(n)) : []
+        const diffArray = l.content.split('\n').filter(n => n !== '' && wcRegex.test(n)) //|| []
+
+        const wordCountDiff = diffArray
+          .map(d => {
+            const match = wcRegex.exec(d)
+            return match ? parseInt(`${match[1]}${match[2]}`, 10) : 0
+          })
+          .reduce((previous, current) => {
+            return previous + current
+          }, 0)
+
+        return { log: l, wordCountDiff }
+      })
+
+    return logList
+  }
 
   //TODO: could be private?
   public async contentHasChangedVersusFile(filepath: string, content: string) {
@@ -243,21 +282,21 @@ export class MarkupUtils {
       const initialContent = await this.fsUtils.readFileContent(metadataFilePath)
 
       const initialObj = this.softConfig.parsePerStyle(initialContent)
-        // this.softConfig.configStyle === 'JSON5'
-        //   ? JSON.parse(initialContent)
-        //   : this.softConfig.configStyle === 'YAML'
-        //   ? yaml.safeLoad(initialContent)
-        //   : {}
+      // this.softConfig.configStyle === 'JSON5'
+      //   ? JSON.parse(initialContent)
+      //   : this.softConfig.configStyle === 'YAML'
+      //   ? yaml.safeLoad(initialContent)
+      //   : {}
       const updatedObj = JSON.parse(JSON.stringify(initialObj)) //used to create deep copy
       updatedObj.extracted = extractedMarkup
       updatedObj.computed = computedMarkup
 
       const updatedContent = this.softConfig.stringifyPerStyle(updatedObj)
-        // this.softConfig.configStyle === 'JSON5'
-        //   ? JSON.stringify(updatedObj, null, 4)
-        //   : this.softConfig.configStyle === 'YAML'
-        //   ? yaml.safeDump(updatedObj)
-        //   : ''
+      // this.softConfig.configStyle === 'JSON5'
+      //   ? JSON.stringify(updatedObj, null, 4)
+      //   : this.softConfig.configStyle === 'YAML'
+      //   ? yaml.safeDump(updatedObj)
+      //   : ''
       if (initialContent !== updatedContent) {
         debug(`metadataFilePath=${metadataFilePath} updatedContent=${updatedContent}`)
         await this.fsUtils.writeFile(metadataFilePath, updatedContent)
@@ -338,17 +377,17 @@ export class MarkupUtils {
       const initialContent = await this.fsUtils.readFileContent(file)
       try {
         const initialObj = this.softConfig.parsePerStyle(initialContent)
-          // this.softConfig.configStyle === 'JSON5'
-          //   ? JSON.parse(initialContent)
-          //   : this.softConfig.configStyle === 'YAML'
-          //   ? yaml.safeLoad(initialContent)
-          //   : {}
+        // this.softConfig.configStyle === 'JSON5'
+        //   ? JSON.parse(initialContent)
+        //   : this.softConfig.configStyle === 'YAML'
+        //   ? yaml.safeLoad(initialContent)
+        //   : {}
         const replacedObj = this.softConfig.parsePerStyle(initialContent)
-          // this.softConfig.configStyle === 'JSON5'
-          //   ? JSON.parse(initialContent)
-          //   : this.softConfig.configStyle === 'YAML'
-          //   ? yaml.safeLoad(initialContent)
-          //   : {}
+        // this.softConfig.configStyle === 'JSON5'
+        //   ? JSON.parse(initialContent)
+        //   : this.softConfig.configStyle === 'YAML'
+        //   ? yaml.safeLoad(initialContent)
+        //   : {}
 
         let changeApplied = false
         observableDiff(replacedObj.manual, this.softConfig.metadataFieldsDefaults, d => {
@@ -364,11 +403,11 @@ export class MarkupUtils {
             table.accumulator(this.softConfig.mapFileToBeRelativeToRootPath(file), expl)
           })
           const outputString = this.softConfig.stringifyPerStyle(replacedObj)
-            // this.softConfig.configStyle === 'JSON5'
-            //   ? JSON.stringify(replacedObj, null, 4)
-            //   : this.softConfig.configStyle === 'YAML'
-            //   ? yaml.safeDump(replacedObj)
-            //   : ''
+          // this.softConfig.configStyle === 'JSON5'
+          //   ? JSON.stringify(replacedObj, null, 4)
+          //   : this.softConfig.configStyle === 'YAML'
+          //   ? yaml.safeDump(replacedObj)
+          //   : ''
           await this.fsUtils.writeFile(file, outputString)
         }
       } catch (err) {
@@ -381,6 +420,16 @@ export class MarkupUtils {
     }
     table.show('Metadata fields updated in files')
   }
+}
+
+export interface MetaObj {
+  log: {
+    file: string
+    hash: string
+    date: moment.Moment
+    subject: string
+  }
+  wordCountDiff: number
 }
 
 export interface MarkupObj {

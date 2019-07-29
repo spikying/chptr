@@ -5,11 +5,11 @@ import * as moment from 'moment'
 import * as path from 'path'
 import { file as tmpFile } from 'tmp-promise'
 
-import { ChptrError } from '../chptr-error'
-import { QueryBuilder, tableize } from '../ui-utils'
-
-import { d } from './base'
-import Command from './initialized-base'
+import { ChptrError } from '../../chptr-error'
+import { MetaObj } from '../../markup-utils'
+import { QueryBuilder, tableize } from '../../ui-utils'
+import { d } from '../base'
+import Command from '../compactable-base'
 
 const debug = d('build')
 
@@ -39,11 +39,11 @@ export default class Build extends Command {
       description: 'Remove paragraph numbers and other markup in output',
       default: false
     }),
-    compact: flags.boolean({
-      char: 'c',
-      description: 'Compact chapter numbers at the same time',
-      default: false
-    }),
+    // compact: flags.boolean({
+    //   char: 'c',
+    //   description: 'Compact chapter numbers at the same time',
+    //   default: false
+    // }),
     showWritingRate: flags.string({
       char: 's',
       description: 'Show word count per day in varying details',
@@ -66,7 +66,7 @@ export default class Build extends Command {
       const { flags } = this.parse(Build)
 
       const removeMarkup = flags.removemarkup
-      const compact = flags.compact
+      // const compact = flags.compact
 
       const wrOption = flags.showWritingRate
       const showWritingRate = wrOption === 'all' || wrOption === 'short' || wrOption === 'export'
@@ -113,7 +113,7 @@ export default class Build extends Command {
 
       const metaExtractPromises: Promise<MetaObj[]>[] = []
       allMetadataFilesArray.forEach(m => {
-        metaExtractPromises.push(this.extractMeta(m, exportWritingRate))
+        metaExtractPromises.push(this.markupUtils.extractMeta(m, exportWritingRate))
       })
       await Promise.all(metaExtractPromises).then(async fullMetaArray => {
         //flatten equivalent
@@ -276,13 +276,7 @@ export default class Build extends Command {
 
         pandocArgs = [chapterFiles, '--smart', '--standalone', '-o', `"${fullOutputFilePath}"`].concat(pandocArgs)
 
-        // try {
         pandocRuns.push(this.runPandoc(pandocArgs))
-        // } catch (err) {
-        //   this.error(err.toString().errorColor())
-        //   cli.action.status = 'error'.errorColor()
-        //   this.exit(1)
-        // }
       }
 
       await Promise.all(pandocRuns)
@@ -290,14 +284,11 @@ export default class Build extends Command {
       const allOutputFilePathPretty = allOutputFilePath.reduce((previous, current) => `${previous}\n    ${current}`, '')
       cli.action.stop(allOutputFilePathPretty.actionStopColor())
 
-      if (compact) {
-        await this.coreUtils.compactFileNumbers()
-        await this.coreUtils.preProcessAndCommitFiles('Compacted file numbers')
-      }
+      // if (compact) {
+      //   await this.coreUtils.compactFileNumbers()
+      //   await this.coreUtils.preProcessAndCommitFiles('Compacted file numbers')
+      // }
     } catch (err) {
-      // cli.action.status = 'error'.errorColor()
-      // this.error(err.toString().errorColor())
-      // this.exit(1)
       throw new ChptrError(err, 'build.run', 3)
     } finally {
       await tmpMDfile.cleanup()
@@ -325,50 +316,4 @@ export default class Build extends Command {
       })
     })
   }
-
-  private async extractMeta(filepath: string, extractAll: boolean): Promise<MetaObj[]> {
-    // const file = this.softConfig.mapFileToBeRelativeToRootPath(filepath)
-    // const beginBlock = '########'
-    // const endFormattedBlock = '------------------------ >8 ------------------------'
-    // const gitLogArgs = ['log', '-c', '--follow', `--pretty=format:"${beginBlock}%H;%aI;%s${endFormattedBlock}"`]
-    // if (!extractAll) {
-    //   gitLogArgs.push(`--since="${moment().add(-1, 'week')}"`)
-    // }
-    // const logListString = (await this.git.raw([...gitLogArgs, file])) || ''
-    const logListArray = await this.gitUtils.GetGitListOfVersionsOfFile(filepath, extractAll)
-
-    const logList = logListArray
-      // .map(l => {
-      //   const s = l.split(endFormattedBlock)
-      //   const logArray = s[0].split(';')
-      //   const log = { file, hash: logArray[0], date: moment(logArray[1]), subject: logArray[2] }
-      .map(l => {
-        const wcRegex = /^([+-])\s*\"wordCount\": (\d+)/
-        // const diffArray = s.length === 2 ? s[1].split('\n').filter(n => n !== '' && wcRegex.test(n)) : []
-        const diffArray = l.content.split('\n').filter(n => n !== '' && wcRegex.test(n)) //|| []
-
-        const wordCountDiff = diffArray
-          .map(d => {
-            const match = wcRegex.exec(d)
-            return match ? parseInt(`${match[1]}${match[2]}`, 10) : 0
-          })
-          .reduce((previous, current) => {
-            return previous + current
-          }, 0)
-
-        return { log: l, wordCountDiff }
-      })
-
-    return logList
-  }
-}
-
-interface MetaObj {
-  log: {
-    file: string
-    hash: string
-    date: moment.Moment
-    subject: string
-  }
-  wordCountDiff: number
 }

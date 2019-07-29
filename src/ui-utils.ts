@@ -4,6 +4,33 @@ import inquirer = require('inquirer')
 
 import { FsUtils } from './fs-utils'
 
+  const chalk: any = require('chalk')
+  String.prototype.color = function (colorName: string) {
+    return chalk[colorName](this)
+  }
+  String.prototype.actionStartColor = function () {
+    return chalk.blue(this)
+  }
+  String.prototype.actionStopColor = function () {
+    return chalk.cyan(this)
+  }
+  String.prototype.resultHighlighColor = function () {
+    return chalk.yellow(this)
+  }
+  String.prototype.resultSecondaryColor = function () {
+    return chalk.magenta(this)
+  }
+  String.prototype.resultNormalColor = function () {
+    return chalk.whiteBright(this)
+  }
+  String.prototype.infoColor = function () {
+    return chalk.gray(this)
+  }
+  String.prototype.errorColor = function () {
+    return chalk.redBright(this)
+  }
+
+
 const debug = d('ui-utils')
 
 export class QueryBuilder {

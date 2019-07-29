@@ -91,12 +91,18 @@ USAGE
 
 <!-- commands -->
 * [`chptr add [NAME] [NUMBER]`](#chptr-add-name-number)
-* [`chptr antidote [CHAPTERID]`](#chptr-antidote-chapterid)
 * [`chptr build`](#chptr-build)
+* [`chptr build:compact`](#chptr-buildcompact)
+* [`chptr build:metadata`](#chptr-buildmetadata)
 * [`chptr delete [NAME]`](#chptr-delete-name)
 * [`chptr edit [CHAPTERIDS]`](#chptr-edit-chapterids)
 * [`chptr help [COMMAND]`](#chptr-help-command)
 * [`chptr init [NAME]`](#chptr-init-name)
+* [`chptr plugins`](#chptr-plugins)
+* [`chptr plugins:install PLUGIN...`](#chptr-pluginsinstall-plugin)
+* [`chptr plugins:link PLUGIN`](#chptr-pluginslink-plugin)
+* [`chptr plugins:uninstall PLUGIN...`](#chptr-pluginsuninstall-plugin)
+* [`chptr plugins:update`](#chptr-pluginsupdate)
 * [`chptr rename [CHAPTERIDORFILENAME] [NEWNAME]`](#chptr-rename-chapteridorfilename-newname)
 * [`chptr reorder [ORIGINID] [DESTINATIONID]`](#chptr-reorder-originid-destinationid)
 * [`chptr save [MESSAGE]`](#chptr-save-message)
@@ -125,25 +131,6 @@ OPTIONS
 
 _See code: [src\commands\add.ts](https://github.com/spikying/chptr/blob/v0.1.0/src\commands\add.ts)_
 
-## `chptr antidote [CHAPTERID]`
-
-Launch Antidote spell-checker for given chapter
-
-```
-USAGE
-  $ chptr antidote [CHAPTERID]
-
-ARGUMENTS
-  CHAPTERID  Chapter number to Antidote.
-
-OPTIONS
-  -N, --notify     show a notification box when build is completed.
-  -h, --help       show CLI help
-  -p, --path=path  [default: .] Path where root of project files are
-```
-
-_See code: [src\commands\antidote.ts](https://github.com/spikying/chptr/blob/v0.1.0/src\commands\antidote.ts)_
-
 ## `chptr build`
 
 Takes all original Markdown files and outputs a single file without metadata and comments.  Handles these output formats: md, pdf, docx, html, epub, tex.  Gives some insight into writing rate.
@@ -166,7 +153,42 @@ ALIASES
   $ chptr compile
 ```
 
-_See code: [src\commands\build.ts](https://github.com/spikying/chptr/blob/v0.1.0/src\commands\build.ts)_
+_See code: [src\commands\build\index.ts](https://github.com/spikying/chptr/blob/v0.1.0/src\commands\build\index.ts)_
+
+## `chptr build:compact`
+
+Only compacts numbers of files
+
+```
+USAGE
+  $ chptr build:compact
+
+OPTIONS
+  -N, --notify     show a notification box when build is completed.
+  -h, --help       show CLI help
+  -p, --path=path  [default: .] Path where root of project files are
+```
+
+_See code: [src\commands\build\compact.ts](https://github.com/spikying/chptr/blob/v0.1.0/src\commands\build\compact.ts)_
+
+## `chptr build:metadata`
+
+Updates only metadata files
+
+```
+USAGE
+  $ chptr build:metadata
+
+OPTIONS
+  -N, --notify                                 show a notification box when build is completed.
+  -c, --compact                                Compact chapter numbers at the same time
+  -d, --datetimestamp                          adds datetime stamp before output filename
+  -h, --help                                   show CLI help
+  -p, --path=path                              [default: .] Path where root of project files are
+  -s, --showWritingRate=all|short|none|export  [default: short] Show word count per day in varying details
+```
+
+_See code: [src\commands\build\metadata.ts](https://github.com/spikying/chptr/blob/v0.1.0/src\commands\build\metadata.ts)_
 
 ## `chptr delete [NAME]`
 
@@ -268,6 +290,123 @@ ALIASES
 ```
 
 _See code: [src\commands\init.ts](https://github.com/spikying/chptr/blob/v0.1.0/src\commands\init.ts)_
+
+## `chptr plugins`
+
+list installed plugins
+
+```
+USAGE
+  $ chptr plugins
+
+OPTIONS
+  --core  show core plugins
+
+EXAMPLE
+  $ chptr plugins
+```
+
+_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v1.7.8/src\commands\plugins\index.ts)_
+
+## `chptr plugins:install PLUGIN...`
+
+installs a plugin into the CLI
+
+```
+USAGE
+  $ chptr plugins:install PLUGIN...
+
+ARGUMENTS
+  PLUGIN  plugin to install
+
+OPTIONS
+  -f, --force    yarn install with force flag
+  -h, --help     show CLI help
+  -v, --verbose
+
+DESCRIPTION
+  Can be installed from npm or a git url.
+
+  Installation of a user-installed plugin will override a core plugin.
+
+  e.g. If you have a core plugin that has a 'hello' command, installing a user-installed plugin with a 'hello' command 
+  will override the core plugin implementation. This is useful if a user needs to update core plugin functionality in 
+  the CLI without the need to patch and update the whole CLI.
+
+ALIASES
+  $ chptr plugins:add
+
+EXAMPLES
+  $ chptr plugins:install myplugin 
+  $ chptr plugins:install https://github.com/someuser/someplugin
+  $ chptr plugins:install someuser/someplugin
+```
+
+_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v1.7.8/src\commands\plugins\install.ts)_
+
+## `chptr plugins:link PLUGIN`
+
+links a plugin into the CLI for development
+
+```
+USAGE
+  $ chptr plugins:link PLUGIN
+
+ARGUMENTS
+  PATH  [default: .] path to plugin
+
+OPTIONS
+  -h, --help     show CLI help
+  -v, --verbose
+
+DESCRIPTION
+  Installation of a linked plugin will override a user-installed or core plugin.
+
+  e.g. If you have a user-installed or core plugin that has a 'hello' command, installing a linked plugin with a 'hello' 
+  command will override the user-installed or core plugin implementation. This is useful for development work.
+
+EXAMPLE
+  $ chptr plugins:link myplugin
+```
+
+_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v1.7.8/src\commands\plugins\link.ts)_
+
+## `chptr plugins:uninstall PLUGIN...`
+
+removes a plugin from the CLI
+
+```
+USAGE
+  $ chptr plugins:uninstall PLUGIN...
+
+ARGUMENTS
+  PLUGIN  plugin to uninstall
+
+OPTIONS
+  -h, --help     show CLI help
+  -v, --verbose
+
+ALIASES
+  $ chptr plugins:unlink
+  $ chptr plugins:remove
+```
+
+_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v1.7.8/src\commands\plugins\uninstall.ts)_
+
+## `chptr plugins:update`
+
+update installed plugins
+
+```
+USAGE
+  $ chptr plugins:update
+
+OPTIONS
+  -h, --help     show CLI help
+  -v, --verbose
+```
+
+_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v1.7.8/src\commands\plugins\update.ts)_
 
 ## `chptr rename [CHAPTERIDORFILENAME] [NEWNAME]`
 

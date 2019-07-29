@@ -37,7 +37,7 @@ export default abstract class extends Command {
     ...Command.flags
   }
 
-  // TODO: put --compact flag here? it's in build, delete and reorder now.
+  // TODO: put --compact flag here? it's in build, delete, split and reorder now.
 
   private _softConfig: SoftConfig | undefined
   private _statistics: Statistics | undefined
@@ -83,8 +83,8 @@ export default abstract class extends Command {
   }
 
   public async finally() {
-    await super.finally()
     await this.fsUtils.deleteEmptySubDirectories(this.rootPath)
+    await super.finally()
   }
 
   //#region config watches
