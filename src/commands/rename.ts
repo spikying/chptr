@@ -66,15 +66,13 @@ export default class Rename extends Command {
 
     const chapterFile = (await this.fsUtils.listFiles(path.join(this.rootPath, this.softConfig.chapterWildcardWithNumber(chapterId))))[0]
     const summaryFile = (await this.fsUtils.listFiles(path.join(this.rootPath, this.softConfig.summaryWildcardWithNumber(chapterId))))[0]
-    const metadataFile = (await this.fsUtils.listFiles(
-      path.join(this.rootPath, this.softConfig.metadataWildcardWithNumber(chapterId))
-    ))[0]
+    const metadataFile = (await this.fsUtils.listFiles(path.join(this.rootPath, this.softConfig.metadataWildcardWithNumber(chapterId))))[0]
 
     const newName = flags.title ? await this.extractTitleFromFile(chapterFile) : args.newName || queryResponses.newName || 'chapter'
     const newNameForFile = this.fsUtils.sanitizeFileName(newName)
 
     if (!chapterFile || !summaryFile || !metadataFile) {
-      await this.statistics.updateStackStatistics(chapterId.isAtNumber)
+      await this.statistics.refreshStats()
       // const digits = this.statistics.getMinDigits(chapterId.isAtNumber)
       chapterId.fixedDigits = this.statistics.getMinDigits(chapterId.isAtNumber)
       const expectedFiles = [
@@ -144,11 +142,11 @@ export default class Rename extends Command {
     let obj: any
     try {
       obj = this.softConfig.parsePerStyle(initialContent)
-        // this.softConfig.configStyle === 'JSON5'
-        //   ? JSON.parse(initialContent)
-        //   : this.softConfig.configStyle === 'YAML'
-        //   ? yaml.safeLoad(initialContent)
-        //   : {}
+      // this.softConfig.configStyle === 'JSON5'
+      //   ? JSON.parse(initialContent)
+      //   : this.softConfig.configStyle === 'YAML'
+      //   ? yaml.safeLoad(initialContent)
+      //   : {}
       const extractedMarkup = obj.extracted
       extractedMarkup.title = newTitle
     } catch (err) {
@@ -160,11 +158,11 @@ export default class Rename extends Command {
     }
 
     const updatedContent = this.softConfig.stringifyPerStyle(obj)
-      // this.softConfig.configStyle === 'JSON5'
-      //   ? JSON.stringify(obj, null, 4)
-      //   : this.softConfig.configStyle === 'YAML'
-      //   ? yaml.safeDump(obj)
-      //   : ''
+    // this.softConfig.configStyle === 'JSON5'
+    //   ? JSON.stringify(obj, null, 4)
+    //   : this.softConfig.configStyle === 'YAML'
+    //   ? yaml.safeDump(obj)
+    //   : ''
 
     if (initialContent !== updatedContent) {
       await this.fsUtils.writeFile(metadataFile, updatedContent)
