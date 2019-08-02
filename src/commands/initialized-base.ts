@@ -13,6 +13,7 @@ import { Statistics } from '../statistics'
 import { tableize } from '../ui-utils'
 
 import Command, { d } from './base'
+import BootstrapChptr from '../bootstrap-functions';
 
 const debug = d('command:initialized-base')
 
@@ -51,13 +52,16 @@ export default abstract class extends Command {
     await super.init()
 
     //#region checkIfInitialized
-    const git = simplegit(this.rootPath)
-    const isRepo = await git.checkIsRepo()
-    const hasConfigFolder = await this.fsUtils.fileExists(this.hardConfig.configPath)
-    const hasConfigJSON5File = await this.fsUtils.fileExists(this.hardConfig.configJSON5FilePath)
-    const hasConfigYAMLFile = await this.fsUtils.fileExists(this.hardConfig.configYAMLFilePath)
+    const bootstrapper = new BootstrapChptr(this.rootPath)
+    const isChptrFolder = await bootstrapper.isChptrFolder()
+    // const git = simplegit(this.rootPath)
+    // const isRepo = await git.checkIsRepo()
+    // const hasConfigFolder = await this.fsUtils.fileExists(this.hardConfig.configPath)
+    // const hasConfigJSON5File = await this.fsUtils.fileExists(this.hardConfig.configJSON5FilePath)
+    // const hasConfigYAMLFile = await this.fsUtils.fileExists(this.hardConfig.configYAMLFilePath)
 
-    if (!isRepo || !hasConfigFolder || !(hasConfigJSON5File || hasConfigYAMLFile)) {
+    // if (!isRepo || !hasConfigFolder || !(hasConfigJSON5File || hasConfigYAMLFile)) {
+    if (!isChptrFolder) {
       throw new ChptrError('Directory was not initialized.  Run `init` command.', 'initialized-base.init', 9)
     }
     //#endregion
