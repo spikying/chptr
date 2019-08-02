@@ -1,6 +1,5 @@
 import { observableDiff } from 'deep-diff'
 import * as path from 'path'
-import * as simplegit from 'simple-git/promise'
 import { MoveSummary } from 'simple-git/typings/response'
 
 import { BootstrapChptr } from '../bootstrap-functions'

@@ -4,9 +4,9 @@ import { FsUtils } from './fs-utils'
 import { HardConfig } from './hard-config'
 
 export class BootstrapChptr {
-  private rootPath: string
-  private hardConfig: HardConfig
-  private fsUtils: FsUtils
+  private readonly rootPath: string
+  private readonly hardConfig: HardConfig
+  private readonly fsUtils: FsUtils
 
   constructor(rootPath: string) {
     this.rootPath = rootPath
