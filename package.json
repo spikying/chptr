@@ -1,7 +1,7 @@
 {
   "name": "chptr",
   "description": "Command Line tool to handle separate Markdown files with special markup notations and export as a complete document.",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "author": {
     "name": "Mathieu Leblanc",
     "email": "spiky.ing@gmail.com",
@@ -73,6 +73,7 @@
     "globby": "8.0.2",
     "mocha": "5.2.0",
     "nyc": "13.3.0",
+    "pkg": "4.4.0",
     "prettify": "0.1.7",
     "rimraf": "2.6.3",
     "ts-node": "8.0.3",
@@ -87,7 +88,8 @@
     "/bin",
     "/lib",
     "/npm-shrinkwrap.json",
-    "/oclif.manifest.json"
+    "/oclif.manifest.json",
+    "/templates"
   ],
   "homepage": "https://github.com/spikying/chptr",
   "keywords": [
@@ -112,12 +114,11 @@
   "repository": "git@github.com:spikying/chptr.git",
   "scripts": {
     "postpack": "rimraf oclif.manifest.json",
-    "posttest": "echo tslint -p test -t stylish",
+    "posttest": "tslint -p test -t stylish",
     "prepack": "rimraf lib && tsc -b && oclif-dev manifest && oclif-dev readme",
     "test": "echo nyc --extension .ts mocha --forbid-only \"test/**/*.test.ts\"",
     "version": "oclif-dev readme && git add README.md",
-    "pkg": "pkg .",
-    "prepare": "npm run-script prepack",
+    "pkgStandalone": "pkg .",
     "testadd": "DEBUG='command:add' ./bin/run.cmd add --path='../testNovel'",
     "testantidote": "DEBUG='command:antidote' ./bin/run.cmd antidote --path='../testNovel'",
     "testbuild": "DEBUG='command:build' ./bin/run.cmd build --path='../testNovel'",
