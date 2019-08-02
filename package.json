@@ -7,6 +7,7 @@
     "email": "spiky.ing@gmail.com",
     "url": "https://github.com/spikying"
   },
+  "publisher": "spikying",
   "bin": {
     "chptr": "./bin/run"
   },
