@@ -117,7 +117,7 @@
     "test": "echo nyc --extension .ts mocha --forbid-only \"test/**/*.test.ts\"",
     "version": "oclif-dev readme && git add README.md",
     "pkg": "pkg .",
-    "prepublish": "npm run-script prepack",
+    "prepare": "npm run-script prepack",
     "testadd": "DEBUG='command:add' ./bin/run.cmd add --path='../testNovel'",
     "testantidote": "DEBUG='command:antidote' ./bin/run.cmd antidote --path='../testNovel'",
     "testbuild": "DEBUG='command:build' ./bin/run.cmd build --path='../testNovel'",
