@@ -3,6 +3,7 @@ import * as path from 'path'
 import * as simplegit from 'simple-git/promise'
 import { MoveSummary } from 'simple-git/typings/response'
 
+import { BootstrapChptr } from '../bootstrap-functions'
 import { ChapterId } from '../chapter-id'
 import { ChptrError } from '../chptr-error'
 import { CoreUtils } from '../core-utils'
@@ -13,7 +14,6 @@ import { Statistics } from '../statistics'
 import { tableize } from '../ui-utils'
 
 import Command, { d } from './base'
-import BootstrapChptr from '../bootstrap-functions';
 
 const debug = d('command:initialized-base')
 
