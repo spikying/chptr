@@ -110,7 +110,7 @@
   "repository": "spikying/chptr",
   "scripts": {
     "postpack": "rimraf oclif.manifest.json",
-    "prepack": "rimraf lib && tsc -b && oclif-dev manifest && oclif-dev readme",
+    "prepack": "rimraf lib && tsc -b -v && oclif-dev manifest && oclif-dev readme",
     "test": "echo NO TEST",
     "version": "oclif-dev readme && git add README.md",
     "testadd": "DEBUG='command:add' ./bin/run.cmd add --path='../testNovel'",
