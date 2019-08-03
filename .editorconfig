@@ -10,3 +10,6 @@ max_line_length = 140
 
 [*.md]
 trim_trailing_whitespace = false
+
+[.json]
+trim_trailing_whitespace = true

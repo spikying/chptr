@@ -114,10 +114,11 @@ export default class Init extends Command {
 
     // Create folder structure, with /config
     try {
-      await this.fsUtils.createSubDirectoryFromDirectoryPathIfNecessary(this.hardConfig.configPath)
+      const madeDir = await this.fsUtils.createSubDirectoryFromDirectoryPathIfNecessary(this.hardConfig.configPath)
 
-      // await this.fsUtils.createDir(this.hardConfig.configPath)
-      cli.info(`Created directory ${this.hardConfig.configPath.resultHighlighColor()}`.resultNormalColor())
+      if (madeDir) {
+        cli.info(`Created directory ${this.hardConfig.configPath.resultHighlighColor()}`.resultNormalColor())
+      }
     } catch (err) {
       // If directory already exists, silently swallow the error
       debug(err)
