@@ -129,7 +129,7 @@ ARGUMENTS
           AtNumbering will be determined by the presence or absence of @ sign.
 
 OPTIONS
-  -N, --notify      show a notification box when build is completed.
+  -N, --notify      show a notification box when command is completed.
   -a, --atnumbered  Add an @numbered chapter
   -c, --compact     Compact chapter numbers at the same time
   -h, --help        show CLI help
@@ -147,7 +147,7 @@ USAGE
   $ chptr build
 
 OPTIONS
-  -N, --notify                                  show a notification box when build is completed.
+  -N, --notify                                  show a notification box when command is completed.
   -c, --compact                                 Compact chapter numbers at the same time
   -d, --datetimestamp                           adds datetime stamp before output filename
   -h, --help                                    show CLI help
@@ -171,7 +171,7 @@ USAGE
   $ chptr build:compact
 
 OPTIONS
-  -N, --notify     show a notification box when build is completed.
+  -N, --notify     show a notification box when command is completed.
   -h, --help       show CLI help
   -p, --path=path  [default: .] Path where root of project files are
 ```
@@ -187,7 +187,7 @@ USAGE
   $ chptr build:metadata
 
 OPTIONS
-  -N, --notify                                 show a notification box when build is completed.
+  -N, --notify                                 show a notification box when command is completed.
   -c, --compact                                Compact chapter numbers at the same time
   -d, --datetimestamp                          adds datetime stamp before output filename
   -h, --help                                   show CLI help
@@ -209,7 +209,7 @@ ARGUMENTS
   NAME  chapter number or filename to delete
 
 OPTIONS
-  -N, --notify     show a notification box when build is completed.
+  -N, --notify     show a notification box when command is completed.
   -c, --compact    Compact chapter numbers at the same time
   -h, --help       show CLI help
   -p, --path=path  [default: .] Path where root of project files are
@@ -232,7 +232,7 @@ ARGUMENTS
   CHAPTERIDS  Chapter number(s) to modify, comma-separated.
 
 OPTIONS
-  -N, --notify                    show a notification box when build is completed.
+  -N, --notify                    show a notification box when command is completed.
   -h, --help                      show CLI help
   -p, --path=path                 [default: .] Path where root of project files are
   -t, --type=all|summary|chapter  [default: all] Edit either chapter file, summary file or all.
@@ -273,7 +273,7 @@ ARGUMENTS
   NAME  Name of project
 
 OPTIONS
-  -N, --notify                                            show a notification box when build is completed.
+  -N, --notify                                            show a notification box when command is completed.
   -a, --author=author                                     Name of author of project
   -d, --directorystructure=/|chapters/|chapters/number/|  Directory structure initially written in config file
   -e, --email=email                                       Email of author of project
@@ -428,7 +428,7 @@ ARGUMENTS
   NEWNAME              New chapter name
 
 OPTIONS
-  -N, --notify     show a notification box when build is completed.
+  -N, --notify     show a notification box when command is completed.
   -h, --help       show CLI help
   -p, --path=path  [default: .] Path where root of project files are
   -t, --title      'Use chapter's title as new name.  Will supercede a `newName` argument.
@@ -449,7 +449,7 @@ ARGUMENTS
   DESTINATIONID  Number it will become (write `end` or `@end`to put at the end of each stack).
 
 OPTIONS
-  -N, --notify     show a notification box when build is completed.
+  -N, --notify     show a notification box when command is completed.
   -c, --compact    Compact chapter numbers at the same time
   -h, --help       show CLI help
   -p, --path=path  [default: .] Path where root of project files are
@@ -472,7 +472,7 @@ ARGUMENTS
   MESSAGE  Message to use in commit to repository
 
 OPTIONS
-  -N, --notify             show a notification box when build is completed.
+  -N, --notify             show a notification box when command is completed.
 
   -f, --filename=filename  Tracked filename or filename pattern to filter which files to stage before saving to
                            repository
@@ -503,7 +503,7 @@ ARGUMENTS
   FILENAME  Filename to track
 
 OPTIONS
-  -N, --notify     show a notification box when build is completed.
+  -N, --notify     show a notification box when command is completed.
   -h, --help       show CLI help
   -p, --path=path  [default: .] Path where root of project files are
 ```

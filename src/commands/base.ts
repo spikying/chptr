@@ -4,7 +4,7 @@ import * as notifier from 'node-notifier'
 import * as path from 'path'
 // import * as simplegit from 'simple-git/promise'
 
-import { FsUtils} from '../fs-utils'
+import { FsUtils } from '../fs-utils'
 import { HardConfig } from '../hard-config'
 // import { promisify } from 'util'
 import '../ui-utils'
@@ -59,7 +59,7 @@ export default abstract class extends Command {
     help: flags.help({ char: 'h' }),
     notify: flags.boolean({
       char: 'N',
-      description: 'show a notification box when build is completed.',
+      description: 'show a notification box when command is completed.',
       default: false
     }),
     path: flags.string({

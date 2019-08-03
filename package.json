@@ -66,12 +66,8 @@
     "@oclif/dev-cli": "1.22.0",
     "@oclif/test": "1.2.4",
     "@oclif/tslint": "3.1.1",
-    "@types/chai": "4.1.7",
-    "@types/mocha": "5.2.6",
     "@types/node": "10.14.4",
-    "chai": "4.2.0",
     "globby": "8.0.2",
-    "mocha": "5.2.0",
     "nyc": "13.3.0",
     "pkg": "4.4.0",
     "prettify": "0.1.7",
@@ -111,14 +107,12 @@
       "@oclif/plugin-plugins"
     ]
   },
-  "repository": "git@github.com:spikying/chptr.git",
+  "repository": "spikying/chptr",
   "scripts": {
     "postpack": "rimraf oclif.manifest.json",
-    "posttest": "tslint -p test -t stylish",
     "prepack": "rimraf lib && tsc -b && oclif-dev manifest && oclif-dev readme",
-    "test": "echo nyc --extension .ts mocha --forbid-only \"test/**/*.test.ts\"",
+    "test": "echo NO TEST",
     "version": "oclif-dev readme && git add README.md",
-    "pkgStandalone": "pkg .",
     "testadd": "DEBUG='command:add' ./bin/run.cmd add --path='../testNovel'",
     "testantidote": "DEBUG='command:antidote' ./bin/run.cmd antidote --path='../testNovel'",
     "testbuild": "DEBUG='command:build' ./bin/run.cmd build --path='../testNovel'",
@@ -129,7 +123,8 @@
     "testreorder": "DEBUG='command:reorder' ./bin/run.cmd reorder --path='../testNovel'",
     "testsave": "DEBUG='command:save' ./bin/run.cmd save --path='../testNovel'",
     "testsplit": "DEBUG='command:split' ./bin/run.cmd split --path='../testNovel'",
-    "testtrack": "DEBUG='command:track' ./bin/run.cmd track --path='../testNovel'"
+    "testtrack": "DEBUG='command:track' ./bin/run.cmd track --path='../testNovel'",
+    "buildstandalone": "pkg ."
   },
   "types": "lib/index.d.ts"
 }

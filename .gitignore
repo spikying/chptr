@@ -8,4 +8,4 @@
 node_modules
 chptr-linux
 chptr-macos
-tsconfig.tsbuildinfo
+chptr-win.exe
