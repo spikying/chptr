@@ -12,12 +12,11 @@ It is aimed at helping writing fiction, but could be used for managing any compl
 # Table of Contents
 
 <!-- toc -->
-
-- [chptr](#chptr)
-- [Table of Contents](#table-of-contents)
-- [Usage](#usage)
-- [Commands](#commands)
-  <!-- tocstop -->
+* [chptr](#chptr)
+* [Table of Contents](#table-of-contents)
+* [Usage](#usage)
+* [Commands](#commands)
+<!-- tocstop -->
 
 ## Key features
 
@@ -81,42 +80,39 @@ In some future, I wish to do these things:
 # Usage
 
 <!-- usage -->
-
 ```sh-session
 $ npm install -g chptr
 $ chptr COMMAND
 running command...
 $ chptr (-v|--version|version)
-chptr/0.1.7 win32-x64 node-v10.15.1
+chptr/0.1.8 win32-x64 node-v10.15.1
 $ chptr --help [COMMAND]
 USAGE
   $ chptr COMMAND
 ...
 ```
-
 <!-- usagestop -->
 
 # Commands
 
 <!-- commands -->
-
-- [`chptr add [NAME] [NUMBER]`](#chptr-add-name-number)
-- [`chptr build`](#chptr-build)
-- [`chptr build:compact`](#chptr-buildcompact)
-- [`chptr build:metadata`](#chptr-buildmetadata)
-- [`chptr delete [NAME]`](#chptr-delete-name)
-- [`chptr edit [CHAPTERIDS]`](#chptr-edit-chapterids)
-- [`chptr help [COMMAND]`](#chptr-help-command)
-- [`chptr init [NAME]`](#chptr-init-name)
-- [`chptr plugins`](#chptr-plugins)
-- [`chptr plugins:install PLUGIN...`](#chptr-pluginsinstall-plugin)
-- [`chptr plugins:link PLUGIN`](#chptr-pluginslink-plugin)
-- [`chptr plugins:uninstall PLUGIN...`](#chptr-pluginsuninstall-plugin)
-- [`chptr plugins:update`](#chptr-pluginsupdate)
-- [`chptr rename [CHAPTERIDORFILENAME] [NEWNAME]`](#chptr-rename-chapteridorfilename-newname)
-- [`chptr reorder [ORIGINID] [DESTINATIONID]`](#chptr-reorder-originid-destinationid)
-- [`chptr save [MESSAGE]`](#chptr-save-message)
-- [`chptr track [FILENAME]`](#chptr-track-filename)
+* [`chptr add [NAME] [NUMBER]`](#chptr-add-name-number)
+* [`chptr build`](#chptr-build)
+* [`chptr build:compact`](#chptr-buildcompact)
+* [`chptr build:metadata`](#chptr-buildmetadata)
+* [`chptr delete [NAME]`](#chptr-delete-name)
+* [`chptr edit [CHAPTERIDS]`](#chptr-edit-chapterids)
+* [`chptr help [COMMAND]`](#chptr-help-command)
+* [`chptr init [NAME]`](#chptr-init-name)
+* [`chptr plugins`](#chptr-plugins)
+* [`chptr plugins:install PLUGIN...`](#chptr-pluginsinstall-plugin)
+* [`chptr plugins:link PLUGIN`](#chptr-pluginslink-plugin)
+* [`chptr plugins:uninstall PLUGIN...`](#chptr-pluginsuninstall-plugin)
+* [`chptr plugins:update`](#chptr-pluginsupdate)
+* [`chptr rename [CHAPTERIDORFILENAME] [NEWNAME]`](#chptr-rename-chapteridorfilename-newname)
+* [`chptr reorder [ORIGINID] [DESTINATIONID]`](#chptr-reorder-originid-destinationid)
+* [`chptr save [MESSAGE]`](#chptr-save-message)
+* [`chptr track [FILENAME]`](#chptr-track-filename)
 
 ## `chptr add [NAME] [NUMBER]`
 
@@ -140,11 +136,11 @@ OPTIONS
   -p, --path=path   [default: .] Path where root of project files are
 ```
 
-_See code: [src\commands\add.ts](https://github.com/spikying/chptr/blob/v0.1.7/src\commands\add.ts)_
+_See code: [src\commands\add.ts](https://github.com/spikying/chptr/blob/v0.1.8/src\commands\add.ts)_
 
 ## `chptr build`
 
-Takes all original Markdown files and outputs a single file without metadata and comments. Handles these output formats: md, pdf, docx, html, epub, tex. Gives some insight into writing rate.
+Takes all original Markdown files and outputs a single file without metadata and comments.  Handles these output formats: md, pdf, docx, html, epub, tex.  Gives some insight into writing rate.
 
 ```
 USAGE
@@ -164,7 +160,7 @@ ALIASES
   $ chptr compile
 ```
 
-_See code: [src\commands\build\index.ts](https://github.com/spikying/chptr/blob/v0.1.7/src\commands\build\index.ts)_
+_See code: [src\commands\build\index.ts](https://github.com/spikying/chptr/blob/v0.1.8/src\commands\build\index.ts)_
 
 ## `chptr build:compact`
 
@@ -180,7 +176,7 @@ OPTIONS
   -p, --path=path  [default: .] Path where root of project files are
 ```
 
-_See code: [src\commands\build\compact.ts](https://github.com/spikying/chptr/blob/v0.1.7/src\commands\build\compact.ts)_
+_See code: [src\commands\build\compact.ts](https://github.com/spikying/chptr/blob/v0.1.8/src\commands\build\compact.ts)_
 
 ## `chptr build:metadata`
 
@@ -199,7 +195,7 @@ OPTIONS
   -s, --showWritingRate=all|short|none|export  [default: short] Show word count per day in varying details
 ```
 
-_See code: [src\commands\build\metadata.ts](https://github.com/spikying/chptr/blob/v0.1.7/src\commands\build\metadata.ts)_
+_See code: [src\commands\build\metadata.ts](https://github.com/spikying/chptr/blob/v0.1.8/src\commands\build\metadata.ts)_
 
 ## `chptr delete [NAME]`
 
@@ -222,11 +218,11 @@ ALIASES
   $ chptr del
 ```
 
-_See code: [src\commands\delete.ts](https://github.com/spikying/chptr/blob/v0.1.7/src\commands\delete.ts)_
+_See code: [src\commands\delete.ts](https://github.com/spikying/chptr/blob/v0.1.8/src\commands\delete.ts)_
 
 ## `chptr edit [CHAPTERIDS]`
 
-Adjust sentence and paragraph endings to allow for easier editing. Commit changes with SAVE command.
+Adjust sentence and paragraph endings to allow for easier editing.  Commit changes with SAVE command.
 
 ```
 USAGE
@@ -246,7 +242,7 @@ ALIASES
   $ chptr mod
 ```
 
-_See code: [src\commands\edit.ts](https://github.com/spikying/chptr/blob/v0.1.7/src\commands\edit.ts)_
+_See code: [src\commands\edit.ts](https://github.com/spikying/chptr/blob/v0.1.8/src\commands\edit.ts)_
 
 ## `chptr help [COMMAND]`
 
@@ -300,7 +296,7 @@ ALIASES
   $ chptr setup
 ```
 
-_See code: [src\commands\init.ts](https://github.com/spikying/chptr/blob/v0.1.7/src\commands\init.ts)_
+_See code: [src\commands\init.ts](https://github.com/spikying/chptr/blob/v0.1.8/src\commands\init.ts)_
 
 ## `chptr plugins`
 
@@ -340,15 +336,15 @@ DESCRIPTION
 
   Installation of a user-installed plugin will override a core plugin.
 
-  e.g. If you have a core plugin that has a 'hello' command, installing a user-installed plugin with a 'hello' command
-  will override the core plugin implementation. This is useful if a user needs to update core plugin functionality in
+  e.g. If you have a core plugin that has a 'hello' command, installing a user-installed plugin with a 'hello' command 
+  will override the core plugin implementation. This is useful if a user needs to update core plugin functionality in 
   the CLI without the need to patch and update the whole CLI.
 
 ALIASES
   $ chptr plugins:add
 
 EXAMPLES
-  $ chptr plugins:install myplugin
+  $ chptr plugins:install myplugin 
   $ chptr plugins:install https://github.com/someuser/someplugin
   $ chptr plugins:install someuser/someplugin
 ```
@@ -373,7 +369,7 @@ OPTIONS
 DESCRIPTION
   Installation of a linked plugin will override a user-installed or core plugin.
 
-  e.g. If you have a user-installed or core plugin that has a 'hello' command, installing a linked plugin with a 'hello'
+  e.g. If you have a user-installed or core plugin that has a 'hello' command, installing a linked plugin with a 'hello' 
   command will override the user-installed or core plugin implementation. This is useful for development work.
 
 EXAMPLE
@@ -438,7 +434,7 @@ OPTIONS
   -t, --title      'Use chapter's title as new name.  Will supercede a `newName` argument.
 ```
 
-_See code: [src\commands\rename.ts](https://github.com/spikying/chptr/blob/v0.1.7/src\commands\rename.ts)_
+_See code: [src\commands\rename.ts](https://github.com/spikying/chptr/blob/v0.1.8/src\commands\rename.ts)_
 
 ## `chptr reorder [ORIGINID] [DESTINATIONID]`
 
@@ -462,7 +458,7 @@ ALIASES
   $ chptr move
 ```
 
-_See code: [src\commands\reorder.ts](https://github.com/spikying/chptr/blob/v0.1.7/src\commands\reorder.ts)_
+_See code: [src\commands\reorder.ts](https://github.com/spikying/chptr/blob/v0.1.8/src\commands\reorder.ts)_
 
 ## `chptr save [MESSAGE]`
 
@@ -493,7 +489,7 @@ ALIASES
   $ chptr commit
 ```
 
-_See code: [src\commands\save.ts](https://github.com/spikying/chptr/blob/v0.1.7/src\commands\save.ts)_
+_See code: [src\commands\save.ts](https://github.com/spikying/chptr/blob/v0.1.8/src\commands\save.ts)_
 
 ## `chptr track [FILENAME]`
 
@@ -512,6 +508,5 @@ OPTIONS
   -p, --path=path  [default: .] Path where root of project files are
 ```
 
-_See code: [src\commands\track.ts](https://github.com/spikying/chptr/blob/v0.1.7/src\commands\track.ts)_
-
+_See code: [src\commands\track.ts](https://github.com/spikying/chptr/blob/v0.1.8/src\commands\track.ts)_
 <!-- commandsstop -->
