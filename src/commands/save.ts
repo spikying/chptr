@@ -20,20 +20,17 @@ export default class Save extends Command {
     number: flags.string({
       char: 'n',
       required: false,
-      default: '',
       description: 'Chapter number to filter which files to stage before saving to repository',
       exclusive: ['filename']
     }),
     filename: flags.string({
       char: 'f',
       required: false,
-      default: '',
       description: 'Tracked filename or filename pattern to filter which files to stage before saving to repository'
     }),
     track: flags.boolean({
       char: 't',
       required: false,
-      default: false,
       description: 'Force tracking of file if not already in repository',
       dependsOn: ['filename']
     })
