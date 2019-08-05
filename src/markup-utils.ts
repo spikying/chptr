@@ -17,7 +17,7 @@ const debug = d('markup-utils')
 export class MarkupUtils {
   // https://unicode.org/reports/tr29/#Sentence_Boundaries
   public readonly sentenceBreakChar = '\u2028' // '\u000D'// '\u200D' // '\u2028'
-  public readonly paragraphBreakChar = '\u2029'
+  public readonly paragraphBreakChar = ''// '\u2029'
   public titleRegex = /^\n# (.*?)\n/
 
   private readonly propRegex = /(?:{{(\d+)}}\n)?.*?(?<!{){([^:,.!\n{}]+?)}(?!})/gm

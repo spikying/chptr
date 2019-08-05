@@ -12,11 +12,12 @@ It is aimed at helping writing fiction, but could be used for managing any compl
 # Table of Contents
 
 <!-- toc -->
-* [chptr](#chptr)
-* [Table of Contents](#table-of-contents)
-* [Usage](#usage)
-* [Commands](#commands)
-<!-- tocstop -->
+
+- [chptr](#chptr)
+- [Table of Contents](#table-of-contents)
+- [Usage](#usage)
+- [Commands](#commands)
+  <!-- tocstop -->
 
 ## Key features
 
@@ -69,7 +70,7 @@ To make it work, you'll need to have [Git](https://git-scm.com/) and [Pandoc](ht
 
 ## Roadmap, todos and warnings
 
-This app doesn't have tests at this point, is not documented and will be liberately refactored as intensely as needed. **It is not mature at all** but I decided I wouldn't wait until it was to open-source it.
+This app doesn't have tests at this point, is not documented and will be liberately refactored as intensely as needed. **It is not mature at all** but I decided I wouldn't wait until it was to open-source it. Any and all breaking changes may appear between now and version 1.0.0.
 
 In some future, I wish to do these things:
 
@@ -80,6 +81,7 @@ In some future, I wish to do these things:
 # Usage
 
 <!-- usage -->
+
 ```sh-session
 $ npm install -g chptr
 $ chptr COMMAND
@@ -91,28 +93,30 @@ USAGE
   $ chptr COMMAND
 ...
 ```
+
 <!-- usagestop -->
 
 # Commands
 
 <!-- commands -->
-* [`chptr add [NAME] [NUMBER]`](#chptr-add-name-number)
-* [`chptr build`](#chptr-build)
-* [`chptr build:compact`](#chptr-buildcompact)
-* [`chptr build:metadata`](#chptr-buildmetadata)
-* [`chptr delete [NAME]`](#chptr-delete-name)
-* [`chptr edit [CHAPTERIDS]`](#chptr-edit-chapterids)
-* [`chptr help [COMMAND]`](#chptr-help-command)
-* [`chptr init [NAME]`](#chptr-init-name)
-* [`chptr plugins`](#chptr-plugins)
-* [`chptr plugins:install PLUGIN...`](#chptr-pluginsinstall-plugin)
-* [`chptr plugins:link PLUGIN`](#chptr-pluginslink-plugin)
-* [`chptr plugins:uninstall PLUGIN...`](#chptr-pluginsuninstall-plugin)
-* [`chptr plugins:update`](#chptr-pluginsupdate)
-* [`chptr rename [CHAPTERIDORFILENAME] [NEWNAME]`](#chptr-rename-chapteridorfilename-newname)
-* [`chptr reorder [ORIGINID] [DESTINATIONID]`](#chptr-reorder-originid-destinationid)
-* [`chptr save [MESSAGE]`](#chptr-save-message)
-* [`chptr track [FILENAME]`](#chptr-track-filename)
+
+- [`chptr add [NAME] [NUMBER]`](#chptr-add-name-number)
+- [`chptr build`](#chptr-build)
+- [`chptr build:compact`](#chptr-buildcompact)
+- [`chptr build:metadata`](#chptr-buildmetadata)
+- [`chptr delete [NAME]`](#chptr-delete-name)
+- [`chptr edit [CHAPTERIDS]`](#chptr-edit-chapterids)
+- [`chptr help [COMMAND]`](#chptr-help-command)
+- [`chptr init [NAME]`](#chptr-init-name)
+- [`chptr plugins`](#chptr-plugins)
+- [`chptr plugins:install PLUGIN...`](#chptr-pluginsinstall-plugin)
+- [`chptr plugins:link PLUGIN`](#chptr-pluginslink-plugin)
+- [`chptr plugins:uninstall PLUGIN...`](#chptr-pluginsuninstall-plugin)
+- [`chptr plugins:update`](#chptr-pluginsupdate)
+- [`chptr rename [CHAPTERIDORFILENAME] [NEWNAME]`](#chptr-rename-chapteridorfilename-newname)
+- [`chptr reorder [ORIGINID] [DESTINATIONID]`](#chptr-reorder-originid-destinationid)
+- [`chptr save [MESSAGE]`](#chptr-save-message)
+- [`chptr track [FILENAME]`](#chptr-track-filename)
 
 ## `chptr add [NAME] [NUMBER]`
 
@@ -140,7 +144,7 @@ _See code: [src\commands\add.ts](https://github.com/spikying/chptr/blob/v0.1.7/s
 
 ## `chptr build`
 
-Takes all original Markdown files and outputs a single file without metadata and comments.  Handles these output formats: md, pdf, docx, html, epub, tex.  Gives some insight into writing rate.
+Takes all original Markdown files and outputs a single file without metadata and comments. Handles these output formats: md, pdf, docx, html, epub, tex. Gives some insight into writing rate.
 
 ```
 USAGE
@@ -222,7 +226,7 @@ _See code: [src\commands\delete.ts](https://github.com/spikying/chptr/blob/v0.1.
 
 ## `chptr edit [CHAPTERIDS]`
 
-Adjust sentence and paragraph endings to allow for easier editing.  Commit changes with SAVE command.
+Adjust sentence and paragraph endings to allow for easier editing. Commit changes with SAVE command.
 
 ```
 USAGE
@@ -336,15 +340,15 @@ DESCRIPTION
 
   Installation of a user-installed plugin will override a core plugin.
 
-  e.g. If you have a core plugin that has a 'hello' command, installing a user-installed plugin with a 'hello' command 
-  will override the core plugin implementation. This is useful if a user needs to update core plugin functionality in 
+  e.g. If you have a core plugin that has a 'hello' command, installing a user-installed plugin with a 'hello' command
+  will override the core plugin implementation. This is useful if a user needs to update core plugin functionality in
   the CLI without the need to patch and update the whole CLI.
 
 ALIASES
   $ chptr plugins:add
 
 EXAMPLES
-  $ chptr plugins:install myplugin 
+  $ chptr plugins:install myplugin
   $ chptr plugins:install https://github.com/someuser/someplugin
   $ chptr plugins:install someuser/someplugin
 ```
@@ -369,7 +373,7 @@ OPTIONS
 DESCRIPTION
   Installation of a linked plugin will override a user-installed or core plugin.
 
-  e.g. If you have a user-installed or core plugin that has a 'hello' command, installing a linked plugin with a 'hello' 
+  e.g. If you have a user-installed or core plugin that has a 'hello' command, installing a linked plugin with a 'hello'
   command will override the user-installed or core plugin implementation. This is useful for development work.
 
 EXAMPLE
@@ -509,4 +513,5 @@ OPTIONS
 ```
 
 _See code: [src\commands\track.ts](https://github.com/spikying/chptr/blob/v0.1.7/src\commands\track.ts)_
+
 <!-- commandsstop -->

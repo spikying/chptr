@@ -13,6 +13,7 @@ import { Statistics } from '../statistics'
 import { tableize } from '../ui-utils'
 
 import Command, { d } from './base'
+import { FsUtils } from '../fs-utils';
 
 const debug = d('command:initialized-base')
 
@@ -84,7 +85,8 @@ export default abstract class extends Command {
   }
 
   public async finally() {
-    await this.fsUtils.deleteEmptySubDirectories(this.rootPath)
+    const fsu = this.fsUtils || new FsUtils()
+    await fsu.deleteEmptySubDirectories(this.rootPath)
     await super.finally()
   }
 
