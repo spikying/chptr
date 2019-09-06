@@ -31,20 +31,35 @@ export default class Metadata extends Command {
 
   static hidden = false
 
+  private _outputFile = ''
+  public get outputFile(): string {
+    return this._outputFile
+  }
+
+  async init() {
+    debug('init of  Build:metadata')
+    await super.init()
+
+    const { flags } = this.parse(Metadata)
+    this._outputFile = `${flags.datetimestamp ? moment().format('YYYYMMDD.HHmm ') : ''}${this.fsUtils.sanitizeFileName(
+      this.softConfig.config.projectTitle
+    )}`
+  }
+
   async run() {
     debug('Running Build:metadata command')
+     const { flags } = this.parse(Metadata)
 
+    await this.RunMetadata(flags)
+  }
+
+  public async RunMetadata(flags: any) {
     try {
-      const { flags } = this.parse(Metadata)
-
+ 
       const wrOption = flags.showWritingRate
       const showWritingRate = wrOption === 'all' || wrOption === 'short' || wrOption === 'export'
       const showWritingRateDetails = wrOption === 'all' || wrOption === 'export'
       const exportWritingRate = wrOption === 'export'
-
-      const outputFile = `${flags.datetimestamp ? moment().format('YYYYMMDD.HHmm ') : ''}${this.fsUtils.sanitizeFileName(
-        this.softConfig.config.projectTitle
-      )}`
 
       await this.coreUtils.preProcessAndCommitFiles('Autosave before build')
 
@@ -58,9 +73,13 @@ export default class Metadata extends Command {
 
       const allChapterFilesArray = (await this.fsUtils.listFiles(path.join(this.rootPath, this.softConfig.chapterWildcard(false)))).concat(
         await this.fsUtils.listFiles(path.join(this.rootPath, this.softConfig.chapterWildcard(true)))
+      ).concat(
+        await this.fsUtils.listFiles(path.join(this.rootPath, this.softConfig.summaryWildcard(false)))
+      ).concat(
+        await this.fsUtils.listFiles(path.join(this.rootPath, this.softConfig.summaryWildcard(true)))
       )
 
-      await this.markupUtils.extractAndUpdateGlobalAndChapterMetadata(allChapterFilesArray, outputFile)
+      await this.markupUtils.extractAndUpdateGlobalAndChapterMetadata(allChapterFilesArray, this.outputFile)
       await this.coreUtils.preProcessAndCommitFiles('Autosave markup updates')
 
       cli.info('Extracting metadata for all chapters files'.actionStartColor())
@@ -141,7 +160,7 @@ export default class Metadata extends Command {
         }
       })
     } catch (err) {
-      throw new ChptrError(err, 'build:metadata.run', 3)
+      throw new ChptrError(err, 'build:RunMetadata', 3)
     }
   }
 }

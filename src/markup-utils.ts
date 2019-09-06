@@ -132,29 +132,37 @@ export class MarkupUtils {
 
     // try {
     const initialContent = await this.fsUtils.readFileContent(path.join(this.rootPath, chapterFilepath))
-    const markupRegex = /(?:{{(\d+)}}\n)?.*?{([^}]*?)\s?:\s?(.*?)}/gm
+    const markupRegex = /(?:{{(\d+)}}\n)|{([^}]*?)\s?:\s?(.*?)}/gm
+    const propRegex = /(?:{{(\d+)}}\n)|{([^:,.!\n{}]+?)}/gm
+
     let regexArray: RegExpExecArray | null
     let paraCounter = 1
     while ((regexArray = markupRegex.exec(initialContent)) !== null) {
-      paraCounter = regexArray[1] ? parseInt(regexArray[1], 10) : paraCounter
-      resultArray.push({
-        filename: this.softConfig.mapFileToBeRelativeToRootPath(chapterFilepath),
-        paragraph: paraCounter,
-        type: regexArray[2].toLowerCase(),
-        value: regexArray[3],
-        computed: false
-      })
+      if (regexArray[1]) {      
+        paraCounter = parseInt(regexArray[1], 10)
+      } else {
+        resultArray.push({
+          filename: this.softConfig.mapFileToBeRelativeToRootPath(chapterFilepath),
+          paragraph: paraCounter,
+          type: regexArray[2].toLowerCase(),
+          value: regexArray[3],
+          computed: false
+        })
+      }
     }
     paraCounter = 1
-    while ((regexArray = this.propRegex.exec(initialContent)) !== null) {
-      paraCounter = regexArray[1] ? parseInt(regexArray[1], 10) : paraCounter
-      resultArray.push({
-        filename: this.softConfig.mapFileToBeRelativeToRootPath(chapterFilepath),
-        paragraph: paraCounter,
-        type: 'prop',
-        value: regexArray[2],
-        computed: false
-      })
+    while ((regexArray = propRegex.exec(initialContent)) !== null) {
+      if (regexArray[1]) {
+        paraCounter = parseInt(regexArray[1], 10)
+      } else {      
+        resultArray.push({
+          filename: this.softConfig.mapFileToBeRelativeToRootPath(chapterFilepath),
+          paragraph: paraCounter,
+          type: 'prop',
+          value: regexArray[2],
+          computed: false
+        })
+      }
     }
     const wordCount = this.GetWordCount(initialContent)
     resultArray.push({
@@ -205,8 +213,9 @@ export class MarkupUtils {
     return flattenedMarkupArray.reduce(
       (cumul, markup) => {
         if (!markup.computed) {
-          cumul[markup.type] = cumul[markup.type] || []
-          cumul[markup.type].push({ filename: markup.filename, paragraph: markup.paragraph, value: markup.value })
+          cumul[markup.type] = cumul[markup.type] || {}
+          cumul[markup.type][markup.value] = cumul[markup.type][markup.value] || []
+          cumul[markup.type][markup.value].push({ filename: markup.filename, paragraph: markup.paragraph })
         } else {
           if (markup.type === 'wordCount') {
             cumul.totalWordCount = cumul.totalWordCount || 0
