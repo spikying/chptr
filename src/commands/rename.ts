@@ -58,53 +58,72 @@ export default class Rename extends Command {
     const queryResponses: any = await queryBuilder.responses()
     const chapterIdString = args.chapterIdOrFilename || queryResponses.chapterIdOrFilename || ''
 
-    // const num = this.softConfig.extractNumber(chapterIdString)
+    const num = this.softConfig.extractNumber(chapterIdString)
     // const isAtNumbering = this.softConfig.isAtNumbering(chapterIdString)
-    const chapterId = new ChapterId(this.softConfig.extractNumber(chapterIdString), this.softConfig.isAtNumbering(chapterIdString))
+    const chapterId = new ChapterId(num, this.softConfig.isAtNumbering(chapterIdString))
 
     cli.action.start('Renaming files'.actionStartColor())
 
     const chapterFile = (await this.fsUtils.listFiles(path.join(this.rootPath, this.softConfig.chapterWildcardWithNumber(chapterId))))[0]
     const summaryFile = (await this.fsUtils.listFiles(path.join(this.rootPath, this.softConfig.summaryWildcardWithNumber(chapterId))))[0]
     const metadataFile = (await this.fsUtils.listFiles(path.join(this.rootPath, this.softConfig.metadataWildcardWithNumber(chapterId))))[0]
+    const trackedFile = (await this.fsUtils.listFiles(path.join(this.rootPath, `${chapterIdString}.*`)))[0]
 
     const newName = flags.title ? await this.extractTitleFromFile(chapterFile) : args.newName || queryResponses.newName || 'chapter'
     const newNameForFile = this.fsUtils.sanitizeFileName(newName)
 
-    if (!chapterFile || !summaryFile || !metadataFile) {
-      await this.statistics.refreshStats()
-      // const digits = this.statistics.getMinDigits(chapterId.isAtNumber)
-      chapterId.fixedDigits = this.statistics.getMinDigits(chapterId.isAtNumber)
-      const expectedFiles = [
-        this.softConfig.chapterFileNameFromParameters(chapterId, newNameForFile),
-        this.softConfig.summaryFileNameFromParameters(chapterId, newNameForFile),
-        this.softConfig.metadataFileNameFromParameters(chapterId, newNameForFile)
+    let didUpdates: {
+      filename: string
+      title: boolean
+      newFileName: string
+      rename: string
+    }[]
+
+    if (trackedFile) {
+      const tfExt = path.extname(trackedFile)
+      didUpdates = [
+        {
+          filename: trackedFile,
+          title: false,
+          newFileName: `${newNameForFile}${tfExt}`,
+          rename: ''
+        }
       ]
-      throw new ChptrError(`Missing a file within this list:${expectedFiles.map(f => `\n    ${f}`)}`, 'rename.run', 21)
-    }
+    } else {
+      if (!chapterFile || !summaryFile || !metadataFile) {
+        await this.statistics.refreshStats()
+        chapterId.fixedDigits = this.statistics.getMinDigits(chapterId.isAtNumber)
+        const expectedFiles = [
+          this.softConfig.chapterFileNameFromParameters(chapterId, newNameForFile),
+          this.softConfig.summaryFileNameFromParameters(chapterId, newNameForFile),
+          this.softConfig.metadataFileNameFromParameters(chapterId, newNameForFile)
+        ]
+        throw new ChptrError(`Missing a file within this list:${expectedFiles.map(f => `\n    ${f}`)}`, 'rename.run', 21)
+      }
 
-    // const digits = this.statistics.getActualDigitsFromChapterFilename(chapterFile, isAtNumbering)
-    chapterId.fixedDigits = this.statistics.getActualDigitsFromChapterFilename(chapterFile, chapterId.isAtNumber)
+      // const digits = this.statistics.getActualDigitsFromChapterFilename(chapterFile, isAtNumbering)
+      chapterId.fixedDigits = this.statistics.getActualDigitsFromChapterFilename(chapterFile, chapterId.isAtNumber)
 
-    const didUpdateChapter = {
-      filename: chapterFile,
-      title: await this.replaceTitleInMarkdown(chapterFile, newName),
-      newFileName: this.softConfig.chapterFileNameFromParameters(chapterId, newNameForFile),
-      rename: ''
+      const didUpdateChapter = {
+        filename: chapterFile,
+        title: await this.replaceTitleInMarkdown(chapterFile, newName),
+        newFileName: this.softConfig.chapterFileNameFromParameters(chapterId, newNameForFile),
+        rename: ''
+      }
+      const didUpdateSummary = {
+        filename: summaryFile,
+        title: await this.replaceTitleInMarkdown(summaryFile, newName),
+        newFileName: this.softConfig.summaryFileNameFromParameters(chapterId, newNameForFile),
+        rename: ''
+      }
+      const didUpdateMetadata = {
+        filename: metadataFile,
+        title: await this.replaceTitleInObject(metadataFile, newName),
+        newFileName: this.softConfig.metadataFileNameFromParameters(chapterId, newNameForFile),
+        rename: ''
+      }
+      didUpdates = [didUpdateChapter, didUpdateSummary, didUpdateMetadata]
     }
-    const didUpdateSummary = {
-      filename: summaryFile,
-      title: await this.replaceTitleInMarkdown(summaryFile, newName),
-      newFileName: this.softConfig.summaryFileNameFromParameters(chapterId, newNameForFile),
-      rename: ''
-    }
-    const didUpdateMetadata = {
-      filename: metadataFile,
-      title: await this.replaceTitleInObject(metadataFile, newName),
-      newFileName: this.softConfig.metadataFileNameFromParameters(chapterId, newNameForFile),
-      rename: ''
-    }
-    const didUpdates = [didUpdateChapter, didUpdateSummary, didUpdateMetadata]
 
     for (const didUpdate of didUpdates) {
       if (this.softConfig.mapFileToBeRelativeToRootPath(didUpdate.filename) !== didUpdate.newFileName) {
