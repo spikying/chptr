@@ -96,7 +96,8 @@ export default class Rename extends Command {
         const expectedFiles = [
           this.softConfig.chapterFileNameFromParameters(chapterId, newNameForFile),
           this.softConfig.summaryFileNameFromParameters(chapterId, newNameForFile),
-          this.softConfig.metadataFileNameFromParameters(chapterId, newNameForFile)
+          this.softConfig.metadataFileNameFromParameters(chapterId, newNameForFile),
+          `${chapterIdString}.*`
         ]
         throw new ChptrError(`Missing a file within this list:${expectedFiles.map(f => `\n    ${f}`)}`, 'rename.run', 21)
       }
