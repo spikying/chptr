@@ -15,8 +15,9 @@ export class GitUtils {
   private readonly softConfig: SoftConfig
 
   constructor(softConfig: SoftConfig, rootPath: string) {
-    this.git = simplegit(rootPath)
+    this.git = simplegit(rootPath)    
     this.softConfig = softConfig
+    void this.git.addConfig('core.quotepath', 'off')
   }
 
   public async CommitToGit(
@@ -84,7 +85,7 @@ export class GitUtils {
       .concat(gitStatus.renamed.map((value: any) => value.to as string).map(unQuote))
       .filter(onlyUnique)
 
-    // debug(`unfilteredFileList=${JSON.stringify(unfilteredFileList)}`)
+    debug(`unfilteredFileList=${JSON.stringify(unfilteredFileList)}`)
 
     return unfilteredFileList
       .filter(val => val !== '')

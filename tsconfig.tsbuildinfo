@@ -858,7 +858,7 @@
         "signature": "a5374e3e51841bca888e1ea93cc67aa0a9a0f610ea3a5d45443f81e4003693bb"
       },
       "c:/users/mathi/codeprojects/chptr/chptr/src/commands/rename.ts": {
-        "version": "2efc5999508e2e79e2248c9b0144e112f45665d5fbc7cf91ca8d0251d61d838a",
+        "version": "54ed2ecafaa7563cca09860d5dece3b027cfc0b7d847e61c6e1fcac8cc7376f8",
         "signature": "2165007917443a68f23293eb9cc973f180001dec7d3098142b9d7f17ad314b69"
       },
       "c:/users/mathi/codeprojects/chptr/chptr/src/commands/reorder.ts": {
@@ -866,7 +866,7 @@
         "signature": "38b92fbea8bc6bbef9aef483116e0eb5c673a02aaa3940e62760b7024942860f"
       },
       "c:/users/mathi/codeprojects/chptr/chptr/src/commands/save.ts": {
-        "version": "b11c26f7b058e033038eb2a8c05821b0094f19d7c56b69699c249f971df0a0c8",
+        "version": "987e115007896a4e15851e108e98f096ab3d0462873b31d54c83011bd309cb93",
         "signature": "5833a086c597066a150095f44762bd8dd7c85fb7bc44cff75e076b7c98374a8f"
       },
       "c:/users/mathi/codeprojects/chptr/chptr/src/commands/split.ts": {
@@ -986,8 +986,8 @@
       "declaration": true,
       "importHelpers": true,
       "module": 1,
-      "outDir": "C:/Users/mathi/CodeProjects/Chptr/chptr/lib",
-      "rootDir": "C:/Users/mathi/CodeProjects/Chptr/chptr/src",
+      "outDir": "c:/Users/mathi/CodeProjects/Chptr/chptr/lib",
+      "rootDir": "c:/Users/mathi/CodeProjects/Chptr/chptr/src",
       "strict": true,
       "target": 4,
       "composite": true,
@@ -996,7 +996,7 @@
           "name": "typescript-tslint-plugin"
         }
       ],
-      "configFilePath": "C:/Users/mathi/CodeProjects/Chptr/chptr/tsconfig.json"
+      "configFilePath": "c:/Users/mathi/CodeProjects/Chptr/chptr/tsconfig.json"
     },
     "referencedMap": {
       "c:/users/mathi/codeprojects/chptr/chptr/node_modules/typescript/lib/lib.es5.d.ts": [
@@ -4386,7 +4386,6 @@
       "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/validator/index.d.ts",
       "c:/users/mathi/codeprojects/chptr/chptr/src/commands/init.ts",
       "c:/users/mathi/codeprojects/chptr/chptr/src/commands/reorder.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/src/commands/save.ts",
       "c:/users/mathi/codeprojects/chptr/chptr/src/commands/split.ts",
       "c:/users/mathi/codeprojects/chptr/chptr/src/commands/track.ts",
       "c:/users/mathi/codeprojects/chptr/chptr/src/commands/build/compact.ts",
@@ -4415,7 +4414,8 @@
       "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/sinon/ts3.1/index.d.ts",
       "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/uuid/interfaces.d.ts",
       "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/uuid/index.d.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/src/commands/rename.ts"
+      "c:/users/mathi/codeprojects/chptr/chptr/src/commands/rename.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/src/commands/save.ts"
     ]
   },
   "version": "3.4.3"
