@@ -67,10 +67,10 @@ export default class Rename extends Command {
     const chapterFile = (await this.fsUtils.listFiles(path.join(this.rootPath, this.softConfig.chapterWildcardWithNumber(chapterId))))[0]
     const summaryFile = (await this.fsUtils.listFiles(path.join(this.rootPath, this.softConfig.summaryWildcardWithNumber(chapterId))))[0]
     const metadataFile = (await this.fsUtils.listFiles(path.join(this.rootPath, this.softConfig.metadataWildcardWithNumber(chapterId))))[0]
-    const trackedFile = (await this.fsUtils.listFiles(path.join(this.rootPath, `${chapterIdString}.*`)))[0]
+    const trackedFile = (await this.fsUtils.listFiles(path.join(this.rootPath, chapterIdString)))[0]
 
     const newName = flags.title ? await this.extractTitleFromFile(chapterFile) : args.newName || queryResponses.newName || 'chapter'
-    const newNameForFile = this.fsUtils.sanitizeFileName(newName)
+    const newNameForFile = this.fsUtils.sanitizeFileName(newName, true).replace(path.sep, '/')
 
     let didUpdates: {
       filename: string
@@ -80,12 +80,12 @@ export default class Rename extends Command {
     }[]
 
     if (trackedFile) {
-      const tfExt = path.extname(trackedFile)
+      // const tfExt = path.extname(trackedFile)
       didUpdates = [
         {
           filename: trackedFile,
           title: false,
-          newFileName: `${newNameForFile}${tfExt}`,
+          newFileName: `${newNameForFile}`, //${tfExt}`,
           rename: ''
         }
       ]
