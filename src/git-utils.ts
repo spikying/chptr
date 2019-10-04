@@ -11,13 +11,20 @@ import { SoftConfig } from './soft-config'
 const debug = d('git-utils')
 
 export class GitUtils {
-  private readonly git: simplegit.SimpleGit
+  private readonly _git: simplegit.SimpleGit
   private readonly softConfig: SoftConfig
 
+  private async git(): Promise<simplegit.SimpleGit> {
+    const quotepath = await this._git.addConfig('core.quotepath', '')
+    if (quotepath !== 'off') {
+      await this._git.addConfig('core.quotepath', 'off')
+    }
+    return this._git
+  }
+
   constructor(softConfig: SoftConfig, rootPath: string) {
-    this.git = simplegit(rootPath)    
-    this.softConfig = softConfig
-    void this.git.addConfig('core.quotepath', 'off')
+    this._git = simplegit(rootPath)    
+    this.softConfig = softConfig    
   }
 
   public async CommitToGit(
@@ -26,6 +33,7 @@ export class GitUtils {
     toStageFiles?: string[],
     forDeletes = false
   ) {
+    const git = await this.git()
     toStageFiles = toStageFiles || (await this.GetGitListOfStageableFiles())
     if (toStageFiles.length > 0 || forDeletes) {
       // try {
@@ -36,19 +44,19 @@ export class GitUtils {
       debug(`after processing file`)
 
       if (!forDeletes) {
-        await this.git.add(toStageFiles)
+        await git.add(toStageFiles)
       }
       debug(`after adding files`)
-      await this.git.addConfig('user.name', this.softConfig.config.projectAuthor.name)
-      await this.git.addConfig('user.email', this.softConfig.config.projectAuthor.email)
+      await git.addConfig('user.name', this.softConfig.config.projectAuthor.name)
+      await git.addConfig('user.email', this.softConfig.config.projectAuthor.email)
 
-      const commitSummary = await this.git.commit(message)
-      const hasRemote: boolean = await this.git.getRemotes(false).then(result => {
+      const commitSummary = await git.commit(message)
+      const hasRemote: boolean = await git.getRemotes(false).then(result => {
         return result.find(value => value.name === 'origin') !== undefined
       })
       if (hasRemote) {
-        await this.git.push()
-        await this.git.pull()
+        await git.push()
+        await git.pull()
       }
 
       const toStagePretty = toStageFiles.map(f => `\n    ${f}`.infoColor())
@@ -64,7 +72,8 @@ export class GitUtils {
   }
 
   public async GetGitListOfStageableFiles(chapterId?: ChapterId): Promise<string[]> {
-    const gitStatus = await this.git.status()
+    const git = await this.git()
+    const gitStatus = await git.status()
 
     const unQuote = function(value: string) {
       if (!value) {
@@ -77,7 +86,7 @@ export class GitUtils {
       return self.indexOf(value) === index
     }
 
-    const unfilteredFileList = (await this.git.diff(['--name-only']))
+    const unfilteredFileList = (await git.diff(['--name-only']))
       .split('\n')
       // .concat(gitStatus.deleted.map(unQuote)) //If they are removed by git.rm it is not necessary to "readd" then
       .concat(gitStatus.modified.map(unQuote))
@@ -99,7 +108,8 @@ export class GitUtils {
   }
 
   public async GetGitListOfUntrackedFiles(): Promise<string[]> {
-    const gitStatus = await this.git.status()
+    const git = await this.git()
+    const gitStatus = await git.status()
 
     const unQuote = function(value: string) {
       if (!value) {
@@ -112,27 +122,31 @@ export class GitUtils {
   }
 
   // public async checkIsRepo(): Promise<boolean> {
-  //   return this.git.checkIsRepo()
+  //   return git.checkIsRepo()
   // }
 
   public async mv(from: string | string[], to: string): Promise<MoveSummary> {
-    return this.git.mv(from, to)
+    const git = await this.git()
+    return git.mv(from, to)
   }
 
   public async rm(paths: string | string[]): Promise<void> {
-    return this.git.rm(paths)
+    const git = await this.git()
+    return git.rm(paths)
   }
 
   public async add(files: string | string[]) {
-    return this.git.add(files)
+    const git = await this.git()
+    return git.add(files)
   }
 
   public async showHeadVersionOfFile(filepath: string): Promise<string> {
-    return this.git.show([`HEAD:${this.softConfig.mapFileToBeRelativeToRootPath(filepath).replace(/\\/, '/')}`])
+    const git = await this.git()
+    return git.show([`HEAD:${this.softConfig.mapFileToBeRelativeToRootPath(filepath).replace(/\\/, '/')}`])
   }
 
   // public async raw(commands: string | string[]): Promise<string> {
-  //   return this.git.raw(commands)
+  //   return git.raw(commands)
   // }
   public async GetGitListOfVersionsOfFile(
     filepath: string,
@@ -145,7 +159,8 @@ export class GitUtils {
       subject: string
       content: string
     }[]
-  > {
+    > {
+      const git = await this.git()
     const file = this.softConfig.mapFileToBeRelativeToRootPath(filepath)
     const beginBlock = '########'
     const endFormattedBlock = '------------------------ >8 ------------------------'
@@ -153,7 +168,7 @@ export class GitUtils {
     if (!extractAll) {
       gitLogArgs.push(`--since="${moment().add(-1, 'week')}"`)
     }
-    return (await this.git.raw([...gitLogArgs, file]))
+    return (await git.raw([...gitLogArgs, file]))
       .split(beginBlock)
       .filter(l => l !== '')
       .map(l => {
