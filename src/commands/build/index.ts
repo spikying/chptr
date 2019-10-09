@@ -1,4 +1,5 @@
 import { flags } from '@oclif/command'
+import { Input } from '@oclif/parser'
 import { exec } from 'child_process'
 import cli from 'cli-ux'
 import * as moment from 'moment'
@@ -9,6 +10,7 @@ import { ChptrError } from '../../chptr-error'
 import { MetaObj } from '../../markup-utils'
 import { QueryBuilder, tableize } from '../../ui-utils'
 import { d } from '../base'
+
 import Command from './metadata'
 
 const debug = d('build')
@@ -23,7 +25,7 @@ export default class Build extends Command {
 
   static flags = {
     ...Command.flags,
-    filetype: flags.string({
+    type: flags.string({
       char: 't',
       description: 'filetype to export to.  Can be set multiple times.',
       options: Build.exportableFileTypes.concat('all'),
@@ -60,7 +62,7 @@ export default class Build extends Command {
     debug(`temp files = ${tmpMDfile.path} and ${tmpMDfileTex.path}`)
 
     try {
-      const { flags } = this.parse(Build)
+      const { flags } = this.parse(this.constructor as Input<any>)
 
       await this.RunMetadata(flags)
 
@@ -75,12 +77,12 @@ export default class Build extends Command {
       //   this.softConfig.config.projectTitle
       // )}`
 
-      let outputFiletype = flags.filetype
+      let outputFiletype = flags.type
       if (!outputFiletype) {
         const queryBuilder = new QueryBuilder()
         queryBuilder.add('type', queryBuilder.checkboxinput(Build.exportableFileTypes, 'Which filetype(s) to output?', ['md']))
         const queryResponses: any = await queryBuilder.responses()
-      outputFiletype = queryResponses.type
+        outputFiletype = queryResponses.type
       }
       if (outputFiletype.indexOf('all') >= 0) {
         outputFiletype = Build.exportableFileTypes

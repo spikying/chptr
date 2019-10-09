@@ -8,6 +8,7 @@ import { MetaObj } from '../../markup-utils'
 import { tableize } from '../../ui-utils'
 import { d } from '../base'
 import Command from '../compactable-base'
+import { Input } from '@oclif/parser'
 
 const debug = d('build:metadata')
 
@@ -40,7 +41,7 @@ export default class Metadata extends Command {
     debug('init of  Build:metadata')
     await super.init()
 
-    const { flags } = this.parse(Metadata)
+    const { flags } = this.parse(<Input<any>>this.constructor)
     this._outputFile = `${flags.datetimestamp ? moment().format('YYYYMMDD.HHmm ') : ''}${this.fsUtils.sanitizeFileName(
       this.softConfig.config.projectTitle
     )}`
@@ -48,7 +49,7 @@ export default class Metadata extends Command {
 
   async run() {
     debug('Running Build:metadata command')
-     const { flags } = this.parse(Metadata)
+     const { flags } = this.parse(<Input<any>>this.constructor)
 
     await this.RunMetadata(flags)
   }

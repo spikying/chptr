@@ -122,7 +122,7 @@ export default abstract class extends Command {
       }
     })
 
-    debug(`old vs new: ${JSON.stringify(oldVsNew)}`)
+    // debug(`old vs new: ${JSON.stringify(oldVsNew)}`)
 
     const oldChapterPattern = lastConfigObj.chapterPattern
 

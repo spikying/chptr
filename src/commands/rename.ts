@@ -69,7 +69,9 @@ export default class Rename extends Command {
     const metadataFile = (await this.fsUtils.listFiles(path.join(this.rootPath, this.softConfig.metadataWildcardWithNumber(chapterId))))[0]
     const trackedFile = (await this.fsUtils.listFiles(path.join(this.rootPath, chapterIdString)))[0]
 
-    const newName = flags.title ? await this.extractTitleFromFile(chapterFile) : args.newName || queryResponses.newName || 'chapter'
+    debug(`chapter wildcard = ${this.softConfig.chapterWildcardWithNumber(chapterId)}`)
+    debug(`chapter file = ${chapterFile}`)
+    const newName = flags.title ? await this.extractTitleFromFile(chapterFile) : (args.newName || queryResponses.newName || 'chapter')
     const newNameForFile = this.fsUtils.sanitizeFileName(newName, true).replace(path.sep, '/')
 
     let didUpdates: {
