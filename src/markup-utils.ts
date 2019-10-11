@@ -86,7 +86,8 @@ export class MarkupUtils {
     const modifiedMetadataFiles = await this.writeMetadataInEachFile(markupByFile)
     const modifiedFile = modifiedMetadataFiles[0]
 
-    cli.action.stop(`updated ${modifiedFile.file} with ${modifiedFile.diff}`.actionStopColor())
+    const msg = modifiedFile ? `updated ${modifiedFile.file} with ${modifiedFile.diff}`.actionStopColor() : 'updated nothing'
+    cli.action.stop(msg)
   }
 
   public async extractMeta(filepath: string, extractAll: boolean): Promise<MetaObj[]> {
@@ -138,7 +139,7 @@ export class MarkupUtils {
     let regexArray: RegExpExecArray | null
     let paraCounter = 1
     while ((regexArray = markupRegex.exec(initialContent)) !== null) {
-      if (regexArray[1]) {      
+      if (regexArray[1]) {
         paraCounter = parseInt(regexArray[1], 10)
       } else {
         resultArray.push({
@@ -154,7 +155,7 @@ export class MarkupUtils {
     while ((regexArray = propRegex.exec(initialContent)) !== null) {
       if (regexArray[1]) {
         paraCounter = parseInt(regexArray[1], 10)
-      } else {      
+      } else {
         resultArray.push({
           filename: this.softConfig.mapFileToBeRelativeToRootPath(chapterFilepath),
           paragraph: paraCounter,
