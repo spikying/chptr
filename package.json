@@ -1,7 +1,7 @@
 {
   "name": "chptr",
   "description": "Command Line tool to handle separate Markdown files with special markup notations and export as a complete document.",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "author": {
     "name": "Mathieu Leblanc",
     "email": "spiky.ing@gmail.com",
