@@ -147,14 +147,14 @@ USAGE
   $ chptr build
 
 OPTIONS
-  -N, --notify                                  show a notification box when command is completed.
-  -c, --compact                                 Compact chapter numbers at the same time
-  -d, --datetimestamp                           adds datetime stamp before output filename
-  -h, --help                                    show CLI help
-  -p, --path=path                               [default: .] Path where root of project files are
-  -r, --removemarkup                            Remove paragraph numbers and other markup in output
-  -s, --showWritingRate=all|short|none|export   [default: short] Show word count per day in varying details
-  -t, --filetype=md|pdf|docx|html|epub|tex|all  filetype to export to.  Can be set multiple times.
+  -N, --notify                                 show a notification box when command is completed.
+  -c, --compact                                Compact chapter numbers at the same time
+  -d, --datetimestamp                          adds datetime stamp before output filename
+  -h, --help                                   show CLI help
+  -p, --path=path                              [default: .] Path where root of project files are
+  -r, --removemarkup                           Remove paragraph numbers and other markup in output
+  -s, --showWritingRate=all|short|none|export  [default: short] Show word count per day in varying details
+  -t, --type=md|pdf|docx|html|epub|tex|all     filetype to export to.  Can be set multiple times.
 
 ALIASES
   $ chptr compile
