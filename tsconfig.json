@@ -3,6 +3,7 @@
     "declaration": true,
     "importHelpers": true,
     "module": "commonjs",
+    "moduleResolution": "node",
     "outDir": "lib",
     "rootDir": "src",
     "strict": true,
@@ -14,7 +15,5 @@
       }
     ]
   },
-  "include": [
-    "src/**/*"
-  ]
+  "include": ["src/**/*"]
 }

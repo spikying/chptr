@@ -2,13 +2,17 @@ import { flags } from '@oclif/command'
 import { Input } from '@oclif/parser'
 import { exec } from 'child_process'
 import cli from 'cli-ux'
-import * as moment from 'moment'
+import yaml = require('js-yaml')
+// import { applyChange, observableDiff } from 'deep-diff'
+// import * as moment from 'moment'
 import * as path from 'path'
 import { file as tmpFile } from 'tmp-promise'
 
+import { BootstrapChptr } from '../../bootstrap-functions'
+import { ChapterId } from '../../chapter-id'
 import { ChptrError } from '../../chptr-error'
-import { MetaObj } from '../../markup-utils'
-import { QueryBuilder, tableize } from '../../ui-utils'
+// import { MetaObj } from '../../markup-utils'
+import { QueryBuilder } from '../../ui-utils'
 import { d } from '../base'
 
 import Command from './metadata'
@@ -41,6 +45,11 @@ export default class Build extends Command {
       char: 'r',
       description: 'Remove paragraph numbers and other markup in output',
       default: false
+    }),
+    withsummaries: flags.boolean({
+      char: 'S',
+      description: 'Add summaries in output, before actual content',
+      default: false
     })
     // ,
     // showWritingRate: flags.string({
@@ -67,6 +76,7 @@ export default class Build extends Command {
       await this.RunMetadata(flags)
 
       const removeMarkup = flags.removemarkup
+      const withSummaries = flags.withsummaries
 
       // const wrOption = flags.showWritingRate
       // const showWritingRate = wrOption === 'all' || wrOption === 'short' || wrOption === 'export'
@@ -88,112 +98,72 @@ export default class Build extends Command {
         outputFiletype = Build.exportableFileTypes
       }
 
-      // await this.coreUtils.preProcessAndCommitFiles('Autosave before build')
-
-      // await this.markupUtils.UpdateAllMetadataFieldsFromDefaults()
-
-      // await this.fsUtils.createSubDirectoryFromDirectoryPathIfNecessary(this.softConfig.buildDirectory)
-
       const originalChapterFilesArray = (await this.fsUtils.listFiles(
         path.join(this.rootPath, this.softConfig.chapterWildcard(false))
       )).sort()
 
-      // const allChapterFilesArray = originalChapterFilesArray.concat(
-      //   await this.fsUtils.listFiles(path.join(this.rootPath, this.softConfig.chapterWildcard(true)))
-      // )
-
-      // await this.markupUtils.extractAndUpdateGlobalAndChapterMetadata(allChapterFilesArray, outputFile)
-      // await this.coreUtils.preProcessAndCommitFiles('Autosave markup updates')
-
-      // cli.info('Extracting metadata for all chapters files'.actionStartColor())
-
-      // const allMetadataFilesArray = (await this.fsUtils.listFiles(
-      //   path.join(this.rootPath, this.softConfig.metadataWildcard(false))
-      // )).concat(await this.fsUtils.listFiles(path.join(this.rootPath, this.softConfig.metadataWildcard(true))))
-
-      // const metaExtractPromises: Promise<MetaObj[]>[] = []
-      // allMetadataFilesArray.forEach(m => {
-      //   metaExtractPromises.push(this.markupUtils.extractMeta(m, exportWritingRate))
-      // })
-      // await Promise.all(metaExtractPromises).then(async fullMetaArray => {
-      //   //flatten equivalent
-      //   const flattenedMetaArray: MetaObj[] = ([] as MetaObj[]).concat(...fullMetaArray).filter(m => m.wordCountDiff !== 0)
-
-      //   const diffByDate: any = {}
-
-      //   const mappedDiffArray = flattenedMetaArray.map(m => ({
-      //     file: m.log.file,
-      //     date: m.log.date.format('YYYY-MM-DD'),
-      //     diff: m.wordCountDiff
-      //   }))
-
-      //   debug(`mappedArray=${JSON.stringify(mappedDiffArray.filter(d => d.date === moment().format('YYYY-MM-DD')), null, 2)}`)
-
-      //   if (exportWritingRate) {
-      //     cli.action.start('Writing rate CSV file'.actionStartColor())
-      //     let csvContent = 'Date;Chapter Number;Word Count Diff\n'
-
-      //     mappedDiffArray.forEach((m: { date: any; file: any; diff: any }) => {
-      //       const isAtNumbering = this.softConfig.isAtNumbering(m.file)
-      //       const chapterNumberMatch = this.softConfig.metadataRegex(isAtNumbering).exec(m.file)
-      //       const chapterNumber = chapterNumberMatch ? (isAtNumbering ? '@' : '') + chapterNumberMatch[1] : '?'
-      //       csvContent += `${m.date};${chapterNumber};${m.diff}\n`
-      //     })
-      //     const writingRateFilePath = path.join(this.softConfig.buildDirectory, 'writingRate.csv')
-      //     await this.fsUtils.writeFile(writingRateFilePath, csvContent)
-      //     cli.action.stop(`Created ${writingRateFilePath}`.actionStopColor())
-      //   }
-
-      //   mappedDiffArray.forEach((m: { date: any; file: any; diff: any }) => {
-      //     if (!diffByDate[m.date]) {
-      //       diffByDate[m.date] = { total: 0 }
-      //     }
-      //     if (!diffByDate[m.date][m.file]) {
-      //       diffByDate[m.date][m.file] = m.diff
-      //     } else {
-      //       diffByDate[m.date][m.file] += m.diff
-      //     }
-      //     diffByDate[m.date].total += m.diff
-      //   })
-
-      //   if (showWritingRate) {
-      //     cli.info(`Writing rate:`.infoColor())
-      //     const tableSummary = tableize('Date', 'Word diff')
-      //     const tableDetails = tableize('Date | Chapter file #', 'Word diff')
-      //     for (const date of Object.keys(diffByDate).sort()) {
-      //       tableSummary.accumulator(date, diffByDate[date].total.toString())
-
-      //       if (showWritingRateDetails) {
-      //         for (const metafile of Object.keys(diffByDate[date])) {
-      //           if (metafile !== 'total') {
-      //             const isAtNumbering = this.softConfig.isAtNumbering(metafile)
-      //             const chapterNumberMatch = this.softConfig.metadataRegex(isAtNumbering).exec(metafile)
-      //             const chapterNumber = chapterNumberMatch ? (isAtNumbering ? '@' : '') + chapterNumberMatch[1] : '?'
-
-      //             let wordDiff: string = diffByDate[date][metafile].toString()
-      //             wordDiff = wordDiff.resultSecondaryColor()
-
-      //             tableDetails.accumulator(`${date.infoColor()} # ${chapterNumber}`, wordDiff)
-      //           }
-      //         }
-      //       }
-      //     }
-      //     tableDetails.show()
-      //     tableSummary.show()
-      //   }
-      // })
-
       cli.action.start('Compiling and generating output files'.actionStartColor())
 
       let fullOriginalContent = this.softConfig.globalMetadataContent
+
+      const bootstrapChptr = new BootstrapChptr(this.rootPath)
+
       for (const file of originalChapterFilesArray) {
-        fullOriginalContent += '\n' + (await this.fsUtils.readFileContent(file))
+        fullOriginalContent += '\n'
+        const chapterContent = await this.fsUtils.readFileContent(file)
+        if (withSummaries) {
+          const number = this.softConfig.extractNumber(file)
+          const chapterId = new ChapterId(number, false)
+
+          const summaryFile = (await this.fsUtils.listFiles(
+            path.join(this.rootPath, this.softConfig.summaryWildcardWithNumber(chapterId))
+          ))[0]
+          const summaryContent = await this.fsUtils.readFileContent(summaryFile)
+          const summaryRE = /^(?!# )(?!{{\d+}})(.+)$/gm
+          fullOriginalContent += summaryContent.replace(summaryRE, '> *$1*\n\n')
+          fullOriginalContent += '\n\n````\n'
+
+          const metadataFile = (await this.fsUtils.listFiles(
+            path.join(this.rootPath, this.softConfig.metadataWildcardWithNumber(chapterId))
+          ))[0]
+          const metadataContent = await this.fsUtils.readFileContent(metadataFile)
+          const metadataObj = this.softConfig.parsePerStyle(metadataContent)
+          let filteredMetadataObj: any = bootstrapChptr.deepCopy(metadataObj)
+
+          // debug(`filteredMetadataObj: ${JSON.stringify(filteredMetadataObj)}`)
+
+          // observableDiff(filteredMetadataObj, metadataObj, d => {
+          //   debug(`metadataObj=${JSON.stringify(metadataObj)}`)
+          //   debug(`metadataObj truthyness=${JSON.stringify(metadataObj as boolean)}`)
+          //   if (metadataObj) {
+          //     applyChange(filteredMetadataObj, metadataObj, d)
+          //   }
+          // })
+
+          // for (const key of Object.keys(metadataObj)) {
+          //   debug(`key=${key}`)
+          //   debug(`metadataObj[key]=${JSON.stringify(metadataObj[key])}`)
+          //   if (metadataObj[key]) {
+          //     filteredMetadataObj[key] = metadataObj[key]
+          //   }
+          // }
+          fullOriginalContent += yaml.safeDump(filteredMetadataObj) //.replace(/\n/g, '\n\n')
+          fullOriginalContent += '````\n\n'
+
+          const chapterRE = /# (.*)\n/
+          fullOriginalContent += chapterContent.replace(chapterRE, '***\n')
+        } else {
+          fullOriginalContent += chapterContent
+        }
       }
       const fullCleanedOrTransformedContent = removeMarkup
         ? this.markupUtils.cleanMarkupContent(fullOriginalContent)
         : this.markupUtils.transformMarkupContent(fullOriginalContent)
       await this.fsUtils.writeInFile(tmpMDfile.fd, fullCleanedOrTransformedContent)
-      await this.fsUtils.writeInFile(tmpMDfileTex.fd, fullCleanedOrTransformedContent.replace(/^\*\s?\*\s?\*$/gm, '\\asterism'))
+      await this.fsUtils.writeInFile(
+        tmpMDfileTex.fd,
+        fullCleanedOrTransformedContent.replace(/^\*\s?\*\s?\*$/gm, '\\asterism').replace(/\u200B/g, '')
+      )
 
       let chapterFiles = '"' + tmpMDfile.path + '" '
 
@@ -267,6 +237,8 @@ export default class Build extends Command {
           }
 
           pandocArgs = pandocArgs.concat([
+            // '--listings',
+            // '--fenced_code_blocks',
             '--toc',
             '--toc-depth',
             '2',

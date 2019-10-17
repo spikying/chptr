@@ -230,9 +230,7 @@ date: ${moment().format('D MMMM YYYY')}
           this._configStyle = 'YAML'
         } catch (err) {
           throw new ChptrError(
-            `File ${this.hardConfig.configJSON5FilePath} or ${
-              this.hardConfig.configYAMLFilePath
-            } either doesn't exist or is not readable by process.\n${err}`,
+            `File ${this.hardConfig.configJSON5FilePath} or ${this.hardConfig.configYAMLFilePath} either doesn't exist or is not readable by process.\n${err}`,
             'soft-config:configstyle.get',
             307
           )
