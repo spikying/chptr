@@ -76,6 +76,8 @@ lang: ${this.config.projectLang}
 fontfamily: ${this.config.fontName}
 fontsize: ${this.config.fontSize}
 date: ${moment().format('D MMMM YYYY')}
+papersize: letter
+classoption: oneside
 ...
 
 `
