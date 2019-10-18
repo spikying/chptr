@@ -17,7 +17,7 @@ const debug = d('markup-utils')
 export class MarkupUtils {
   // https://unicode.org/reports/tr29/#Sentence_Boundaries
   public readonly sentenceBreakChar = '\u2028' // '\u000D'// '\u200D' // '\u2028'
-  public readonly paragraphBreakChar = ''// '\u2029'
+  public readonly paragraphBreakChar = '' // '\u2029'
   public titleRegex = /^\n# (.*?)\n/
 
   private readonly propRegex = /(?:{{(\d+)}}\n)?.*?(?<!{){([^:,.!\n{}]+?)}(?!})/gm
@@ -35,10 +35,19 @@ export class MarkupUtils {
     this.gitUtils = new GitUtils(softConfig, rootPath)
   }
 
-  public async extractAndUpdateGlobalAndChapterMetadata(allChapterFilesArray: string[], outputFile: string) {
+  public async extractAndUpdateGlobalAndChapterMetadata(
+    allChapterFilesArray: string[],
+    allSummaryFilesArray: string[],
+    outputFile: string
+  ) {
     cli.action.start('Extracting global metadata'.actionStartColor())
     debug(`starting extractGlobalMetadata`)
 
+    const flattenedChapterMarkupArray = await this.extractGlobalAndChapterMetadata(allChapterFilesArray)
+    const flattenedSummaryMarkupArray = await this.extractGlobalAndChapterMetadata(allSummaryFilesArray)
+    const flattenedMarkupArray = await this.combineChapterAndSummaryMetadata(flattenedChapterMarkupArray, flattenedSummaryMarkupArray)
+    await this.updateGlobalAndChapterMetadata(flattenedMarkupArray, outputFile)
+    /*
     const table = tableize('file', 'diff')
     const extractPromises: Promise<MarkupObj[]>[] = []
     allChapterFilesArray.forEach(cf => {
@@ -73,15 +82,70 @@ export class MarkupUtils {
         modifiedMetadataFiles.map(val => ({ from: this.softConfig.mapFileToBeRelativeToRootPath(val.file), to: val.diff }))
       )
     })
-
+*/
     cli.action.stop(`done`.actionStopColor())
+    // table.show()
+  }
+  public async extractGlobalAndChapterMetadata(allFilesArray: string[]): Promise<MarkupObj[]> {
+    const extractPromises: Promise<MarkupObj[]>[] = []
+    allFilesArray.forEach(cf => {
+      extractPromises.push(this.extractMarkupFromFile(cf))
+    })
+
+    return Promise.all(extractPromises).then(async fullMarkupArray => {
+      const flattenedMarkupArray: MarkupObj[] = ([] as MarkupObj[]).concat(...fullMarkupArray)
+
+      return flattenedMarkupArray
+    })
+  }
+  public async updateGlobalAndChapterMetadata(flattenedMarkupArray: MarkupObj[], outputFile: string) {
+    const table = tableize('file', 'diff')
+    const markupByFile = this.getMarkupByFile(flattenedMarkupArray)
+    const markupByType = this.getMarkupByType(flattenedMarkupArray)
+
+    const markupExt = this.softConfig.configStyle.toLowerCase()
+    const allMarkups = [
+      { markupObj: markupByFile, fullPath: path.join(this.softConfig.buildDirectory, `${outputFile}.markupByFile.${markupExt}`) },
+      { markupObj: markupByType, fullPath: path.join(this.softConfig.buildDirectory, `${outputFile}.markupByType.${markupExt}`) }
+    ]
+
+    for (const markup of allMarkups) {
+      debug(`markup.fullPath=${markup.fullPath}`)
+      const comparedString = this.softConfig.stringifyPerStyle(markup.markupObj)
+
+      if (await this.contentHasChangedVersusFile(markup.fullPath, comparedString)) {
+        await this.fsUtils.writeFile(markup.fullPath, comparedString)
+        table.accumulator(this.softConfig.mapFileToBeRelativeToRootPath(markup.fullPath), 'updated')
+      }
+    }
+
+    const modifiedMetadataFiles = await this.writeMetadataInEachFile(markupByFile)
+    table.accumulatorArray(
+      modifiedMetadataFiles.map(val => ({ from: this.softConfig.mapFileToBeRelativeToRootPath(val.file), to: val.diff }))
+    )
+
     table.show()
+  }
+
+  public combineChapterAndSummaryMetadata(flattenedChapterMarkupArray: MarkupObj[], flattenedSummaryMarkupArray: MarkupObj[]): MarkupObj[] {
+    return flattenedChapterMarkupArray.concat(
+      flattenedSummaryMarkupArray.map(s => {
+        const summaryNum = this.softConfig.extractNumber(s.filename)
+        const chapterFilename = flattenedChapterMarkupArray.filter(c => {
+          const chapterNum = this.softConfig.extractNumber(c.filename)
+          return chapterNum === summaryNum
+        })[0].filename
+        s.filename = chapterFilename
+        s.summary = true
+        return s
+      })
+    )
   }
 
   public async UpdateSingleMetadata(chapterFile: string) {
     cli.action.start('Extracting single metadata'.actionStartColor())
 
-    const markupObjArr = await this.extractMarkupFromChapterFile(chapterFile)
+    const markupObjArr = await this.extractMarkupFromFile(chapterFile)
     const markupByFile = this.getMarkupByFile(markupObjArr)
     const modifiedMetadataFiles = await this.writeMetadataInEachFile(markupByFile)
     const modifiedFile = modifiedMetadataFiles[0]
@@ -90,7 +154,7 @@ export class MarkupUtils {
     cli.action.stop(msg)
   }
 
-  public async extractMeta(filepath: string, extractAll: boolean): Promise<MetaObj[]> {
+  public async extractWordCountHistory(filepath: string, extractAll: boolean): Promise<WordCountHistoryObj[]> {
     // const file = this.softConfig.mapFileToBeRelativeToRootPath(filepath)
     // const beginBlock = '########'
     // const endFormattedBlock = '------------------------ >8 ------------------------'
@@ -101,6 +165,7 @@ export class MarkupUtils {
     // const logListString = (await this.git.raw([...gitLogArgs, file])) || ''
     const logListArray = await this.gitUtils.GetGitListOfVersionsOfFile(filepath, extractAll)
 
+    // debug(`logListArray = ${JSON.stringify(logListArray)}`)
     const logList = logListArray
       // .map(l => {
       //   const s = l.split(endFormattedBlock)
@@ -110,7 +175,7 @@ export class MarkupUtils {
         const wcRegex = /^([+-])\s*\"wordCount\": (\d+)/
         // const diffArray = s.length === 2 ? s[1].split('\n').filter(n => n !== '' && wcRegex.test(n)) : []
         const diffArray = l.content.split('\n').filter(n => n !== '' && wcRegex.test(n)) //|| []
-
+        debug(`diffArray=${JSON.stringify(diffArray)}`)
         const wordCountDiff = diffArray
           .map(d => {
             const match = wcRegex.exec(d)
@@ -122,17 +187,18 @@ export class MarkupUtils {
 
         return { log: l, wordCountDiff }
       })
-
+      debug(`logList = ${JSON.stringify(logList)}`)
     return logList
   }
 
-  public async extractMarkupFromChapterFile(chapterFilepath: string): Promise<MarkupObj[]> {
+  public async extractMarkupFromFile(filepath: string): Promise<MarkupObj[]> {
     const resultArray: MarkupObj[] = []
 
-    debug(`in ExtractMarkup; chapterFilePath=${chapterFilepath}`)
+    debug(`in ExtractMarkup; filePath=${filepath}`)
 
     // try {
-    const initialContent = await this.fsUtils.readFileContent(path.join(this.rootPath, chapterFilepath))
+    const summary = this.softConfig.summaryRegex(false).test(filepath)
+    const initialContent = await this.fsUtils.readFileContent(path.join(this.rootPath, filepath))
     const markupRegex = /(?:{{(\d+)}}\n)|{([^}]*?)\s?:\s?(.*?)}/gm
     const propRegex = /(?:{{(\d+)}}\n)|{([^:,.!\n{}]+?)}/gm
 
@@ -143,11 +209,12 @@ export class MarkupUtils {
         paraCounter = parseInt(regexArray[1], 10)
       } else {
         resultArray.push({
-          filename: this.softConfig.mapFileToBeRelativeToRootPath(chapterFilepath),
+          filename: this.softConfig.mapFileToBeRelativeToRootPath(filepath),
           paragraph: paraCounter,
           type: regexArray[2].toLowerCase(),
           value: regexArray[3],
-          computed: false
+          computed: false,
+          summary
         })
       }
     }
@@ -157,27 +224,30 @@ export class MarkupUtils {
         paraCounter = parseInt(regexArray[1], 10)
       } else {
         resultArray.push({
-          filename: this.softConfig.mapFileToBeRelativeToRootPath(chapterFilepath),
+          filename: this.softConfig.mapFileToBeRelativeToRootPath(filepath),
           paragraph: paraCounter,
           type: 'prop',
           value: regexArray[2],
-          computed: false
+          computed: false,
+          summary
         })
       }
     }
     const wordCount = this.GetWordCount(initialContent)
     resultArray.push({
-      filename: this.softConfig.mapFileToBeRelativeToRootPath(chapterFilepath),
-      type: 'wordCount',
+      filename: this.softConfig.mapFileToBeRelativeToRootPath(filepath),
+      type: summary ? 'summaryWordCount' : 'wordCount',
       value: wordCount,
-      computed: true
+      computed: true,
+      summary
     })
     const title = (await this.extractTitleFromString(initialContent)) || '###'
     resultArray.push({
-      filename: this.softConfig.mapFileToBeRelativeToRootPath(chapterFilepath),
+      filename: this.softConfig.mapFileToBeRelativeToRootPath(filepath),
       type: 'title',
       value: title,
-      computed: true
+      computed: true,
+      summary
     })
     // } catch (err) {
     //   throw new ChptrError(err.toString().errorColor())
@@ -200,10 +270,18 @@ export class MarkupUtils {
     return flattenedMarkupArray.reduce(
       (cumul, markup) => {
         cumul[markup.filename] = cumul[markup.filename] || []
-        if (markup.computed) {
-          cumul[markup.filename].push({ computed: true, type: markup.type, value: markup.value })
+        if (markup.summary) {
+          cumul[markup.filename].push({ summary: true, computed: false, type: markup.type, value: markup.value })
+        } else if (markup.computed) {
+          cumul[markup.filename].push({ summary: false, computed: true, type: markup.type, value: markup.value })
         } else {
-          cumul[markup.filename].push({ computed: false, paragraph: markup.paragraph, type: markup.type, value: markup.value })
+          cumul[markup.filename].push({
+            summary: false,
+            computed: false,
+            paragraph: markup.paragraph,
+            type: markup.type,
+            value: markup.value
+          })
         }
         return cumul
       },
@@ -216,7 +294,7 @@ export class MarkupUtils {
         if (!markup.computed) {
           cumul[markup.type] = cumul[markup.type] || {}
           cumul[markup.type][markup.value] = cumul[markup.type][markup.value] || []
-          cumul[markup.type][markup.value].push({ filename: markup.filename, paragraph: markup.paragraph })
+          cumul[markup.type][markup.value].push({ filename: markup.filename, paragraph: markup.paragraph, summary: markup.summary })
         } else {
           if (markup.type === 'wordCount') {
             cumul.totalWordCount = cumul.totalWordCount || 0
@@ -235,11 +313,21 @@ export class MarkupUtils {
     for (const file of Object.keys(markupByFile)) {
       const extractedMarkup: any = {}
       const computedMarkup: any = {}
+      const summaryMarkup: any = {}
       const markupArray = markupByFile[file]
       debug(`file: ${file} markupArray=${JSON.stringify(markupArray)}`)
 
       markupArray.forEach((markup: MarkupObj) => {
-        if (markup.computed) {
+        if (markup.summary) {
+          if (summaryMarkup[markup.type]) {
+            if (!Array.isArray(summaryMarkup[markup.type])) {
+              summaryMarkup[markup.type] = [summaryMarkup[markup.type]]
+            }
+            summaryMarkup[markup.type].push(markup.value)
+          } else {
+            summaryMarkup[markup.type] = markup.value
+          }
+        } else if (markup.computed) {
           computedMarkup[markup.type] = markup.value
         } else {
           if (extractedMarkup[markup.type]) {
@@ -264,6 +352,7 @@ export class MarkupUtils {
       const updatedObj = JSON.parse(JSON.stringify(initialObj)) //used to create deep copy
       updatedObj.extracted = extractedMarkup
       updatedObj.computed = computedMarkup
+      updatedObj.summary = summaryMarkup
 
       const updatedContent = this.softConfig.stringifyPerStyle(updatedObj)
 
@@ -399,7 +488,7 @@ export class MarkupUtils {
   }
 }
 
-export interface MetaObj {
+export interface WordCountHistoryObj {
   log: {
     file: string
     hash: string
@@ -415,6 +504,7 @@ export interface MarkupObj {
   type: string
   value: string | number
   computed: boolean
+  summary: boolean
 }
 
 interface MarkupByFile {
@@ -423,7 +513,8 @@ interface MarkupByFile {
       paragraph?: number
       type: string
       value: string | number
-      computed: boolean
+      computed?: boolean
+      summary?: boolean
     }
   ]
 }

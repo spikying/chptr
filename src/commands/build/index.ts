@@ -130,23 +130,6 @@ export default class Build extends Command {
           const metadataObj = this.softConfig.parsePerStyle(metadataContent)
           let filteredMetadataObj: any = bootstrapChptr.deepCopy(metadataObj)
 
-          // debug(`filteredMetadataObj: ${JSON.stringify(filteredMetadataObj)}`)
-
-          // observableDiff(filteredMetadataObj, metadataObj, d => {
-          //   debug(`metadataObj=${JSON.stringify(metadataObj)}`)
-          //   debug(`metadataObj truthyness=${JSON.stringify(metadataObj as boolean)}`)
-          //   if (metadataObj) {
-          //     applyChange(filteredMetadataObj, metadataObj, d)
-          //   }
-          // })
-
-          // for (const key of Object.keys(metadataObj)) {
-          //   debug(`key=${key}`)
-          //   debug(`metadataObj[key]=${JSON.stringify(metadataObj[key])}`)
-          //   if (metadataObj[key]) {
-          //     filteredMetadataObj[key] = metadataObj[key]
-          //   }
-          // }
           fullOriginalContent += yaml.safeDump(filteredMetadataObj) //.replace(/\n/g, '\n\n')
           fullOriginalContent += '````\n\n'
 

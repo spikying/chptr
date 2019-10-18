@@ -1,14 +1,14 @@
 import { flags } from '@oclif/command'
+import { Input } from '@oclif/parser'
 import cli from 'cli-ux'
 import * as moment from 'moment'
 import * as path from 'path'
 
 import { ChptrError } from '../../chptr-error'
-import { MetaObj } from '../../markup-utils'
+import { WordCountHistoryObj } from '../../markup-utils'
 import { tableize } from '../../ui-utils'
 import { d } from '../base'
 import Command from '../compactable-base'
-import { Input } from '@oclif/parser'
 
 const debug = d('build:metadata')
 
@@ -41,7 +41,7 @@ export default class Metadata extends Command {
     debug('init of  Build:metadata')
     await super.init()
 
-    const { flags } = this.parse(<Input<any>>this.constructor)
+    const { flags } = this.parse(this.constructor as Input<any>)
     this._outputFile = `${flags.datetimestamp ? moment().format('YYYYMMDD.HHmm ') : ''}${this.fsUtils.sanitizeFileName(
       this.softConfig.config.projectTitle
     )}`
@@ -49,14 +49,13 @@ export default class Metadata extends Command {
 
   async run() {
     debug('Running Build:metadata command')
-     const { flags } = this.parse(<Input<any>>this.constructor)
+    const { flags } = this.parse(this.constructor as Input<any>)
 
     await this.RunMetadata(flags)
   }
 
   public async RunMetadata(flags: any) {
     try {
- 
       const wrOption = flags.showWritingRate
       const showWritingRate = wrOption === 'all' || wrOption === 'short' || wrOption === 'export'
       const showWritingRateDetails = wrOption === 'all' || wrOption === 'export'
@@ -74,13 +73,17 @@ export default class Metadata extends Command {
 
       const allChapterFilesArray = (await this.fsUtils.listFiles(path.join(this.rootPath, this.softConfig.chapterWildcard(false)))).concat(
         await this.fsUtils.listFiles(path.join(this.rootPath, this.softConfig.chapterWildcard(true)))
-      ).concat(
-        await this.fsUtils.listFiles(path.join(this.rootPath, this.softConfig.summaryWildcard(false)))
-      ).concat(
+      )
+
+      const allSummaryFilesArray = (await this.fsUtils.listFiles(path.join(this.rootPath, this.softConfig.summaryWildcard(false)))).concat(
         await this.fsUtils.listFiles(path.join(this.rootPath, this.softConfig.summaryWildcard(true)))
       )
 
-      await this.markupUtils.extractAndUpdateGlobalAndChapterMetadata(allChapterFilesArray, this.outputFile)
+      // const summaryWordCountMetadata = (await this.markupUtils.extractGlobalAndChapterMetadata(allSummaryFilesArray)).filter(
+      //   m => m.type !== 'title'
+      // )
+      // debug(`flatSummaryMetadata: ${JSON.stringify(summaryWordCountMetadata, null, 4)}`)
+      await this.markupUtils.extractAndUpdateGlobalAndChapterMetadata(allChapterFilesArray, allSummaryFilesArray, this.outputFile)
       await this.coreUtils.preProcessAndCommitFiles('Autosave markup updates')
 
       cli.info('Extracting metadata for all chapters files'.actionStartColor())
@@ -89,17 +92,17 @@ export default class Metadata extends Command {
         path.join(this.rootPath, this.softConfig.metadataWildcard(false))
       )).concat(await this.fsUtils.listFiles(path.join(this.rootPath, this.softConfig.metadataWildcard(true))))
 
-      const metaExtractPromises: Promise<MetaObj[]>[] = []
+      const wordCountExtractPromises: Promise<WordCountHistoryObj[]>[] = []
       allMetadataFilesArray.forEach(m => {
-        metaExtractPromises.push(this.markupUtils.extractMeta(m, exportWritingRate))
+        wordCountExtractPromises.push(this.markupUtils.extractWordCountHistory(m, exportWritingRate))
       })
-      await Promise.all(metaExtractPromises).then(async fullMetaArray => {
+      await Promise.all(wordCountExtractPromises).then(async fullMetaArray => {
         //flatten equivalent
-        const flattenedMetaArray: MetaObj[] = ([] as MetaObj[]).concat(...fullMetaArray).filter(m => m.wordCountDiff !== 0)
+        const flattenedWordCountArray: WordCountHistoryObj[] = ([] as WordCountHistoryObj[]).concat(...fullMetaArray).filter(m => m.wordCountDiff !== 0)
 
         const diffByDate: any = {}
 
-        const mappedDiffArray = flattenedMetaArray.map(m => ({
+        const mappedDiffArray = flattenedWordCountArray.map(m => ({
           file: m.log.file,
           date: m.log.date.format('YYYY-MM-DD'),
           diff: m.wordCountDiff
@@ -122,6 +125,7 @@ export default class Metadata extends Command {
           cli.action.stop(`Created ${writingRateFilePath}`.actionStopColor())
         }
 
+        //todo: change to Reduce function
         mappedDiffArray.forEach((m: { date: any; file: any; diff: any }) => {
           if (!diffByDate[m.date]) {
             diffByDate[m.date] = { total: 0 }
