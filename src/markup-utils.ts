@@ -20,7 +20,7 @@ export class MarkupUtils {
   public readonly paragraphBreakChar = '' // '\u2029'
   public titleRegex = /^\n# (.*?)\n/
 
-  private readonly propRegex = /(?:{{(\d+)}}\n)?.*?(?<!{){([^:,.!\n{}]+?)}(?!})/gm
+  private readonly propRegex = /(?:{{(\d+)}}\n)?(.*?)\s?(?<!{){([^:,.!\n{}]+?)}(?!})/gm
   // private readonly propRegex = /(?<!{){([^:,.!\n{}]+?)}(?!})/gm
 
   private readonly fsUtils: FsUtils
@@ -409,7 +409,7 @@ export class MarkupUtils {
       .replace(paragraphBreakRegex, '^_($1)_^\t')
       .replace(/^### (.*)$/gm, '* * *\n\n## $1')
       .replace(/^\\(.*)$/gm, '_% $1_')
-      .replace(this.propRegex, '**$2**')
+      .replace(this.propRegex, '$2 **$3**')
       .replace(sentenceBreakRegex, '')
 
     let continueReplacing = true
