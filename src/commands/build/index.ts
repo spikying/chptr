@@ -146,6 +146,7 @@ export default class Build extends Command {
       await this.fsUtils.writeInFile(
         tmpMDfileTex.fd,
         fullCleanedOrTransformedContent.replace(/^\*\s?\*\s?\*$/gm, '\\asterism').replace(/\u200B/g, '')
+        // .replace(/\\textbf{/gm, '\\merriweatherblack{')
       )
 
       let chapterFiles = '"' + tmpMDfile.path + '" '
