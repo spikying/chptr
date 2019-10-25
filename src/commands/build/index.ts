@@ -119,8 +119,9 @@ export default class Build extends Command {
             path.join(this.rootPath, this.softConfig.summaryWildcardWithNumber(chapterId))
           ))[0]
           const summaryContent = await this.fsUtils.readFileContent(summaryFile)
-          const summaryRE = /^(?!# )(?!{{\d+}})(.+)$/gm
-          fullOriginalContent += summaryContent.replace(summaryRE, '> *$1*\n\n')
+          // const summaryRE = /^(?!# )(?!{{\d+}})(.+)$/gm
+          const summaryRE = /^(?!# )(.+)$/gm
+          fullOriginalContent += summaryContent.replace(/^{{\d+}}$/gm, '').replace(summaryRE, '> *$1*')
           fullOriginalContent += '\n\n````\n'
 
           const metadataFile = (await this.fsUtils.listFiles(
@@ -159,10 +160,10 @@ export default class Build extends Command {
         const fullOutputFilePath = path.join(this.softConfig.buildDirectory, this.outputFile + '.' + filetype)
         allOutputFilePath.push(fullOutputFilePath)
 
-        let pandocArgs: string[] = []
+        let pandocArgs: string[] = ['--strip-comments']
 
         if (filetype === 'md') {
-          pandocArgs = pandocArgs.concat(['--number-sections', '--to', 'markdown-raw_html+smart', '--wrap=none', '--atx-headers'])
+          pandocArgs = pandocArgs.concat(['--number-sections', '--to', 'markdown-raw_html+smart+fancy_lists', '--wrap=none', '--atx-headers'])
         }
 
         if (filetype === 'docx') {
@@ -174,7 +175,7 @@ export default class Build extends Command {
           }
           pandocArgs = pandocArgs.concat([
             '--to',
-            'docx+smart',
+            'docx+smart+fancy_lists',
             '--toc',
             '--toc-depth',
             '2',
@@ -200,7 +201,7 @@ export default class Build extends Command {
 
           pandocArgs = pandocArgs.concat([
             '--to',
-            'html5+smart',
+            'html5+smart+fancy_lists',
             '--toc',
             '--toc-depth',
             '2',
@@ -231,14 +232,14 @@ export default class Build extends Command {
             // '--latex-engine=xelatex',
             '--pdf-engine=xelatex',
             '--to',
-            'latex+raw_tex+smart'
+            'latex+raw_tex+smart+fancy_lists'
           ])
         }
 
         if (filetype === 'epub') {
           pandocArgs = pandocArgs.concat([
             '--to',
-            'epub+smart',
+            'epub+smart+fancy_lists',
             '--toc',
             '--toc-depth',
             '2',

@@ -33,7 +33,14 @@ export default class Save extends Command {
       required: false,
       description: 'Force tracking of file if not already in repository',
       dependsOn: ['filename']
+    }),
+    empty: flags.boolean({
+      char: 'e',
+      required: false,
+      description: 'No manual message in commit',
+      exclusive: ['message']
     })
+
   }
 
   static args = [
@@ -53,6 +60,7 @@ export default class Save extends Command {
     debug('Running Save command')
     const { args, flags } = this.parse(Save)
 
+    const emptyCommitMessage = flags.empty
     // const atFilter = flags.number ? flags.number.substring(0, 1) === '@' : false
     // const numberFilter = flags.number ? this.softConfig.extractNumber(flags.number) : undefined
     const chapterIdFilter = flags.number
@@ -99,13 +107,13 @@ export default class Save extends Command {
     }
 
     const queryBuilder = new QueryBuilder()
-    if (!args.message) {
+    if (!args.message && !emptyCommitMessage) {
       queryBuilder.add('message', queryBuilder.textinput('Message to use in commit to repository?', ''))
     }
     const queryResponses: any = await queryBuilder.responses()
 
-    let message: string = args.message || queryResponses.message || 'Modified files:'
-    message += '\n    ' + `${toStageFiles.join('\n    ')}`
+    let message: string = emptyCommitMessage ? '' : ((args.message || queryResponses.message) && '\n')    
+    message += 'Modified files:\n    ' + `${toStageFiles.join('\n    ')}`
 
     await this.coreUtils.preProcessAndCommitFiles(message, toStageFiles)
   }

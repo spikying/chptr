@@ -1,5 +1,6 @@
 import { flags } from '@oclif/command'
 import { cli } from 'cli-ux'
+import * as minimatch from 'minimatch'
 import * as path from 'path'
 
 import { ChapterId } from '../chapter-id'
@@ -22,7 +23,7 @@ export default class Split extends Command {
     }),
     type: flags.string({
       char: 't',
-      description: 'Parse either chapter file or summary file.  The other file will be copied in full.',
+      description: 'Parse either chapter file or summary file.  The other file will be untouched.',
       default: 'chapter',
       options: ['summary', 'chapter'],
       required: true
@@ -47,6 +48,7 @@ export default class Split extends Command {
     debug(`chapterId = ${chapterId.toString()}`)
 
     let commitMsg = `Split ${type} ${chapterId.toString()} `
+    const commitFiles: string[] = []
 
     const toAnalyseFiles = await this.fsUtils.listFiles(
       path.join(
@@ -61,85 +63,104 @@ export default class Split extends Command {
     const toAnalyseFile = toAnalyseFiles && toAnalyseFiles.length === 1 ? toAnalyseFiles[0] : null
     if (!toAnalyseFile) {
       throw new ChptrError('There should be one and only one file fitting this pattern.', 'split.run', 16)
+    } else {
+      commitFiles.push(toAnalyseFile)
     }
     let toEditPretty = `\n    analyzing from file ${this.softConfig.mapFileToBeRelativeToRootPath(toAnalyseFile)}`
     const initialContent = await this.fsUtils.readFileContent(toAnalyseFile)
     const replacedContents = await this.splitContentByTitles(initialContent)
 
     if (replacedContents.length > 1) {
-      cli.info('Stashing chapter files...'.resultNormalColor())
-      const atEndNum = this.statistics.getHighestNumber(true)
-
-      //move file to the end of the atnumber pile unless it's already there
-      if (!chapterId.isAtNumber || chapterId.num !== atEndNum) {
-        await this.coreUtils.reorder(`${chapterId.toString()}`, '@end')
-      }
+      // cli.info('Stashing chapter files...'.resultNormalColor())
+      // const atEndNum = this.statistics.getHighestNumber(true)
+      //
+      // //move file to the end of the atnumber pile unless it's already there
+      // if (!chapterId.isAtNumber || chapterId.num !== atEndNum) {
+      //   await this.coreUtils.reorder(`${chapterId.toString()}`, '@end')
+      // }
 
       cli.info('Reading and processing chapter...'.resultNormalColor())
 
-      // await this.statistics.updateStackStatistics(true, true)
       await this.statistics.refreshStats()
-      const stashedId = new ChapterId(this.statistics.getHighestNumber(true), true)
-      debug(`stashedId=${stashedId.toString()}`)
-      await cli.anykey()
+      // const stashedId = new ChapterId(this.statistics.getHighestNumber(true), true)
+      // debug(`stashedId=${stashedId.toString()}`)
+      // await cli.anykey()
 
       cli.info('Adding new chapters...'.resultNormalColor())
       commitMsg += `in ${replacedContents.length} parts:`
 
-      const addedTempIds: ChapterId[] = []
-      for (let i = 0; i < replacedContents.length; i++) {
+      // TODO: first chapter keeps its files and name, and all others are put in @end queue
+
+      // const addedTempIds: ChapterId[] = []
+      // not looping in first segment
+      for (let i = 1; i < replacedContents.length; i++) {
         const titleAndContentPair = replacedContents[i]
         const title = this.markupUtils.extractTitleFromString(titleAndContentPair[0]) || 'chapter'
         commitMsg += `\n    ${title}`
 
+        debug(`titleAndContentPair=${JSON.stringify(titleAndContentPair)}`)
+        // await cli.anykey()
+
         await this.statistics.refreshStats()
-        const addedFiles = await this.coreUtils.addChapterFiles(title, true)
-        await this.gitUtils.add(addedFiles)
+
+        const newContent = this.coreUtils.processContent(titleAndContentPair.join(''))
+        debug(`newContent:\n${newContent}`)
+
+        const addedFiles = await this.coreUtils.addChapterFiles(title, true, undefined, newContent)
+        // await this.gitUtils.add(addedFiles)
+        commitFiles.push(...addedFiles)
         cli.info(`Added\n    ${addedFiles.join('\n    ')}`)
 
-        const newId = new ChapterId(stashedId.num + i + 1, true)
-        const filename =
-          type === 'chapter'
-            ? this.softConfig.chapterFileNameFromParameters(newId, title)
-            : type === 'summary'
-            ? this.softConfig.summaryFileNameFromParameters(newId, title)
-            : ''
+        // const newId = new ChapterId(stashedId.num + (i + 1) * this.softConfig.config.numberingStep, true)
+        // const filename =
+        //   type === 'chapter'
+        //     ? this.softConfig.chapterFileNameFromParameters(newId, title)
+        //     : type === 'summary'
+        //     ? this.softConfig.summaryFileNameFromParameters(newId, title)
+        //     : ''
 
-        const filepath =path.join(this.rootPath, filename)
-        const newContent = this.coreUtils.processContent(titleAndContentPair.join(''))
-        debug(`filepath: ${filepath}\nnewContent:\n${newContent}`)
-        await this.fsUtils.writeFile(filepath, newContent)
+        // const filepath = path.join(this.rootPath, filename)
+        // // const newContent = this.coreUtils.processContent(titleAndContentPair.join(''))
+        // // debug(`filepath: ${filepath}\nnewContent:\n${newContent}`)
+        // await this.fsUtils.writeFile(filepath, newContent)
 
-        if (type === 'chapter') {
-          await this.markupUtils.UpdateSingleMetadata(filepath)
-        }
+        // if (type === 'chapter') {
+        //   await this.markupUtils.UpdateSingleMetadata(filepath)
+        // }
 
-        addedTempIds.push(newId)
+        addedFiles.forEach(async file => {
+          if (minimatch(file, this.softConfig.chapterWildcard(true))) {
+            await this.markupUtils.UpdateSingleMetadata(file)
+            // addedTempIds.push(new ChapterId(this.softConfig.extractNumber(file), true))
+          }
+        })
       }
 
-      cli.info('Reinserting newly created chapters...'.resultNormalColor())
-      commitMsg += `\nwith Ids `
+      await this.fsUtils.writeFile(toAnalyseFile, this.coreUtils.processContent(replacedContents[0].join('')))
 
-      for (let i = 0; i < addedTempIds.length; i++) {
-        const addedId = addedTempIds[i]
-        toEditPretty += `\n    inserted chapter ${addedId.toString()}`
+      // cli.info('Reinserting newly created chapters...'.resultNormalColor())
+      // commitMsg += `\nwith Ids `
 
-        await this.statistics.refreshStats()
-        await this.coreUtils.reorder(addedId.toString(), `${chapterId.isAtNumber ? '@' : ''}${chapterId.num + i}`)
-        commitMsg += `${chapterId.isAtNumber ? '@' : ''}${chapterId.num + i}, `
-      }
+      // for (let i = 0; i < addedTempIds.length; i++) {
+      //   const addedId = addedTempIds[i]
+      //   toEditPretty += `\n    inserted chapter ${addedId.toString()}`
+
+      //   await this.statistics.refreshStats()
+      //   await this.coreUtils.reorder(addedId.toString(), `${chapterId.isAtNumber ? '@' : ''}${chapterId.num + i}`)
+      //   commitMsg += `${chapterId.isAtNumber ? '@' : ''}${chapterId.num + i}, `
+      // }
       commitMsg = commitMsg.replace(/, $/, '')
 
       cli.info(`modified files:${toEditPretty.resultHighlighColor()}`.resultNormalColor())
 
-      await this.coreUtils.deleteFilesFromRepo(stashedId.toString())
+      // await this.coreUtils.deleteFilesFromRepo(stashedId.toString())
 
       if (compact) {
         await this.coreUtils.compactFileNumbers()
         commitMsg += `\nCompacted file numbers`
       }
 
-      await this.coreUtils.preProcessAndCommitFiles(commitMsg)
+      await this.coreUtils.preProcessAndCommitFiles(commitMsg, commitFiles)
     } else {
       throw new ChptrError(`File with id ${chapterId.toString()} does not have many 1st level titles.  Nothing to split.`, 'split.run', 49)
     }

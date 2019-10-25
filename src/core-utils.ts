@@ -101,10 +101,16 @@ export class CoreUtils {
     return this.gitUtils.CommitToGit(message, this.processChapterFilesBeforeSaving.bind(this), toStageFiles, forDeletes)
   }
 
-  public async addChapterFiles(name: string, atNumbering: boolean, number?: string) {
+  public async addChapterFiles(name: string, atNumbering: boolean, number?: string, content?: string): Promise<string[]> {
     let chapterId: ChapterId
     if (number) {
       chapterId = new ChapterId(this.softConfig.extractNumber(number), this.softConfig.isAtNumbering(number))
+
+      await this.statistics.getAllFilesForOneType(atNumbering)
+      chapterId.fixedDigits = this.statistics.getMaxNecessaryDigits(atNumbering)
+
+      debug(`chapterId.fixedDigits = ${chapterId.fixedDigits}`)
+      debug(`statistics = ${JSON.stringify(this.statistics, null, 2)}`)
 
       const existingFile = await this.fsUtils.listFiles(path.join(this.rootPath, this.softConfig.chapterWildcardWithNumber(chapterId)))
 
@@ -124,7 +130,10 @@ export class CoreUtils {
     }
 
     const emptyFileString = this.softConfig.emptyFileString.toString()
-    const filledTemplateData = emptyFileString.replace(/{TITLE}/gim, name)
+    let filledTemplateData = emptyFileString.replace(/{TITLE}/gim, name)
+    if (content) {
+      filledTemplateData = content
+    }
     const metadataObj: any = this.softConfig.config.metadataFields
     metadataObj.computed.title = name
     metadataObj.computed.wordCount = this.markupUtils.GetWordCount(filledTemplateData)
@@ -145,7 +154,7 @@ export class CoreUtils {
       }
     ]
 
-    cli.action.start('Creating file(s) locally and to repository'.actionStartColor())
+    cli.action.start('Creating file(s)'.actionStartColor())
 
     const allPromises: Promise<void>[] = []
     for (const pathAndData of fullPathsAndData) {
