@@ -41,7 +41,7 @@ export class MarkupUtils {
     outputFile: string
   ) {
     cli.action.start('Extracting global metadata'.actionStartColor())
-    debug(`starting extractGlobalMetadata`)
+    // debug(`starting extractGlobalMetadata`)
 
     const flattenedChapterMarkupArray = await this.extractGlobalAndChapterMetadata(allChapterFilesArray)
     const flattenedSummaryMarkupArray = await this.extractGlobalAndChapterMetadata(allSummaryFilesArray)
@@ -121,7 +121,7 @@ export class MarkupUtils {
 
     const modifiedMetadataFiles = await this.writeMetadataInEachFile(markupByFile)
     table.accumulatorArray(
-      modifiedMetadataFiles.map(val => ({ from: this.softConfig.mapFileToBeRelativeToRootPath(val.file), to: val.diff }))
+      modifiedMetadataFiles.map(val => ({ from: this.softConfig.mapFileToBeRelativeToRootPath(val.file), to: 'updated'  })) //to: val.diff
     )
 
     table.show()
