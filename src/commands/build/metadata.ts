@@ -86,7 +86,24 @@ export default class Metadata extends Command {
       await this.markupUtils.extractAndUpdateGlobalAndChapterMetadata(allChapterFilesArray, allSummaryFilesArray, this.outputFile)
       await this.coreUtils.preProcessAndCommitFiles('Autosave markup updates')
 
-      cli.info('Extracting metadata for all chapters files'.actionStartColor())
+      if (showWritingRate) {
+        cli.action.start('Extracting word count stats for all content files'.actionStartColor())
+
+        const wordCountHistory = await this.markupUtils.extractWordCountHistory2(false)
+        const tableSummary = tableize('Date', 'Word diff')
+        let firstLine = false
+        for (const wcHistory of wordCountHistory) {
+          const result = firstLine
+            ? `${wcHistory.wordCountDiff} (total ${wcHistory.wordCountTotal})`
+            : `... (total ${wcHistory.wordCountTotal})`
+          firstLine = true
+          tableSummary.accumulator(wcHistory.date.format('YYYY-MM-DD (ddd)'), result)
+        }
+        tableSummary.show()
+        cli.action.stop()
+      }
+
+      return
 
       const allMetadataFilesArray = (await this.fsUtils.listFiles(
         path.join(this.rootPath, this.softConfig.metadataWildcard(false))
@@ -98,7 +115,9 @@ export default class Metadata extends Command {
       })
       await Promise.all(wordCountExtractPromises).then(async fullMetaArray => {
         //flatten equivalent
-        const flattenedWordCountArray: WordCountHistoryObj[] = ([] as WordCountHistoryObj[]).concat(...fullMetaArray).filter(m => m.wordCountDiff !== 0)
+        const flattenedWordCountArray: WordCountHistoryObj[] = ([] as WordCountHistoryObj[])
+          .concat(...fullMetaArray)
+          .filter(m => m.wordCountDiff !== 0)
 
         const diffByDate: any = {}
 

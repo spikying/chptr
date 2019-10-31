@@ -3,7 +3,9 @@ import * as d from 'debug'
 import minimatch = require('minimatch')
 import * as moment from 'moment'
 import * as simplegit from 'simple-git/promise'
-import { MoveSummary } from 'simple-git/typings/response'
+import { LogOptions } from 'simple-git/promise'
+import { DefaultLogFields, MoveSummary } from 'simple-git/typings/response'
+import { format } from 'url'
 
 import { ChapterId } from './chapter-id'
 import { SoftConfig } from './soft-config'
@@ -14,17 +16,9 @@ export class GitUtils {
   private readonly _git: simplegit.SimpleGit
   private readonly softConfig: SoftConfig
 
-  private async git(): Promise<simplegit.SimpleGit> {
-    const quotepath = await this._git.addConfig('core.quotepath', '')
-    if (quotepath !== 'off') {
-      await this._git.addConfig('core.quotepath', 'off')
-    }
-    return this._git
-  }
-
   constructor(softConfig: SoftConfig, rootPath: string) {
-    this._git = simplegit(rootPath)    
-    this.softConfig = softConfig    
+    this._git = simplegit(rootPath)
+    this.softConfig = softConfig
   }
 
   public async CommitToGit(
@@ -63,7 +57,7 @@ export class GitUtils {
       cli.action.stop(
         `\nCommited and pushed ${commitSummary.commit.resultHighlighColor()}:\n${message.infoColor()}\nFile${
           toStageFiles.length > 1 ? 's' : ''
-        }:${toStagePretty}`.actionStopColor()
+          }:${toStagePretty}`.actionStopColor()
       )
       // } catch (err) {
       //   this.error(err.toString().errorColor())
@@ -75,14 +69,14 @@ export class GitUtils {
     const git = await this.git()
     const gitStatus = await git.status()
 
-    const unQuote = function(value: string) {
+    const unQuote = function (value: string) {
       if (!value) {
         return value
       }
       return value.replace(/"(.*)"/, '$1')
     }
 
-    const onlyUnique = function(value: any, index: number, self: any) {
+    const onlyUnique = function (value: any, index: number, self: any) {
       return self.indexOf(value) === index
     }
 
@@ -101,8 +95,8 @@ export class GitUtils {
       .filter(val => {
         return chapterId
           ? minimatch(val, this.softConfig.chapterWildcardWithNumber(chapterId)) ||
-              minimatch(val, this.softConfig.metadataWildcardWithNumber(chapterId)) ||
-              minimatch(val, this.softConfig.summaryWildcardWithNumber(chapterId))
+          minimatch(val, this.softConfig.metadataWildcardWithNumber(chapterId)) ||
+          minimatch(val, this.softConfig.summaryWildcardWithNumber(chapterId))
           : true
       })
   }
@@ -111,7 +105,7 @@ export class GitUtils {
     const git = await this.git()
     const gitStatus = await git.status()
 
-    const unQuote = function(value: string) {
+    const unQuote = function (value: string) {
       if (!value) {
         return value
       }
@@ -159,8 +153,8 @@ export class GitUtils {
       subject: string
       content: string
     }[]
-    > {
-      const git = await this.git()
+  > {
+    const git = await this.git()
     const file = this.softConfig.mapFileToBeRelativeToRootPath(filepath)
     const beginBlock = '########'
     const endFormattedBlock = '------------------------ >8 ------------------------'
@@ -177,4 +171,92 @@ export class GitUtils {
         return { file, hash: logArray[0], date: moment(logArray[1]), subject: logArray[2], content: s[1] || '' }
       })
   }
+
+  public async GetGitListOfHistoryFiles(extractAll: boolean): Promise<{ hash: string, date: moment.Moment, files: string[]}[]> {
+    const git = await this.git()
+
+    const allLastCommitsPerDay = await this.GetAllLastCommitsPerDay(extractAll)
+    const value: { hash: string, date: moment.Moment, files: string[] }[] = []
+    
+    for (const commit of allLastCommitsPerDay) {
+      // debug(`hash=${commit.hash}`)
+      const allFilesInCommit = await this.GetAllFilesInCommit(commit.hash)     
+      const allChapterAndSummaryFiles = allFilesInCommit.filter(f => {
+        return (
+          this.softConfig.chapterRegex(true).test(f) ||
+          this.softConfig.chapterRegex(false).test(f) ||
+          this.softConfig.summaryRegex(true).test(f) ||
+          this.softConfig.summaryRegex(false).test(f)
+        )
+      })
+      // debug(`allChapterAndSummaryFiles=${JSON.stringify(allChapterAndSummaryFiles)}`)
+      value.push({hash: commit.hash, date: moment(commit.date).startOf('day'), files: allChapterAndSummaryFiles})
+      // for (const file of allChapterAndSummaryFiles) {
+      //   const content = await git.show([`${commit.hash}:${file}`])
+      //   const wordCount = this.markup
+      // }
+    }
+    return value
+  }
+
+  public async GetGitContentOfHistoryFile(hash: string, file: string): Promise<string>{
+    const git = await this.git()
+    const content = await git.show([`${hash}:${file}`])
+    return content
+  }
+
+  private async GetAllFilesInCommit(hash: string): Promise<string[]> {
+    const git = await this.git()
+
+    const allFiles = await git.raw(['ls-tree', '-r', '--name-only', hash])
+    return allFiles.split('\n').filter(f => f)
+  }
+
+  private async GetModifiedFilesInCommit(hash: string): Promise<string[]> {
+    const git = await this.git()
+
+    const allFiles = await git.raw(['diff-tree', '--no-commit-id', '-r', '--name-only', hash])
+    return allFiles.split('\n').filter(f => f)
+  }
+
+  private async GetAllLastCommitsPerDay(extractAll: boolean): Promise<LogFields[]> {
+    const git = await this.git()
+
+    const options: LogOptions<LogFields> = {}
+    options.splitter = ';'
+    options.format = {
+      hash: '%h',
+      date: '%aI'
+    }
+    if (!extractAll) {
+      options['--since'] = `"${moment().add(-1, 'week')}"`
+    }
+    const allCommits = await git.log(options)
+    const allDates: string[] = []
+    const allLastCommitsPerDay: LogFields[] = []
+    allCommits.all.forEach(c => {
+      const commitDate = moment(c.date)
+        .startOf('day')
+        .toString()
+      if (allDates.indexOf(commitDate) === -1) {
+        allDates.push(commitDate)
+        allLastCommitsPerDay.push(c)
+      }
+    })
+    // debug(`allLastCommitsPerDay=${JSON.stringify(allLastCommitsPerDay, null, 2)}`)
+    return allLastCommitsPerDay
+  }
+
+  private async git(): Promise<simplegit.SimpleGit> {
+    const quotepath = await this._git.addConfig('core.quotepath', '')
+    if (quotepath !== 'off') {
+      await this._git.addConfig('core.quotepath', 'off')
+    }
+    return this._git
+  }
+}
+
+interface LogFields {
+  hash: string
+  date: string
 }

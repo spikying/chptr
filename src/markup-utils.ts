@@ -143,7 +143,7 @@ export class MarkupUtils {
   }
 
   public async UpdateSingleMetadata(chapterFile: string) {
-    cli.action.start('Extracting single metadata'.actionStartColor())
+    cli.action.start(`Extracting markup from ${chapterFile}`.actionStartColor())
 
     const markupObjArr = await this.extractMarkupFromFile(chapterFile)
     const markupByFile = this.getMarkupByFile(markupObjArr)
@@ -154,40 +154,50 @@ export class MarkupUtils {
     cli.action.stop(msg)
   }
 
+  public async extractWordCountHistory2(
+    extractAll: boolean
+  ): Promise<{ date: moment.Moment; wordCountTotal: number; wordCountDiff: number }[]> {
+    const allDatedContentFiles = await this.gitUtils.GetGitListOfHistoryFiles(extractAll)
+    const value: { date: moment.Moment; wordCountTotal: number; wordCountDiff: number }[] = []
+    let tempTotal = 0
+
+    //TODO: refactor with .map.reduce?
+    for (const datedFiles of allDatedContentFiles.sort((a, b) => {
+      return a.date.valueOf() < b.date.valueOf() ? -1 : a.date.valueOf() > b.date.valueOf() ? 1 : 0
+    })) {
+      debug(`DateFiles.date=${datedFiles.date.valueOf()}`)
+      let wcTotalForDay = 0
+      for (const file of datedFiles.files) {
+        const content = await this.gitUtils.GetGitContentOfHistoryFile(datedFiles.hash, file)
+        const wordCount = this.GetWordCount(content)
+        wcTotalForDay += wordCount
+      }
+      value.push({ date: datedFiles.date, wordCountTotal: wcTotalForDay, wordCountDiff: wcTotalForDay - tempTotal })
+      tempTotal = wcTotalForDay
+    }
+    return value
+  }
+
   public async extractWordCountHistory(filepath: string, extractAll: boolean): Promise<WordCountHistoryObj[]> {
-    // const file = this.softConfig.mapFileToBeRelativeToRootPath(filepath)
-    // const beginBlock = '########'
-    // const endFormattedBlock = '------------------------ >8 ------------------------'
-    // const gitLogArgs = ['log', '-c', '--follow', `--pretty=format:"${beginBlock}%H;%aI;%s${endFormattedBlock}"`]
-    // if (!extractAll) {
-    //   gitLogArgs.push(`--since="${moment().add(-1, 'week')}"`)
-    // }
-    // const logListString = (await this.git.raw([...gitLogArgs, file])) || ''
     const logListArray = await this.gitUtils.GetGitListOfVersionsOfFile(filepath, extractAll)
 
-    // debug(`logListArray = ${JSON.stringify(logListArray)}`)
-    const logList = logListArray
-      // .map(l => {
-      //   const s = l.split(endFormattedBlock)
-      //   const logArray = s[0].split(';')
-      //   const log = { file, hash: logArray[0], date: moment(logArray[1]), subject: logArray[2] }
-      .map(l => {
-        const wcRegex = /^([+-])\s*\"wordCount\": (\d+)/
-        // const diffArray = s.length === 2 ? s[1].split('\n').filter(n => n !== '' && wcRegex.test(n)) : []
-        const diffArray = l.content.split('\n').filter(n => n !== '' && wcRegex.test(n)) //|| []
-        debug(`diffArray=${JSON.stringify(diffArray)}`)
-        const wordCountDiff = diffArray
-          .map(d => {
-            const match = wcRegex.exec(d)
-            return match ? parseInt(`${match[1]}${match[2]}`, 10) : 0
-          })
-          .reduce((previous, current) => {
-            return previous + current
-          }, 0)
+    const logList = logListArray.map(l => {
+      const wcRegex = /^([+-])\s*\"wordCount\": (\d+)/
+      // const diffArray = s.length === 2 ? s[1].split('\n').filter(n => n !== '' && wcRegex.test(n)) : []
+      const diffArray = l.content.split('\n').filter(n => n !== '' && wcRegex.test(n)) //|| []
+      debug(`diffArray=${JSON.stringify(diffArray)}`)
+      const wordCountDiff = diffArray
+        .map(d => {
+          const match = wcRegex.exec(d)
+          return match ? parseInt(`${match[1]}${match[2]}`, 10) : 0
+        })
+        .reduce((previous, current) => {
+          return previous + current
+        }, 0)
 
-        return { log: l, wordCountDiff }
-      })
-      debug(`logList = ${JSON.stringify(logList)}`)
+      return { log: l, wordCountDiff }
+    })
+    debug(`logList = ${JSON.stringify(logList)}`)
     return logList
   }
 
@@ -438,17 +448,7 @@ export class MarkupUtils {
       const initialContent = await this.fsUtils.readFileContent(file)
       try {
         const initialObj = this.softConfig.parsePerStyle(initialContent)
-        // this.softConfig.configStyle === 'JSON5'
-        //   ? JSON.parse(initialContent)
-        //   : this.softConfig.configStyle === 'YAML'
-        //   ? yaml.safeLoad(initialContent)
-        //   : {}
         const replacedObj = this.softConfig.parsePerStyle(initialContent)
-        // this.softConfig.configStyle === 'JSON5'
-        //   ? JSON.parse(initialContent)
-        //   : this.softConfig.configStyle === 'YAML'
-        //   ? yaml.safeLoad(initialContent)
-        //   : {}
 
         let changeApplied = false
         observableDiff(replacedObj.manual, this.softConfig.metadataFieldsDefaults, d => {
@@ -464,11 +464,7 @@ export class MarkupUtils {
             table.accumulator(this.softConfig.mapFileToBeRelativeToRootPath(file), expl)
           })
           const outputString = this.softConfig.stringifyPerStyle(replacedObj)
-          // this.softConfig.configStyle === 'JSON5'
-          //   ? JSON.stringify(replacedObj, null, 4)
-          //   : this.softConfig.configStyle === 'YAML'
-          //   ? yaml.safeDump(replacedObj)
-          //   : ''
+
           await this.fsUtils.writeFile(file, outputString)
         }
       } catch (err) {
