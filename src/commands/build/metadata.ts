@@ -83,7 +83,7 @@ export default class Metadata extends Command {
       //   m => m.type !== 'title'
       // )
       // debug(`flatSummaryMetadata: ${JSON.stringify(summaryWordCountMetadata, null, 4)}`)
-      await this.markupUtils.extractAndUpdateGlobalAndChapterMetadata(allChapterFilesArray, allSummaryFilesArray, this.outputFile)
+      await this.markupUtils.extractMarkupAndUpdateGlobalAndChapterMetadata(allChapterFilesArray, allSummaryFilesArray, this.outputFile)
       await this.coreUtils.preProcessAndCommitFiles('Autosave markup updates')
 
       if (showWritingRate) {

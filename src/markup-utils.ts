@@ -35,16 +35,16 @@ export class MarkupUtils {
     this.gitUtils = new GitUtils(softConfig, rootPath)
   }
 
-  public async extractAndUpdateGlobalAndChapterMetadata(
+  public async extractMarkupAndUpdateGlobalAndChapterMetadata(
     allChapterFilesArray: string[],
     allSummaryFilesArray: string[],
     outputFile: string
   ) {
-    cli.action.start('Extracting global metadata'.actionStartColor())
+    cli.action.start('Extracting markup and updating metadata'.actionStartColor())
     // debug(`starting extractGlobalMetadata`)
 
-    const flattenedChapterMarkupArray = await this.extractGlobalAndChapterMetadata(allChapterFilesArray)
-    const flattenedSummaryMarkupArray = await this.extractGlobalAndChapterMetadata(allSummaryFilesArray)
+    const flattenedChapterMarkupArray = await this.extractMarkupFromFiles(allChapterFilesArray)
+    const flattenedSummaryMarkupArray = await this.extractMarkupFromFiles(allSummaryFilesArray)
     const flattenedMarkupArray = await this.combineChapterAndSummaryMetadata(flattenedChapterMarkupArray, flattenedSummaryMarkupArray)
     await this.updateGlobalAndChapterMetadata(flattenedMarkupArray, outputFile)
     /*
@@ -86,13 +86,13 @@ export class MarkupUtils {
     cli.action.stop(`done`.actionStopColor())
     // table.show()
   }
-  public async extractGlobalAndChapterMetadata(allFilesArray: string[]): Promise<MarkupObj[]> {
+  public async extractMarkupFromFiles(allFilesArray: string[]): Promise<MarkupObj[]> {
     const extractPromises: Promise<MarkupObj[]>[] = []
     allFilesArray.forEach(cf => {
       extractPromises.push(this.extractMarkupFromFile(cf))
     })
 
-    return Promise.all(extractPromises).then(async fullMarkupArray => {
+    return Promise.all(extractPromises).then(fullMarkupArray => {
       const flattenedMarkupArray: MarkupObj[] = ([] as MarkupObj[]).concat(...fullMarkupArray)
 
       return flattenedMarkupArray
@@ -131,9 +131,13 @@ export class MarkupUtils {
     return flattenedChapterMarkupArray.concat(
       flattenedSummaryMarkupArray.map(s => {
         const summaryNum = this.softConfig.extractNumber(s.filename)
+        const summaryAtNumbering = this.softConfig.isAtNumbering(s.filename)
+
         const chapterFilename = flattenedChapterMarkupArray.filter(c => {
           const chapterNum = this.softConfig.extractNumber(c.filename)
-          return chapterNum === summaryNum
+          const chapterAtNumbering = this.softConfig.isAtNumbering(c.filename)
+
+          return chapterNum === summaryNum && chapterAtNumbering === summaryAtNumbering
         })[0].filename
         s.filename = chapterFilename
         s.summary = true
@@ -207,7 +211,8 @@ export class MarkupUtils {
     debug(`in ExtractMarkup; filePath=${filepath}`)
 
     // try {
-    const summary = this.softConfig.summaryRegex(false).test(filepath)
+    const isAtNumbering = this.softConfig.isAtNumbering(filepath)
+    const summary = this.softConfig.summaryRegex(isAtNumbering).test(filepath)
     const initialContent = await this.fsUtils.readFileContent(path.join(this.rootPath, filepath))
     const markupRegex = /(?:{{(\d+)}}\n)|{([^}]*?)\s?:\s?(.*?)}/gm
     const propRegex = /(?:{{(\d+)}}\n)|{([^:,.!\n{}]+?)}/gm
@@ -244,6 +249,12 @@ export class MarkupUtils {
       }
     }
     const wordCount = this.GetWordCount(initialContent)
+    if (wordCount === 4) {
+      debug(`filename: ${this.softConfig.mapFileToBeRelativeToRootPath(filepath)}`)
+      debug(`initialContent=${initialContent}`)
+
+      await cli.anykey()
+    }
     resultArray.push({
       filename: this.softConfig.mapFileToBeRelativeToRootPath(filepath),
       type: summary ? 'summaryWordCount' : 'wordCount',
