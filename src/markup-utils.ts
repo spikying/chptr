@@ -249,12 +249,6 @@ export class MarkupUtils {
       }
     }
     const wordCount = this.GetWordCount(initialContent)
-    if (wordCount === 4) {
-      debug(`filename: ${this.softConfig.mapFileToBeRelativeToRootPath(filepath)}`)
-      debug(`initialContent=${initialContent}`)
-
-      await cli.anykey()
-    }
     resultArray.push({
       filename: this.softConfig.mapFileToBeRelativeToRootPath(filepath),
       type: summary ? 'summaryWordCount' : 'wordCount',
