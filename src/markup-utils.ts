@@ -160,32 +160,32 @@ export class MarkupUtils {
 
   public async extractWordCountHistory2(recalculateWritingRate: boolean): Promise<WordCountObject[]> {
     const wordCountData = this.softConfig.WordCountData
+    const dateSortAscFunction = (a: { date: moment.Moment }, b: { date: moment.Moment }) => {
+      return a.date.valueOf() < b.date.valueOf() ? -1 : a.date.valueOf() > b.date.valueOf() ? 1 : 0
+    }
 
+    const today = moment(moment().toDate())
     const daysFromToday =
-      recalculateWritingRate || wordCountData.length < 2
+      recalculateWritingRate || wordCountData.length < 3
         ? 0
-        : moment().diff(
-            wordCountData.sort((a, b) => {
-              return a.date.valueOf() > b.date.valueOf() ? -1 : a.date.valueOf() < b.date.valueOf() ? 1 : 0
-            })[1].date,
-            'days'
-        )
+        : today.diff(wordCountData.sort((a, b) => -dateSortAscFunction(a, b))[2].date.toDate(), 'days')
+    debug(`day diffed from today=${wordCountData.sort((a, b) => -dateSortAscFunction(a, b))[2].date.toDate()}`)
     debug(`daysFromToday=${daysFromToday}`)
-    const allDatedContentFiles = await this.gitUtils.GetGitListOfHistoryFiles(daysFromToday)
+    const allDatedContentFiles = (await this.gitUtils.GetGitListOfHistoryFiles(daysFromToday)).sort(dateSortAscFunction)
+
     // const value: WordCountObject[] = []
     let tempChapterTotal = 0
     let tempSummaryTotal = 0
 
     //TODO: refactor with .map.reduce?
-    for (const datedFiles of allDatedContentFiles.sort((a, b) => {
-      return a.date.valueOf() < b.date.valueOf() ? -1 : a.date.valueOf() > b.date.valueOf() ? 1 : 0
-    })) {
-      debug(`DateFiles.date=${datedFiles.date.valueOf()}`)
+    for (const datedFiles of allDatedContentFiles) {
+      debug(`DateFiles.date=${datedFiles.date.toJSON()}`)
       let wcChapterTotalForDay = 0
       let wcSummaryTotalForDay = 0
       for (const file of datedFiles.chapterFiles) {
         const content = await this.gitUtils.GetGitContentOfHistoryFile(datedFiles.hash, file)
         const wordCount = this.GetWordCount(content)
+        // debug(`file:${file} wordCount=${wordCount}`)
         wcChapterTotalForDay += wordCount
       }
       for (const file of datedFiles.summaryFiles) {
@@ -193,7 +193,7 @@ export class MarkupUtils {
         const wordCount = this.GetWordCount(content)
         wcSummaryTotalForDay += wordCount
       }
-      const indexOfDate = wordCountData.map(wc => wc.date.date).indexOf(datedFiles.date.date)
+      const indexOfDate = wordCountData.map(wc => wc.date.format('YYYY-MM-DD')).indexOf(datedFiles.date.format('YYYY-MM-DD'))
       const wordCountForDate: WordCountObject = {
         date: datedFiles.date,
         wordCountChapterTotal: wcChapterTotalForDay,
@@ -201,10 +201,15 @@ export class MarkupUtils {
         wordCountSummaryTotal: wcSummaryTotalForDay,
         wordCountSummaryDiff: wcSummaryTotalForDay - tempSummaryTotal
       }
+      debug(`indexOfDate=${indexOfDate}`)
+      debug(`wordCountData[indexOfDate]=${JSON.stringify(wordCountData[indexOfDate])}`)
+      debug(`wordCountForDate=${JSON.stringify(wordCountForDate)}`)
       if (indexOfDate === -1) {
         wordCountData.push(wordCountForDate)
       } else {
-        wordCountData[indexOfDate] = wordCountForDate
+        if (tempChapterTotal > 0 || tempSummaryTotal > 0) {
+          wordCountData[indexOfDate] = wordCountForDate
+        }
       }
 
       tempChapterTotal = wcChapterTotalForDay
@@ -212,9 +217,7 @@ export class MarkupUtils {
     }
     this.softConfig.WordCountData = wordCountData
     const maxFive = Math.max(wordCountData.length - 5, 0)
-    return wordCountData
-      .sort((a, b) => (a.date.valueOf() < b.date.valueOf() ? -1 : a.date.valueOf() > b.date.valueOf() ? 1 : 0))
-      .slice(maxFive)
+    return wordCountData.sort(dateSortAscFunction).slice(maxFive)
   }
 
   public async extractWordCountHistory(filepath: string, extractAll: boolean): Promise<WordCountHistoryObj[]> {
@@ -224,7 +227,7 @@ export class MarkupUtils {
       const wcRegex = /^([+-])\s*\"wordCount\": (\d+)/
       // const diffArray = s.length === 2 ? s[1].split('\n').filter(n => n !== '' && wcRegex.test(n)) : []
       const diffArray = l.content.split('\n').filter(n => n !== '' && wcRegex.test(n)) //|| []
-      debug(`diffArray=${JSON.stringify(diffArray)}`)
+      // debug(`diffArray=${JSON.stringify(diffArray)}`)
       const wordCountDiff = diffArray
         .map(d => {
           const match = wcRegex.exec(d)
@@ -236,14 +239,14 @@ export class MarkupUtils {
 
       return { log: l, wordCountDiff }
     })
-    debug(`logList = ${JSON.stringify(logList)}`)
+    // debug(`logList = ${JSON.stringify(logList)}`)
     return logList
   }
 
   public async extractMarkupFromFile(filepath: string): Promise<MarkupObj[]> {
     const resultArray: MarkupObj[] = []
 
-    debug(`in ExtractMarkup; filePath=${filepath}`)
+    // debug(`in ExtractMarkup; filePath=${filepath}`)
 
     // try {
     const isAtNumbering = this.softConfig.isAtNumbering(filepath)
@@ -303,7 +306,7 @@ export class MarkupUtils {
     //   throw new ChptrError(err.toString().errorColor())
     // }
 
-    debug(`end of extractMarkup.  result=${JSON.stringify(resultArray)}`)
+    // debug(`end of extractMarkup.  result=${JSON.stringify(resultArray)}`)
     return resultArray
   }
 
@@ -365,7 +368,7 @@ export class MarkupUtils {
       const computedMarkup: any = {}
       const summaryMarkup: any = {}
       const markupArray = markupByFile[file]
-      debug(`file: ${file} markupArray=${JSON.stringify(markupArray)}`)
+      // debug(`file: ${file} markupArray=${JSON.stringify(markupArray)}`)
 
       markupArray.forEach((markup: MarkupObj) => {
         if (markup.summary) {
@@ -407,7 +410,7 @@ export class MarkupUtils {
       const updatedContent = this.softConfig.stringifyPerStyle(updatedObj)
 
       if (initialContent !== updatedContent) {
-        debug(`metadataFilePath=${metadataFilePath} updatedContent=${updatedContent}`)
+        // debug(`metadataFilePath=${metadataFilePath} updatedContent=${updatedContent}`)
         await this.fsUtils.writeFile(metadataFilePath, updatedContent)
         //todo: move to deep-diff? at least test with yaml config files
         modifiedFiles.push({
@@ -484,7 +487,7 @@ export class MarkupUtils {
     const allMetadataFiles = await this.softConfig.getAllMetadataFiles()
     const table = tableize('file', 'changes')
     for (const file of allMetadataFiles) {
-      debug(`file=${file}`)
+      // debug(`file=${file}`)
       const initialContent = await this.fsUtils.readFileContent(file)
       try {
         const initialObj = this.softConfig.parsePerStyle(initialContent)
