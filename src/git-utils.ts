@@ -57,7 +57,7 @@ export class GitUtils {
       cli.action.stop(
         `\nCommited and pushed ${commitSummary.commit.resultHighlighColor()}:\n${message.infoColor()}\nFile${
           toStageFiles.length > 1 ? 's' : ''
-          }:${toStagePretty}`.actionStopColor()
+        }:${toStagePretty}`.actionStopColor()
       )
       // } catch (err) {
       //   this.error(err.toString().errorColor())
@@ -69,14 +69,14 @@ export class GitUtils {
     const git = await this.git()
     const gitStatus = await git.status()
 
-    const unQuote = function (value: string) {
+    const unQuote = function(value: string) {
       if (!value) {
         return value
       }
       return value.replace(/"(.*)"/, '$1')
     }
 
-    const onlyUnique = function (value: any, index: number, self: any) {
+    const onlyUnique = function(value: any, index: number, self: any) {
       return self.indexOf(value) === index
     }
 
@@ -95,8 +95,8 @@ export class GitUtils {
       .filter(val => {
         return chapterId
           ? minimatch(val, this.softConfig.chapterWildcardWithNumber(chapterId)) ||
-          minimatch(val, this.softConfig.metadataWildcardWithNumber(chapterId)) ||
-          minimatch(val, this.softConfig.summaryWildcardWithNumber(chapterId))
+              minimatch(val, this.softConfig.metadataWildcardWithNumber(chapterId)) ||
+              minimatch(val, this.softConfig.summaryWildcardWithNumber(chapterId))
           : true
       })
   }
@@ -105,7 +105,7 @@ export class GitUtils {
     const git = await this.git()
     const gitStatus = await git.status()
 
-    const unQuote = function (value: string) {
+    const unQuote = function(value: string) {
       if (!value) {
         return value
       }
@@ -139,9 +139,6 @@ export class GitUtils {
     return git.show([`HEAD:${this.softConfig.mapFileToBeRelativeToRootPath(filepath).replace(/\\/, '/')}`])
   }
 
-  // public async raw(commands: string | string[]): Promise<string> {
-  //   return git.raw(commands)
-  // }
   public async GetGitListOfVersionsOfFile(
     filepath: string,
     extractAll: boolean
@@ -172,34 +169,26 @@ export class GitUtils {
       })
   }
 
-  public async GetGitListOfHistoryFiles(extractAll: boolean): Promise<{ hash: string, date: moment.Moment, files: string[]}[]> {
-    const git = await this.git()
+  public async GetGitListOfHistoryFiles(
+    sinceDays: number
+  ): Promise<{ hash: string; date: moment.Moment; chapterFiles: string[]; summaryFiles: string[] }[]> {
+    const allLastCommitsPerDay = await this.GetAllLastCommitsPerDay(sinceDays)
+    const value: { hash: string; date: moment.Moment; chapterFiles: string[]; summaryFiles: string[] }[] = []
 
-    const allLastCommitsPerDay = await this.GetAllLastCommitsPerDay(extractAll)
-    const value: { hash: string, date: moment.Moment, files: string[] }[] = []
-    
     for (const commit of allLastCommitsPerDay) {
-      // debug(`hash=${commit.hash}`)
-      const allFilesInCommit = await this.GetAllFilesInCommit(commit.hash)     
-      const allChapterAndSummaryFiles = allFilesInCommit.filter(f => {
-        return (
-          this.softConfig.chapterRegex(true).test(f) ||
-          this.softConfig.chapterRegex(false).test(f) ||
-          this.softConfig.summaryRegex(true).test(f) ||
-          this.softConfig.summaryRegex(false).test(f)
-        )
+      const allFilesInCommit = await this.GetAllFilesInCommit(commit.hash)
+      const chapterFiles = allFilesInCommit.filter(f => {
+        return this.softConfig.chapterRegex(true).test(f) || this.softConfig.chapterRegex(false).test(f)
       })
-      // debug(`allChapterAndSummaryFiles=${JSON.stringify(allChapterAndSummaryFiles)}`)
-      value.push({hash: commit.hash, date: moment(commit.date).startOf('day'), files: allChapterAndSummaryFiles})
-      // for (const file of allChapterAndSummaryFiles) {
-      //   const content = await git.show([`${commit.hash}:${file}`])
-      //   const wordCount = this.markup
-      // }
+      const summaryFiles = allFilesInCommit.filter(f => {
+        return this.softConfig.summaryRegex(true).test(f) || this.softConfig.summaryRegex(false).test(f)
+      })
+      value.push({ hash: commit.hash, date: moment(commit.date).startOf('day'), chapterFiles, summaryFiles })
     }
     return value
   }
 
-  public async GetGitContentOfHistoryFile(hash: string, file: string): Promise<string>{
+  public async GetGitContentOfHistoryFile(hash: string, file: string): Promise<string> {
     const git = await this.git()
     const content = await git.show([`${hash}:${file}`])
     return content
@@ -219,7 +208,7 @@ export class GitUtils {
     return allFiles.split('\n').filter(f => f)
   }
 
-  private async GetAllLastCommitsPerDay(extractAll: boolean): Promise<LogFields[]> {
+  private async GetAllLastCommitsPerDay(sinceDays: number): Promise<LogFields[]> {
     const git = await this.git()
 
     const options: LogOptions<LogFields> = {}
@@ -228,8 +217,8 @@ export class GitUtils {
       hash: '%h',
       date: '%aI'
     }
-    if (!extractAll) {
-      options['--since'] = `"${moment().add(-1, 'week')}"`
+    if (sinceDays > 0) {
+      options['--since'] = `"${moment().subtract(sinceDays, 'days')}"`
     }
     const allCommits = await git.log(options)
     const allDates: string[] = []

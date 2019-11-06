@@ -98,6 +98,57 @@ documentclass: bookest
     return this._emptyFileString
   }
 
+  private _wordCountObject: WordCountObject[] = []
+
+  public set WordCountData(value: WordCountObject[]) {
+    const uniqueValue = []
+    const map = new Map()
+    for (const item of value) {
+      if (!map.has(item.date.format('YYYY-MM-DD'))) {
+        map.set(item.date.format('YYYY-MM-DD'), true)
+        uniqueValue.push(item)
+      }
+    }
+    this._wordCountObject = uniqueValue
+
+    const wordCountFilePath = path.join(this.buildDirectory, `wordCountData.${this.configStyle.toLowerCase()}`)
+    const dto: WordCountDTO[] = this._wordCountObject.map(o => {
+      const v: WordCountDTO = {
+        date: o.date.format('YYYY-MM-DD'),
+        wordCountChapterTotal: o.wordCountChapterTotal,
+        wordCountSummaryTotal: o.wordCountSummaryTotal,
+        wordCountChapterDiff: o.wordCountChapterDiff,
+        wordCountSummaryDiff: o.wordCountSummaryDiff
+      }
+      return v
+    })
+    this.fsUtils.writeFile(wordCountFilePath, this.stringifyPerStyle(dto))
+  }
+  public get WordCountData(): WordCountObject[] {
+    const wordCountFilePath = path.join(this.buildDirectory, `wordCountData.${this.configStyle.toLowerCase()}`)
+    const getFromFile = () => {
+      try {
+        const wordCountContent = this.fsUtils.loadFileSync(wordCountFilePath)
+        const wco: WordCountDTO[] = this.parsePerStyle(wordCountContent)
+        this._wordCountObject = wco.map<WordCountObject>(o => {
+          const v: WordCountObject = {
+            date: moment(o.date),
+            wordCountChapterTotal: o.wordCountChapterTotal,
+            wordCountSummaryTotal: o.wordCountSummaryTotal,
+            wordCountChapterDiff: o.wordCountChapterDiff,
+            wordCountSummaryDiff: o.wordCountSummaryDiff
+          }
+          return v
+        })
+      } catch (err) {
+        cli.warn('No existing wordCount file')
+      }
+
+      return this._wordCountObject
+    }
+    return this._wordCountObject.length > 0 ? this._wordCountObject : getFromFile()
+  }
+
   // public templateReadmeString = `\n# ${this.config.projectTitle}\n\nA novel by ${this.config.projectAuthor.name}.`
 
   private _config: ConfigObject | undefined
@@ -541,4 +592,20 @@ documentclass: bookest
     }
     return result
   }
+}
+
+export interface WordCountObject {
+  date: moment.Moment
+  wordCountChapterTotal: number
+  wordCountSummaryTotal: number
+  wordCountChapterDiff: number
+  wordCountSummaryDiff: number
+}
+
+interface WordCountDTO {
+  date: string
+  wordCountChapterTotal: number
+  wordCountSummaryTotal: number
+  wordCountChapterDiff: number
+  wordCountSummaryDiff: number
 }

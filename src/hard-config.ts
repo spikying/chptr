@@ -28,6 +28,10 @@ export class HardConfig {
     return path.join(this.configPath, 'metadataFields.yaml')
   }
 
+  // public get WordCountDataFilenameWithoutExtension(): string {
+  //   return 'wordCountData'
+  // }
+
   public get emptyFilePath(): string {
     return path.join(this.configPath, 'empty.md')
   }

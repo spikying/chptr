@@ -9,7 +9,7 @@ import { ChapterId } from './chapter-id'
 import { ChptrError } from './chptr-error'
 import { FsUtils } from './fs-utils'
 import { GitUtils } from './git-utils'
-import { SoftConfig } from './soft-config'
+import { SoftConfig, WordCountObject } from './soft-config'
 import { tableize } from './ui-utils'
 
 const debug = d('markup-utils')
@@ -121,7 +121,7 @@ export class MarkupUtils {
 
     const modifiedMetadataFiles = await this.writeMetadataInEachFile(markupByFile)
     table.accumulatorArray(
-      modifiedMetadataFiles.map(val => ({ from: this.softConfig.mapFileToBeRelativeToRootPath(val.file), to: 'updated'  })) //to: val.diff
+      modifiedMetadataFiles.map(val => ({ from: this.softConfig.mapFileToBeRelativeToRootPath(val.file), to: 'updated' })) //to: val.diff
     )
 
     table.show()
@@ -158,28 +158,63 @@ export class MarkupUtils {
     cli.action.stop(msg)
   }
 
-  public async extractWordCountHistory2(
-    extractAll: boolean
-  ): Promise<{ date: moment.Moment; wordCountTotal: number; wordCountDiff: number }[]> {
-    const allDatedContentFiles = await this.gitUtils.GetGitListOfHistoryFiles(extractAll)
-    const value: { date: moment.Moment; wordCountTotal: number; wordCountDiff: number }[] = []
-    let tempTotal = 0
+  public async extractWordCountHistory2(recalculateWritingRate: boolean): Promise<WordCountObject[]> {
+    const wordCountData = this.softConfig.WordCountData
+
+    const daysFromToday =
+      recalculateWritingRate || wordCountData.length < 2
+        ? 0
+        : moment().diff(
+            wordCountData.sort((a, b) => {
+              return a.date.valueOf() > b.date.valueOf() ? -1 : a.date.valueOf() < b.date.valueOf() ? 1 : 0
+            })[1].date,
+            'days'
+        )
+    debug(`daysFromToday=${daysFromToday}`)
+    const allDatedContentFiles = await this.gitUtils.GetGitListOfHistoryFiles(daysFromToday)
+    // const value: WordCountObject[] = []
+    let tempChapterTotal = 0
+    let tempSummaryTotal = 0
 
     //TODO: refactor with .map.reduce?
     for (const datedFiles of allDatedContentFiles.sort((a, b) => {
       return a.date.valueOf() < b.date.valueOf() ? -1 : a.date.valueOf() > b.date.valueOf() ? 1 : 0
     })) {
       debug(`DateFiles.date=${datedFiles.date.valueOf()}`)
-      let wcTotalForDay = 0
-      for (const file of datedFiles.files) {
+      let wcChapterTotalForDay = 0
+      let wcSummaryTotalForDay = 0
+      for (const file of datedFiles.chapterFiles) {
         const content = await this.gitUtils.GetGitContentOfHistoryFile(datedFiles.hash, file)
         const wordCount = this.GetWordCount(content)
-        wcTotalForDay += wordCount
+        wcChapterTotalForDay += wordCount
       }
-      value.push({ date: datedFiles.date, wordCountTotal: wcTotalForDay, wordCountDiff: wcTotalForDay - tempTotal })
-      tempTotal = wcTotalForDay
+      for (const file of datedFiles.summaryFiles) {
+        const content = await this.gitUtils.GetGitContentOfHistoryFile(datedFiles.hash, file)
+        const wordCount = this.GetWordCount(content)
+        wcSummaryTotalForDay += wordCount
+      }
+      const indexOfDate = wordCountData.map(wc => wc.date.date).indexOf(datedFiles.date.date)
+      const wordCountForDate: WordCountObject = {
+        date: datedFiles.date,
+        wordCountChapterTotal: wcChapterTotalForDay,
+        wordCountChapterDiff: wcChapterTotalForDay - tempChapterTotal,
+        wordCountSummaryTotal: wcSummaryTotalForDay,
+        wordCountSummaryDiff: wcSummaryTotalForDay - tempSummaryTotal
+      }
+      if (indexOfDate === -1) {
+        wordCountData.push(wordCountForDate)
+      } else {
+        wordCountData[indexOfDate] = wordCountForDate
+      }
+
+      tempChapterTotal = wcChapterTotalForDay
+      tempSummaryTotal = wcSummaryTotalForDay
     }
-    return value
+    this.softConfig.WordCountData = wordCountData
+    const maxFive = Math.max(wordCountData.length - 5, 0)
+    return wordCountData
+      .sort((a, b) => (a.date.valueOf() < b.date.valueOf() ? -1 : a.date.valueOf() > b.date.valueOf() ? 1 : 0))
+      .slice(maxFive)
   }
 
   public async extractWordCountHistory(filepath: string, extractAll: boolean): Promise<WordCountHistoryObj[]> {
@@ -519,3 +554,11 @@ interface MarkupByFile {
     }
   ]
 }
+
+// interface WordCountsPerDay {
+//   date: moment.Moment
+//   wordCountTotalChapters: number
+//   wordCountDiffChapters: number
+//   wordCountTotalSummaries: number
+//   wordCountDiffSummaries: number
+// }

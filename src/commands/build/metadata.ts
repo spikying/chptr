@@ -24,9 +24,9 @@ export default class Metadata extends Command {
     }),
     showWritingRate: flags.string({
       char: 's',
-      description: 'Show word count per day in varying details',
-      options: ['all', 'short', 'none', 'export'],
-      default: 'short'
+      description: 'Show word count per day.  Overwrite option recalculates it all from scratch.',
+      options: ['yes', 'no', 'overwrite'],
+      default: 'yes'
     })
   }
 
@@ -57,9 +57,10 @@ export default class Metadata extends Command {
   public async RunMetadata(flags: any) {
     try {
       const wrOption = flags.showWritingRate
-      const showWritingRate = wrOption === 'all' || wrOption === 'short' || wrOption === 'export'
-      const showWritingRateDetails = wrOption === 'all' || wrOption === 'export'
-      const exportWritingRate = wrOption === 'export'
+      const showWritingRate = wrOption === 'yes' || wrOption === 'overwrite'
+      const recalculateWritingRate = wrOption === 'overwrite'
+      // const showWritingRateDetails = wrOption === 'all' || wrOption === 'export'
+      // const exportWritingRate = wrOption === 'export'
 
       await this.coreUtils.preProcessAndCommitFiles('Autosave before build')
 
@@ -89,18 +90,20 @@ export default class Metadata extends Command {
       if (showWritingRate) {
         cli.action.start('Extracting word count stats for all content files'.actionStartColor())
 
-        const wordCountHistory = await this.markupUtils.extractWordCountHistory2(false)
-        const tableSummary = tableize('Date', 'Word diff')
-        let firstLine = false
-        for (const wcHistory of wordCountHistory) {
-          const result = firstLine
-            ? `${wcHistory.wordCountDiff} (total ${wcHistory.wordCountTotal})`
-            : `... (total ${wcHistory.wordCountTotal})`
-          firstLine = true
-          tableSummary.accumulator(wcHistory.date.format('YYYY-MM-DD (ddd)'), result)
+        const wordCountHistory = await this.markupUtils.extractWordCountHistory2(recalculateWritingRate)
+        if (wordCountHistory.length > 0) {
+          const tableSummary = tableize('Date', 'Word diff')
+          for (const wcHistory of wordCountHistory) {
+            debug(`wcHistory: ${JSON.stringify(wcHistory)}`)
+            debug(`typeof wcHistory.date: ${typeof wcHistory.date}`)
+            const result = `${wcHistory.wordCountChapterDiff} | ${wcHistory.wordCountSummaryDiff} (total ${wcHistory.wordCountChapterTotal} | ${wcHistory.wordCountSummaryTotal})`
+            tableSummary.accumulator(wcHistory.date.format('YYYY-MM-DD (ddd)'), result)
+          }
+          tableSummary.show()
+        } else {
+          cli.warn('No history in repository')
         }
-        tableSummary.show()
-        cli.action.stop()
+        cli.action.stop('done'.actionStopColor())
       }
 
       return
