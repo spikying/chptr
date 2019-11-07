@@ -6,6 +6,7 @@ import * as path from 'path'
 
 import { ChptrError } from '../../chptr-error'
 import { WordCountHistoryObj } from '../../markup-utils'
+import { WordCountObject } from '../../soft-config'
 import { tableize } from '../../ui-utils'
 import { d } from '../base'
 import Command from '../compactable-base'
@@ -91,12 +92,45 @@ export default class Metadata extends Command {
         cli.action.start('Extracting word count stats for all content files'.actionStartColor())
 
         const wordCountHistory = await this.markupUtils.extractWordCountHistory2(recalculateWritingRate)
+        const numDigits = (val: number) => {
+          const digits = Math.max(Math.floor(Math.log10(Math.abs(val))), 0) + 1
+          return Math.abs(val) === val ? digits : digits + 1
+        }
+        const stringifyNumber = (val: number, numDigits: number): string => {
+          const s = val.toString()
+          const spaces = Math.max(numDigits - s.length, 0)
+          if (spaces > 0) {
+            return ' '.repeat(spaces).concat(s)
+          } else {
+            return s
+          }
+        }
+        const digitsCount = (wch: WordCountObject[], property: string): number => {
+          return wch
+            .map((val: WordCountObject) => numDigits(val[property] as number))
+            .reduce((pv, cv) => {
+              return Math.max(pv, cv)
+            }, 0)
+        }
+
         if (wordCountHistory.length > 0) {
-          const tableSummary = tableize('Date', 'Word diff')
+          const digits: { [index: string]: number } = {}
+          for (const prop of ['wordCountChapterDiff', 'wordCountSummaryDiff', 'wordCountChapterTotal', 'wordCountSummaryTotal']) {
+            digits[prop] = digitsCount(wordCountHistory, prop)
+          }
+          debug(`digits=${JSON.stringify(digits)}`)
+
+          const tableSummary = tableize('Date', 'Word count diff chapters | summaries (total chapters | summaries)')
           for (const wcHistory of wordCountHistory) {
             debug(`wcHistory: ${JSON.stringify(wcHistory)}`)
             debug(`typeof wcHistory.date: ${typeof wcHistory.date}`)
-            const result = `${wcHistory.wordCountChapterDiff} | ${wcHistory.wordCountSummaryDiff} (total ${wcHistory.wordCountChapterTotal} | ${wcHistory.wordCountSummaryTotal})`
+            const result = `${stringifyNumber(wcHistory.wordCountChapterDiff, digits.wordCountChapterDiff)} | ${stringifyNumber(
+              wcHistory.wordCountSummaryDiff,
+              digits.wordCountSummaryDiff
+            )} (total ${stringifyNumber(wcHistory.wordCountChapterTotal, digits.wordCountChapterTotal)} | ${stringifyNumber(
+              wcHistory.wordCountSummaryTotal,
+              digits.wordCountSummaryTotal
+            )})`
             tableSummary.accumulator(wcHistory.date.format('YYYY-MM-DD (ddd)'), result)
           }
           tableSummary.show()
@@ -105,87 +139,6 @@ export default class Metadata extends Command {
         }
         cli.action.stop('done'.actionStopColor())
       }
-
-      return
-
-      const allMetadataFilesArray = (await this.fsUtils.listFiles(
-        path.join(this.rootPath, this.softConfig.metadataWildcard(false))
-      )).concat(await this.fsUtils.listFiles(path.join(this.rootPath, this.softConfig.metadataWildcard(true))))
-
-      const wordCountExtractPromises: Promise<WordCountHistoryObj[]>[] = []
-      allMetadataFilesArray.forEach(m => {
-        wordCountExtractPromises.push(this.markupUtils.extractWordCountHistory(m, exportWritingRate))
-      })
-      await Promise.all(wordCountExtractPromises).then(async fullMetaArray => {
-        //flatten equivalent
-        const flattenedWordCountArray: WordCountHistoryObj[] = ([] as WordCountHistoryObj[])
-          .concat(...fullMetaArray)
-          .filter(m => m.wordCountDiff !== 0)
-
-        const diffByDate: any = {}
-
-        const mappedDiffArray = flattenedWordCountArray.map(m => ({
-          file: m.log.file,
-          date: m.log.date.format('YYYY-MM-DD'),
-          diff: m.wordCountDiff
-        }))
-
-        debug(`mappedArray=${JSON.stringify(mappedDiffArray.filter(d => d.date === moment().format('YYYY-MM-DD')), null, 2)}`)
-
-        if (exportWritingRate) {
-          cli.action.start('Writing rate CSV file'.actionStartColor())
-          let csvContent = 'Date;Chapter Number;Word Count Diff\n'
-
-          mappedDiffArray.forEach((m: { date: any; file: any; diff: any }) => {
-            const isAtNumbering = this.softConfig.isAtNumbering(m.file)
-            const chapterNumberMatch = this.softConfig.metadataRegex(isAtNumbering).exec(m.file)
-            const chapterNumber = chapterNumberMatch ? (isAtNumbering ? '@' : '') + chapterNumberMatch[1] : '?'
-            csvContent += `${m.date};${chapterNumber};${m.diff}\n`
-          })
-          const writingRateFilePath = path.join(this.softConfig.buildDirectory, 'writingRate.csv')
-          await this.fsUtils.writeFile(writingRateFilePath, csvContent)
-          cli.action.stop(`Created ${writingRateFilePath}`.actionStopColor())
-        }
-
-        //todo: change to Reduce function
-        mappedDiffArray.forEach((m: { date: any; file: any; diff: any }) => {
-          if (!diffByDate[m.date]) {
-            diffByDate[m.date] = { total: 0 }
-          }
-          if (!diffByDate[m.date][m.file]) {
-            diffByDate[m.date][m.file] = m.diff
-          } else {
-            diffByDate[m.date][m.file] += m.diff
-          }
-          diffByDate[m.date].total += m.diff
-        })
-
-        if (showWritingRate) {
-          cli.info(`Writing rate:`.infoColor())
-          const tableSummary = tableize('Date', 'Word diff')
-          const tableDetails = tableize('Date | Chapter file #', 'Word diff')
-          for (const date of Object.keys(diffByDate).sort()) {
-            tableSummary.accumulator(date, diffByDate[date].total.toString())
-
-            if (showWritingRateDetails) {
-              for (const metafile of Object.keys(diffByDate[date])) {
-                if (metafile !== 'total') {
-                  const isAtNumbering = this.softConfig.isAtNumbering(metafile)
-                  const chapterNumberMatch = this.softConfig.metadataRegex(isAtNumbering).exec(metafile)
-                  const chapterNumber = chapterNumberMatch ? (isAtNumbering ? '@' : '') + chapterNumberMatch[1] : '?'
-
-                  let wordDiff: string = diffByDate[date][metafile].toString()
-                  wordDiff = wordDiff.resultSecondaryColor()
-
-                  tableDetails.accumulator(`${date.infoColor()} # ${chapterNumber}`, wordDiff)
-                }
-              }
-            }
-          }
-          tableDetails.show()
-          tableSummary.show()
-        }
-      })
     } catch (err) {
       throw new ChptrError(err, 'build:RunMetadata', 3)
     }

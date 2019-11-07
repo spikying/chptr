@@ -595,6 +595,7 @@ documentclass: bookest
 }
 
 export interface WordCountObject {
+  [index: string]: number | moment.Moment
   date: moment.Moment
   wordCountChapterTotal: number
   wordCountSummaryTotal: number
