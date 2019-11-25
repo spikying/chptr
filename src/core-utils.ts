@@ -324,6 +324,25 @@ export class CoreUtils {
     }
     await Promise.all(moveTempPromises)
 
+    // let aForAtNumbering = false
+
+    // for (const file of this.softConfig.filesWithChapterNumbersInContent) {
+    //   let content = await this.fsUtils.readFileContent(file)
+    //   for (const from of toRenameFiles.map(f => {
+    //     return {
+    //       number: this.softConfig.extractNumber(f.file),
+    //       isAtNumber: this.softConfig.isAtNumbering(f.file)
+    //     }
+    //   })) {
+    //     const fromNumberRE = new RegExp(`(?<!%|\w)(${from.isAtNumber ? '(a|@)' : '()'}0*${from.number})(?!%|\w)`, 'gm')
+    //     //  (?<!%|\w)((?:a|@)?\d+)(?!%|\w)
+    //     content = content.replace(fromNumberRE, '%$1%')
+    //     aForAtNumbering = aForAtNumbering || content.replace(fromNumberRE, '$2') === 'a'
+    //   }
+    //   await this.fsUtils.writeFile(file, content)
+    // }
+    const aForAtNumbering = await this.moveChapterNumbersInFileContentToTemp(toRenameFiles.map(trf => trf.file))
+
     cli.action.stop(tempDir.actionStopColor())
 
     cli.action.start('Moving files to their final states'.actionStartColor())
@@ -347,6 +366,30 @@ export class CoreUtils {
       moveBackPromises.push(this.gitUtils.mv(fromFilename, toFilename))
     }
     await Promise.all(moveBackPromises)
+
+    // for (const file of this.softConfig.filesWithChapterNumbersInContent) {
+    //   let content = await this.fsUtils.readFileContent(file)
+    //   for (const moveNumbers of toRenameFiles.map(f => {
+    //     return {
+    //       fromNumber: this.softConfig.extractNumber(f.file),
+    //       fromIsAtNumber: this.softConfig.isAtNumbering(f.file),
+    //       toNumber: f.newFileNumber
+    //     }
+    //   })) {
+    //     const fromNumberRE = new RegExp(`(?<!\w)(%${moveNumbers.fromIsAtNumber ? '(?:a|@)' : ''}0*${moveNumbers.fromNumber}%)(?!\w)`, 'gm')
+    //     //  (?<!%|\w)((?:a|@)?\d+)(?!%|\w)
+    //     content = content.replace(fromNumberRE, `${destinationId.isAtNumber ? (aForAtNumbering ? 'a' : '@') : ''}${moveNumbers.toNumber}`)
+    //   }
+    //   await this.fsUtils.writeFile(file, content)
+    // }
+
+    const fixedDigits = this.statistics.getMaxNecessaryDigits(destinationId.isAtNumber)
+    await this.moveChapterNumbersInFileContentToDestination(
+      toRenameFiles.map(trf => {
+        return { file: trf.file, destId: new ChapterId(trf.newFileNumber, destinationId.isAtNumber, fixedDigits) }
+      }),
+      aForAtNumbering
+    )
 
     await this.fsUtils.deleteEmptySubDirectories(this.rootPath)
 
@@ -410,12 +453,16 @@ export class CoreUtils {
     cli.action.start('Compacting file numbers'.actionStartColor())
 
     const table = tableize('from', 'to')
-    const moves: { fromFilename: string; toFilename: string }[] = []
+    const moves: { fromFilename: string; toFilename: string; destDigits: number }[] = []
     const movePromises: Promise<MoveSummary>[] = []
+    const fromFilenames: string[] = []
     const { tempDir, removeTempDir } = await this.fsUtils.getTempDir(this.rootPath)
     const tempDirForGit = this.softConfig.mapFileToBeRelativeToRootPath(tempDir)
 
     for (const b of [true, false]) {
+      await this.statistics.refreshStats()
+      const destDigits = this.statistics.getMaxNecessaryDigits(b)
+
       const wildcards = [this.softConfig.chapterWildcard(b), this.softConfig.metadataWildcard(b), this.softConfig.summaryWildcard(b)]
       for (const wildcard of wildcards) {
         const files = await this.fsUtils.listFiles(path.join(this.rootPath, wildcard))
@@ -425,7 +472,7 @@ export class CoreUtils {
           organizedFiles.push({ number: this.softConfig.extractNumber(file), filename: file })
         }
 
-        const destDigits = this.statistics.getMaxNecessaryDigits(b)
+        // const destDigits = this.statistics.getMaxNecessaryDigits(b)
         let currentNumber = this.softConfig.config.numberingInitial
 
         for (const file of organizedFiles.sort((a, b) => a.number - b.number)) {
@@ -433,20 +480,31 @@ export class CoreUtils {
           const toFilename = this.softConfig.renumberedFilename(fromFilename, currentNumber, destDigits, b)
 
           if (fromFilename !== toFilename) {
-            moves.push({ fromFilename, toFilename })
+            moves.push({ fromFilename, toFilename, destDigits })
             table.accumulator(fromFilename, toFilename)
             movePromises.push(this.gitUtils.mv(fromFilename, path.join(tempDirForGit, toFilename)))
+            fromFilenames.push(file.filename)
           }
           currentNumber += this.softConfig.config.numberingStep
         }
       }
     }
-
     await Promise.all(movePromises)
+    const aForAtNumbering = await this.moveChapterNumbersInFileContentToTemp(fromFilenames)
+
     for (const renumbering of moves) {
       movePromises.push(this.gitUtils.mv(path.join(tempDirForGit, renumbering.toFilename), renumbering.toFilename))
     }
     await Promise.all(movePromises)
+    await this.moveChapterNumbersInFileContentToDestination(
+      moves.map(v => {
+        return {
+          file: v.fromFilename,
+          destId: new ChapterId(this.softConfig.extractNumber(v.toFilename), this.softConfig.isAtNumbering(v.toFilename), v.destDigits)
+        }
+      }),
+      aForAtNumbering
+    )
 
     await removeTempDir()
 
@@ -459,10 +517,58 @@ export class CoreUtils {
     }
   }
 
+  private async moveChapterNumbersInFileContentToTemp(filenames: string[]): Promise<boolean> {
+    let aForAtNumbering = false
+
+    for (const file of this.softConfig.filesWithChapterNumbersInContent) {
+      let content = await this.fsUtils.readFileContent(file)
+      for (const from of filenames.map(f => {
+        return {
+          number: this.softConfig.extractNumber(f),
+          isAtNumber: this.softConfig.isAtNumbering(f)
+        }
+      })) {
+        const fromNumberRE = new RegExp(`(?<!%|\w|\d)(${from.isAtNumber ? '(a|@)' : '()'}0*${from.number})(?!%|\w|\d)`, 'gm')
+        debug(`fromNumberRE = ${JSON.stringify(fromNumberRE)}`)
+        content = content.replace(fromNumberRE, '%$1%')
+        aForAtNumbering = aForAtNumbering || content.replace(fromNumberRE, '$2') === 'a'
+      }
+      await this.fsUtils.writeFile(file, content)
+    }
+
+    return aForAtNumbering
+  }
+
+  private async moveChapterNumbersInFileContentToDestination(
+    filesWithInfo: { file: string; destId: ChapterId }[],
+    aForAtNumbering: boolean
+  ) {
+    for (const file of this.softConfig.filesWithChapterNumbersInContent) {
+      let content = await this.fsUtils.readFileContent(file)
+      for (const moveNumbers of filesWithInfo.map(f => {
+        return {
+          fromNumber: this.softConfig.extractNumber(f.file),
+          fromIsAtNumber: this.softConfig.isAtNumbering(f.file),
+          toNumber: f.destId.stringifyNumber(), //f.newFileNumber,
+          destIsAtNumber: f.destId.isAtNumber // f.destIsAtNumber
+        }
+      })) {
+        const fromNumberRE = new RegExp(
+          `(?<!\w|\d)(%${moveNumbers.fromIsAtNumber ? '(?:a|@)' : ''}0*${moveNumbers.fromNumber}%)(?!\w|\d)`,
+          'gm'
+        )
+        //  (?<!%|\w)((?:a|@)?\d+)(?!%|\w)
+        content = content.replace(fromNumberRE, `${moveNumbers.destIsAtNumber ? (aForAtNumbering ? 'a' : '@') : ''}${moveNumbers.toNumber}`)
+      }
+      await this.fsUtils.writeFile(file, content)
+    }
+  }
+
   private async addDigitsToFiles(files: string[], newDigitNumber: number, atNumberingStack: boolean): Promise<boolean> {
     const promises: Promise<MoveSummary>[] = []
     let hasMadeChanges = false
     const table = tableize('from', 'to')
+    const filesWithInfo: { file: string; destId: ChapterId }[] = []
 
     for (const file of files) {
       const filename = this.softConfig.mapFileToBeRelativeToRootPath(file)
@@ -476,11 +582,19 @@ export class CoreUtils {
         if (fromFilename !== toFilename) {
           await this.fsUtils.createSubDirectoryFromFilePathIfNecessary(path.join(this.rootPath, toFilename))
           table.accumulator(fromFilename, toFilename)
+          filesWithInfo.push({
+            file: fromFilename,
+            destId: new ChapterId(this.softConfig.extractNumber(toFilename), this.softConfig.isAtNumbering(toFilename), newDigitNumber)
+            // newFileNumber: this.softConfig.extractNumber(toFilename),
+            // destIsAtNumber: this.softConfig.isAtNumbering(toFilename)
+          })
           promises.push(this.gitUtils.mv(fromFilename, toFilename))
           hasMadeChanges = true
         }
       }
     }
+    const aForAtNumbering = await this.moveChapterNumbersInFileContentToTemp(filesWithInfo.map(fwi => fwi.file))
+    await this.moveChapterNumbersInFileContentToDestination(filesWithInfo, aForAtNumbering)
 
     await Promise.all(promises)
     await this.fsUtils.deleteEmptySubDirectories(this.rootPath)

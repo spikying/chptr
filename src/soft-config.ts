@@ -29,6 +29,7 @@ interface ConfigObject {
   numberingStep: number
   numberingInitial: number
   metadataFields: object
+  filesWithChapterNumbersInContent: string[]
 }
 
 export interface Author {
@@ -66,6 +67,10 @@ export class SoftConfig {
 
   public get buildDirectory(): string {
     return path.join(this.rootPath, this.config.buildDirectory)
+  }
+
+  public get filesWithChapterNumbersInContent(): string[] {
+    return this.config.filesWithChapterNumbersInContent.map(f => path.join(this.rootPath, f))
   }
 
   public get globalMetadataContent(): string {
@@ -250,6 +255,10 @@ documentclass: bookest
     numberingInitial: {
       doc: 'Initial file number',
       default: 1
+    },
+    filesWithChapterNumbersInContent: {
+      doc: 'File paths to files containing chapter numbers, to have them follow in reorder and compact operations.',
+      default: []
     }
     // ,
     // metadataFields: {

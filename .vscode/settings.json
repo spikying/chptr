@@ -7,7 +7,6 @@
     "files.eol": "\n",
     "files.insertFinalNewline": true,
     "prettier.eslintIntegration ": true,
-    "prettier.tslintIntegration": true,
     "prettier.requireConfig": true,
     "[typescript]": {
         "editor.defaultFormatter": "esbenp.prettier-vscode"
