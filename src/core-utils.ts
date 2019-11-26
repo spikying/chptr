@@ -341,7 +341,6 @@ export class CoreUtils {
     //   }
     //   await this.fsUtils.writeFile(file, content)
     // }
-    const aForAtNumbering = await this.moveChapterNumbersInFileContentToTemp(toRenameFiles.map(trf => trf.file))
 
     cli.action.stop(tempDir.actionStopColor())
 
@@ -383,6 +382,7 @@ export class CoreUtils {
     //   await this.fsUtils.writeFile(file, content)
     // }
 
+    const aForAtNumbering = await this.moveChapterNumbersInFileContentToTemp(toRenameFiles.map(trf => trf.file))
     const fixedDigits = this.statistics.getMaxNecessaryDigits(destinationId.isAtNumber)
     await this.moveChapterNumbersInFileContentToDestination(
       toRenameFiles.map(trf => {
@@ -490,12 +490,13 @@ export class CoreUtils {
       }
     }
     await Promise.all(movePromises)
-    const aForAtNumbering = await this.moveChapterNumbersInFileContentToTemp(fromFilenames)
 
     for (const renumbering of moves) {
       movePromises.push(this.gitUtils.mv(path.join(tempDirForGit, renumbering.toFilename), renumbering.toFilename))
     }
     await Promise.all(movePromises)
+
+    const aForAtNumbering = await this.moveChapterNumbersInFileContentToTemp(fromFilenames)
     await this.moveChapterNumbersInFileContentToDestination(
       moves.map(v => {
         return {
@@ -517,6 +518,7 @@ export class CoreUtils {
     }
   }
 
+  //todo: Merge this and next one in a single function
   private async moveChapterNumbersInFileContentToTemp(filenames: string[]): Promise<boolean> {
     let aForAtNumbering = false
 

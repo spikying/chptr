@@ -3,8 +3,7 @@ import Command from '../initialized-base'
 
 const debug = d('build:compact')
 
- export class Compact extends Command
-{
+export class Compact extends Command {
   static description = `Only compacts numbers of files`
 
   static flags = {
@@ -15,8 +14,8 @@ const debug = d('build:compact')
 
   async run() {
     debug('Running Build:compact command')
+    await this.coreUtils.preProcessAndCommitFiles('Before compacting file numbers')
     await this.coreUtils.compactFileNumbers()
     await this.coreUtils.preProcessAndCommitFiles('Compacted file numbers')
-
   }
 }
