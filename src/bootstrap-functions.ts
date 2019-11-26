@@ -3,9 +3,11 @@ import * as simplegit from 'simple-git/promise'
 import { d } from './commands/base'
 import { FsUtils } from './fs-utils'
 import { HardConfig } from './hard-config'
+import { Singleton, Container } from 'typescript-ioc'
 
 const debug = d('BootstrapChptr')
 
+@Singleton
 export class BootstrapChptr {
   private readonly rootPath: string
   private readonly hardConfig: HardConfig
@@ -13,7 +15,7 @@ export class BootstrapChptr {
 
   constructor(rootPath: string) {
     this.rootPath = rootPath
-    this.hardConfig = new HardConfig(rootPath)
+    this.hardConfig = Container.get(HardConfig)//new HardConfig(rootPath)
     this.fsUtils = new FsUtils()
   }
 

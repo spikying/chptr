@@ -12,10 +12,12 @@ import { MarkupUtils } from './markup-utils'
 import { SoftConfig } from './soft-config'
 import { Statistics } from './statistics'
 import { QueryBuilder, tableize } from './ui-utils'
+import { Singleton, Container } from 'typescript-ioc'
 
 const debug = d('core-utils')
 
 // TODO: implement IoC (DI) with https://www.npmjs.com/package/typescript-ioc
+@Singleton
 export class CoreUtils {
   private readonly softConfig: SoftConfig
   private readonly hardConfig: HardConfig
@@ -27,12 +29,12 @@ export class CoreUtils {
 
   constructor(softConfig: SoftConfig, rootPath: string) {
     this.softConfig = softConfig
-    this.hardConfig = new HardConfig(rootPath)
+    this.hardConfig = Container.get(HardConfig)//new HardConfig(rootPath)
     this.rootPath = rootPath
-    this.markupUtils = new MarkupUtils(softConfig, rootPath)
+    this.markupUtils = Container.get(MarkupUtils) // new MarkupUtils(softConfig, rootPath)
     this.fsUtils = new FsUtils()
-    this.statistics = new Statistics(softConfig, rootPath)
-    this.gitUtils = new GitUtils(softConfig, rootPath)
+    this.statistics = Container.get(Statistics) // new Statistics(softConfig, rootPath)
+    this.gitUtils = Container.get(GitUtils) // new GitUtils(softConfig, rootPath)
   }
 
   //#region project files manipulations

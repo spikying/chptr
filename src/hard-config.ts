@@ -1,9 +1,11 @@
 import * as d from 'debug'
 import * as path from 'path'
 import * as YAML from 'yaml'
+import { Singleton, AutoWired } from 'typescript-ioc'
 
 const debug = d('config:hard')
 
+@Singleton
 export class HardConfig {
   public get configPath(): string {
     if (!this._configPathName) {
@@ -79,7 +81,7 @@ export class HardConfig {
   private _configFileName = ''
 
   constructor(dirname: string) {
-    debug('In HardConfig constructor')
+    debug('CONSTRUCTOR HARD-CONFIG')
     this.rootPath = path.join(dirname)
   }
 
@@ -91,5 +93,4 @@ export class HardConfig {
     const re = new RegExp(/^@?end$/)
     return re.test(value)
   }
-
 }

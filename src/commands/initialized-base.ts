@@ -13,7 +13,8 @@ import { Statistics } from '../statistics'
 import { tableize } from '../ui-utils'
 
 import Command, { d } from './base'
-import { FsUtils } from '../fs-utils';
+import { FsUtils } from '../fs-utils'
+import { Container, Scope, Provider } from 'typescript-ioc'
 
 const debug = d('command:initialized-base')
 
@@ -67,11 +68,40 @@ export default abstract class extends Command {
     //#endregion
 
     //#region bootstrap all configs and utils
-    this._softConfig = new SoftConfig(this.rootPath)
-    this._statistics = new Statistics(this.softConfig, this.rootPath)
-    this._markupUtils = new MarkupUtils(this.softConfig, this.rootPath)
-    this._gitUtils = new GitUtils(this.softConfig, this.rootPath)
+    const softConfigProvider: Provider = {
+      get: () => {
+        return new SoftConfig(this.rootPath)
+      }
+    }
+    Container.bind(SoftConfig).provider(softConfigProvider).scope(Scope.Singleton)
+
+    const gitUtilsProvider: Provider = {
+      get: () => {
+        return new GitUtils(this.softConfig, this.rootPath)
+      }
+    }
+    Container.bind(GitUtils).provider(gitUtilsProvider).scope(Scope.Singleton)
+
+    const statisticsProvider: Provider = {
+      get: () => {
+        return new Statistics(this.softConfig, this.rootPath)
+      }
+    }
+    Container.bind(Statistics).provider(statisticsProvider).scope(Scope.Singleton)
+
+    const markupUtilsProvider: Provider = {
+      get: () => {
+        return new MarkupUtils(this.softConfig, this.rootPath)
+      }
+    }
+    Container.bind(MarkupUtils).provider(markupUtilsProvider).scope(Scope.Singleton)
+
+    this._softConfig = Container.get(SoftConfig) //new SoftConfig(this.rootPath)
+    this._statistics = Container.get(Statistics) // new Statistics(this.softConfig, this.rootPath)
+    this._markupUtils = Container.get(MarkupUtils) // new MarkupUtils(this.softConfig, this.rootPath)
+    this._gitUtils = Container.get(GitUtils) //new GitUtils(this.softConfig, this.rootPath)
     this._coreUtils = new CoreUtils(this.softConfig, this.rootPath)
+
     //#endregion
 
     //#region check for changes to config files

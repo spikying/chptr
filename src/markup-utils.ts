@@ -11,9 +11,11 @@ import { FsUtils } from './fs-utils'
 import { GitUtils } from './git-utils'
 import { SoftConfig, WordCountObject } from './soft-config'
 import { tableize } from './ui-utils'
+import { Singleton, Container } from 'typescript-ioc'
 
 const debug = d('markup-utils')
 
+@Singleton
 export class MarkupUtils {
   // https://unicode.org/reports/tr29/#Sentence_Boundaries
   public readonly sentenceBreakChar = '\u2028' // '\u000D'// '\u200D' // '\u2028'
@@ -32,7 +34,7 @@ export class MarkupUtils {
     this.fsUtils = new FsUtils()
     this.softConfig = softConfig
     this.rootPath = rootPath
-    this.gitUtils = new GitUtils(softConfig, rootPath)
+    this.gitUtils = Container.get(GitUtils) // new GitUtils(softConfig, rootPath)
   }
 
   public async extractMarkupAndUpdateGlobalAndChapterMetadata(
@@ -320,44 +322,38 @@ export class MarkupUtils {
   }
 
   public getMarkupByFile(flattenedMarkupArray: MarkupObj[]): MarkupByFile {
-    return flattenedMarkupArray.reduce(
-      (cumul, markup) => {
-        cumul[markup.filename] = cumul[markup.filename] || []
-        if (markup.summary) {
-          cumul[markup.filename].push({ summary: true, computed: false, type: markup.type, value: markup.value })
-        } else if (markup.computed) {
-          cumul[markup.filename].push({ summary: false, computed: true, type: markup.type, value: markup.value })
-        } else {
-          cumul[markup.filename].push({
-            summary: false,
-            computed: false,
-            paragraph: markup.paragraph,
-            type: markup.type,
-            value: markup.value
-          })
-        }
-        return cumul
-      },
-      {} as MarkupByFile
-    )
+    return flattenedMarkupArray.reduce((cumul, markup) => {
+      cumul[markup.filename] = cumul[markup.filename] || []
+      if (markup.summary) {
+        cumul[markup.filename].push({ summary: true, computed: false, type: markup.type, value: markup.value })
+      } else if (markup.computed) {
+        cumul[markup.filename].push({ summary: false, computed: true, type: markup.type, value: markup.value })
+      } else {
+        cumul[markup.filename].push({
+          summary: false,
+          computed: false,
+          paragraph: markup.paragraph,
+          type: markup.type,
+          value: markup.value
+        })
+      }
+      return cumul
+    }, {} as MarkupByFile)
   }
   public getMarkupByType(flattenedMarkupArray: MarkupObj[]): any {
-    return flattenedMarkupArray.reduce(
-      (cumul, markup) => {
-        if (!markup.computed) {
-          cumul[markup.type] = cumul[markup.type] || {}
-          cumul[markup.type][markup.value] = cumul[markup.type][markup.value] || []
-          cumul[markup.type][markup.value].push({ filename: markup.filename, paragraph: markup.paragraph, summary: markup.summary })
-        } else {
-          if (markup.type === 'wordCount') {
-            cumul.totalWordCount = cumul.totalWordCount || 0
-            cumul.totalWordCount += markup.value
-          }
+    return flattenedMarkupArray.reduce((cumul, markup) => {
+      if (!markup.computed) {
+        cumul[markup.type] = cumul[markup.type] || {}
+        cumul[markup.type][markup.value] = cumul[markup.type][markup.value] || []
+        cumul[markup.type][markup.value].push({ filename: markup.filename, paragraph: markup.paragraph, summary: markup.summary })
+      } else {
+        if (markup.type === 'wordCount') {
+          cumul.totalWordCount = cumul.totalWordCount || 0
+          cumul.totalWordCount += markup.value
         }
-        return cumul
-      },
-      {} as any
-    )
+      }
+      return cumul
+    }, {} as any)
   }
 
   public async writeMetadataInEachFile(markupByFile: any): Promise<{ file: string; diff: string }[]> {

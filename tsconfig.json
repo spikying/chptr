@@ -9,6 +9,8 @@
     "strict": true,
     "target": "es2017",
     "composite": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
     "plugins": [
       {
         "name": "typescript-tslint-plugin"

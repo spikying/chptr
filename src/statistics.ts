@@ -4,6 +4,7 @@ import { ChapterId } from './chapter-id'
 // import { ChptrError } from './chptr-error'
 import { FsUtils } from './fs-utils'
 import { SoftConfig } from './soft-config'
+import { Singleton } from 'typescript-ioc'
 
 const debug = d('config:statistics')
 
@@ -22,6 +23,7 @@ const nullStackStats: StackStatistics = {
   maxNecessaryDigits: 1
 }
 
+@Singleton
 export class Statistics {
   private readonly softConfig: SoftConfig
   private readonly rootPath: string
@@ -33,7 +35,7 @@ export class Statistics {
   private readonly _allNovelStatistics: NovelStatistics = { atNumberStack: nullStackStats, normalStack: nullStackStats }
 
   constructor(softConfig: SoftConfig, rootPath: string) {
-    debug(`New Statistics instance`)
+    debug(`CONSTRUCTOR STATISTICS`)
     this.softConfig = softConfig
     this.rootPath = rootPath
     this.fsUtils = new FsUtils()

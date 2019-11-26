@@ -58,6 +58,7 @@
     "simple-git": "1.119.0",
     "tmp-promise": "2.0.1",
     "tslib": "1.9.3",
+    "typescript-ioc": "1.2.5",
     "validator": "11.1.0",
     "word-regex": "0.1.2",
     "yaml": "1.6.0"

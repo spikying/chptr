@@ -13,6 +13,7 @@ import { ChapterId } from './chapter-id'
 import { ChptrError } from './chptr-error'
 import { FsUtils } from './fs-utils'
 import { HardConfig } from './hard-config'
+import { Singleton, AutoWired, Container } from 'typescript-ioc'
 
 const debug = d('config:soft')
 
@@ -37,6 +38,8 @@ export interface Author {
   email: string
 }
 
+@Singleton
+// @AutoWired
 export class SoftConfig {
   public get config(): ConfigObject {
     if (!this._config) {
@@ -311,7 +314,8 @@ documentclass: bookest
       : ''
   }
   constructor(dirname: string, readFromFile = true) {
-    this.hardConfig = new HardConfig(dirname)
+    debug('CONSTRUCTOR SOFT-CONFIG')
+    this.hardConfig = Container.get(HardConfig) //new HardConfig(dirname)
     this.rootPath = path.join(dirname)
     this.fsUtils = new FsUtils()
 

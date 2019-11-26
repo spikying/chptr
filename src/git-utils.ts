@@ -6,17 +6,20 @@ import * as simplegit from 'simple-git/promise'
 import { LogOptions } from 'simple-git/promise'
 import { DefaultLogFields, MoveSummary } from 'simple-git/typings/response'
 import { format } from 'url'
+import { AutoWired, Inject, Singleton } from 'typescript-ioc'
 
 import { ChapterId } from './chapter-id'
 import { SoftConfig } from './soft-config'
 
 const debug = d('git-utils')
 
+@Singleton
 export class GitUtils {
   private readonly _git: simplegit.SimpleGit
   private readonly softConfig: SoftConfig
 
   constructor(softConfig: SoftConfig, rootPath: string) {
+    debug('CONSTRUCTOR GIT-UTILS')
     this._git = simplegit(rootPath)
     this.softConfig = softConfig
   }
