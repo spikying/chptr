@@ -278,11 +278,12 @@ export class MarkupUtils {
       if (regexArray[1]) {
         paraCounter = parseInt(regexArray[1], 10)
       } else {
-        resultArray.push({
+        const propValue = this.softConfig.getFinalPropFor(regexArray[2])
+        resultArray.push({         
           filename: this.softConfig.mapFileToBeRelativeToRootPath(filepath),
           paragraph: paraCounter,
           type: 'prop',
-          value: regexArray[2],
+          value: propValue,
           computed: false,
           summary
         })

@@ -31,6 +31,7 @@ interface ConfigObject {
   numberingInitial: number
   metadataFields: object
   filesWithChapterNumbersInContent: string[]
+  propEquivalents: PropEquivalent[]
 }
 
 export interface Author {
@@ -261,6 +262,11 @@ documentclass: bookest
     },
     filesWithChapterNumbersInContent: {
       doc: 'File paths to files containing chapter numbers, to have them follow in reorder and compact operations.',
+      default: []
+    },
+    propEquivalents: {
+      doc:
+        'When extracting props metadata, coalesce `arr` values to `final` value.  Each object in array must contain `arr` array of strings and `final` string.',
       default: []
     }
     // ,
@@ -585,6 +591,16 @@ documentclass: bookest
     return chapterMatch ? chapterMatch[2] : ''
   }
 
+  public getFinalPropFor(prop: string): string {
+    return this.config.propEquivalents.reduce((pv, cv) => {
+      if (cv.arr.indexOf(prop) >= 0) {
+        return cv.final
+      } else {
+        return pv
+      }
+    }, prop)
+  }
+
   private wildcardWithNumber(pattern: string, id: ChapterId): string {
     return pattern.replace(/NUM/g, this.numberWildcardPortion(id.isAtNumber, id.num)).replace(/NAME/g, '*')
   }
@@ -622,4 +638,9 @@ interface WordCountDTO {
   wordCountSummaryTotal: number
   wordCountChapterDiff: number
   wordCountSummaryDiff: number
+}
+
+interface PropEquivalent {
+  arr: string[]
+  final: string
 }
