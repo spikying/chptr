@@ -73,28 +73,36 @@ export default abstract class extends Command {
         return new SoftConfig(this.rootPath)
       }
     }
-    Container.bind(SoftConfig).provider(softConfigProvider).scope(Scope.Singleton)
+    Container.bind(SoftConfig)
+      .provider(softConfigProvider)
+      .scope(Scope.Singleton)
 
     const gitUtilsProvider: Provider = {
       get: () => {
         return new GitUtils(this.softConfig, this.rootPath)
       }
     }
-    Container.bind(GitUtils).provider(gitUtilsProvider).scope(Scope.Singleton)
+    Container.bind(GitUtils)
+      .provider(gitUtilsProvider)
+      .scope(Scope.Singleton)
 
     const statisticsProvider: Provider = {
       get: () => {
         return new Statistics(this.softConfig, this.rootPath)
       }
     }
-    Container.bind(Statistics).provider(statisticsProvider).scope(Scope.Singleton)
+    Container.bind(Statistics)
+      .provider(statisticsProvider)
+      .scope(Scope.Singleton)
 
     const markupUtilsProvider: Provider = {
       get: () => {
         return new MarkupUtils(this.softConfig, this.rootPath)
       }
     }
-    Container.bind(MarkupUtils).provider(markupUtilsProvider).scope(Scope.Singleton)
+    Container.bind(MarkupUtils)
+      .provider(markupUtilsProvider)
+      .scope(Scope.Singleton)
 
     this._softConfig = Container.get(SoftConfig) //new SoftConfig(this.rootPath)
     this._statistics = Container.get(Statistics) // new Statistics(this.softConfig, this.rootPath)
@@ -136,7 +144,7 @@ export default abstract class extends Command {
         d.kind === 'E' &&
         d.path &&
         d.path.reduce((previous, current) => {
-          return previous || current.indexOf('Pattern') > 0
+          return previous || (typeof current === 'string' && current.indexOf('Pattern') > 0)
         }, false)
       ) {
         const fileType = d.path && d.path[0]
@@ -267,7 +275,7 @@ export default abstract class extends Command {
         d.kind === 'E' &&
         d.path &&
         d.path.reduce((previous, current) => {
-          return previous || current.substring(0, 9) === 'numbering'
+          return previous || (typeof current === 'string' && current.substring(0, 9) === 'numbering')
         }, false)
       ) {
         const numberingType = d.path && d.path[0]

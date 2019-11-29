@@ -593,7 +593,7 @@ documentclass: bookest
 
   public getFinalPropFor(prop: string): string {
     return this.config.propEquivalents.reduce((pv, cv) => {
-      if (cv.arr.indexOf(prop) >= 0) {
+      if (cv.arr.map(v=>v.toLowerCase()).indexOf(prop.toLowerCase()) >= 0) {
         return cv.final
       } else {
         return pv
