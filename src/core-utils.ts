@@ -14,6 +14,11 @@ import { Statistics } from './statistics'
 import { QueryBuilder, tableize } from './ui-utils'
 import { Singleton, Container } from 'typescript-ioc'
 
+import { file as tmpFile } from 'tmp-promise'
+import { BootstrapChptr } from './bootstrap-functions'
+import yaml = require('js-yaml')
+import { exec } from 'child_process'
+
 const debug = d('core-utils')
 
 // TODO: implement IoC (DI) with https://www.npmjs.com/package/typescript-ioc
@@ -29,7 +34,7 @@ export class CoreUtils {
 
   constructor(softConfig: SoftConfig, rootPath: string) {
     this.softConfig = softConfig
-    this.hardConfig = Container.get(HardConfig)//new HardConfig(rootPath)
+    this.hardConfig = Container.get(HardConfig) //new HardConfig(rootPath)
     this.rootPath = rootPath
     this.markupUtils = Container.get(MarkupUtils) // new MarkupUtils(softConfig, rootPath)
     this.fsUtils = new FsUtils()
@@ -518,6 +523,221 @@ export class CoreUtils {
       cli.action.stop(`done:`.actionStopColor())
       table.show()
     }
+  }
+
+  public async buildOutput(removeMarkup: boolean, withSummaries: boolean, outputFiletype: any, outputFile: string): Promise<void> {
+    debug('Running Build Output')
+
+    const tmpMDfile = await tmpFile()
+    const tmpMDfileTex = await tmpFile()
+    debug(`temp files = ${tmpMDfile.path} and ${tmpMDfileTex.path}`)
+
+    try {
+      const originalChapterFilesArray = (
+        await this.fsUtils.listFiles(path.join(this.rootPath, this.softConfig.chapterWildcard(false)))
+      ).sort()
+
+      cli.action.start('Compiling and generating output files'.actionStartColor())
+
+      let fullOriginalContent = this.softConfig.globalMetadataContent
+
+      const bootstrapChptr = new BootstrapChptr(this.rootPath)
+
+      for (const file of originalChapterFilesArray) {
+        fullOriginalContent += '\n'
+        const chapterContent = await this.fsUtils.readFileContent(file)
+        if (withSummaries) {
+          const number = this.softConfig.extractNumber(file)
+          const chapterId = new ChapterId(number, false)
+
+          const summaryFile = (
+            await this.fsUtils.listFiles(path.join(this.rootPath, this.softConfig.summaryWildcardWithNumber(chapterId)))
+          )[0]
+          const summaryContent = await this.fsUtils.readFileContent(summaryFile)
+          // const summaryRE = /^(?!# )(?!{{\d+}})(.+)$/gm
+          const summaryRE = /^(?!# )(.+)$/gm
+          fullOriginalContent += summaryContent.replace(/^{{\d+}}$/gm, '').replace(summaryRE, '> *$1*')
+          fullOriginalContent += '\n\n````\n'
+
+          const metadataFile = (
+            await this.fsUtils.listFiles(path.join(this.rootPath, this.softConfig.metadataWildcardWithNumber(chapterId)))
+          )[0]
+          const metadataContent = await this.fsUtils.readFileContent(metadataFile)
+          const metadataObj = this.softConfig.parsePerStyle(metadataContent)
+          let filteredMetadataObj: any = bootstrapChptr.deepCopy(metadataObj)
+
+          fullOriginalContent += yaml.safeDump(filteredMetadataObj) //.replace(/\n/g, '\n\n')
+          fullOriginalContent += '````\n\n'
+
+          const chapterRE = /# (.*)\n/
+          fullOriginalContent += chapterContent.replace(chapterRE, '***\n')
+        } else {
+          fullOriginalContent += chapterContent
+        }
+      }
+      const fullCleanedOrTransformedContent = removeMarkup
+        ? this.markupUtils.cleanMarkupContent(fullOriginalContent)
+        : this.markupUtils.transformMarkupContent(fullOriginalContent)
+      await this.fsUtils.writeInFile(tmpMDfile.fd, fullCleanedOrTransformedContent)
+      await this.fsUtils.writeInFile(
+        tmpMDfileTex.fd,
+        fullCleanedOrTransformedContent.replace(/^\*\s?\*\s?\*$/gm, '\\asterism').replace(/\u200B/g, '')
+        // .replace(/\\textbf{/gm, '\\merriweatherblack{')
+      )
+
+      let chapterFiles = '"' + tmpMDfile.path + '" '
+
+      const pandocRuns: Promise<string>[] = []
+      const allOutputFilePath: string[] = []
+
+      for (const filetype of outputFiletype) {
+        const fullOutputFilePath = path.join(this.softConfig.buildDirectory, outputFile + '.' + filetype)
+        allOutputFilePath.push(fullOutputFilePath)
+
+        let pandocArgs: string[] = ['--strip-comments']
+
+        if (filetype === 'md') {
+          pandocArgs = pandocArgs.concat([
+            '--number-sections',
+            '--to',
+            'markdown-raw_html+smart+fancy_lists',
+            '--wrap=none',
+            '--atx-headers'
+          ])
+        }
+
+        if (filetype === 'docx') {
+          const referenceDocFullPath = path.join(this.hardConfig.configPath, 'reference.docx')
+          if (await this.fsUtils.fileExists(referenceDocFullPath)) {
+            pandocArgs = pandocArgs.concat([`--reference-doc="${referenceDocFullPath}"`])
+          } else {
+            cli.warn(`For a better output, create an empty styled Word doc at ${referenceDocFullPath}`)
+          }
+          pandocArgs = pandocArgs.concat([
+            '--to',
+            'docx+smart+fancy_lists',
+            '--toc',
+            '--toc-depth',
+            '2',
+            '--top-level-division=chapter',
+            '--number-sections'
+          ])
+        }
+
+        if (filetype === 'html') {
+          const templateFullPath = path.join(this.hardConfig.configPath, 'template.html')
+          if (await this.fsUtils.fileExists(templateFullPath)) {
+            pandocArgs = pandocArgs.concat([`--template`, `"${templateFullPath}"`])
+          } else {
+            cli.warn(`For a better output, create an html template at ${templateFullPath}`)
+          }
+
+          const cssFullPath = path.join(this.hardConfig.configPath, 'template.css')
+          if (await this.fsUtils.fileExists(cssFullPath)) {
+            pandocArgs = pandocArgs.concat([`--css`, `"${cssFullPath}"`])
+          } else {
+            cli.warn(`For a better output, create a css template at ${cssFullPath}`)
+          }
+
+          pandocArgs = pandocArgs.concat([
+            '--to',
+            'html5+smart+fancy_lists',
+            '--toc',
+            '--toc-depth',
+            '2',
+            '--top-level-division=chapter',
+            '--number-sections',
+            '--self-contained'
+          ])
+        }
+
+        if (filetype === 'pdf' || filetype === 'tex') {
+          chapterFiles = '"' + tmpMDfileTex.path + '" '
+
+          const templateFullPath = path.join(this.hardConfig.configPath, 'template.latex')
+          if (await this.fsUtils.fileExists(templateFullPath)) {
+            pandocArgs = pandocArgs.concat([`--template`, `"${templateFullPath}"`])
+          } else {
+            cli.warn(`For a better output, create a latex template at ${templateFullPath}`)
+          }
+
+          pandocArgs = pandocArgs.concat([
+            // '--listings',
+            // '--fenced_code_blocks',
+            '--toc',
+            '--toc-depth',
+            '2',
+            '--top-level-division=chapter',
+            '--number-sections',
+            // '--latex-engine=xelatex',
+            '--pdf-engine=xelatex',
+            '--to',
+            'latex+raw_tex+smart+fancy_lists'
+          ])
+        }
+
+        if (filetype === 'epub') {
+          pandocArgs = pandocArgs.concat([
+            '--to',
+            'epub+smart+fancy_lists',
+            '--toc',
+            '--toc-depth',
+            '2',
+            '--top-level-division=chapter',
+            '--number-sections'
+          ])
+        }
+
+        pandocArgs = [
+          chapterFiles,
+          // '--smart',
+          '--standalone',
+          '-o',
+          `"${fullOutputFilePath}"`
+        ].concat(pandocArgs)
+
+        pandocRuns.push(this.runPandoc(pandocArgs))
+      }
+
+      await Promise.all(pandocRuns).catch(err => {
+        throw new ChptrError(
+          `Error trying to run Pandoc.  You need to have it installed and accessible globally, with version 2.7.3 minimally.\n${err
+            .toString()
+            .errorColor()}`,
+          'command:build:index',
+          52
+        )
+      })
+
+      const allOutputFilePathPretty = allOutputFilePath.reduce((previous, current) => `${previous}\n    ${current}`, '')
+      cli.action.stop(allOutputFilePathPretty.actionStopColor())
+    } catch (err) {
+      throw new ChptrError(err, 'build.run', 3)
+    } finally {
+      await tmpMDfile.cleanup()
+      await tmpMDfileTex.cleanup()
+    }
+  }
+
+  private async runPandoc(options: string[]): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const command = 'pandoc ' + options.join(' ')
+      debug(`Executing child process with command ${command}`)
+      exec(command, (err, pout, perr) => {
+        if (err) {
+          // this.error(err.toString().errorColor())
+          reject(err)
+        }
+        if (perr) {
+          // this.error(perr.toString().errorColor())
+          reject(perr)
+        }
+        // if (pout) {
+        //   this.log(pout)
+        // }
+        resolve(pout)
+      })
+    })
   }
 
   //todo: Merge this and next one in a single function
