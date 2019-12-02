@@ -222,28 +222,28 @@ export class MarkupUtils {
     return wordCountData.sort(dateSortAscFunction).slice(maxFive)
   }
 
-  public async extractWordCountHistory(filepath: string, extractAll: boolean): Promise<WordCountHistoryObj[]> {
-    const logListArray = await this.gitUtils.GetGitListOfVersionsOfFile(filepath, extractAll)
+  // public async extractWordCountHistory(filepath: string, extractAll: boolean): Promise<WordCountHistoryObj[]> {
+  //   const logListArray = await this.gitUtils.GetGitListOfVersionsOfFile(filepath, extractAll)
 
-    const logList = logListArray.map(l => {
-      const wcRegex = /^([+-])\s*\"wordCount\": (\d+)/
-      // const diffArray = s.length === 2 ? s[1].split('\n').filter(n => n !== '' && wcRegex.test(n)) : []
-      const diffArray = l.content.split('\n').filter(n => n !== '' && wcRegex.test(n)) //|| []
-      // debug(`diffArray=${JSON.stringify(diffArray)}`)
-      const wordCountDiff = diffArray
-        .map(d => {
-          const match = wcRegex.exec(d)
-          return match ? parseInt(`${match[1]}${match[2]}`, 10) : 0
-        })
-        .reduce((previous, current) => {
-          return previous + current
-        }, 0)
+  //   const logList = logListArray.map(l => {
+  //     const wcRegex = /^([+-])\s*\"wordCount\": (\d+)/
+  //     // const diffArray = s.length === 2 ? s[1].split('\n').filter(n => n !== '' && wcRegex.test(n)) : []
+  //     const diffArray = l.content.split('\n').filter(n => n !== '' && wcRegex.test(n)) //|| []
+  //     // debug(`diffArray=${JSON.stringify(diffArray)}`)
+  //     const wordCountDiff = diffArray
+  //       .map(d => {
+  //         const match = wcRegex.exec(d)
+  //         return match ? parseInt(`${match[1]}${match[2]}`, 10) : 0
+  //       })
+  //       .reduce((previous, current) => {
+  //         return previous + current
+  //       }, 0)
 
-      return { log: l, wordCountDiff }
-    })
-    // debug(`logList = ${JSON.stringify(logList)}`)
-    return logList
-  }
+  //     return { log: l, wordCountDiff }
+  //   })
+  //   // debug(`logList = ${JSON.stringify(logList)}`)
+  //   return logList
+  // }
 
   public async extractMarkupFromFile(filepath: string): Promise<MarkupObj[]> {
     const resultArray: MarkupObj[] = []

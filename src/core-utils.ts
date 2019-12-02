@@ -54,6 +54,7 @@ export class CoreUtils {
         paraCounter++
         return `${one}\n\n${this.markupUtils.paragraphBreakChar}{{${paraCounter}}}\n${two}`
       })
+    .replace(/(\d{1,2})h(\d{2})/g,"$1\u00A0h\u00A0$2")
 
     return replacedContent
   }
