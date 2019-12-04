@@ -54,7 +54,7 @@ export class CoreUtils {
         paraCounter++
         return `${one}\n\n${this.markupUtils.paragraphBreakChar}{{${paraCounter}}}\n${two}`
       })
-    .replace(/(\d{1,2})h(\d{2})/g,"$1\u00A0h\u00A0$2")
+      .replace(/(\d{1,2})h(\d{2})/g, '$1\u00A0h\u00A0$2')
 
     return replacedContent
   }
@@ -531,7 +531,7 @@ export class CoreUtils {
 
     const tmpMDfile = await tmpFile()
     const tmpMDfileTex = await tmpFile()
-    debug(`temp files = ${tmpMDfile.path} and ${tmpMDfileTex.path}`)
+    debug(`temp files = ${tmpMDfile.path} and for tex = ${tmpMDfileTex.path}`)
 
     try {
       const originalChapterFilesArray = (
@@ -718,8 +718,34 @@ export class CoreUtils {
       await tmpMDfile.cleanup()
       await tmpMDfileTex.cleanup()
     }
+
+    await this.runPostBuildStep()
   }
 
+  private async runPostBuildStep(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (this.softConfig.config.postBuildStep) {
+        try {
+          cli.action.start('Running post-build step'.actionStartColor())
+          exec(this.softConfig.postBuildStep, (err, pout, perr) => {
+            if (err) {
+              reject(err)
+            }
+            if (perr) {
+              reject(perr)
+            }
+            cli.info(pout)
+            resolve()
+          })
+          cli.action.stop(this.softConfig.postBuildStep.actionStopColor())
+        } catch (err) {
+          throw new ChptrError(err, 'build.run', 331)
+        }
+      } else {
+        resolve()
+      }
+    })
+  }
   private async runPandoc(options: string[]): Promise<string> {
     return new Promise((resolve, reject) => {
       const command = 'pandoc ' + options.join(' ')

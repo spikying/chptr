@@ -31,6 +31,7 @@ interface ConfigObject {
   numberingInitial: number
   metadataFields: object
   filesWithChapterNumbersInContent: string[]
+  postBuildStep: string
   propEquivalents: PropEquivalent[]
 }
 
@@ -75,6 +76,10 @@ export class SoftConfig {
 
   public get filesWithChapterNumbersInContent(): string[] {
     return this.config.filesWithChapterNumbersInContent.map(f => path.join(this.rootPath, f))
+  }
+
+  public get postBuildStep(): string {
+    return path.join(this.rootPath, this.config.postBuildStep)
   }
 
   public get globalMetadataContent(): string {
@@ -263,6 +268,10 @@ documentclass: bookest
     filesWithChapterNumbersInContent: {
       doc: 'File paths to files containing chapter numbers, to have them follow in reorder and compact operations.',
       default: []
+    },
+    postBuildStep: {
+      doc: 'Executable or script to run after Build, relative to root.',
+      default: ''
     },
     propEquivalents: {
       doc:
