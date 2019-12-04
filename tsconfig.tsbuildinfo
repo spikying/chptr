@@ -137,46 +137,6 @@
         "version": "93fbd53f556da622d6821af7e7ea191b8d8d7633d147f9fd83950c9c08f2a502",
         "signature": "93fbd53f556da622d6821af7e7ea191b8d8d7633d147f9fd83950c9c08f2a502"
       },
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/handle.d.ts": {
-        "version": "207218b7704a71e718a25a35101afb2206581fd07c878c34540038639ad2759e",
-        "signature": "207218b7704a71e718a25a35101afb2206581fd07c878c34540038639ad2759e"
-      },
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/errors/cli.d.ts": {
-        "version": "ce944b8fd9225950f1d3921b04e5a1746dd90d963de872b1401fcee52cc437a9",
-        "signature": "ce944b8fd9225950f1d3921b04e5a1746dd90d963de872b1401fcee52cc437a9"
-      },
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/errors/exit.d.ts": {
-        "version": "2ec1aa91f5a7e5c87e32a3ab3bea3f3bc2c78700502a27139974479d272788d6",
-        "signature": "2ec1aa91f5a7e5c87e32a3ab3bea3f3bc2c78700502a27139974479d272788d6"
-      },
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/logger.d.ts": {
-        "version": "1b9f1ba55985edc074f18ddfe23c6c93d8463ff30651482e8783e56ca0df0653",
-        "signature": "1b9f1ba55985edc074f18ddfe23c6c93d8463ff30651482e8783e56ca0df0653"
-      },
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/config.d.ts": {
-        "version": "e12f2c48252d0ae261db2be28206e4f1cc282fa5459a0f991a09f86bb766543f",
-        "signature": "e12f2c48252d0ae261db2be28206e4f1cc282fa5459a0f991a09f86bb766543f"
-      },
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/index.d.ts": {
-        "version": "ba093d7f1d0b2d57e2fc3059949eb8f65cfd6b08e1a9642917a6aa752029c7d7",
-        "signature": "ba093d7f1d0b2d57e2fc3059949eb8f65cfd6b08e1a9642917a6aa752029c7d7"
-      },
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/action/base.d.ts": {
-        "version": "a9ba23c7b641dea92c5d98353488e23860b9782e6aaf96a87a0144b2bcf13450",
-        "signature": "a9ba23c7b641dea92c5d98353488e23860b9782e6aaf96a87a0144b2bcf13450"
-      },
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/config.d.ts": {
-        "version": "cb2c799fbed0c6393f43c776cf635401dff8d66bb7014c469312ef4add4f79c3",
-        "signature": "cb2c799fbed0c6393f43c776cf635401dff8d66bb7014c469312ef4add4f79c3"
-      },
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/exit.d.ts": {
-        "version": "168840936351f71eba6047f128bd450e7f1d724ef92d66d1514f98907061e2e9",
-        "signature": "168840936351f71eba6047f128bd450e7f1d724ef92d66d1514f98907061e2e9"
-      },
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/prompt.d.ts": {
-        "version": "e3d2b40728279d9695a6af01d145bd3953cd34e77be3ec76784d6c7690f0502c",
-        "signature": "e3d2b40728279d9695a6af01d145bd3953cd34e77be3ec76784d6c7690f0502c"
-      },
       "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/parser/lib/args.d.ts": {
         "version": "b8fac2a2a066d140f34e5e0c698440f1f8c8a94eea2c95d156ce821ed53336e2",
         "signature": "b8fac2a2a066d140f34e5e0c698440f1f8c8a94eea2c95d156ce821ed53336e2"
@@ -252,30 +212,6 @@
       "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/command/lib/index.d.ts": {
         "version": "778d7164f3612aad776e12987f46889f3fe3541e5d9aed5f673daed728b643d5",
         "signature": "778d7164f3612aad776e12987f46889f3fe3541e5d9aed5f673daed728b643d5"
-      },
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/styled/table.d.ts": {
-        "version": "98bf75a1d6c19b9e82e802649d25355ade5a732cbaa87dd5bf6c3823914c5d39",
-        "signature": "98bf75a1d6c19b9e82e802649d25355ade5a732cbaa87dd5bf6c3823914c5d39"
-      },
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/styled/header.d.ts": {
-        "version": "de8ede1a3263a477c17a9702db5eb4bf65c64f0a5cfc2843db886fa9f3bd8e76",
-        "signature": "de8ede1a3263a477c17a9702db5eb4bf65c64f0a5cfc2843db886fa9f3bd8e76"
-      },
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/styled/json.d.ts": {
-        "version": "172c8da34d1fb46bcc97ec7e5829a8e1a71ec444757fcb3b5b90c004b9b45741",
-        "signature": "172c8da34d1fb46bcc97ec7e5829a8e1a71ec444757fcb3b5b90c004b9b45741"
-      },
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/styled/tree.d.ts": {
-        "version": "54fd36881589b2edf82f3cd1b4b6f057b791385136a0fcafe7dfb5eed633c658",
-        "signature": "54fd36881589b2edf82f3cd1b4b6f057b791385136a0fcafe7dfb5eed633c658"
-      },
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/open.d.ts": {
-        "version": "06198e037b4db334b9b75d7ea66ad9640f9659cc7b3383c28d1515b841f2ac7b",
-        "signature": "06198e037b4db334b9b75d7ea66ad9640f9659cc7b3383c28d1515b841f2ac7b"
-      },
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/index.d.ts": {
-        "version": "766a81f3d99bece142fbe90937a7e909cb51ca47fd7eccd23c09e0e2829561ac",
-        "signature": "766a81f3d99bece142fbe90937a7e909cb51ca47fd7eccd23c09e0e2829561ac"
       },
       "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/debug/index.d.ts": {
         "version": "5e36986c4fc3c242013026c0cffdf95f138c25edfd05e80c23d634e5dca4cfef",
@@ -461,6 +397,74 @@
         "version": "765fc34423b93c2ab763670d8d11d99e5f47387c13c161d6f1640dd6d91b7d1c",
         "signature": "765fc34423b93c2ab763670d8d11d99e5f47387c13c161d6f1640dd6d91b7d1c"
       },
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node-notifier/index.d.ts": {
+        "version": "32cbb3027f5dbc78e276cf5a6ec8e0cbd1344784fbe3a4462fa1f76fed29acee",
+        "signature": "32cbb3027f5dbc78e276cf5a6ec8e0cbd1344784fbe3a4462fa1f76fed29acee"
+      },
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/handle.d.ts": {
+        "version": "207218b7704a71e718a25a35101afb2206581fd07c878c34540038639ad2759e",
+        "signature": "207218b7704a71e718a25a35101afb2206581fd07c878c34540038639ad2759e"
+      },
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/errors/cli.d.ts": {
+        "version": "ce944b8fd9225950f1d3921b04e5a1746dd90d963de872b1401fcee52cc437a9",
+        "signature": "ce944b8fd9225950f1d3921b04e5a1746dd90d963de872b1401fcee52cc437a9"
+      },
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/errors/exit.d.ts": {
+        "version": "2ec1aa91f5a7e5c87e32a3ab3bea3f3bc2c78700502a27139974479d272788d6",
+        "signature": "2ec1aa91f5a7e5c87e32a3ab3bea3f3bc2c78700502a27139974479d272788d6"
+      },
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/logger.d.ts": {
+        "version": "1b9f1ba55985edc074f18ddfe23c6c93d8463ff30651482e8783e56ca0df0653",
+        "signature": "1b9f1ba55985edc074f18ddfe23c6c93d8463ff30651482e8783e56ca0df0653"
+      },
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/config.d.ts": {
+        "version": "e12f2c48252d0ae261db2be28206e4f1cc282fa5459a0f991a09f86bb766543f",
+        "signature": "e12f2c48252d0ae261db2be28206e4f1cc282fa5459a0f991a09f86bb766543f"
+      },
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/index.d.ts": {
+        "version": "ba093d7f1d0b2d57e2fc3059949eb8f65cfd6b08e1a9642917a6aa752029c7d7",
+        "signature": "ba093d7f1d0b2d57e2fc3059949eb8f65cfd6b08e1a9642917a6aa752029c7d7"
+      },
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/action/base.d.ts": {
+        "version": "a9ba23c7b641dea92c5d98353488e23860b9782e6aaf96a87a0144b2bcf13450",
+        "signature": "a9ba23c7b641dea92c5d98353488e23860b9782e6aaf96a87a0144b2bcf13450"
+      },
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/config.d.ts": {
+        "version": "cb2c799fbed0c6393f43c776cf635401dff8d66bb7014c469312ef4add4f79c3",
+        "signature": "cb2c799fbed0c6393f43c776cf635401dff8d66bb7014c469312ef4add4f79c3"
+      },
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/exit.d.ts": {
+        "version": "168840936351f71eba6047f128bd450e7f1d724ef92d66d1514f98907061e2e9",
+        "signature": "168840936351f71eba6047f128bd450e7f1d724ef92d66d1514f98907061e2e9"
+      },
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/prompt.d.ts": {
+        "version": "e3d2b40728279d9695a6af01d145bd3953cd34e77be3ec76784d6c7690f0502c",
+        "signature": "e3d2b40728279d9695a6af01d145bd3953cd34e77be3ec76784d6c7690f0502c"
+      },
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/styled/table.d.ts": {
+        "version": "98bf75a1d6c19b9e82e802649d25355ade5a732cbaa87dd5bf6c3823914c5d39",
+        "signature": "98bf75a1d6c19b9e82e802649d25355ade5a732cbaa87dd5bf6c3823914c5d39"
+      },
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/styled/header.d.ts": {
+        "version": "de8ede1a3263a477c17a9702db5eb4bf65c64f0a5cfc2843db886fa9f3bd8e76",
+        "signature": "de8ede1a3263a477c17a9702db5eb4bf65c64f0a5cfc2843db886fa9f3bd8e76"
+      },
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/styled/json.d.ts": {
+        "version": "172c8da34d1fb46bcc97ec7e5829a8e1a71ec444757fcb3b5b90c004b9b45741",
+        "signature": "172c8da34d1fb46bcc97ec7e5829a8e1a71ec444757fcb3b5b90c004b9b45741"
+      },
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/styled/tree.d.ts": {
+        "version": "54fd36881589b2edf82f3cd1b4b6f057b791385136a0fcafe7dfb5eed633c658",
+        "signature": "54fd36881589b2edf82f3cd1b4b6f057b791385136a0fcafe7dfb5eed633c658"
+      },
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/open.d.ts": {
+        "version": "06198e037b4db334b9b75d7ea66ad9640f9659cc7b3383c28d1515b841f2ac7b",
+        "signature": "06198e037b4db334b9b75d7ea66ad9640f9659cc7b3383c28d1515b841f2ac7b"
+      },
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/index.d.ts": {
+        "version": "766a81f3d99bece142fbe90937a7e909cb51ca47fd7eccd23c09e0e2829561ac",
+        "signature": "766a81f3d99bece142fbe90937a7e909cb51ca47fd7eccd23c09e0e2829561ac"
+      },
       "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/minimatch/index.d.ts": {
         "version": "1d1e6bd176eee5970968423d7e215bfd66828b6db8d54d17afec05a831322633",
         "signature": "1d1e6bd176eee5970968423d7e215bfd66828b6db8d54d17afec05a831322633"
@@ -489,49 +493,17 @@
         "version": "084841e106991e07726ffbcd69a444a8e07ee77f229ce24b845e3789b2b554bb",
         "signature": "084841e106991e07726ffbcd69a444a8e07ee77f229ce24b845e3789b2b554bb"
       },
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/reflect-metadata/index.d.ts": {
+        "version": "8d6d51a5118d000ed3bfe6e1dd1335bebfff3fef23cd2af2f84a24d30f90cc90",
+        "signature": "8d6d51a5118d000ed3bfe6e1dd1335bebfff3fef23cd2af2f84a24d30f90cc90"
+      },
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/typescript-ioc/typescript-ioc.d.ts": {
+        "version": "575df15428425070c2bdcab909181b96dc68e2207440d027e83673eb5b470af1",
+        "signature": "575df15428425070c2bdcab909181b96dc68e2207440d027e83673eb5b470af1"
+      },
       "c:/users/mathi/codeprojects/chptr/chptr/src/hard-config.ts": {
-        "version": "62991244b212d84586dfa4887467b657bf38b1972acaba07dac93e619e3af189",
+        "version": "e1086b8946d7782b4f8b1b9a1d45e92b4a69940f894b1fa6192b0e391055a35c",
         "signature": "5ff64116c4735593ec7688ea116c8d6c9a71bc649e41bdfa18a0856ecda0feed"
-      },
-      "c:/users/mathi/codeprojects/chptr/chptr/src/bootstrap-functions.ts": {
-        "version": "292bacd7fd0bf6114f48c5050f071a045e4ed73f4a95c9769f2998c64492d842",
-        "signature": "501f0b9e77f81bc704dde35c7e0a6ff000f6d9906b8c55e9a4b9871fcdb9cbb7"
-      },
-      "c:/users/mathi/codeprojects/chptr/chptr/src/chapter-id.ts": {
-        "version": "d8bcaf4b6c7cde9ad8bdb929ada1a485518c37fd6681a3afe1626bebd0d57f72",
-        "signature": "4a2ee1353ad751cf7a685cd3737c034c0a86dcbf69ae21e96f5bfac26a8b84e1"
-      },
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/moment/moment.d.ts": {
-        "version": "d62fa6fe33566fa743b3d6715a1a2fe46e937ba9d2ba158563c5744315d438a7",
-        "signature": "d62fa6fe33566fa743b3d6715a1a2fe46e937ba9d2ba158563c5744315d438a7"
-      },
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/comment-json/index.d.ts": {
-        "version": "c401118ea6c6daa9f196013b0622c602d4faec565bb1cc6ca751d2a8fc295498",
-        "signature": "c401118ea6c6daa9f196013b0622c602d4faec565bb1cc6ca751d2a8fc295498"
-      },
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/convict/index.d.ts": {
-        "version": "db4fd9856a5acdb8c73978af625530ae0e960c457e50d61d554b8ced4308bc83",
-        "signature": "db4fd9856a5acdb8c73978af625530ae0e960c457e50d61d554b8ced4308bc83"
-      },
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/js-yaml/index.d.ts": {
-        "version": "a42b7d08df859d5d5774a43c161a70656b7e58c0593f249f5d403a393e0b91c6",
-        "signature": "a42b7d08df859d5d5774a43c161a70656b7e58c0593f249f5d403a393e0b91c6"
-      },
-      "c:/users/mathi/codeprojects/chptr/chptr/src/soft-config.ts": {
-        "version": "636e4f71423cc369e12867c6e31b1d7bd2c7bf7c91a345a2e7afbd65fbd805bb",
-        "signature": "5d450c7a612611ed103aae7c8db1772da1455d42238adf3f5d15af6b259dc2aa"
-      },
-      "c:/users/mathi/codeprojects/chptr/chptr/src/git-utils.ts": {
-        "version": "807b6ec5bb8ea070f12a44c853683875eb812f47b617b7d5932814ad76bd074f",
-        "signature": "0537722b184480d928af3761aa3e789e18324fa03684356a40b8ee875ac47d69"
-      },
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/deep-diff/index.d.ts": {
-        "version": "fb6d2d4e6b93cd3b310ba286b1044d25e2c3f665f9eaac780bc41208d6e73616",
-        "signature": "fb6d2d4e6b93cd3b310ba286b1044d25e2c3f665f9eaac780bc41208d6e73616"
-      },
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/diff/index.d.ts": {
-        "version": "162cb6760a1fb4c786a745093431e3279ad005db5c19c2cc95f1906becb6b021",
-        "signature": "162cb6760a1fb4c786a745093431e3279ad005db5c19c2cc95f1906becb6b021"
       },
       "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/through/index.d.ts": {
         "version": "2d846db276696838aaabdc3c974419d66ab9f866d19cdc869cfb6ecff6754c01",
@@ -801,17 +773,69 @@
         "version": "ee9967690a25f5ff23b9f4515a18db9d68f4070c7f1a2659fb9c7f2ac3b9faee",
         "signature": "96657f8b31c473ab9c0163dba48d1075c54bef92df11adbab35ce16588fc4bbc"
       },
+      "c:/users/mathi/codeprojects/chptr/chptr/src/commands/base.ts": {
+        "version": "b0da2ded7bdf91c4776d0819bacbb7bf69459d906ac009c1ea0914b023d006d5",
+        "signature": "71c1e90676ed571430fbc979eb423b3aba654e2f4ccb6f7bb0d23f829d885c11"
+      },
+      "c:/users/mathi/codeprojects/chptr/chptr/src/bootstrap-functions.ts": {
+        "version": "925f3e2d7544eb149c4936c9b609348ad84e4285a0c69257e8958c060d72380b",
+        "signature": "6da86db08552002cf9054a8c3629d371b1a810dcbb3894d9c613105364a48faa"
+      },
+      "c:/users/mathi/codeprojects/chptr/chptr/src/chapter-id.ts": {
+        "version": "d8bcaf4b6c7cde9ad8bdb929ada1a485518c37fd6681a3afe1626bebd0d57f72",
+        "signature": "4a2ee1353ad751cf7a685cd3737c034c0a86dcbf69ae21e96f5bfac26a8b84e1"
+      },
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/moment/moment.d.ts": {
+        "version": "d62fa6fe33566fa743b3d6715a1a2fe46e937ba9d2ba158563c5744315d438a7",
+        "signature": "d62fa6fe33566fa743b3d6715a1a2fe46e937ba9d2ba158563c5744315d438a7"
+      },
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/comment-json/index.d.ts": {
+        "version": "c401118ea6c6daa9f196013b0622c602d4faec565bb1cc6ca751d2a8fc295498",
+        "signature": "c401118ea6c6daa9f196013b0622c602d4faec565bb1cc6ca751d2a8fc295498"
+      },
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/convict/index.d.ts": {
+        "version": "db4fd9856a5acdb8c73978af625530ae0e960c457e50d61d554b8ced4308bc83",
+        "signature": "db4fd9856a5acdb8c73978af625530ae0e960c457e50d61d554b8ced4308bc83"
+      },
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/js-yaml/index.d.ts": {
+        "version": "a42b7d08df859d5d5774a43c161a70656b7e58c0593f249f5d403a393e0b91c6",
+        "signature": "a42b7d08df859d5d5774a43c161a70656b7e58c0593f249f5d403a393e0b91c6"
+      },
+      "c:/users/mathi/codeprojects/chptr/chptr/src/soft-config.ts": {
+        "version": "c35c689e3da0be20d0c15784a505fd16763f77438565c1fc61b5f0810f7882cf",
+        "signature": "b0bc2b91cd52d806539d8bb4c486b2813e3c5e81e80f2b371af9876e51276a49"
+      },
+      "c:/users/mathi/codeprojects/chptr/chptr/src/git-utils.ts": {
+        "version": "4220c0fdfab87b3b5df07b108aa1112e3c2ce457ba14bb56030a07907ae89593",
+        "signature": "f4a2cc931bfce5e3f57ef85008834217f58bc71a76b40f9d42ff9b1301f7233f"
+      },
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/deep-diff/index.d.ts": {
+        "version": "fb6d2d4e6b93cd3b310ba286b1044d25e2c3f665f9eaac780bc41208d6e73616",
+        "signature": "fb6d2d4e6b93cd3b310ba286b1044d25e2c3f665f9eaac780bc41208d6e73616"
+      },
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/diff/index.d.ts": {
+        "version": "162cb6760a1fb4c786a745093431e3279ad005db5c19c2cc95f1906becb6b021",
+        "signature": "162cb6760a1fb4c786a745093431e3279ad005db5c19c2cc95f1906becb6b021"
+      },
       "c:/users/mathi/codeprojects/chptr/chptr/src/markup-utils.ts": {
-        "version": "f641a5ea10b321d85fb8702791899cc207d9effe9ca839f39caa68a8d39e1185",
-        "signature": "4f404f006ff3cd20a926e84c3dec953ef234db0a4e301deb03562b21e0142015"
+        "version": "d6c15943086e45f6c4a7ddfd5986614509dc80bd295a6a50b68eaad97a2f8da9",
+        "signature": "209e6603f68568fda6e80101a194edfbd3403bf811c1f345321b42f8bbb30a62"
       },
       "c:/users/mathi/codeprojects/chptr/chptr/src/statistics.ts": {
-        "version": "7a5371a4e0fcc87bef24606c7307fd03da0737fd90c84f45a39ec64b1d751296",
+        "version": "e0f9f9238bc0fbd45a235af6e5c4875f0f466a454e48d5cd5f1e93c5935fe66b",
         "signature": "07213c23d02e0318c2ba5ae5abd08dc5914407cc45b2b3fd5892a1ff52da253d"
       },
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/tmp/index.d.ts": {
+        "version": "5685ea2eb87a7a405e106c5bea5936fdaed1184eaaf9bd075d27c40b4984eea6",
+        "signature": "5685ea2eb87a7a405e106c5bea5936fdaed1184eaaf9bd075d27c40b4984eea6"
+      },
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/tmp-promise/index.d.ts": {
+        "version": "c64fa3c96f35a9798a56a5af55caa5d0696254da85df0e72b630bba6deaec2cd",
+        "signature": "c64fa3c96f35a9798a56a5af55caa5d0696254da85df0e72b630bba6deaec2cd"
+      },
       "c:/users/mathi/codeprojects/chptr/chptr/src/core-utils.ts": {
-        "version": "e799fc1c27556643e0212d4ca6de2d391e4550950505f67f6c2a6acb0bf9d183",
-        "signature": "524f3c69499c6636afcdf734856a51351b74c2949d65dff4aa9b4373bbe0401d"
+        "version": "726514eae2f98e86184965118904ef5e55920a8d6910c26faad6a959aa196038",
+        "signature": "a0d09704f7f30470abd201de8413866b58eb7bfccbc208802590b77e46b49079"
       },
       "c:/users/mathi/codeprojects/chptr/chptr/src/imports.d.ts": {
         "version": "e889acac8ac2be238488486518562ef4448083f51928b50d8283109f6422944f",
@@ -821,16 +845,8 @@
         "version": "799fbbf6e14946682be6e826b93e16d2f4fe0450c4db0decb14b5abee2e55467",
         "signature": "e5b102095ea92ddecdf8e9a7c589c856b5d449ff0b9232ec8b4020e43fc984f6"
       },
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node-notifier/index.d.ts": {
-        "version": "32cbb3027f5dbc78e276cf5a6ec8e0cbd1344784fbe3a4462fa1f76fed29acee",
-        "signature": "32cbb3027f5dbc78e276cf5a6ec8e0cbd1344784fbe3a4462fa1f76fed29acee"
-      },
-      "c:/users/mathi/codeprojects/chptr/chptr/src/commands/base.ts": {
-        "version": "1be9738d6a69b469e5550e9d1dde80fbffe3c8d9051752e88931f01d4c377856",
-        "signature": "71c1e90676ed571430fbc979eb423b3aba654e2f4ccb6f7bb0d23f829d885c11"
-      },
       "c:/users/mathi/codeprojects/chptr/chptr/src/commands/initialized-base.ts": {
-        "version": "3e46903bb67dd6b8f289446be16ecda728aebfbb6980a8cc9752f5875d730b3d",
+        "version": "49f79ce0ac1cb6e4289e60d49925018a53c00898c5c846c1e28aa6344fed6bb7",
         "signature": "8a043d15beb4279dfafc87da39c818efa03c6762d534e1da00ba9f1980f423f3"
       },
       "c:/users/mathi/codeprojects/chptr/chptr/src/commands/compactable-base.ts": {
@@ -866,11 +882,11 @@
         "signature": "38b92fbea8bc6bbef9aef483116e0eb5c673a02aaa3940e62760b7024942860f"
       },
       "c:/users/mathi/codeprojects/chptr/chptr/src/commands/save.ts": {
-        "version": "b11c26f7b058e033038eb2a8c05821b0094f19d7c56b69699c249f971df0a0c8",
-        "signature": "5833a086c597066a150095f44762bd8dd7c85fb7bc44cff75e076b7c98374a8f"
+        "version": "c98ba72a1ee95fff49c0768c9c31558468ad9cd3fbb904cb1bcd1056c7310b9e",
+        "signature": "907744ac6d986a502aa0a4a7fb565e564c343a95cc7136ed4547b52694bd49ef"
       },
       "c:/users/mathi/codeprojects/chptr/chptr/src/commands/split.ts": {
-        "version": "bd5117950e1e3ad031e27a285733b626c17130523ccdfab1fd33dcbe40f61ae0",
+        "version": "5587dd61e18785f4fb07311f393254beb334add8559f140640f34d6daeb81384",
         "signature": "42204e9ea5c1c35e74044b5d3a8036e043cd47dd6134297e250dce7366bb8770"
       },
       "c:/users/mathi/codeprojects/chptr/chptr/src/commands/track.ts": {
@@ -878,24 +894,20 @@
         "signature": "5231a4b27603e4455bfc4457c93038422dd660ccddac5dd4350d68ba1e4d8d4d"
       },
       "c:/users/mathi/codeprojects/chptr/chptr/src/commands/build/compact.ts": {
-        "version": "00ebf4999faf3d0cfa6c18d129b3d33d34ac3387dd9b2b16207991ee2187fcba",
+        "version": "bde4f3ab720f0d0ebf76554f62270f8bacd533d1ceb5240cc2e2ce0810807909",
         "signature": "d8adb3914624405485ae44c75b29aa523921a3fa1be8016512ef641d57c79685"
       },
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/tmp/index.d.ts": {
-        "version": "5685ea2eb87a7a405e106c5bea5936fdaed1184eaaf9bd075d27c40b4984eea6",
-        "signature": "5685ea2eb87a7a405e106c5bea5936fdaed1184eaaf9bd075d27c40b4984eea6"
-      },
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/tmp-promise/index.d.ts": {
-        "version": "c64fa3c96f35a9798a56a5af55caa5d0696254da85df0e72b630bba6deaec2cd",
-        "signature": "c64fa3c96f35a9798a56a5af55caa5d0696254da85df0e72b630bba6deaec2cd"
-      },
       "c:/users/mathi/codeprojects/chptr/chptr/src/commands/build/metadata.ts": {
-        "version": "7cd1e25631ef4e142d8012c11e5d7cd20bad6358da373bf45ea50bce9aad94c1",
+        "version": "7aedca032c1ac0e01e04c81bc088d2dc82f421af992253c4adcf6cc1e24479fc",
         "signature": "a01299b9025e994d9cb25b6d654205b6412159b789272951306c80938c140656"
       },
       "c:/users/mathi/codeprojects/chptr/chptr/src/commands/build/index.ts": {
-        "version": "28ef5b0b99902ddba6820ea0157fdcb0c348eb72a1e433f35e613fadd41c4681",
-        "signature": "91209e1fd7f28ddff98644350014720085deb1f472ed3431dacb7b4ae0525e16"
+        "version": "fd7d4ce8a860e25d9832662a8539d35c9d1b256dd307d28f80c47ae08050edbf",
+        "signature": "d50ac706afe4f3d7d02487e0188e9674777bfe8c7894acfdbce4f53143d4fe9a"
+      },
+      "c:/users/mathi/codeprojects/chptr/chptr/src/commands/build/output.ts": {
+        "version": "50329e8957620c5a4c2cf58b722c32cdcaf9f8e2e37d6c9465e2105439591135",
+        "signature": "d50ac706afe4f3d7d02487e0188e9674777bfe8c7894acfdbce4f53143d4fe9a"
       },
       "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/chai/index.d.ts": {
         "version": "c465afa89ac28f74167a2ee7c3c6eb8dd1245c2b3bdaa4704d58d35b932de4b7",
@@ -986,17 +998,20 @@
       "declaration": true,
       "importHelpers": true,
       "module": 1,
-      "outDir": "c:/Users/mathi/CodeProjects/Chptr/chptr/lib",
-      "rootDir": "c:/Users/mathi/CodeProjects/Chptr/chptr/src",
+      "moduleResolution": 2,
+      "outDir": "C:/Users/mathi/CodeProjects/Chptr/chptr/lib",
+      "rootDir": "C:/Users/mathi/CodeProjects/Chptr/chptr/src",
       "strict": true,
       "target": 4,
       "composite": true,
+      "experimentalDecorators": true,
+      "emitDecoratorMetadata": true,
       "plugins": [
         {
           "name": "typescript-tslint-plugin"
         }
       ],
-      "configFilePath": "c:/Users/mathi/CodeProjects/Chptr/chptr/tsconfig.json"
+      "configFilePath": "C:/Users/mathi/CodeProjects/Chptr/chptr/tsconfig.json"
     },
     "referencedMap": {
       "c:/users/mathi/codeprojects/chptr/chptr/node_modules/typescript/lib/lib.es5.d.ts": [
@@ -1136,54 +1151,6 @@
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
       ],
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/handle.d.ts": [
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/errors/cli.d.ts": [
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/errors/exit.d.ts": [
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/errors/cli.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/logger.d.ts": [
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/config.d.ts": [
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/logger.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/index.d.ts": [
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/handle.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/errors/exit.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/errors/cli.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/logger.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/config.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/action/base.d.ts": [
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/config.d.ts": [
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/action/base.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/exit.d.ts": [
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/prompt.d.ts": [
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
-      ],
       "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/parser/lib/args.d.ts": [
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
@@ -1297,42 +1264,6 @@
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/command/lib/command.d.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/command/lib/flags.d.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/command/lib/main.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/styled/table.d.ts": [
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/command/lib/index.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/parser/lib/flags.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/styled/header.d.ts": [
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/styled/json.d.ts": [
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/styled/tree.d.ts": [
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/open.d.ts": [
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/index.d.ts": [
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/index.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/action/base.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/config.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/exit.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/prompt.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/styled/table.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/styled/header.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/styled/json.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/styled/tree.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/open.d.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
       ],
@@ -1608,6 +1539,96 @@
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/globals.d.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts"
       ],
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node-notifier/index.d.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node-notifier/index.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/index.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/handle.d.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/errors/cli.d.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/errors/exit.d.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/errors/cli.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/logger.d.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/config.d.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/logger.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/index.d.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/handle.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/errors/exit.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/errors/cli.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/logger.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/config.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/action/base.d.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/config.d.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/action/base.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/exit.d.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/prompt.d.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/styled/table.d.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/command/lib/index.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/parser/lib/flags.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/styled/header.d.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/styled/json.d.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/styled/tree.d.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/open.d.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/index.d.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/index.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/action/base.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/config.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/exit.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/prompt.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/styled/table.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/styled/header.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/styled/json.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/styled/tree.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/open.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
+      ],
       "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/minimatch/index.d.ts": [
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
@@ -1649,74 +1670,20 @@
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
       ],
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/reflect-metadata/index.d.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/typescript-ioc/typescript-ioc.d.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/reflect-metadata/index.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
+      ],
       "c:/users/mathi/codeprojects/chptr/chptr/src/hard-config.ts": [
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/debug/index.d.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/path.d.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/yaml/index.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "c:/users/mathi/codeprojects/chptr/chptr/src/bootstrap-functions.ts": [
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/simple-git/promise.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/src/fs-utils.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/src/hard-config.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "c:/users/mathi/codeprojects/chptr/chptr/src/chapter-id.ts": [
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/debug/index.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/moment/moment.d.ts": [
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/comment-json/index.d.ts": [
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/convict/index.d.ts": [
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/js-yaml/index.d.ts": [
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "c:/users/mathi/codeprojects/chptr/chptr/src/soft-config.ts": [
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/index.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/comment-json/index.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/convict/index.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/debug/index.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/js-yaml/index.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/moment/moment.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/path.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/yaml/index.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/src/chapter-id.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/src/chptr-error.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/src/fs-utils.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/src/hard-config.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "c:/users/mathi/codeprojects/chptr/chptr/src/git-utils.ts": [
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/index.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/debug/index.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/minimatch/index.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/moment/moment.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/simple-git/promise.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/simple-git/typings/response.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/src/chapter-id.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/src/soft-config.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/deep-diff/index.d.ts": [
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/diff/index.d.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/typescript-ioc/typescript-ioc.d.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
       ],
@@ -2186,6 +2153,87 @@
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
       ],
+      "c:/users/mathi/codeprojects/chptr/chptr/src/commands/base.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/command/lib/index.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/debug/index.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node-notifier/index.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/path.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/src/fs-utils.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/src/hard-config.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/src/ui-utils.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/typescript-ioc/typescript-ioc.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "c:/users/mathi/codeprojects/chptr/chptr/src/bootstrap-functions.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/simple-git/promise.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/src/commands/base.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/src/fs-utils.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/src/hard-config.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/typescript-ioc/typescript-ioc.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "c:/users/mathi/codeprojects/chptr/chptr/src/chapter-id.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/debug/index.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/moment/moment.d.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/comment-json/index.d.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/convict/index.d.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/js-yaml/index.d.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "c:/users/mathi/codeprojects/chptr/chptr/src/soft-config.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/index.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/comment-json/index.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/convict/index.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/debug/index.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/js-yaml/index.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/moment/moment.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/path.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/yaml/index.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/src/chapter-id.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/src/chptr-error.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/src/fs-utils.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/src/hard-config.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/typescript-ioc/typescript-ioc.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "c:/users/mathi/codeprojects/chptr/chptr/src/git-utils.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/index.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/debug/index.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/minimatch/index.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/moment/moment.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/simple-git/promise.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/simple-git/typings/response.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/url.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/typescript-ioc/typescript-ioc.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/src/chapter-id.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/src/soft-config.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/deep-diff/index.d.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/diff/index.d.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
+      ],
       "c:/users/mathi/codeprojects/chptr/chptr/src/markup-utils.ts": [
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/index.d.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/debug/index.d.ts",
@@ -2199,6 +2247,7 @@
         "c:/users/mathi/codeprojects/chptr/chptr/src/git-utils.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/src/soft-config.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/src/ui-utils.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/typescript-ioc/typescript-ioc.d.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
       ],
@@ -2207,6 +2256,16 @@
         "c:/users/mathi/codeprojects/chptr/chptr/src/chapter-id.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/src/fs-utils.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/src/soft-config.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/typescript-ioc/typescript-ioc.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/tmp/index.d.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/tmp-promise/index.d.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/tmp/index.d.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
       ],
@@ -2224,6 +2283,11 @@
         "c:/users/mathi/codeprojects/chptr/chptr/src/soft-config.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/src/statistics.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/src/ui-utils.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/typescript-ioc/typescript-ioc.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/tmp-promise/index.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/src/bootstrap-functions.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/js-yaml/index.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/child_process.d.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
       ],
@@ -2233,23 +2297,6 @@
       ],
       "c:/users/mathi/codeprojects/chptr/chptr/src/index.ts": [
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/command/lib/index.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node-notifier/index.d.ts": [
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node-notifier/index.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/index.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "c:/users/mathi/codeprojects/chptr/chptr/src/commands/base.ts": [
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/command/lib/index.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/debug/index.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node-notifier/index.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/path.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/src/fs-utils.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/src/hard-config.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/src/ui-utils.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
       ],
@@ -2268,6 +2315,7 @@
         "c:/users/mathi/codeprojects/chptr/chptr/src/ui-utils.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/src/commands/base.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/src/fs-utils.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/typescript-ioc/typescript-ioc.d.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
       ],
@@ -2359,6 +2407,7 @@
       "c:/users/mathi/codeprojects/chptr/chptr/src/commands/split.ts": [
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/command/lib/index.d.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/index.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/minimatch/index.d.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/path.d.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/src/chapter-id.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/src/chptr-error.ts",
@@ -2383,26 +2432,18 @@
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
       ],
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/tmp/index.d.ts": [
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/tmp-promise/index.d.ts": [
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/tmp/index.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
-      ],
       "c:/users/mathi/codeprojects/chptr/chptr/src/commands/build/metadata.ts": [
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/command/lib/index.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/parser/lib/index.d.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/index.d.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/moment/moment.d.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/path.d.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/src/chptr-error.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/src/markup-utils.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/src/soft-config.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/src/ui-utils.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/src/commands/base.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/src/commands/compactable-base.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/parser/lib/index.d.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
       ],
@@ -2411,13 +2452,24 @@
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/parser/lib/index.d.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/child_process.d.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/index.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/moment/moment.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/js-yaml/index.d.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/path.d.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/tmp-promise/index.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/src/bootstrap-functions.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/src/chapter-id.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/src/chptr-error.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/src/markup-utils.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/src/ui-utils.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/src/commands/base.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/src/commands/build/metadata.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "c:/users/mathi/codeprojects/chptr/chptr/src/commands/build/output.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/command/lib/index.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/parser/lib/index.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/src/ui-utils.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/src/commands/base.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/moment/moment.d.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/src/commands/build/metadata.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
@@ -2809,54 +2861,6 @@
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
       ],
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/handle.d.ts": [
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/errors/cli.d.ts": [
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/errors/exit.d.ts": [
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/errors/cli.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/logger.d.ts": [
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/config.d.ts": [
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/logger.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/index.d.ts": [
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/handle.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/errors/exit.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/errors/cli.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/logger.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/config.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/action/base.d.ts": [
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/config.d.ts": [
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/action/base.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/exit.d.ts": [
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/prompt.d.ts": [
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
-      ],
       "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/parser/lib/args.d.ts": [
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
@@ -2970,42 +2974,6 @@
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/command/lib/command.d.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/command/lib/flags.d.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/command/lib/main.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/styled/table.d.ts": [
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/command/lib/index.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/parser/lib/flags.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/styled/header.d.ts": [
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/styled/json.d.ts": [
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/styled/tree.d.ts": [
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/open.d.ts": [
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/index.d.ts": [
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/index.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/action/base.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/config.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/exit.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/prompt.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/styled/table.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/styled/header.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/styled/json.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/styled/tree.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/open.d.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
       ],
@@ -3281,6 +3249,96 @@
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/globals.d.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts"
       ],
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node-notifier/index.d.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node-notifier/index.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/index.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/handle.d.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/errors/cli.d.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/errors/exit.d.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/errors/cli.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/logger.d.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/config.d.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/logger.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/index.d.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/handle.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/errors/exit.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/errors/cli.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/logger.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/config.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/action/base.d.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/config.d.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/action/base.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/exit.d.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/prompt.d.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/styled/table.d.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/command/lib/index.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/parser/lib/flags.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/styled/header.d.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/styled/json.d.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/styled/tree.d.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/open.d.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/index.d.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/index.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/action/base.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/config.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/exit.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/prompt.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/styled/table.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/styled/header.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/styled/json.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/styled/tree.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/open.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
+      ],
       "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/minimatch/index.d.ts": [
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
@@ -3308,39 +3366,6 @@
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/glob/index.d.ts"
       ],
       "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/yaml/index.d.ts": [
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/moment/moment.d.ts": [
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/comment-json/index.d.ts": [
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/convict/index.d.ts": [
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/js-yaml/index.d.ts": [
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "c:/users/mathi/codeprojects/chptr/chptr/src/soft-config.ts": [
-        "c:/users/mathi/codeprojects/chptr/chptr/src/chapter-id.ts"
-      ],
-      "c:/users/mathi/codeprojects/chptr/chptr/src/git-utils.ts": [
-        "c:/users/mathi/codeprojects/chptr/chptr/src/soft-config.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/src/chapter-id.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/simple-git/typings/response.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/moment/moment.d.ts"
-      ],
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/deep-diff/index.d.ts": [
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/diff/index.d.ts": [
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
       ],
@@ -3802,6 +3827,48 @@
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
       ],
+      "c:/users/mathi/codeprojects/chptr/chptr/src/commands/base.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/src/ui-utils.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/parser/lib/flags.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/debug/index.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/src/hard-config.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/src/fs-utils.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/command/lib/index.d.ts"
+      ],
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/moment/moment.d.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/comment-json/index.d.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/convict/index.d.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/js-yaml/index.d.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "c:/users/mathi/codeprojects/chptr/chptr/src/soft-config.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/src/chapter-id.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/moment/moment.d.ts"
+      ],
+      "c:/users/mathi/codeprojects/chptr/chptr/src/git-utils.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/src/soft-config.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/src/chapter-id.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/simple-git/typings/response.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/moment/moment.d.ts"
+      ],
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/deep-diff/index.d.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/diff/index.d.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
+      ],
       "c:/users/mathi/codeprojects/chptr/chptr/src/markup-utils.ts": [
         "c:/users/mathi/codeprojects/chptr/chptr/src/soft-config.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/moment/moment.d.ts"
@@ -3809,6 +3876,15 @@
       "c:/users/mathi/codeprojects/chptr/chptr/src/statistics.ts": [
         "c:/users/mathi/codeprojects/chptr/chptr/src/soft-config.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/src/chapter-id.ts"
+      ],
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/tmp/index.d.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/tmp-promise/index.d.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/tmp/index.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
       ],
       "c:/users/mathi/codeprojects/chptr/chptr/src/core-utils.ts": [
         "c:/users/mathi/codeprojects/chptr/chptr/src/soft-config.ts",
@@ -3819,20 +3895,6 @@
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
       ],
       "c:/users/mathi/codeprojects/chptr/chptr/src/index.ts": [
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/command/lib/index.d.ts"
-      ],
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node-notifier/index.d.ts": [
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node-notifier/index.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/index.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "c:/users/mathi/codeprojects/chptr/chptr/src/commands/base.ts": [
-        "c:/users/mathi/codeprojects/chptr/chptr/src/ui-utils.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/parser/lib/flags.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/debug/index.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/src/hard-config.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/src/fs-utils.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/command/lib/index.d.ts"
       ],
       "c:/users/mathi/codeprojects/chptr/chptr/src/commands/initialized-base.ts": [
@@ -3903,15 +3965,6 @@
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/parser/lib/flags.d.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/command/lib/flags.d.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/src/commands/initialized-base.ts"
-      ],
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/tmp/index.d.ts": [
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/tmp-promise/index.d.ts": [
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/tmp/index.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
-        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
       ],
       "c:/users/mathi/codeprojects/chptr/chptr/src/commands/build/metadata.ts": [
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/parser/lib/flags.d.ts",
@@ -4170,6 +4223,20 @@
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/uuid/interfaces.d.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
         "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/reflect-metadata/index.d.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/typescript-ioc/typescript-ioc.d.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/reflect-metadata/index.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/util.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "c:/users/mathi/codeprojects/chptr/chptr/src/commands/build/output.ts": [
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/parser/lib/flags.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/command/lib/index.d.ts",
+        "c:/users/mathi/codeprojects/chptr/chptr/src/commands/build/metadata.ts"
       ]
     },
     "semanticDiagnosticsPerFile": [
@@ -4207,25 +4274,25 @@
       "c:/users/mathi/codeprojects/chptr/chptr/node_modules/tslib/tslib.d.ts",
       "c:/users/mathi/codeprojects/chptr/chptr/node_modules/simple-git/typings/response.d.ts",
       "c:/users/mathi/codeprojects/chptr/chptr/node_modules/simple-git/promise.d.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/handle.d.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/errors/cli.d.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/errors/exit.d.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/logger.d.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/config.d.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/index.d.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/action/base.d.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/config.d.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/exit.d.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/prompt.d.ts",
       "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/parser/lib/args.d.ts",
       "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/parser/lib/alphabet.d.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/parser/lib/flags.d.ts",
       "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/parser/lib/metadata.d.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/parser/lib/parse.d.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/parser/lib/help.d.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/parser/lib/index.d.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/config/lib/command.d.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/config/lib/hooks.d.ts",
       "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/config/lib/pjson.d.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/config/lib/manifest.d.ts",
       "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/config/lib/topic.d.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/styled/header.d.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/styled/json.d.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/styled/tree.d.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/open.d.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/config/lib/plugin.d.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/config/lib/config.d.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/config/lib/index.d.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/command/lib/flags.d.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/command/lib/command.d.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/command/lib/main.d.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/command/lib/index.d.ts",
       "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/debug/index.d.ts",
       "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/globals.d.ts",
       "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/assert.d.ts",
@@ -4272,21 +4339,33 @@
       "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/util.d.ts",
       "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/globals.d.ts",
       "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node/ts3.2/index.d.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node-notifier/index.d.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/handle.d.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/errors/cli.d.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/errors/exit.d.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/logger.d.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/config.d.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/errors/lib/index.d.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/action/base.d.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/config.d.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/exit.d.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/prompt.d.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/styled/table.d.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/styled/header.d.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/styled/json.d.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/styled/tree.d.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/open.d.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/index.d.ts",
       "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/minimatch/index.d.ts",
       "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/glob/index.d.ts",
       "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/latinize/index.d.ts",
       "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/sanitize-filename/index.d.ts",
       "c:/users/mathi/codeprojects/chptr/chptr/src/chptr-error.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/src/fs-utils.ts",
       "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/yaml/index.d.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/reflect-metadata/index.d.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/typescript-ioc/typescript-ioc.d.ts",
       "c:/users/mathi/codeprojects/chptr/chptr/src/hard-config.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/src/bootstrap-functions.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/src/chapter-id.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/moment/moment.d.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/comment-json/index.d.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/convict/index.d.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/js-yaml/index.d.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/deep-diff/index.d.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/diff/index.d.ts",
       "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/through/index.d.ts",
       "c:/users/mathi/codeprojects/chptr/chptr/node_modules/rxjs/internal/subscription.d.ts",
       "c:/users/mathi/codeprojects/chptr/chptr/node_modules/rxjs/internal/types.d.ts",
@@ -4353,12 +4432,41 @@
       "c:/users/mathi/codeprojects/chptr/chptr/node_modules/rxjs/internal/config.d.ts",
       "c:/users/mathi/codeprojects/chptr/chptr/node_modules/rxjs/index.d.ts",
       "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/inquirer/index.d.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/src/ui-utils.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/src/commands/base.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/src/bootstrap-functions.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/src/chapter-id.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/moment/moment.d.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/comment-json/index.d.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/convict/index.d.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/js-yaml/index.d.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/src/soft-config.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/src/git-utils.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/deep-diff/index.d.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/diff/index.d.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/src/markup-utils.ts",
       "c:/users/mathi/codeprojects/chptr/chptr/src/statistics.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/src/imports.d.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/node-notifier/index.d.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/validator/index.d.ts",
       "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/tmp/index.d.ts",
       "c:/users/mathi/codeprojects/chptr/chptr/node_modules/tmp-promise/index.d.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/src/core-utils.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/src/imports.d.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/src/index.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/src/commands/initialized-base.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/src/commands/compactable-base.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/src/commands/add.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/src/commands/delete.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/src/commands/edit.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/validator/index.d.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/src/commands/init.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/src/commands/rename.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/src/commands/reorder.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/src/commands/save.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/src/commands/split.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/src/commands/track.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/src/commands/build/compact.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/src/commands/build/metadata.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/src/commands/build/index.ts",
+      "c:/users/mathi/codeprojects/chptr/chptr/src/commands/build/output.ts",
       "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/chai/index.d.ts",
       "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/json5/index.d.ts",
       "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/lodash/common/common.d.ts",
@@ -4379,45 +4487,7 @@
       "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/nock/index.d.ts",
       "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/sinon/ts3.1/index.d.ts",
       "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/uuid/interfaces.d.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/uuid/index.d.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/parser/lib/flags.d.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/parser/lib/parse.d.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/parser/lib/help.d.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/parser/lib/index.d.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/config/lib/command.d.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/config/lib/hooks.d.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/config/lib/manifest.d.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/config/lib/plugin.d.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/config/lib/config.d.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/config/lib/index.d.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/command/lib/flags.d.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/command/lib/command.d.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/command/lib/main.d.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@oclif/command/lib/index.d.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/styled/table.d.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/cli-ux/lib/index.d.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/src/fs-utils.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/src/soft-config.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/src/git-utils.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/src/ui-utils.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/src/markup-utils.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/src/core-utils.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/src/index.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/src/commands/base.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/src/commands/initialized-base.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/src/commands/compactable-base.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/src/commands/add.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/src/commands/delete.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/src/commands/edit.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/src/commands/init.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/src/commands/rename.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/src/commands/reorder.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/src/commands/save.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/src/commands/split.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/src/commands/track.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/src/commands/build/compact.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/src/commands/build/metadata.ts",
-      "c:/users/mathi/codeprojects/chptr/chptr/src/commands/build/index.ts"
+      "c:/users/mathi/codeprojects/chptr/chptr/node_modules/@types/uuid/index.d.ts"
     ]
   },
   "version": "3.4.3"
