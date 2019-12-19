@@ -57,8 +57,6 @@ export default class Build extends Command {
     // try {
       const { flags } = this.parse(this.constructor as Input<any>)
 
-      await this.RunMetadata(flags)
-
       const removeMarkup = flags.removemarkup
       const withSummaries = flags.withsummaries
 
@@ -72,6 +70,8 @@ export default class Build extends Command {
       if (outputFiletype.indexOf('all') >= 0) {
         outputFiletype = Build.exportableFileTypes
       }
+
+      await this.RunMetadata(flags)
 
       await this.coreUtils.buildOutput(removeMarkup, withSummaries, outputFiletype, this.outputFile)
       // const originalChapterFilesArray = (await this.fsUtils.listFiles(
