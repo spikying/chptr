@@ -37,10 +37,10 @@ export default class Save extends Command {
     empty: flags.boolean({
       char: 'e',
       required: false,
+      default: false,
       description: 'No manual message in commit',
       exclusive: ['message']
     })
-
   }
 
   static args = [
@@ -106,14 +106,19 @@ export default class Save extends Command {
       }
     }
 
+    const messageFromArgs = args.message
     const queryBuilder = new QueryBuilder()
-    if (!args.message && !emptyCommitMessage) {
+    if (!messageFromArgs && !emptyCommitMessage) {
       queryBuilder.add('message', queryBuilder.textinput('Message to use in commit to repository?', ''))
     }
     const queryResponses: any = await queryBuilder.responses()
 
-    let message: string = emptyCommitMessage ? '' : ((args.message || queryResponses.message) && '\n')    
-    message += 'Modified files:\n    ' + `${toStageFiles.join('\n    ')}`
+    debug(`emptyCommitMessage: ${JSON.stringify(emptyCommitMessage)}`)
+    debug(`messageFromArgs: ${JSON.stringify(messageFromArgs)}`)
+    const message: string =
+      (emptyCommitMessage ? '' : (messageFromArgs || queryResponses.message) + '\n') +
+      'Modified files:\n    ' +
+      `${toStageFiles.join('\n    ')}`
 
     await this.coreUtils.preProcessAndCommitFiles(message, toStageFiles)
   }

@@ -68,7 +68,7 @@ export class CoreUtils {
       .replace(paragraphBreakRegex, '\n\n')
       .replace(/([.!?…}*"]) +\n/g, '$1\n')
       .replace(/\n-{1,2}\s?/g, '\n-')
-      .replace(/\n-(.*)\n\n(?=-)/g, '\n-$1\n')
+      .replace(/^-(.*)\n\n(?=-)/gm, '-$1\n')
       .replace(/\n{3,}/g, '\n\n')
       .replace(/\n*$/, '\n')
 
@@ -616,7 +616,7 @@ export class CoreUtils {
           }
           pandocArgs = pandocArgs.concat([
             '--to',
-            'docx+smart+fancy_lists',
+            'docx+smart+fancy_lists+fenced_divs',
             '--toc',
             '--toc-depth',
             '2',
@@ -700,11 +700,13 @@ export class CoreUtils {
         pandocRuns.push(this.runPandoc(pandocArgs))
       }
 
-      await Promise.all(pandocRuns).catch(err => {
+      await Promise.all(pandocRuns).catch(async err => {
+        const tempMdFilePath = path.join(this.softConfig.buildDirectory, 'tempMdFile.md')
+        await this.fsUtils.createFile(tempMdFilePath, fullCleanedOrTransformedContent)
         throw new ChptrError(
-          `Error trying to run Pandoc.  You need to have it installed and accessible globally, with version 2.7.3 minimally.\n${err
+          `Error trying to run Pandoc.  You need to have it installed and accessible globally, with version 2.7.3 minimally.\nLook into ${tempMdFilePath.toString()} with following error:\n${err
             .toString()
-            .errorColor()}`,
+            .errorColor()}\nYou can delete temp file afterwards.`,
           'command:build:index',
           52
         )
