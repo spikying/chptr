@@ -582,7 +582,7 @@ export class CoreUtils {
       await this.fsUtils.writeInFile(tmpMDfile.fd, fullCleanedOrTransformedContent)
       await this.fsUtils.writeInFile(
         tmpMDfileTex.fd,
-        fullCleanedOrTransformedContent.replace(/^\*\s?\*\s?\*$/gm, '\\asterism').replace(/\u200B/g, '')
+        fullCleanedOrTransformedContent.replace(/^\*\s?\*\s?\*$/gm, '\\asterism').replace(/\u200B/g, '').replace(/^:{4}/gm, "````")
         // .replace(/\\textbf{/gm, '\\merriweatherblack{')
       )
 
