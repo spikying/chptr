@@ -582,7 +582,14 @@ export class CoreUtils {
       await this.fsUtils.writeInFile(tmpMDfile.fd, fullCleanedOrTransformedContent)
       await this.fsUtils.writeInFile(
         tmpMDfileTex.fd,
-        fullCleanedOrTransformedContent.replace(/^\*\s?\*\s?\*$/gm, '\\asterism').replace(/\u200B/g, '').replace(/^:{4}/gm, "````")
+        fullCleanedOrTransformedContent
+          .replace(/^\*\s?\*\s?\*$/gm, '\\asterism')
+          .replace(/\u200B/g, '')
+          .replace(/^:{4}\s?(.+?)(-right|-left)?$/gm, ':::: encadre$2')
+          // .replace(/^:{4}\s?(.*)left$/gm, ':::: encadre-left')
+          // .replace(/^:{4}\s?(.*)right$/gm, ':::: encadre-right')
+          // .replace(/^:{4}\s?(.*)$/gm, ':::: encadre')
+        
         // .replace(/\\textbf{/gm, '\\merriweatherblack{')
       )
 
@@ -660,6 +667,12 @@ export class CoreUtils {
             pandocArgs = pandocArgs.concat([`--template`, `"${templateFullPath}"`])
           } else {
             cli.warn(`For a better output, create a latex template at ${templateFullPath}`)
+          }
+
+          const luaFilePaths = await this.fsUtils.listFiles(path.join(this.hardConfig.configPath, '*.lua')) //this.fsUtils.getAllFilesForWildcards(['*.lua'], this.hardConfig.configPath)
+          for (const luaFilePath of luaFilePaths) {
+            pandocArgs = pandocArgs.concat([`--lua-filter="${path.join(luaFilePath)}"`])
+            debug(`lua-flter="${path.join(luaFilePath)}"`)
           }
 
           pandocArgs = pandocArgs.concat([
