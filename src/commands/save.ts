@@ -40,15 +40,28 @@ export default class Save extends Command {
       default: false,
       description: 'No manual message in commit',
       exclusive: ['message']
+    }),
+    message: flags.string({
+      char: 'm',
+      required: false,
+      default: '',
+      description: 'Message to use in commit to repository'
     })
   }
 
   static args = [
+    // {
+    //   name: 'message',
+    //   description: 'Message to use in commit to repository',
+    //   required: false,
+    //   default: ''
+    // }
     {
-      name: 'message',
-      description: 'Message to use in commit to repository',
+      name: 'numberOrFilename',
+      description: 'Chamber number to save, or tracked filename or filename pattern to save to repository',
       required: false,
-      default: ''
+      default: '',
+      exclusive: ['number', 'filename']
     }
   ]
 
@@ -60,11 +73,22 @@ export default class Save extends Command {
     debug('Running Save command')
     const { args, flags } = this.parse(Save)
 
-    const emptyCommitMessage = flags.empty
-    // const atFilter = flags.number ? flags.number.substring(0, 1) === '@' : false
-    // const numberFilter = flags.number ? this.softConfig.extractNumber(flags.number) : undefined
-    const chapterIdFilter = flags.number
-      ? new ChapterId(this.softConfig.extractNumber(flags.number), this.softConfig.isAtNumbering(flags.number))
+    const numberOrFilename = args.numberOrFilename
+    let inputNumber = flags.number
+    let inputFilename = flags.filename
+
+    if (numberOrFilename != '') {
+      const numAtRegex = new RegExp(`^${this.softConfig.numbersPattern(true)}$`)
+      const numRegex = new RegExp(`^${this.softConfig.numbersPattern(false)}$`)
+      if (numAtRegex.test(numberOrFilename) || numRegex.test(numberOrFilename)) {
+        inputNumber = numberOrFilename
+      } else {
+        inputFilename = numberOrFilename
+      }
+    }
+
+    const chapterIdFilter = inputNumber
+      ? new ChapterId(this.softConfig.extractNumber(inputNumber), this.softConfig.isAtNumbering(inputNumber))
       : null
 
     const preStageFiles = chapterIdFilter ? await this.gitUtils.GetGitListOfStageableFiles(chapterIdFilter) : []
@@ -80,22 +104,22 @@ export default class Save extends Command {
     }
     const toStageFiles = chapterIdFilter
       ? await this.gitUtils.GetGitListOfStageableFiles(chapterIdFilter)
-      : flags.filename
+      : inputFilename
       ? (await this.gitUtils.GetGitListOfStageableFiles()).filter(f => {
-          debug(`f=${f}, flags.filename=${flags.filename}`)
-          return minimatch(f, flags.filename || '')
+          debug(`f=${f}, inputFilename=${inputFilename}`)
+          return minimatch(f, inputFilename || '')
         })
       : await this.gitUtils.GetGitListOfStageableFiles()
 
     if (toStageFiles.length === 0) {
-      const filepath = path.join(this.rootPath, flags.filename || '')
-      if (flags.filename && (await this.fsUtils.fileExists(filepath))) {
+      const filepath = path.join(this.rootPath, inputFilename || '')
+      if (inputFilename && (await this.fsUtils.fileExists(filepath))) {
         if (flags.track) {
           toStageFiles.push(this.softConfig.mapFileToBeRelativeToRootPath(filepath))
         } else {
           const warnMsg =
             `That file is not tracked.  You may want to run "` +
-            `track '${flags.filename}'`.resultNormalColor() +
+            `track '${inputFilename}'`.resultNormalColor() +
             `" or add ` +
             `--track`.resultNormalColor() +
             ` flag to this command.`
@@ -106,17 +130,18 @@ export default class Save extends Command {
       }
     }
 
-    const messageFromArgs = args.message
+    const emptyCommitMessage = flags.empty
+    const messageFromFlag = flags.message
     const queryBuilder = new QueryBuilder()
-    if (!messageFromArgs && !emptyCommitMessage) {
+    if (!messageFromFlag && !emptyCommitMessage) {
       queryBuilder.add('message', queryBuilder.textinput('Message to use in commit to repository?', ''))
     }
     const queryResponses: any = await queryBuilder.responses()
 
     debug(`emptyCommitMessage: ${JSON.stringify(emptyCommitMessage)}`)
-    debug(`messageFromArgs: ${JSON.stringify(messageFromArgs)}`)
+    debug(`messageFromFlag: ${JSON.stringify(messageFromFlag)}`)
     const message: string =
-      (emptyCommitMessage ? '' : (messageFromArgs || queryResponses.message) + '\n') +
+      (emptyCommitMessage ? '' : (messageFromFlag || queryResponses.message) + '\n') +
       'Modified files:\n    ' +
       `${toStageFiles.join('\n    ')}`
 

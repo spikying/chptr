@@ -586,9 +586,6 @@ export class CoreUtils {
           .replace(/^\*\s?\*\s?\*$/gm, '\\asterism')
           .replace(/\u200B/g, '')
           .replace(/^:{4}\s?(.+?)(-right|-left)?$/gm, ':::: encadre$2')
-          // .replace(/^:{4}\s?(.*)left$/gm, ':::: encadre-left')
-          // .replace(/^:{4}\s?(.*)right$/gm, ':::: encadre-right')
-          // .replace(/^:{4}\s?(.*)$/gm, ':::: encadre')
         
         // .replace(/\\textbf{/gm, '\\merriweatherblack{')
       )
