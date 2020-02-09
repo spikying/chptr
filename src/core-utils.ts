@@ -805,7 +805,7 @@ export class CoreUtils {
   private async runPandoc(options: string[]): Promise<string> {
     return new Promise((resolve, reject) => {
       const command = 'pandoc ' + options.join(' ')
-      cli.info(`Executing child process with command ${command.resultNormalColor}`)
+      cli.info(`Executing child process with command ${command.resultNormalColor()}`)
       exec(command, (err, pout, perr) => {
         if (err) {
           // this.error(err.toString().errorColor())
