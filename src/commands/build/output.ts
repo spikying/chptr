@@ -33,6 +33,11 @@ export default class Build extends Command {
       char: 'S',
       description: 'Add summaries in output, before actual content',
       default: false
+    }),
+    withFullIntermediaryOutput: flags.boolean({
+      char: 'i',
+      description: 'With full intermediary output as .md file',
+      default: false
     })
   }
 
@@ -46,6 +51,7 @@ export default class Build extends Command {
 
     const removeMarkup = flags.removemarkup
     const withSummaries = flags.withsummaries
+    const withIntermediary = flags.withFullIntermediaryOutput
 
     let outputFiletype = flags.type
     if (!outputFiletype) {
@@ -62,6 +68,6 @@ export default class Build extends Command {
     //   this.softConfig.config.projectTitle
     // )}`
 
-    await this.coreUtils.buildOutput(removeMarkup, withSummaries, outputFiletype, this.outputFile)
+    await this.coreUtils.buildOutput(removeMarkup, withSummaries, withIntermediary, outputFiletype, this.outputFile)
   }
 }

@@ -72,7 +72,7 @@ export class CoreUtils {
       .replace(/\n{3,}/g, '\n\n')
       .replace(/\n*$/, '\n')
 
-    debug(`processContentBack: ${replacedContent}`)
+    // debug(`processContentBack: ${replacedContent}`)
     return replacedContent
   }
 
@@ -526,7 +526,13 @@ export class CoreUtils {
     }
   }
 
-  public async buildOutput(removeMarkup: boolean, withSummaries: boolean, outputFiletype: any, outputFile: string): Promise<void> {
+  public async buildOutput(
+    removeMarkup: boolean,
+    withSummaries: boolean,
+    withIntermediary: boolean,
+    outputFiletype: any,
+    outputFile: string
+  ): Promise<void> {
     debug('Running Build Output')
 
     const tmpMDfile = await tmpFile()
@@ -583,17 +589,23 @@ export class CoreUtils {
       await this.fsUtils.writeInFile(
         tmpMDfileTex.fd,
         fullCleanedOrTransformedContent
-          .replace(/^\*\s?\*\s?\*$/gm, '\\asterism')
+          // .replace(/^\*\s?\*\s?\*$/gm, '\\asterism')
           .replace(/\u200B/g, '')
           .replace(/^:{4}\s?(.+?)(-right|-left)?$/gm, ':::: encadre$2')
-        
+
         // .replace(/\\textbf{/gm, '\\merriweatherblack{')
       )
+
+      const tempMdFilePath = path.join(this.softConfig.buildDirectory, 'tempMdFile.md')
+      if (withIntermediary) {
+        await this.fsUtils.createFile(tempMdFilePath, fullCleanedOrTransformedContent)
+      }
 
       let chapterFiles = '"' + tmpMDfile.path + '" '
 
       const pandocRuns: Promise<string>[] = []
       const allOutputFilePath: string[] = []
+      const allLuaFilters = await this.fsUtils.listFiles(path.join(this.hardConfig.configPath, '*.all.lua'))
 
       for (const filetype of outputFiletype) {
         const fullOutputFilePath = path.join(this.softConfig.buildDirectory, outputFile + '.' + filetype)
@@ -603,12 +615,13 @@ export class CoreUtils {
 
         if (filetype === 'md') {
           pandocArgs = pandocArgs.concat([
-            '--number-sections',
+            // '--number-sections',
             '--to',
             'markdown-raw_html+smart+fancy_lists',
             '--wrap=none',
             '--atx-headers'
           ])
+          pandocArgs = pandocArgs.concat(await this.luaFilters('*.md.lua', allLuaFilters))
         }
 
         if (filetype === 'docx') {
@@ -618,14 +631,17 @@ export class CoreUtils {
           } else {
             cli.warn(`For a better output, create an empty styled Word doc at ${referenceDocFullPath}`)
           }
+
+          pandocArgs = pandocArgs.concat(await this.luaFilters('*.docx.lua', allLuaFilters))
+
           pandocArgs = pandocArgs.concat([
             '--to',
             'docx+smart+fancy_lists+fenced_divs',
             '--toc',
             '--toc-depth',
             '2',
-            '--top-level-division=chapter',
-            '--number-sections'
+            '--top-level-division=chapter'
+            // '--number-sections'
           ])
         }
 
@@ -636,6 +652,7 @@ export class CoreUtils {
           } else {
             cli.warn(`For a better output, create an html template at ${templateFullPath}`)
           }
+          pandocArgs = pandocArgs.concat(await this.luaFilters('*.html.lua', allLuaFilters))
 
           const cssFullPath = path.join(this.hardConfig.configPath, 'template.css')
           if (await this.fsUtils.fileExists(cssFullPath)) {
@@ -651,7 +668,7 @@ export class CoreUtils {
             '--toc-depth',
             '2',
             '--top-level-division=chapter',
-            '--number-sections',
+            // '--number-sections',
             '--self-contained'
           ])
         }
@@ -666,11 +683,13 @@ export class CoreUtils {
             cli.warn(`For a better output, create a latex template at ${templateFullPath}`)
           }
 
-          const luaFilePaths = await this.fsUtils.listFiles(path.join(this.hardConfig.configPath, '*.lua')) //this.fsUtils.getAllFilesForWildcards(['*.lua'], this.hardConfig.configPath)
-          for (const luaFilePath of luaFilePaths) {
-            pandocArgs = pandocArgs.concat([`--lua-filter="${path.join(luaFilePath)}"`])
-            debug(`lua-flter="${path.join(luaFilePath)}"`)
-          }
+          pandocArgs = pandocArgs.concat(await this.luaFilters('*.latex.lua', allLuaFilters))
+          // const luaFilePaths = (await this.fsUtils.listFiles(path.join(this.hardConfig.configPath, '*.latex.lua'))).concat(allLuaFilters)
+          // // this.fsUtils.getAllFilesForWildcards(['*.lua'], this.hardConfig.configPath)
+          // for (const luaFilePath of luaFilePaths) {
+          //   pandocArgs = pandocArgs.concat([`--lua-filter="${path.join(luaFilePath)}"`])
+          //   debug(`lua-flter="${path.join(luaFilePath)}"`)
+          // }
 
           pandocArgs = pandocArgs.concat([
             // '--listings',
@@ -679,12 +698,13 @@ export class CoreUtils {
             '--toc-depth',
             '2',
             '--top-level-division=chapter',
-            '--number-sections',
-            // '--latex-engine=xelatex',
+            // '--number-sections',
             '--pdf-engine=xelatex',
             '--to',
             'latex+raw_tex+smart+fancy_lists'
           ])
+        } else {
+          chapterFiles = '"' + tmpMDfile.path + '" '
         }
 
         if (filetype === 'epub') {
@@ -694,9 +714,11 @@ export class CoreUtils {
             '--toc',
             '--toc-depth',
             '2',
-            '--top-level-division=chapter',
-            '--number-sections'
+            '--top-level-division=chapter'
+            // '--number-sections'
           ])
+
+          pandocArgs = pandocArgs.concat(await this.luaFilters('*.epub.lua', allLuaFilters))
         }
 
         pandocArgs = [
@@ -708,10 +730,19 @@ export class CoreUtils {
         ].concat(pandocArgs)
 
         pandocRuns.push(this.runPandoc(pandocArgs))
+        // await this.runPandoc(pandocArgs).catch(async err => {
+        //   await this.fsUtils.createFile(tempMdFilePath, fullCleanedOrTransformedContent)
+        //   throw new ChptrError(
+        //     `Error trying to run Pandoc.  You need to have it installed and accessible globally, with version 2.7.3 minimally.\nLook into ${tempMdFilePath.toString()} with following error:\n${err
+        //       .toString()
+        //       .errorColor()}\nYou can delete temp file afterwards.`,
+        //     'command:build:index',
+        //     52
+        //   )
+        // })
       }
 
       await Promise.all(pandocRuns).catch(async err => {
-        const tempMdFilePath = path.join(this.softConfig.buildDirectory, 'tempMdFile.md')
         await this.fsUtils.createFile(tempMdFilePath, fullCleanedOrTransformedContent)
         throw new ChptrError(
           `Error trying to run Pandoc.  You need to have it installed and accessible globally, with version 2.7.3 minimally.\nLook into ${tempMdFilePath.toString()} with following error:\n${err
@@ -721,6 +752,9 @@ export class CoreUtils {
           52
         )
       })
+
+      if (outputFiletype.indexOf('html') >= 0) {
+      }
 
       const allOutputFilePathPretty = allOutputFilePath.reduce((previous, current) => `${previous}\n    ${current}`, '')
       cli.action.stop(allOutputFilePathPretty.actionStopColor())
@@ -732,6 +766,16 @@ export class CoreUtils {
     }
 
     await this.runPostBuildStep()
+  }
+
+  private async luaFilters(wildcard: string, otherFiles: string[]): Promise<string[]> {
+    const luaFilePaths = (await this.fsUtils.listFiles(path.join(this.hardConfig.configPath, wildcard))).concat(otherFiles)
+    let result: string[] = []
+    for (const luaFilePath of luaFilePaths) {
+      result = result.concat([`--lua-filter="${path.join(luaFilePath)}"`])
+      debug(`lua-filter="${path.join(luaFilePath)}"`)
+    }
+    return result
   }
 
   private async runPostBuildStep(): Promise<void> {
@@ -761,7 +805,7 @@ export class CoreUtils {
   private async runPandoc(options: string[]): Promise<string> {
     return new Promise((resolve, reject) => {
       const command = 'pandoc ' + options.join(' ')
-      debug(`Executing child process with command ${command}`)
+      cli.info(`Executing child process with command ${command.resultNormalColor}`)
       exec(command, (err, pout, perr) => {
         if (err) {
           // this.error(err.toString().errorColor())
@@ -783,20 +827,35 @@ export class CoreUtils {
   private async moveChapterNumbersInFileContentToTemp(filenames: string[]): Promise<boolean> {
     let aForAtNumbering = false
 
+    debug(`filesWithChapterNumbersInContent array : ${JSON.stringify(this.softConfig.filesWithChapterNumbersInContent)}`)
     for (const file of this.softConfig.filesWithChapterNumbersInContent) {
+      debug(`file of filesWithChapterNumbersInContent = ${this.softConfig.filesWithChapterNumbersInContent}`)
+      // await cli.anykey()
       let content = await this.fsUtils.readFileContent(file)
-      for (const from of filenames.map(f => {
-        return {
-          number: this.softConfig.extractNumber(f),
-          isAtNumber: this.softConfig.isAtNumbering(f)
-        }
-      })) {
-        const fromNumberRE = new RegExp(`(?<!%|\w|\d)(${from.isAtNumber ? '(a|@)' : '()'}0*${from.number})(?!%|\w|\d)`, 'gm')
-        debug(`fromNumberRE = ${JSON.stringify(fromNumberRE)}`)
+      for (const from of filenames
+        .map(f => {
+          return {
+            number: this.softConfig.extractNumber(f),
+            isAtNumber: this.softConfig.isAtNumbering(f)
+          }
+        })
+        .filter((value, index, self) => {
+          return self.indexOf(value) === index
+        })) {
+        const fromNumberRE = new RegExp(
+          `(?<!\\d${from.isAtNumber ? '' : '|a|@'})(${from.isAtNumber ? '(a|@)' : '()'}0*${from.number})(?!%|\\w|\\d)`,
+          'gm'
+        )
+        debug(`fromNumber = ${from.number}`)
+        debug(`fromNumberRE = ${fromNumberRE.toString()}`)
         content = content.replace(fromNumberRE, '%$1%')
-        aForAtNumbering = aForAtNumbering || content.replace(fromNumberRE, '$2') === 'a'
+        // await cli.anykey()
+        const firstAtMatch = content.match(fromNumberRE)
+        aForAtNumbering = aForAtNumbering || (firstAtMatch ? firstAtMatch[0][2] === 'a' : false)
       }
+      // debug(`${file} file content in the middle of the change: \n${content}`)
       await this.fsUtils.writeFile(file, content)
+      // await cli.anykey()
     }
 
     return aForAtNumbering
@@ -817,12 +876,18 @@ export class CoreUtils {
         }
       })) {
         const fromNumberRE = new RegExp(
-          `(?<!\w|\d)(%${moveNumbers.fromIsAtNumber ? '(?:a|@)' : ''}0*${moveNumbers.fromNumber}%)(?!\w|\d)`,
+          // `(?<!\\w|\\d)` +
+          `(%${moveNumbers.fromIsAtNumber ? '(?:a|@)' : ''}0*${moveNumbers.fromNumber}%)`,
+          //+ `(?!\\w|\\d)`
           'gm'
         )
         //  (?<!%|\w)((?:a|@)?\d+)(?!%|\w)
+        debug(
+          `${file} will change ${fromNumberRE} to ${moveNumbers.destIsAtNumber ? (aForAtNumbering ? 'a' : '@') : ''}${moveNumbers.toNumber}`
+        )
         content = content.replace(fromNumberRE, `${moveNumbers.destIsAtNumber ? (aForAtNumbering ? 'a' : '@') : ''}${moveNumbers.toNumber}`)
       }
+
       await this.fsUtils.writeFile(file, content)
     }
   }

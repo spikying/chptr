@@ -6,6 +6,7 @@ import { QueryBuilder } from '../ui-utils'
 
 import { d } from './base'
 import Command from './compactable-base'
+import { ChapterId } from '../chapter-id'
 
 const debug = d('add')
 
@@ -13,26 +14,27 @@ export default class Add extends Command {
   static description = 'Adds a file or set of files as a new chapter, locally and in repository'
 
   static flags = {
-    ...Command.flags,
-    atnumbered: flags.boolean({
-      char: 'a',
-      description: 'Add an @numbered chapter',
-      default: false
-    })
+    ...Command.flags
+    // atnumbered: flags.boolean({
+    //   char: 'a',
+    //   description: 'Add an @numbered chapter',
+    //   default: false
+    // })
   }
 
   static args = [
+    {
+      name: 'number',
+      description:
+        'force this number to be used, if available.  AtNumbering will be determined by the presence or absence of @ sign.  Defaults to `end`.',
+      required: false,
+      default: 'end'
+    },
     {
       name: 'name',
       description: 'name of chapter to add',
       required: false,
       default: ''
-    },
-    {
-      name: 'number',
-      description:
-        'force this number to be used, if available.  If this argument is given, the `atnumbered` flag is ignored.  AtNumbering will be determined by the presence or absence of @ sign.',
-      required: false
     }
   ]
 
@@ -51,7 +53,13 @@ export default class Add extends Command {
 
     const name: string = args.name || queryResponses.name
 
-    const toStageFiles = await this.coreUtils.addChapterFiles(name, flags.atnumbered, args.number)
+    const futureId = await this.coreUtils.checkArgPromptAndExtractChapterId(args.number, '', true)
+
+    const toStageFiles = await this.coreUtils.addChapterFiles(
+      name,
+      futureId ? futureId.isAtNumber : false,
+      futureId ? futureId.num.toString() : ''
+    ) // flags.atnumbered, args.number)
 
     const commitMessage = `added\n    ${toStageFiles.join('\n    ')}`
 

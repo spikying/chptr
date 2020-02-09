@@ -160,7 +160,7 @@ export class FsUtils {
     if (keepFolders) {
       original = original.replace(/[\/\\]/g, '\u2029')
     }
-    const sanitized = sanitize(original).replace(/\u2029/g, path.sep)
+    const sanitized = sanitize(original).replace(/\u2029/g, path.sep).replace('@', 'a')
     const latinized = latinize(sanitized)
     return latinized
   }
