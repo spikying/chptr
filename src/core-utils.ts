@@ -611,7 +611,7 @@ export class CoreUtils {
         const fullOutputFilePath = path.join(this.softConfig.buildDirectory, outputFile + '.' + filetype)
         allOutputFilePath.push(fullOutputFilePath)
 
-        let pandocArgs: string[] = ['--strip-comments']
+        let pandocArgs: string[] = ['--strip-comments', '--from', 'markdown+emoji']
 
         if (filetype === 'md') {
           pandocArgs = pandocArgs.concat([
@@ -639,7 +639,7 @@ export class CoreUtils {
             'docx+smart+fancy_lists+fenced_divs',
             '--toc',
             '--toc-depth',
-            '2',
+            '1',
             '--top-level-division=chapter'
             // '--number-sections'
           ])
@@ -666,7 +666,7 @@ export class CoreUtils {
             'html5+smart+fancy_lists',
             '--toc',
             '--toc-depth',
-            '2',
+            '1',
             '--top-level-division=chapter',
             // '--number-sections',
             '--self-contained'
@@ -696,12 +696,12 @@ export class CoreUtils {
             // '--fenced_code_blocks',
             '--toc',
             '--toc-depth',
-            '2',
+            '1',
             '--top-level-division=chapter',
             // '--number-sections',
             '--pdf-engine=xelatex',
             '--to',
-            'latex+raw_tex+smart+fancy_lists'
+            'latex+raw_tex+smart+fancy_lists-emoji'
           ])
         } else {
           chapterFiles = '"' + tmpMDfile.path + '" '
@@ -713,11 +713,22 @@ export class CoreUtils {
             'epub+smart+fancy_lists',
             '--toc',
             '--toc-depth',
-            '2',
+            '1',
             '--top-level-division=chapter'
             // '--number-sections'
           ])
 
+          const cssFullPath = path.join(this.hardConfig.configPath, 'epub.css')
+          if (await this.fsUtils.fileExists(cssFullPath)) {
+            pandocArgs = pandocArgs.concat([`--css`, `"${cssFullPath}"`])
+          } else {
+            cli.warn(`For a better output, create a css template at ${cssFullPath}`)
+          }
+
+          const fontPath = path.join(this.hardConfig.configPath, 'DejaVuSans.ttf')
+          if (await this.fsUtils.fileExists(cssFullPath)) {
+            pandocArgs = pandocArgs.concat([`--epub-embed-font="${fontPath}"`])
+          }
           pandocArgs = pandocArgs.concat(await this.luaFilters('*.epub.lua', allLuaFilters))
         }
 
@@ -805,7 +816,7 @@ export class CoreUtils {
   private async runPandoc(options: string[]): Promise<string> {
     return new Promise((resolve, reject) => {
       const command = 'pandoc ' + options.join(' ')
-      cli.info(`Executing child process with command ${command.resultNormalColor()}`)
+      cli.info(`Executing child process with command ${command.resultSecondaryColor()}`)
       exec(command, (err, pout, perr) => {
         if (err) {
           // this.error(err.toString().errorColor())
