@@ -55,6 +55,7 @@ export class CoreUtils {
         return `${one}\n\n${this.markupUtils.paragraphBreakChar}{{${paraCounter}}}\n${two}`
       })
       .replace(/(\d{1,2})h(\d{2})/g, '$1\u00A0h\u00A0$2')
+      .replace(/^(\*\s.*)\n(?=\*)/gm, '$1\n\n')
 
     return replacedContent
   }
@@ -69,6 +70,7 @@ export class CoreUtils {
       .replace(/([.!?…}*"]) +\n/g, '$1\n')
       .replace(/\n-{1,2}\s?/g, '\n-')
       .replace(/^-(.*)\n\n(?=-)/gm, '-$1\n')
+      .replace(/^(\*\s.*)\n\n(?=\*\s|{{\d+}}\n\*\s)/gm, '$1\n')
       .replace(/\n{3,}/g, '\n\n')
       .replace(/\n*$/, '\n')
 
@@ -595,6 +597,8 @@ export class CoreUtils {
 
         // .replace(/\\textbf{/gm, '\\merriweatherblack{')
       )
+
+      // todo: make chapter.lua run only on prod, and add numbering for working copies.
 
       const tempMdFilePath = path.join(this.softConfig.buildDirectory, 'tempMdFile.md')
       if (withIntermediary) {

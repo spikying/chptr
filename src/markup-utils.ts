@@ -22,7 +22,8 @@ export class MarkupUtils {
   public readonly paragraphBreakChar = '' // '\u2029'
   public titleRegex = /^\n# (.*?)\n/
 
-  private readonly propRegex = /(?:{{(\d+)}}\n)?(.*?)(?<!{){([^:,.!\n{}]+?)}(?!})/gm
+  private readonly propRegex = /(?<!{){([^:,.!\n{]+?)}(?!})/gm
+  // private readonly propRegex = /(?:{{(\d+)}}\n)?(.*?)(?<!{){([^:,.!\n{}]+?)}(?!})/gm
   // private readonly propRegex = /(?<!{){([^:,.!\n{}]+?)}(?!})/gm
 
   private readonly fsUtils: FsUtils
@@ -279,7 +280,7 @@ export class MarkupUtils {
         paraCounter = parseInt(regexArray[1], 10)
       } else {
         const propValue = this.softConfig.getFinalPropFor(regexArray[2])
-        resultArray.push({         
+        resultArray.push({
           filename: this.softConfig.mapFileToBeRelativeToRootPath(filepath),
           paragraph: paraCounter,
           type: 'prop',
@@ -431,11 +432,13 @@ export class MarkupUtils {
 
     const replacedContent = initialContent
       .replace(paragraphBreakRegex, '')
-      .replace(/{.*?:.*?} ?/gm, ' ')
+      .replace(/ {.*?:.*?}([.!?…*"])/gm, '$1')
+      .replace(/ ?{.*?:.*?} ?/gm, ' ')
       .replace(sentenceBreakRegex, '  ')
       .replace(/^### (.*)$/gm, '* * *')
       .replace(/^\\(.*)$/gm, '_% $1_')
-      .replace(this.propRegex, '$2$3')
+      .replace(this.propRegex, '$1')
+    // .replace(this.propRegex, '$2$3')
 
     return replacedContent
   }
@@ -447,10 +450,11 @@ export class MarkupUtils {
 
     const transformInFootnote = function(initial: string): { replaced: string; didReplacement: boolean } {
       let didReplacement = false
-      const replaced = initial.replace(/(.*){([^}]*?)\s?:\s?(.*?)} *(.*)$/m, (_full, one, two, three, four) => {
+      const replaced = initial.replace(/(?<!{){([^}:]+?)\s?:\s?(.+?)} ?(.*)$/m, (_full, one, two, three) => {
         markupCounter++
-        didReplacement = didReplacement || (two && three)
-        return `${one} ^_${two}: _^[^${markupCounter}]  ${four}\n\n[^${markupCounter}]: ${three}\n\n`
+        didReplacement = didReplacement || (one && two)
+        let after = three.length > 0 ? ` ${three}` : ''
+        return `^_${one}:_^[^z${markupCounter}]${after}\n\n[^z${markupCounter}]: ${two}\n\n`
       })
       return { replaced, didReplacement }
     }
@@ -459,7 +463,8 @@ export class MarkupUtils {
       .replace(paragraphBreakRegex, '^_($1)_^\t')
       .replace(/^### (.*)$/gm, '* * *\n\n## $1')
       .replace(/^\\(.*)$/gm, '_% $1_')
-      .replace(this.propRegex, '$2**$3**')
+      .replace(this.propRegex, '**$1**')
+      // .replace(this.propRegex, '$2**$3**')
       .replace(sentenceBreakRegex, '')
 
     let continueReplacing = true
