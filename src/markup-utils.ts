@@ -327,17 +327,34 @@ export class MarkupUtils {
     return flattenedMarkupArray.reduce((cumul, markup) => {
       cumul[markup.filename] = cumul[markup.filename] || []
       if (markup.summary) {
-        cumul[markup.filename].push({ summary: true, computed: false, type: markup.type, value: markup.value })
+        let rec = { summary: true, computed: false, type: markup.type, value: markup.value }
+        if (cumul[markup.filename].indexOf(rec) < 0) {
+          cumul[markup.filename].push(rec)
+        }
       } else if (markup.computed) {
         cumul[markup.filename].push({ summary: false, computed: true, type: markup.type, value: markup.value })
       } else {
-        cumul[markup.filename].push({
-          summary: false,
-          computed: false,
-          paragraph: markup.paragraph,
-          type: markup.type,
-          value: markup.value
+        let existingValue = cumul[markup.filename].find(value => {
+          return value.summary == false && value.computed == false && value.type == markup.type && value.value == markup.value
         })
+        if (existingValue && markup.paragraph) {
+          let existing = existingValue.paragraph
+            ? Array.isArray(existingValue.paragraph)
+              ? existingValue.paragraph
+              : [existingValue.paragraph]
+            : []
+          if (existing.indexOf(markup.paragraph) < 0) {
+            existingValue.paragraph = existing.concat([markup.paragraph])
+          }
+        } else {
+          cumul[markup.filename].push({
+            summary: false,
+            computed: false,
+            paragraph: markup.paragraph,
+            type: markup.type,
+            value: markup.value
+          })
+        }
       }
       return cumul
     }, {} as MarkupByFile)
@@ -347,7 +364,23 @@ export class MarkupUtils {
       if (!markup.computed) {
         cumul[markup.type] = cumul[markup.type] || {}
         cumul[markup.type][markup.value] = cumul[markup.type][markup.value] || []
-        cumul[markup.type][markup.value].push({ filename: markup.filename, paragraph: markup.paragraph, summary: markup.summary })
+        let existingValue = cumul[markup.type][markup.value].find(
+          (value: { summary: boolean; filename: string; paragraph: number | number[] }) => {
+            return value.summary == markup.summary && value.filename == markup.filename
+          }
+        )
+        if (existingValue) {
+          let existing = existingValue.paragraph
+            ? Array.isArray(existingValue.paragraph)
+              ? existingValue.paragraph
+              : [existingValue.paragraph]
+            : []
+          if (existing.indexOf(markup.paragraph) < 0) {
+            existingValue.paragraph = existing.concat([markup.paragraph])
+          }
+        } else {
+          cumul[markup.type][markup.value].push({ filename: markup.filename, paragraph: markup.paragraph, summary: markup.summary })
+        }
       } else {
         if (markup.type === 'wordCount') {
           cumul.totalWordCount = cumul.totalWordCount || 0
@@ -432,7 +465,7 @@ export class MarkupUtils {
 
     const replacedContent = initialContent
       .replace(paragraphBreakRegex, '')
-      .replace(/ {.*?:.*?}([.!?…*"])/gm, '$1')
+      .replace(/ {.*?:.*?}([,;:.!?…*"])/gm, '$1')
       .replace(/ ?{.*?:.*?} ?/gm, ' ')
       .replace(sentenceBreakRegex, '  ')
       .replace(/^### (.*)$/gm, '* * *')
@@ -551,7 +584,7 @@ export interface MarkupObj {
 interface MarkupByFile {
   [filename: string]: [
     {
-      paragraph?: number
+      paragraph?: number | number[]
       type: string
       value: string | number
       computed?: boolean
