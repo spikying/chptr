@@ -328,7 +328,11 @@ export class MarkupUtils {
       cumul[markup.filename] = cumul[markup.filename] || []
       if (markup.summary) {
         let rec = { summary: true, computed: false, type: markup.type, value: markup.value }
-        if (cumul[markup.filename].indexOf(rec) < 0) {
+        if (
+          !cumul[markup.filename].find(value => {
+            return value.summary == rec.summary && rec.type == markup.type && value.value == markup.value
+          })
+        ) {
           cumul[markup.filename].push(rec)
         }
       } else if (markup.computed) {
