@@ -48,7 +48,7 @@ export class CoreUtils {
     let paraCounter = 1
     // \u2028 = line sep  \u200D = zero width joiner
     const replacedContent = this.processContentBack(initialContent)
-      .replace(/\n+-{1,2}\s?/g, '\n\n-- ')
+      .replace(/\n+-{1,2}\s?(?!>|->)/g, '\n\n-- ')
       .replace(/([.!?…}*"]) {2}([\"*\-A-Z{À-Ú])/gm, '$1' + this.markupUtils.sentenceBreakChar + '\n$2')
       .replace(/([.!?…}*"])\n{2}([\"*\-A-Z{À-Ú])(?!\*{2})/gm, (_full, one, two) => {
         paraCounter++
@@ -67,8 +67,9 @@ export class CoreUtils {
     const replacedContent = initialContent
       .replace(sentenceBreakRegex, '  ')
       .replace(paragraphBreakRegex, '\n\n')
+      .replace(/—/gm, '--')
       .replace(/([.!?…}*"]) +\n/g, '$1\n')
-      .replace(/\n-{1,2}\s?/g, '\n-')
+      .replace(/\n-{1,2}\s?(?!>|->)/g, '\n-')
       .replace(/^-(.*)\n\n(?=-)/gm, '-$1\n')
       .replace(/^(\*\s.*)\n\n(?=\*\s|{{\d+}}\n\*\s)/gm, '$1\n')
       .replace(/\n{3,}/g, '\n\n')

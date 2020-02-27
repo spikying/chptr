@@ -468,6 +468,7 @@ export class MarkupUtils {
     const sentenceBreakRegex = new RegExp(this.sentenceBreakChar + '\\s?', 'g')
 
     const replacedContent = initialContent
+      .replace(/—/gm, '--')
       .replace(paragraphBreakRegex, '')
       .replace(/ {.*?:.*?}([,;:.!?…*"])/gm, '$1')
       .replace(/ ?{.*?:.*?} ?/gm, ' ')
@@ -491,12 +492,13 @@ export class MarkupUtils {
         markupCounter++
         didReplacement = didReplacement || (one && two)
         let after = three.length > 0 ? ` ${three}` : ''
-        return `^_${one}:_^[^z${markupCounter}]${after}\n\n[^z${markupCounter}]: ${two}\n\n`
+        return `^_${one}:_^[^z${markupCounter}]${after}\n\n[^z${markupCounter}]: **${one.toUpperCase()}**: ${two}\n\n`
       })
       return { replaced, didReplacement }
     }
 
     let replacedContent = initialContent
+      .replace(/—/gm, '--')
       .replace(paragraphBreakRegex, '^_($1)_^\t')
       .replace(/^### (.*)$/gm, '* * *\n\n## $1')
       .replace(/^\\(.*)$/gm, '_% $1_')
