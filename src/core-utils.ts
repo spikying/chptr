@@ -68,6 +68,9 @@ export class CoreUtils {
       .replace(sentenceBreakRegex, '  ')
       .replace(paragraphBreakRegex, '\n\n')
       .replace(/—/gm, '--')
+      .replace(/’/gm, '\'')
+      .replace(/“/gm, '"')
+      .replace(/”/gm, '"')
       .replace(/([.!?…}*"]) +\n/g, '$1\n')
       .replace(/\n-{1,2}\s?(?!>|->)/g, '\n-')
       .replace(/^-(.*)\n\n(?=-)/gm, '-$1\n')
@@ -550,6 +553,11 @@ export class CoreUtils {
       cli.action.start('Compiling and generating output files'.actionStartColor())
 
       let fullOriginalContent = this.softConfig.globalMetadataContent
+
+      const readmeFile = path.join(this.rootPath, 'readme.md')
+      if ((await this.fsUtils.fileExists(readmeFile))) {
+        fullOriginalContent += '\n' + (await this.fsUtils.readFileContent(readmeFile))
+      }
 
       const bootstrapChptr = new BootstrapChptr(this.rootPath)
 
