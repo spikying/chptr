@@ -66,8 +66,8 @@ export default class Edit extends Command {
       if (arg.split(',').length > 1) {
         chapterIdsString.push(...arg.split(','))
       } else if (arg.split('-').length == 2) {
-        const lowRange: number = parseInt(arg.split('-')[0], 0)
-        const hiRange: number = parseInt(arg.split('-')[1], 0)
+        const lowRange: number = parseInt(arg.split('-')[0], 10)
+        const hiRange: number = parseInt(arg.split('-')[1], 10)
         // const range = Array.from({ length: hiRange - lowRange }, (v, k) => k + 1).map(v => v.toString())
         const range = Array(hiRange - lowRange + 1).fill(undefined, undefined, undefined).map((_, idx) => lowRange + idx).map(v => v.toString())
         debug(`range: ${JSON.stringify(range)}`)

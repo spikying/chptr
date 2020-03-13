@@ -32,14 +32,19 @@ export default class Build extends Command {
       default: '',
       multiple: true
     }),
-    removemarkup: flags.boolean({
-      char: 'r',
-      description: 'Remove paragraph numbers and clean markup in output',
-      default: false
-    }),
-    withsummaries: flags.boolean({
-      char: 'S',
-      description: 'Add summaries in output, before actual content',
+    // removemarkup: flags.boolean({
+    //   char: 'r',
+    //   description: 'Remove paragraph numbers and clean markup in output',
+    //   default: false
+    // }),
+    // withsummaries: flags.boolean({
+    //   char: 'S',
+    //   description: 'Add summaries in output, before actual content',
+    //   default: false
+    // }),
+    outputToProd: flags.boolean({
+      char: 'p',
+      description: 'Remove paragraph numbers, clean markup in output and remove chapter titles.  When false, adds summaries in output.',
       default: false
     }),
     withFullIntermediaryOutput: flags.boolean({
@@ -62,8 +67,9 @@ export default class Build extends Command {
     // try {
     const { flags } = this.parse(this.constructor as Input<any>)
 
-    const removeMarkup = flags.removemarkup
-    const withSummaries = flags.withsummaries
+    // const removeMarkup = flags.removemarkup
+    // const withSummaries = flags.withsummaries
+    const outputToProd = flags.outputToProd
     const withIntermediary = flags.withFullIntermediaryOutput
 
     let outputFiletype = flags.type
@@ -79,200 +85,6 @@ export default class Build extends Command {
 
     await this.RunMetadata(flags)
 
-    await this.coreUtils.buildOutput(removeMarkup, withSummaries, withIntermediary, outputFiletype, this.outputFile)
-    // const originalChapterFilesArray = (await this.fsUtils.listFiles(
-    //   path.join(this.rootPath, this.softConfig.chapterWildcard(false))
-    // )).sort()
-
-    // cli.action.start('Compiling and generating output files'.actionStartColor())
-
-    // let fullOriginalContent = this.softConfig.globalMetadataContent
-
-    // const bootstrapChptr = new BootstrapChptr(this.rootPath)
-
-    // for (const file of originalChapterFilesArray) {
-    //   fullOriginalContent += '\n'
-    //   const chapterContent = await this.fsUtils.readFileContent(file)
-    //   if (withSummaries) {
-    //     const number = this.softConfig.extractNumber(file)
-    //     const chapterId = new ChapterId(number, false)
-
-    //     const summaryFile = (await this.fsUtils.listFiles(
-    //       path.join(this.rootPath, this.softConfig.summaryWildcardWithNumber(chapterId))
-    //     ))[0]
-    //     const summaryContent = await this.fsUtils.readFileContent(summaryFile)
-    //     const summaryRE = /^(?!# )(.+)$/gm
-    //     fullOriginalContent += summaryContent.replace(/^{{\d+}}$/gm, '').replace(summaryRE, '> *$1*')
-    //     fullOriginalContent += '\n\n````\n'
-
-    //     const metadataFile = (await this.fsUtils.listFiles(
-    //       path.join(this.rootPath, this.softConfig.metadataWildcardWithNumber(chapterId))
-    //     ))[0]
-    //     const metadataContent = await this.fsUtils.readFileContent(metadataFile)
-    //     const metadataObj = this.softConfig.parsePerStyle(metadataContent)
-    //     let filteredMetadataObj: any = bootstrapChptr.deepCopy(metadataObj)
-
-    //     fullOriginalContent += yaml.safeDump(filteredMetadataObj) //.replace(/\n/g, '\n\n')
-    //     fullOriginalContent += '````\n\n'
-
-    //     const chapterRE = /# (.*)\n/
-    //     fullOriginalContent += chapterContent.replace(chapterRE, '***\n')
-    //   } else {
-    //     fullOriginalContent += chapterContent
-    //   }
-    // }
-    // const fullCleanedOrTransformedContent = removeMarkup
-    //   ? this.markupUtils.cleanMarkupContent(fullOriginalContent)
-    //   : this.markupUtils.transformMarkupContent(fullOriginalContent)
-    // await this.fsUtils.writeInFile(tmpMDfile.fd, fullCleanedOrTransformedContent)
-    // await this.fsUtils.writeInFile(
-    //   tmpMDfileTex.fd,
-    //   fullCleanedOrTransformedContent.replace(/^\*\s?\*\s?\*$/gm, '\\asterism').replace(/\u200B/g, '')
-    // )
-
-    // let chapterFiles = '"' + tmpMDfile.path + '" '
-
-    // const pandocRuns: Promise<void>[] = []
-    // const allOutputFilePath: string[] = []
-
-    // for (const filetype of outputFiletype) {
-    //   const fullOutputFilePath = path.join(this.softConfig.buildDirectory, this.outputFile + '.' + filetype)
-    //   allOutputFilePath.push(fullOutputFilePath)
-
-    //   let pandocArgs: string[] = ['--strip-comments']
-
-    //   if (filetype === 'md') {
-    //     pandocArgs = pandocArgs.concat(['--number-sections', '--to', 'markdown-raw_html+smart+fancy_lists', '--wrap=none', '--atx-headers'])
-    //   }
-
-    //   if (filetype === 'docx') {
-    //     const referenceDocFullPath = path.join(this.hardConfig.configPath, 'reference.docx')
-    //     if (await this.fsUtils.fileExists(referenceDocFullPath)) {
-    //       pandocArgs = pandocArgs.concat([`--reference-doc="${referenceDocFullPath}"`])
-    //     } else {
-    //       this.warn(`For a better output, create an empty styled Word doc at ${referenceDocFullPath}`)
-    //     }
-    //     pandocArgs = pandocArgs.concat([
-    //       '--to',
-    //       'docx+smart+fancy_lists',
-    //       '--toc',
-    //       '--toc-depth',
-    //       '2',
-    //       '--top-level-division=chapter',
-    //       '--number-sections'
-    //     ])
-    //   }
-
-    //   if (filetype === 'html') {
-    //     const templateFullPath = path.join(this.hardConfig.configPath, 'template.html')
-    //     if (await this.fsUtils.fileExists(templateFullPath)) {
-    //       pandocArgs = pandocArgs.concat([`--template`, `"${templateFullPath}"`])
-    //     } else {
-    //       this.warn(`For a better output, create an html template at ${templateFullPath}`)
-    //     }
-
-    //     const cssFullPath = path.join(this.hardConfig.configPath, 'template.css')
-    //     if (await this.fsUtils.fileExists(cssFullPath)) {
-    //       pandocArgs = pandocArgs.concat([`--css`, `"${cssFullPath}"`])
-    //     } else {
-    //       this.warn(`For a better output, create a css template at ${cssFullPath}`)
-    //     }
-
-    //     pandocArgs = pandocArgs.concat([
-    //       '--to',
-    //       'html5+smart+fancy_lists',
-    //       '--toc',
-    //       '--toc-depth',
-    //       '2',
-    //       '--top-level-division=chapter',
-    //       '--number-sections',
-    //       '--self-contained'
-    //     ])
-    //   }
-
-    //   if (filetype === 'pdf' || filetype === 'tex') {
-    //     chapterFiles = '"' + tmpMDfileTex.path + '" '
-
-    //     const templateFullPath = path.join(this.hardConfig.configPath, 'template.latex')
-    //     if (await this.fsUtils.fileExists(templateFullPath)) {
-    //       pandocArgs = pandocArgs.concat([`--template`, `"${templateFullPath}"`])
-    //     } else {
-    //       this.warn(`For a better output, create a latex template at ${templateFullPath}`)
-    //     }
-
-    //     pandocArgs = pandocArgs.concat([
-    //       '--toc',
-    //       '--toc-depth',
-    //       '2',
-    //       '--top-level-division=chapter',
-    //       '--number-sections',
-    //       '--pdf-engine=xelatex',
-    //       '--to',
-    //       'latex+raw_tex+smart+fancy_lists'
-    //     ])
-    //   }
-
-    //   if (filetype === 'epub') {
-    //     pandocArgs = pandocArgs.concat([
-    //       '--to',
-    //       'epub+smart+fancy_lists',
-    //       '--toc',
-    //       '--toc-depth',
-    //       '2',
-    //       '--top-level-division=chapter',
-    //       '--number-sections'
-    //     ])
-    //   }
-
-    //   pandocArgs = [
-    //     chapterFiles,
-    //     '--standalone',
-    //     '-o',
-    //     `"${fullOutputFilePath}"`
-    //   ].concat(pandocArgs)
-
-    //   pandocRuns.push(this.runPandoc(pandocArgs))
-    // }
-
-    // await Promise.all(pandocRuns).catch(err => {
-    //   throw new ChptrError(
-    //     `Error trying to run Pandoc.  You need to have it installed and accessible globally, with version 2.7.3 minimally.\n${err
-    //       .toString()
-    //       .errorColor()}`,
-    //     'command:build:index',
-    //     52
-    //   )
-    // })
-
-    // const allOutputFilePathPretty = allOutputFilePath.reduce((previous, current) => `${previous}\n    ${current}`, '')
-    // cli.action.stop(allOutputFilePathPretty.actionStopColor())
-
-    // } catch (err) {
-    //   throw new ChptrError(err, 'build.run', 3)
-    // } finally {
-    //   await tmpMDfile.cleanup()
-    //   await tmpMDfileTex.cleanup()
-    // }
+    await this.coreUtils.buildOutput(outputToProd, withIntermediary, outputFiletype, this.outputFile)
   }
-
-  // private async runPandoc(options: string[]): Promise<void> {
-  //   return new Promise((resolve, reject) => {
-  //     const command = 'pandoc ' + options.join(' ')
-  //     debug(`Executing child process with command ${command}`)
-  //     exec(command, (err, pout, perr) => {
-  //       if (err) {
-  //         this.error(err.toString().errorColor())
-  //         reject(err)
-  //       }
-  //       if (perr) {
-  //         this.error(perr.toString().errorColor())
-  //         reject(perr)
-  //       }
-  //       if (pout) {
-  //         this.log(pout)
-  //       }
-  //       resolve()
-  //     })
-  //   })
-  // }
 }

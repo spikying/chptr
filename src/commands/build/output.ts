@@ -24,14 +24,19 @@ export default class Build extends Command {
       default: '',
       multiple: true
     }),
-    removemarkup: flags.boolean({
-      char: 'r',
-      description: 'Remove paragraph numbers and clean markup in output',
-      default: false
-    }),
-    withsummaries: flags.boolean({
-      char: 'S',
-      description: 'Add summaries in output, before actual content',
+    // removemarkup: flags.boolean({
+    //   char: 'r',
+    //   description: 'Remove paragraph numbers and clean markup in output',
+    //   default: false
+    // }),
+    // withsummaries: flags.boolean({
+    //   char: 'S',
+    //   description: 'Add summaries in output, before actual content',
+    //   default: false
+    // }),
+    outputToProd: flags.boolean({
+      char: 'p',
+      description: 'Remove paragraph numbers, clean markup in output and remove chapter titles.  When false, adds summaries in output.',
       default: false
     }),
     withFullIntermediaryOutput: flags.boolean({
@@ -49,8 +54,9 @@ export default class Build extends Command {
     debug('Running Build:output command')
     const { flags } = this.parse(this.constructor as Input<any>)
 
-    const removeMarkup = flags.removemarkup
-    const withSummaries = flags.withsummaries
+    // const removeMarkup = flags.removemarkup
+    // const withSummaries = flags.withsummaries
+    const outputToProd = flags.outputToProd
     const withIntermediary = flags.withFullIntermediaryOutput
 
     let outputFiletype = flags.type
@@ -68,6 +74,6 @@ export default class Build extends Command {
     //   this.softConfig.config.projectTitle
     // )}`
 
-    await this.coreUtils.buildOutput(removeMarkup, withSummaries, withIntermediary, outputFiletype, this.outputFile)
+    await this.coreUtils.buildOutput(outputToProd, withIntermediary, outputFiletype, this.outputFile)
   }
 }

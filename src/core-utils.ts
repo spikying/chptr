@@ -68,7 +68,7 @@ export class CoreUtils {
       .replace(sentenceBreakRegex, '  ')
       .replace(paragraphBreakRegex, '\n\n')
       .replace(/—/gm, '--')
-      .replace(/’/gm, '\'')
+      .replace(/’/gm, "'")
       .replace(/“/gm, '"')
       .replace(/”/gm, '"')
       .replace(/([.!?…}*"]) +\n/g, '$1\n')
@@ -533,8 +533,9 @@ export class CoreUtils {
   }
 
   public async buildOutput(
-    removeMarkup: boolean,
-    withSummaries: boolean,
+    // removeMarkup: boolean,
+    // withSummaries: boolean,
+    outputToProd: boolean,
     withIntermediary: boolean,
     outputFiletype: any,
     outputFile: string
@@ -555,7 +556,7 @@ export class CoreUtils {
       let fullOriginalContent = this.softConfig.globalMetadataContent
 
       const readmeFile = path.join(this.rootPath, 'readme.md')
-      if ((await this.fsUtils.fileExists(readmeFile))) {
+      if (await this.fsUtils.fileExists(readmeFile)) {
         fullOriginalContent += '\n' + (await this.fsUtils.readFileContent(readmeFile))
       }
 
@@ -564,7 +565,7 @@ export class CoreUtils {
       for (const file of originalChapterFilesArray) {
         fullOriginalContent += '\n'
         const chapterContent = await this.fsUtils.readFileContent(file)
-        if (withSummaries) {
+        if (!outputToProd) {
           const number = this.softConfig.extractNumber(file)
           const chapterId = new ChapterId(number, false)
 
@@ -593,7 +594,7 @@ export class CoreUtils {
           fullOriginalContent += chapterContent
         }
       }
-      const fullCleanedOrTransformedContent = removeMarkup
+      const fullCleanedOrTransformedContent = outputToProd
         ? this.markupUtils.cleanMarkupContent(fullOriginalContent)
         : this.markupUtils.transformMarkupContent(fullOriginalContent)
       await this.fsUtils.writeInFile(tmpMDfile.fd, fullCleanedOrTransformedContent)
@@ -619,6 +620,10 @@ export class CoreUtils {
       const pandocRuns: Promise<string>[] = []
       const allOutputFilePath: string[] = []
       const allLuaFilters = await this.fsUtils.listFiles(path.join(this.hardConfig.configPath, '*.all.lua'))
+      const prodLuaFilters = await this.fsUtils.listFiles(path.join(this.hardConfig.configPath, '*.prod.lua'))
+      if (outputToProd) {
+        allLuaFilters.push(...prodLuaFilters)
+      }
 
       for (const filetype of outputFiletype) {
         const fullOutputFilePath = path.join(this.softConfig.buildDirectory, outputFile + '.' + filetype)
