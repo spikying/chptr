@@ -575,7 +575,11 @@ export class CoreUtils {
           const summaryContent = await this.fsUtils.readFileContent(summaryFile)
           // const summaryRE = /^(?!# )(?!{{\d+}})(.+)$/gm
           const summaryRE = /^(?!# )(.+)$/gm
-          fullOriginalContent += summaryContent.replace(/^{{\d+}}$/gm, '').replace(summaryRE, '> *$1*')
+          const titleRE = /# (.*)\n/
+          fullOriginalContent += summaryContent
+            .replace(/^{{\d+}}$/gm, '')
+            .replace(titleRE, `# (${number.toString()}) $1\n`)
+            .replace(summaryRE, '> *$1*')
           fullOriginalContent += '\n\n````\n'
 
           const metadataFile = (
@@ -588,8 +592,7 @@ export class CoreUtils {
           fullOriginalContent += yaml.safeDump(filteredMetadataObj) //.replace(/\n/g, '\n\n')
           fullOriginalContent += '````\n\n'
 
-          const chapterRE = /# (.*)\n/
-          fullOriginalContent += chapterContent.replace(chapterRE, '***\n')
+          fullOriginalContent += chapterContent.replace(titleRE, '***\n')
         } else {
           fullOriginalContent += chapterContent
         }
