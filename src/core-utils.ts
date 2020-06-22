@@ -18,6 +18,7 @@ import { file as tmpFile } from 'tmp-promise'
 import { BootstrapChptr } from './bootstrap-functions'
 import yaml = require('js-yaml')
 import { exec } from 'child_process'
+import * as moment from 'moment'
 
 const debug = d('core-utils')
 
@@ -918,6 +919,62 @@ export class CoreUtils {
           `${file} will change ${fromNumberRE} to ${moveNumbers.destIsAtNumber ? (aForAtNumbering ? 'a' : '@') : ''}${moveNumbers.toNumber}`
         )
         content = content.replace(fromNumberRE, `${moveNumbers.destIsAtNumber ? (aForAtNumbering ? 'a' : '@') : ''}${moveNumbers.toNumber}`)
+      }
+
+      await this.fsUtils.writeFile(file, content)
+    }
+  }
+
+  //todo: make sure this is called from all places needed (all builds, move, compact, etc.)
+  public async rewriteLabelsInFilesWithNumbersInContent(aForAtNumbering: boolean) {
+    const allMetadataFiles = await this.softConfig.getAllMetadataFiles()
+    const allFilesWithChapterInfo: any[] = []
+    for (const metadataFile of allMetadataFiles) {
+      const metaNumber = this.softConfig.extractNumber(metadataFile)
+      debug(`meta number = ${metaNumber}`)
+      const metaStringContent = await this.fsUtils.readFileContent(metadataFile)
+      const meta = this.softConfig.parsePerStyle(metaStringContent)
+      let timeInterval: string = '. '
+      try {
+        const hourStart = moment(meta.manual.start, 'HH:mm')
+        if (hourStart.isValid()) {
+          timeInterval += `${hourStart.format('HH:mm')}`
+          const hourEnd = hourStart.add(meta.manual.duration, 'minutes')
+          if (hourEnd.isValid() && meta.manual.duration) {
+            timeInterval += `-${hourEnd.format('HH:mm')}`
+          }
+        } else {
+          timeInterval = ''
+        }
+      } catch (error) {
+        timeInterval = '?'
+      }
+
+      debug(`timeInterval: ${timeInterval.toString()}`)
+
+      allFilesWithChapterInfo.push({
+        number: metaNumber,
+        title: meta.computed.title,
+        isAtNumber: this.softConfig.isAtNumbering(metadataFile),
+        timeInterval: timeInterval
+      })
+    }
+
+    for (const file of this.softConfig.filesWithChapterNumbersInContent) {
+      debug(`file to modify: ${file}`)
+      let content = await this.fsUtils.readFileContent(file)
+
+      for (const chapter of allFilesWithChapterInfo) {
+        debug(`chapter: ${JSON.stringify(chapter)}`)
+        const fromRE = new RegExp(
+          `\\(${chapter.isAtNumber ? (aForAtNumbering ? 'a' : '@') : ''}0*${chapter.number}\\s.*(?:\\.\\s+\\d+:\\d+-\\d+:\\d+)?\\)$`,
+          'gm'
+        )
+        debug(`fromRE: ${fromRE}`)
+        content = content.replace(
+          fromRE,
+          `(${chapter.isAtNumber ? (aForAtNumbering ? 'a' : '@') : ''}${chapter.number} ${chapter.title}${chapter.timeInterval})`
+        )
       }
 
       await this.fsUtils.writeFile(file, content)

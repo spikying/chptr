@@ -88,6 +88,8 @@ export default class Metadata extends Command {
       await this.markupUtils.extractMarkupAndUpdateGlobalAndChapterMetadata(allChapterFilesArray, allSummaryFilesArray, this.outputFile)
       await this.coreUtils.preProcessAndCommitFiles('Autosave markup updates')
 
+      await this.coreUtils.rewriteLabelsInFilesWithNumbersInContent(true) //todo: get value for A-for-at-numbering
+
       if (showWritingRate) {
         cli.action.start('Extracting word count stats for all content files'.actionStartColor())
 
