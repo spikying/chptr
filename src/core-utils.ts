@@ -954,7 +954,7 @@ export class CoreUtils {
 
       allFilesWithChapterInfo.push({
         number: metaNumber,
-        title: meta.computed.title,
+        title: this.fsUtils.sanitizeFileName(meta.computed.title).replace('(', '_').replace(')', '_'),
         isAtNumber: this.softConfig.isAtNumbering(metadataFile),
         timeInterval: timeInterval
       })
