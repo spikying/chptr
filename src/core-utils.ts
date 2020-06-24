@@ -405,6 +405,7 @@ export class CoreUtils {
       }),
       aForAtNumbering
     )
+    await this.rewriteLabelsInFilesWithNumbersInContent(aForAtNumbering)
 
     await this.fsUtils.deleteEmptySubDirectories(this.rootPath)
 
@@ -521,6 +522,8 @@ export class CoreUtils {
       }),
       aForAtNumbering
     )
+    await this.rewriteLabelsInFilesWithNumbersInContent(aForAtNumbering)
+
 
     await removeTempDir()
 
@@ -1012,6 +1015,7 @@ export class CoreUtils {
     }
     const aForAtNumbering = await this.moveChapterNumbersInFileContentToTemp(filesWithInfo.map(fwi => fwi.file))
     await this.moveChapterNumbersInFileContentToDestination(filesWithInfo, aForAtNumbering)
+    await this.rewriteLabelsInFilesWithNumbersInContent(aForAtNumbering)
 
     await Promise.all(promises)
     await this.fsUtils.deleteEmptySubDirectories(this.rootPath)
