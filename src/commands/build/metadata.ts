@@ -86,9 +86,8 @@ export default class Metadata extends Command {
       // )
       // debug(`flatSummaryMetadata: ${JSON.stringify(summaryWordCountMetadata, null, 4)}`)
       await this.markupUtils.extractMarkupAndUpdateGlobalAndChapterMetadata(allChapterFilesArray, allSummaryFilesArray, this.outputFile)
-      await this.coreUtils.preProcessAndCommitFiles('Autosave markup updates')
-
       await this.coreUtils.rewriteLabelsInFilesWithNumbersInContent(true) //todo: get value for A-for-at-numbering
+      await this.coreUtils.preProcessAndCommitFiles('Autosave markup updates')
 
       if (showWritingRate) {
         cli.action.start('Extracting word count stats for all content files'.actionStartColor())

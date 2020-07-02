@@ -24,6 +24,8 @@ export class GitUtils {
     this.softConfig = softConfig
   }
 
+  //todo: split git.add and git.commit to enable doing everything without committing, e.g. for functions like rename or others that don't need a commit automatically
+  
   public async CommitToGit(
     message: string,
     preProcessingCallback: (files: string[]) => Promise<void>,
