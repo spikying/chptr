@@ -561,7 +561,7 @@ export class CoreUtils {
       const readmeFile = path.join(this.rootPath, 'readme.md')
       if (await this.fsUtils.fileExists(readmeFile)) {
         let readme = await this.fsUtils.readFileContent(readmeFile)
-        readme = readme.replace(/\n#+\s(.*)$\n+/gm, '')
+        readme = readme.replace(/^\n#+\s.*?\n+/s, '')
         debug(`readme:\n${readme}`)
         fullOriginalContent += '\n' + readme
       }
