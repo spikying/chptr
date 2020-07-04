@@ -43,7 +43,7 @@ export default class Build extends Command {
     //   default: false
     // }),
     outputToProd: flags.boolean({
-      char: 'p',
+      char: 'P',
       description: 'Remove paragraph numbers, clean markup in output and remove chapter titles.  When false, adds summaries in output.',
       default: false
     }),

@@ -124,8 +124,8 @@ export class CoreUtils {
       await this.statistics.getAllFilesForOneType(atNumbering)
       chapterId.fixedDigits = this.statistics.getMaxNecessaryDigits(atNumbering)
 
-      debug(`chapterId.fixedDigits = ${chapterId.fixedDigits}`)
-      debug(`statistics = ${JSON.stringify(this.statistics, null, 2)}`)
+      // debug(`chapterId.fixedDigits = ${chapterId.fixedDigits}`)
+      // debug(`statistics = ${JSON.stringify(this.statistics, null, 2)}`)
 
       const existingFile = await this.fsUtils.listFiles(path.join(this.rootPath, this.softConfig.chapterWildcardWithNumber(chapterId)))
 
@@ -137,7 +137,7 @@ export class CoreUtils {
       // await this.statistics.updateStackStatistics(atNumbering)
 
       const highestNumber = this.statistics.getHighestNumber(atNumbering)
-      debug(`highestNumber in add-chapter-files before adding one: ${highestNumber}`)
+      // debug(`highestNumber in add-chapter-files before adding one: ${highestNumber}`)
       chapterId = new ChapterId(
         highestNumber === 0 ? this.softConfig.config.numberingInitial : highestNumber + this.softConfig.config.numberingStep,
         atNumbering
@@ -331,7 +331,7 @@ export class CoreUtils {
     for (const file of toRenameFiles.map(f => f.file)) {
       const fromFilename = this.softConfig.mapFileToBeRelativeToRootPath(file)
       const toFilename = this.softConfig.mapFileToBeRelativeToRootPath(path.join(tempDir, fromFilename))
-      debug(`Original file: ${fromFilename} TEMP TO ${toFilename}`)
+      // debug(`Original file: ${fromFilename} TEMP TO ${toFilename}`)
 
       await this.fsUtils.createSubDirectoryFromFilePathIfNecessary(path.join(this.rootPath, toFilename))
 
@@ -374,7 +374,7 @@ export class CoreUtils {
 
       await this.fsUtils.createSubDirectoryFromFilePathIfNecessary(path.join(this.rootPath, toFilename))
 
-      debug(`TEMPed file: ${fromFilename} BACK TO ${toFilename}`)
+      // debug(`TEMPed file: ${fromFilename} BACK TO ${toFilename}`)
 
       fileMovesPretty.concat(`\n    renaming from "${fromFilename}" to "${toFilename}"`)
       moveBackPromises.push(this.gitUtils.mv(fromFilename, toFilename))
@@ -415,7 +415,7 @@ export class CoreUtils {
   //#endregion
 
   public async checkArgPromptAndExtractChapterId(chapterInput: string, promptMsg: string, nextId = false): Promise<ChapterId | null> {
-    debug(`chapterInput = ${chapterInput}`)
+    // debug(`chapterInput = ${chapterInput}`)
     if (!chapterInput) {
       //no chapter given; must ask for it
       const queryBuilder = new QueryBuilder()
@@ -425,7 +425,7 @@ export class CoreUtils {
     }
 
     const isAtNumbering = this.softConfig.isAtNumbering(chapterInput)
-    debug(`isAtNumbering in checkArgsPrompt = ${isAtNumbering}`)
+    // debug(`isAtNumbering in checkArgsPrompt = ${isAtNumbering}`)
     let num: number
     if (this.hardConfig.isEndOfStack(chapterInput)) {
       await this.statistics.refreshStats()
@@ -524,7 +524,6 @@ export class CoreUtils {
     )
     await this.rewriteLabelsInFilesWithNumbersInContent(aForAtNumbering)
 
-
     await removeTempDir()
 
     if (moves.length === 0) {
@@ -548,7 +547,7 @@ export class CoreUtils {
 
     const tmpMDfile = await tmpFile()
     const tmpMDfileTex = await tmpFile()
-    debug(`temp files = ${tmpMDfile.path} and for tex = ${tmpMDfileTex.path}`)
+    // debug(`temp files = ${tmpMDfile.path} and for tex = ${tmpMDfileTex.path}`)
 
     try {
       const originalChapterFilesArray = (
@@ -561,7 +560,10 @@ export class CoreUtils {
 
       const readmeFile = path.join(this.rootPath, 'readme.md')
       if (await this.fsUtils.fileExists(readmeFile)) {
-        fullOriginalContent += '\n' + (await this.fsUtils.readFileContent(readmeFile))
+        let readme = await this.fsUtils.readFileContent(readmeFile)
+        readme = readme.replace(/\n#+\s(.*)$\n+/gm, '')
+        debug(`readme:\n${readme}`)
+        fullOriginalContent += '\n' + readme
       }
 
       const bootstrapChptr = new BootstrapChptr(this.rootPath)
@@ -662,12 +664,13 @@ export class CoreUtils {
           pandocArgs = pandocArgs.concat([
             '--to',
             'docx+smart+fancy_lists+fenced_divs',
-            '--toc',
-            '--toc-depth',
-            '1',
             '--top-level-division=chapter'
             // '--number-sections'
           ])
+
+          // if (!outputToProd) {
+          //   pandocArgs = pandocArgs.concat(['--toc', '--toc-depth', '1'])
+          // }
         }
 
         if (filetype === 'html') {
@@ -689,11 +692,10 @@ export class CoreUtils {
           pandocArgs = pandocArgs.concat([
             '--to',
             'html5+smart+fancy_lists',
-            '--toc',
-            '--toc-depth',
-            '1',
+            // '--toc',
+            // '--toc-depth',
+            // '1',
             '--top-level-division=chapter',
-            // '--number-sections',
             '--self-contained'
           ])
         }
@@ -717,13 +719,10 @@ export class CoreUtils {
           // }
 
           pandocArgs = pandocArgs.concat([
-            // '--listings',
-            // '--fenced_code_blocks',
-            '--toc',
-            '--toc-depth',
-            '1',
+            // '--toc',
+            // '--toc-depth',
+            // '1',
             '--top-level-division=chapter',
-            // '--number-sections',
             '--pdf-engine=xelatex',
             '--to',
             'latex+raw_tex+smart+fancy_lists-emoji'
@@ -736,11 +735,10 @@ export class CoreUtils {
           pandocArgs = pandocArgs.concat([
             '--to',
             'epub+smart+fancy_lists',
-            '--toc',
-            '--toc-depth',
-            '1',
+            // '--toc',
+            // '--toc-depth',
+            // '1',
             '--top-level-division=chapter'
-            // '--number-sections'
           ])
 
           const cssFullPath = path.join(this.hardConfig.configPath, 'epub.css')
@@ -755,6 +753,10 @@ export class CoreUtils {
             pandocArgs = pandocArgs.concat([`--epub-embed-font="${fontPath}"`])
           }
           pandocArgs = pandocArgs.concat(await this.luaFilters('*.epub.lua', allLuaFilters))
+        }
+
+        if (!outputToProd) {
+          pandocArgs = pandocArgs.concat(['--toc', '--toc-depth', '1'])
         }
 
         pandocArgs = [
@@ -934,7 +936,7 @@ export class CoreUtils {
     const allFilesWithChapterInfo: any[] = []
     for (const metadataFile of allMetadataFiles) {
       const metaNumber = this.softConfig.extractNumber(metadataFile)
-      debug(`meta number = ${metaNumber}`)
+      // debug(`meta number = ${metaNumber}`)
       const metaStringContent = await this.fsUtils.readFileContent(metadataFile)
       const meta = this.softConfig.parsePerStyle(metaStringContent)
       let timeInterval: string = '. '
@@ -953,7 +955,7 @@ export class CoreUtils {
         timeInterval = '?'
       }
 
-      debug(`timeInterval: ${timeInterval.toString()}`)
+      // debug(`timeInterval: ${timeInterval.toString()}`)
 
       allFilesWithChapterInfo.push({
         number: metaNumber,
@@ -964,16 +966,16 @@ export class CoreUtils {
     }
 
     for (const file of this.softConfig.filesWithChapterNumbersInContent) {
-      debug(`file to modify: ${file}`)
+      // debug(`file to modify: ${file}`)
       let content = await this.fsUtils.readFileContent(file)
 
       for (const chapter of allFilesWithChapterInfo) {
-        debug(`chapter: ${JSON.stringify(chapter)}`)
+        // debug(`chapter: ${JSON.stringify(chapter)}`)
         const fromRE = new RegExp(
           `\\(${chapter.isAtNumber ? (aForAtNumbering ? 'a' : '@') : ''}0*${chapter.number}\\s.*(?:\\.\\s+\\d+:\\d+-\\d+:\\d+)?\\)$`,
           'gm'
         )
-        debug(`fromRE: ${fromRE}`)
+        // debug(`fromRE: ${fromRE}`)
         content = content.replace(
           fromRE,
           `(${chapter.isAtNumber ? (aForAtNumbering ? 'a' : '@') : ''}${chapter.number} ${chapter.title}${chapter.timeInterval})`
