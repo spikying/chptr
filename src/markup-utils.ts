@@ -470,8 +470,10 @@ export class MarkupUtils {
     const replacedContent = initialContent
       .replace(/—/gm, '--')
       .replace(paragraphBreakRegex, '')
-      .replace(/ {.*?:.*?}([,;:.!?…*"])/gm, '$1')
-      .replace(/ ?{.*?:.*?} ?/gm, ' ')
+      // .replace(/ {.*?:.*?}([,;:.!?…*"])/gm, '$1')
+      // .replace(/ ?{.*?:.*?} ?/gm, ' ')
+      .replace(/ {[^}]+?:.+?}([,;:.!?…*"])/gm, '$1')
+      .replace(/ ?{[^}]+?:.+?} ?/gm, ' ')
       .replace(sentenceBreakRegex, '  ')
       .replace(/^### (.*)$/gm, '* * *')
       .replace(/^\\(.*)$/gm, '_% $1_')
@@ -486,7 +488,7 @@ export class MarkupUtils {
     const sentenceBreakRegex = new RegExp(this.sentenceBreakChar, 'g')
     let markupCounter = 0
 
-    const transformInFootnote = function(initial: string): { replaced: string; didReplacement: boolean } {
+    const transformInFootnote = function (initial: string): { replaced: string; didReplacement: boolean } {
       let didReplacement = false
       const replaced = initial.replace(/(?<!{){([^}:]+?)\s?:\s?(.+?)} ?(.*)$/m, (_full, one, two, three) => {
         markupCounter++

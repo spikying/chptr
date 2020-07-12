@@ -972,13 +972,13 @@ export class CoreUtils {
       for (const chapter of allFilesWithChapterInfo) {
         // debug(`chapter: ${JSON.stringify(chapter)}`)
         const fromRE = new RegExp(
-          `\\(${chapter.isAtNumber ? (aForAtNumbering ? 'a' : '@') : ''}0*${chapter.number}\\s.*(?:\\.\\s+\\d+:\\d+-\\d+:\\d+)?\\)$`,
+          `\\(${chapter.isAtNumber ? (aForAtNumbering ? 'a' : '@') : ''}0*${chapter.number}\\s.*?(?:\\.\\s+\\d+:\\d+-\\d+:\\d+)?(\\)+)$`,
           'gm'
         )
         // debug(`fromRE: ${fromRE}`)
         content = content.replace(
           fromRE,
-          `(${chapter.isAtNumber ? (aForAtNumbering ? 'a' : '@') : ''}${chapter.number} ${chapter.title}${chapter.timeInterval})`
+          `(${chapter.isAtNumber ? (aForAtNumbering ? 'a' : '@') : ''}${chapter.number} ${chapter.title}${chapter.timeInterval}$1`
         )
       }
 
