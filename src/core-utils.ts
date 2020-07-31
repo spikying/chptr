@@ -76,6 +76,7 @@ export class CoreUtils {
       .replace(/\n-{1,2}\s?(?!>|->)/g, '\n-')
       .replace(/^-(.*)\n\n(?=-)/gm, '-$1\n')
       .replace(/^(\*\s.*)\n\n(?=\*\s|{{\d+}}\n\*\s)/gm, '$1\n')
+      .replace(/ --$/gm, '\u00A0--')
       .replace(/\n{3,}/g, '\n\n')
       .replace(/\n*$/, '\n')
 
