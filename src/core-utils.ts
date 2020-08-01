@@ -120,7 +120,7 @@ export class CoreUtils {
   public async addChapterFiles(name: string, atNumbering: boolean, number?: string, content?: string): Promise<string[]> {
     let chapterId: ChapterId
     if (number) {
-      chapterId = new ChapterId(this.softConfig.extractNumber(number), this.softConfig.isAtNumbering(number))
+      chapterId = new ChapterId(this.softConfig.extractNumber(number), atNumbering)
 
       await this.statistics.getAllFilesForOneType(atNumbering)
       chapterId.fixedDigits = this.statistics.getMaxNecessaryDigits(atNumbering)

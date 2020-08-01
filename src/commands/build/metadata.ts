@@ -69,10 +69,6 @@ export default class Metadata extends Command {
 
       await this.fsUtils.createSubDirectoryFromDirectoryPathIfNecessary(this.softConfig.buildDirectory)
 
-      // const originalChapterFilesArray = (await this.fsUtils.listFiles(
-      //   path.join(this.rootPath, this.softConfig.chapterWildcard(false))
-      // )).sort()
-
       const allChapterFilesArray = (await this.fsUtils.listFiles(path.join(this.rootPath, this.softConfig.chapterWildcard(false)))).concat(
         await this.fsUtils.listFiles(path.join(this.rootPath, this.softConfig.chapterWildcard(true)))
       )
@@ -81,10 +77,6 @@ export default class Metadata extends Command {
         await this.fsUtils.listFiles(path.join(this.rootPath, this.softConfig.summaryWildcard(true)))
       )
 
-      // const summaryWordCountMetadata = (await this.markupUtils.extractGlobalAndChapterMetadata(allSummaryFilesArray)).filter(
-      //   m => m.type !== 'title'
-      // )
-      // debug(`flatSummaryMetadata: ${JSON.stringify(summaryWordCountMetadata, null, 4)}`)
       await this.markupUtils.extractMarkupAndUpdateGlobalAndChapterMetadata(allChapterFilesArray, allSummaryFilesArray, this.outputFile)
       await this.coreUtils.rewriteLabelsInFilesWithNumbersInContent(true) //todo: get value for A-for-at-numbering
       await this.coreUtils.preProcessAndCommitFiles('Autosave markup updates')

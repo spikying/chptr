@@ -1,7 +1,7 @@
 import * as d from 'debug'
 import * as path from 'path'
 import * as YAML from 'yaml'
-import { Singleton, AutoWired } from 'typescript-ioc'
+import { Singleton } from 'typescript-ioc'
 
 const debug = d('config:hard')
 

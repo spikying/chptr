@@ -2,12 +2,14 @@ import { cli } from 'cli-ux'
 import * as d from 'debug'
 import * as fs from 'fs'
 import * as glob from 'glob'
-import * as latinize from 'latinize'
+// import { latinize } from 'latinize'
 import * as path from 'path'
-import * as sanitize from 'sanitize-filename'
+// import sanitize from 'sanitize-filename'
 import { promisify } from 'util'
 
 import { ChptrError } from './chptr-error'
+import latinize = require('latinize')
+import sanitize = require('sanitize-filename')
 
 const debug = d('fs-utils')
 
@@ -20,13 +22,12 @@ export class FsUtils {
   public readonly deleteDir = promisify(fs.rmdir)
   public readonly deleteFile = promisify(fs.unlink)
   public readonly mkdtemp = promisify(fs.mkdtemp)
-  public readonly loadFileSync = fs.readFileSync as (path: string) => string
-
+  
   private readonly readFileBuffer = promisify(fs.readFile)
   public readonly accessSync = function(filePath: string): void {
     return fs.accessSync(filePath, fs.constants.R_OK)
   }
-
+  
   public readonly fileStat = async function(path: fs.PathLike): Promise<{ path: fs.PathLike; stats: fs.Stats }> {
     return new Promise((resolve, reject) => {
       fs.stat(path, (err, stats) => {
@@ -38,7 +39,10 @@ export class FsUtils {
       })
     })
   }
-
+  
+  public readonly loadFileSync = function(path: string): string{
+    return fs.readFileSync(path, 'utf-8')
+  }
   public readonly fileExists = async function(path: fs.PathLike): Promise<boolean> {
     return new Promise(resolve => {
       fs.access(path, err => {
@@ -50,6 +54,15 @@ export class FsUtils {
       })
     })
   }
+  public readonly fileExistsSync = function (path: fs.PathLike): boolean {
+    try {
+      fs.accessSync(path)
+      return true
+    } catch (err) {
+      return false
+    }
+  } 
+
   public readonly writeFile = async function(path: string, data: string) {
     const wf = promisify(fs.writeFile)
     const triedWF = (path: string, data: string) => {
@@ -66,15 +79,16 @@ export class FsUtils {
   public async createSubDirectoryFromDirectoryPathIfNecessary(directoryPath: string): Promise<string | null> {
     const mkdirp = require('mkdirp')
 
-    return new Promise((resolve, reject) => {
-      mkdirp(directoryPath, (err: any, made: any) => {
-        if (err) {
-          debug(err)
-          reject(err)
-        }
-        resolve(made)
-      })
-    })
+    return mkdirp(directoryPath)
+    // return new Promise((resolve, reject) => {
+    //   mkdirp(directoryPath, (err: any, made: any) => {
+    //     if (err) {
+    //       debug(err)
+    //       reject(err)
+    //     }
+    //     resolve(made)
+    //   })
+    // })
   }
   public async createSubDirectoryFromFilePathIfNecessary(fullFilePath: string): Promise<string | null> {
     const directoryPath = path.dirname(fullFilePath)

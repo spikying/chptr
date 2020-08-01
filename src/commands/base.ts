@@ -1,4 +1,4 @@
-import { Command, flags } from '@oclif/command'
+import Command, { flags } from '@oclif/command'
 import * as deb from 'debug'
 import * as notifier from 'node-notifier'
 import * as path from 'path'
@@ -8,7 +8,7 @@ import { FsUtils } from '../fs-utils'
 import { HardConfig } from '../hard-config'
 // import { promisify } from 'util'
 import '../ui-utils'
-import { Container, Scope, Provider } from 'typescript-ioc'
+import { Container, Scope, ObjectFactory } from 'typescript-ioc'
 
 export const d = (cmdName: string) => {
   return deb(`chptr:${cmdName}`)
@@ -76,18 +76,15 @@ export default abstract class extends Command {
 
   async init() {
     debug('Base init')
-    const { flags } = this.parse(this.constructor as any)
+    const { flags } = this.parse(this.constructor as any) as any
     const dir = path.join(flags.path as string)
     this._rootPath = dir
 
-    const hardConfigProvider: Provider = {
-      get: () => {
-        return new HardConfig(dir)
-      }
+    const hardConfigFactory: ObjectFactory = () => {
+      return new HardConfig(dir)
     }
-    Container.bind(HardConfig)
-      .provider(hardConfigProvider)
-      .scope(Scope.Singleton)
+
+    Container.bind(HardConfig).factory(hardConfigFactory).scope(Scope.Singleton)
 
     this._hardConfig = Container.get(HardConfig) //new HardConfig(dir)
 
@@ -102,7 +99,7 @@ export default abstract class extends Command {
 
   async finally() {
     debug(`Base Finally`)
-    const { flags } = this.parse(this.constructor as any)
+    const { flags } = this.parse(this.constructor as any) as any
     if (flags.notify) {
       notifier.notify({
         title: 'Chptr',

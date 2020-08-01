@@ -16,7 +16,7 @@ export default abstract class extends Command {
 
   public async finally() {
     debug('Running Finally on compactable-base')
-    const { flags } = this.parse(this.constructor as any)
+    const { flags } = this.parse(this.constructor as any) as any
     const compact = flags.compact
 
     if (compact) {

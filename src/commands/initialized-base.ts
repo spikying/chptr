@@ -14,7 +14,7 @@ import { tableize } from '../ui-utils'
 
 import Command, { d } from './base'
 import { FsUtils } from '../fs-utils'
-import { Container, Scope, Provider } from 'typescript-ioc'
+import { Container, Scope, ObjectFactory } from 'typescript-ioc'
 
 const debug = d('command:initialized-base')
 
@@ -68,41 +68,29 @@ export default abstract class extends Command {
     //#endregion
 
     //#region bootstrap all configs and utils
-    const softConfigProvider: Provider = {
-      get: () => {
-        return new SoftConfig(this.rootPath)
-      }
+    const softConfigFactory: ObjectFactory = () => {
+      return new SoftConfig(this.rootPath)
     }
-    Container.bind(SoftConfig)
-      .provider(softConfigProvider)
-      .scope(Scope.Singleton)
 
-    const gitUtilsProvider: Provider = {
-      get: () => {
-        return new GitUtils(this.softConfig, this.rootPath)
-      }
-    }
-    Container.bind(GitUtils)
-      .provider(gitUtilsProvider)
-      .scope(Scope.Singleton)
+    Container.bind(SoftConfig).factory(softConfigFactory).scope(Scope.Singleton)
 
-    const statisticsProvider: Provider = {
-      get: () => {
-        return new Statistics(this.softConfig, this.rootPath)
-      }
+    const gitUtilsFactory: ObjectFactory = () => {
+      return new GitUtils(this.softConfig, this.rootPath)
     }
-    Container.bind(Statistics)
-      .provider(statisticsProvider)
-      .scope(Scope.Singleton)
 
-    const markupUtilsProvider: Provider = {
-      get: () => {
-        return new MarkupUtils(this.softConfig, this.rootPath)
-      }
+    Container.bind(GitUtils).factory(gitUtilsFactory).scope(Scope.Singleton)
+
+    const statisticsFactory: ObjectFactory = () => {
+      return new Statistics(this.softConfig, this.rootPath)
     }
-    Container.bind(MarkupUtils)
-      .provider(markupUtilsProvider)
-      .scope(Scope.Singleton)
+
+    Container.bind(Statistics).factory(statisticsFactory).scope(Scope.Singleton)
+
+    const markupUtilsFactory: ObjectFactory = () => {
+      return new MarkupUtils(this.softConfig, this.rootPath)
+    }
+
+    Container.bind(MarkupUtils).factory(markupUtilsFactory).scope(Scope.Singleton)
 
     this._softConfig = Container.get(SoftConfig) //new SoftConfig(this.rootPath)
     this._statistics = Container.get(Statistics) // new Statistics(this.softConfig, this.rootPath)

@@ -140,7 +140,7 @@ export default class Init extends Command {
       }
     }
     const emailString = function(val: string): string {
-      if (!validator.isEmail(val)) {
+      if (!validator.default.isEmail(val)) {
         throw new ChptrError('Must be an email address', 'init.run.emailstring', 7)
       } else {
         return val

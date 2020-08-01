@@ -4,9 +4,9 @@ import minimatch = require('minimatch')
 import * as moment from 'moment'
 import * as simplegit from 'simple-git/promise'
 import { LogOptions } from 'simple-git/promise'
-import { DefaultLogFields, MoveSummary } from 'simple-git/typings/response'
+import { MoveSummary } from 'simple-git/typings/response'
 import { format } from 'url'
-import { AutoWired, Inject, Singleton } from 'typescript-ioc'
+import { Inject, Singleton } from 'typescript-ioc'
 
 import { ChapterId } from './chapter-id'
 import { SoftConfig } from './soft-config'

@@ -1,11 +1,10 @@
 // https://codingsans.com/blog/node-config-best-practices
 import { cli } from 'cli-ux'
-import * as jsonComment from 'comment-json'
-import * as Convict from 'convict'
+// import { parse } from 'comment-json'
+// import Convict from 'convict'
 import * as d from 'debug'
-// import { applyDiff } from 'deep-diff'
 import yaml = require('js-yaml')
-import moment = require('moment')
+// import moment from 'moment';
 import * as path from 'path'
 import * as YAML from 'yaml'
 
@@ -13,7 +12,16 @@ import { ChapterId } from './chapter-id'
 import { ChptrError } from './chptr-error'
 import { FsUtils } from './fs-utils'
 import { HardConfig } from './hard-config'
-import { Singleton, AutoWired, Container } from 'typescript-ioc'
+import { Singleton, Container } from 'typescript-ioc'
+import { YAMLSeq, Pair } from 'yaml/types'
+//import decomment = require('decomment')
+import JSON5 = require('json5')
+
+import Convict = require('convict')
+// import moment = require('moment')
+const moment = require('moment')
+
+Convict.addFormat(require('convict-format-with-validator').email)
 
 const debug = d('config:soft')
 
@@ -142,6 +150,11 @@ documentclass: bookest
     const wordCountFilePath = path.join(this.buildDirectory, `wordCountData.${this.configStyle.toLowerCase()}`)
     const getFromFile = () => {
       try {
+        const wordCountFileExists = this.fsUtils.fileExistsSync(wordCountFilePath)
+        if (!wordCountFileExists) {
+          throw new Error(`File ${wordCountFilePath} doesn't exist`)          
+        }
+
         const wordCountContent = this.fsUtils.loadFileSync(wordCountFilePath)
         const wco: WordCountDTO[] = this.parsePerStyle(wordCountContent)
         this._wordCountObject = wco.map<WordCountObject>(o => {
@@ -334,6 +347,8 @@ documentclass: bookest
     this.rootPath = path.join(dirname)
     this.fsUtils = new FsUtils()
 
+    debug('here 1')
+
     if (readFromFile) {
       let configFileString = ''
       let metadataFieldsString = ''
@@ -343,16 +358,16 @@ documentclass: bookest
         if (this.configStyle === 'JSON5') {
           configFileString = this.fsUtils.loadFileSync(this.hardConfig.configJSON5FilePath)
           metadataFieldsString = this.fsUtils.loadFileSync(this.hardConfig.metadataFieldsJSON5FilePath)
-
-          objConfig = jsonComment.parse(configFileString, undefined, true)
-          this._metadataFieldsObj = jsonComment.parse(metadataFieldsString, undefined, false)
+          
+          objConfig = JSON5.parse(configFileString, undefined) //parse(configFileString, undefined, true)
+          this._metadataFieldsObj = JSON5.parse(metadataFieldsString, undefined)
         } else if (this.configStyle === 'YAML') {
           configFileString = this.fsUtils.loadFileSync(this.hardConfig.configYAMLFilePath)
           metadataFieldsString = this.fsUtils.loadFileSync(this.hardConfig.metadataFieldsYAMLFilePath)
 
           // const yamlOptions = { keepBlobsInJSON: false, prettyErrors: true }
           debug(`configFileString:\n${configFileString}`)
-          objConfig = yaml.safeLoad(configFileString)
+          objConfig = yaml.safeLoad(configFileString) as any
           debug(`objConfig = ${JSON.stringify(objConfig)}`)
           this._metadataFieldsObj = yaml.safeLoad(metadataFieldsString)
           debug(`_metadataFieldsObj = ${JSON.stringify(this._metadataFieldsObj)}`)
@@ -431,12 +446,12 @@ documentclass: bookest
     const result = new YAML.Document()
     result.version = 'core'
     result.commentBefore = "Project's configuration options.\nModify as needed and `build` the project after to apply modifications."
-    result.contents = (YAML.createNode(defaultOverridedConfig) as unknown) as YAML.ast.Seq
+    result.contents = (YAML.createNode(defaultOverridedConfig) as unknown) as YAMLSeq // YAML.ast.Seq
 
     debug(`before comments adding loop`)
 
     for (const n of result.contents.items) {
-      const node = (n as unknown) as YAML.ast.Pair
+      const node = (n as unknown) as Pair // YAML.ast.Pair
       const prop = (node && node.key) || ''
       node.commentBefore = this.configSchemaObject[prop.toString()].doc
     }
@@ -450,7 +465,7 @@ documentclass: bookest
     return this.configStyle === 'JSON5' ? JSON.stringify(obj, null, 4) : this.configStyle === 'YAML' ? yaml.safeDump(obj) : ''
   }
   public parsePerStyle(str: string): any {
-    return this.configStyle === 'JSON5' ? jsonComment.parse(str, undefined, true) : this.configStyle === 'YAML' ? yaml.safeLoad(str) : {}
+    return this.configStyle === 'JSON5' ? JSON5.parse(str, undefined) : this.configStyle === 'YAML' ? yaml.safeLoad(str) : {}
   }
 
   public chapterWildcard(atNumbering: boolean): string {
@@ -602,7 +617,7 @@ documentclass: bookest
 
   public getFinalPropFor(prop: string): string {
     return this.config.propEquivalents.reduce((pv, cv) => {
-      if (cv.arr.map(v=>v.toLowerCase()).indexOf(prop.toLowerCase()) >= 0) {
+      if (cv.arr.map(v => v.toLowerCase()).indexOf(prop.toLowerCase()) >= 0) {
         return cv.final
       } else {
         return pv

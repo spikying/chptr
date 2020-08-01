@@ -96,7 +96,7 @@ USAGE
 # Commands
 
 <!-- commands -->
-* [`chptr add [NAME] [NUMBER]`](#chptr-add-name-number)
+* [`chptr add [NUMBER] [NAME]`](#chptr-add-number-name)
 * [`chptr build`](#chptr-build)
 * [`chptr build:compact`](#chptr-buildcompact)
 * [`chptr build:metadata`](#chptr-buildmetadata)
@@ -112,29 +112,28 @@ USAGE
 * [`chptr plugins:update`](#chptr-pluginsupdate)
 * [`chptr rename [CHAPTERIDORFILENAME] [NEWNAME]`](#chptr-rename-chapteridorfilename-newname)
 * [`chptr reorder [ORIGINID] [DESTINATIONID]`](#chptr-reorder-originid-destinationid)
-* [`chptr save [MESSAGE]`](#chptr-save-message)
+* [`chptr save [NUMBERORFILENAME]`](#chptr-save-numberorfilename)
 * [`chptr track [FILENAME]`](#chptr-track-filename)
 
-## `chptr add [NAME] [NUMBER]`
+## `chptr add [NUMBER] [NAME]`
 
 Adds a file or set of files as a new chapter, locally and in repository
 
 ```
 USAGE
-  $ chptr add [NAME] [NUMBER]
+  $ chptr add [NUMBER] [NAME]
 
 ARGUMENTS
+  NUMBER  [default: end] force this number to be used, if available.  AtNumbering will be determined by the presence or
+          absence of @ sign.  Defaults to `end`.
+
   NAME    name of chapter to add
 
-  NUMBER  force this number to be used, if available.  If this argument is given, the `atnumbered` flag is ignored.
-          AtNumbering will be determined by the presence or absence of @ sign.
-
 OPTIONS
-  -N, --notify      show a notification box when command is completed.
-  -a, --atnumbered  Add an @numbered chapter
-  -c, --compact     Compact chapter numbers at the same time
-  -h, --help        show CLI help
-  -p, --path=path   [default: .] Path where root of project files are
+  -N, --notify     show a notification box when command is completed.
+  -c, --compact    Compact chapter numbers at the same time
+  -h, --help       show CLI help
+  -p, --path=path  [default: .] Path where root of project files are
 ```
 
 _See code: [src\commands\add.ts](https://github.com/spikying/chptr/blob/v0.1.13/src\commands\add.ts)_
@@ -149,12 +148,19 @@ USAGE
 
 OPTIONS
   -N, --notify                              show a notification box when command is completed.
-  -S, --withsummaries                       Add summaries in output, before actual content
+
+  -P, --outputToProd                        Remove paragraph numbers, clean markup in output and remove chapter titles.
+                                            When false, adds summaries in output.
+
   -c, --compact                             Compact chapter numbers at the same time
+
   -d, --datetimestamp                       adds datetime stamp before output filename
+
   -h, --help                                show CLI help
+
+  -i, --withFullIntermediaryOutput          With full intermediary output as .md file
+
   -p, --path=path                           [default: .] Path where root of project files are
-  -r, --removemarkup                        Remove paragraph numbers and clean markup in output
 
   -s, --showWritingRate=yes|no|overwrite    [default: yes] Show word count per day.  Overwrite option recalculates it
                                             all from scratch.
@@ -214,12 +220,19 @@ USAGE
 
 OPTIONS
   -N, --notify                              show a notification box when command is completed.
-  -S, --withsummaries                       Add summaries in output, before actual content
+
+  -P, --outputToProd                        Remove paragraph numbers, clean markup in output and remove chapter titles.
+                                            When false, adds summaries in output.
+
   -c, --compact                             Compact chapter numbers at the same time
+
   -d, --datetimestamp                       adds datetime stamp before output filename
+
   -h, --help                                show CLI help
+
+  -i, --withFullIntermediaryOutput          With full intermediary output as .md file
+
   -p, --path=path                           [default: .] Path where root of project files are
-  -r, --removemarkup                        Remove paragraph numbers and clean markup in output
 
   -s, --showWritingRate=yes|no|overwrite    [default: yes] Show word count per day.  Overwrite option recalculates it
                                             all from scratch.
@@ -264,7 +277,7 @@ USAGE
   $ chptr edit [CHAPTERIDS]
 
 ARGUMENTS
-  CHAPTERIDS  Chapter number(s) to modify, comma-separated.
+  CHAPTERIDS  Chapter number(s) to modify, comma-separated or dash-separated for a range.
 
 OPTIONS
   -N, --notify                    show a notification box when command is completed.
@@ -294,7 +307,7 @@ OPTIONS
   --all  see all commands in CLI
 ```
 
-_See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v2.1.6/src\commands\help.ts)_
+_See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v3.1.0/src\commands\help.ts)_
 
 ## `chptr init [NAME]`
 
@@ -348,7 +361,7 @@ EXAMPLE
   $ chptr plugins
 ```
 
-_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v1.7.8/src\commands\plugins\index.ts)_
+_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v1.9.0/src\commands\plugins\index.ts)_
 
 ## `chptr plugins:install PLUGIN...`
 
@@ -384,7 +397,7 @@ EXAMPLES
   $ chptr plugins:install someuser/someplugin
 ```
 
-_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v1.7.8/src\commands\plugins\install.ts)_
+_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v1.9.0/src\commands\plugins\install.ts)_
 
 ## `chptr plugins:link PLUGIN`
 
@@ -411,7 +424,7 @@ EXAMPLE
   $ chptr plugins:link myplugin
 ```
 
-_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v1.7.8/src\commands\plugins\link.ts)_
+_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v1.9.0/src\commands\plugins\link.ts)_
 
 ## `chptr plugins:uninstall PLUGIN...`
 
@@ -433,7 +446,7 @@ ALIASES
   $ chptr plugins:remove
 ```
 
-_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v1.7.8/src\commands\plugins\uninstall.ts)_
+_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v1.9.0/src\commands\plugins\uninstall.ts)_
 
 ## `chptr plugins:update`
 
@@ -448,7 +461,7 @@ OPTIONS
   -v, --verbose
 ```
 
-_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v1.7.8/src\commands\plugins\update.ts)_
+_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v1.9.0/src\commands\plugins\update.ts)_
 
 ## `chptr rename [CHAPTERIDORFILENAME] [NEWNAME]`
 
@@ -495,16 +508,16 @@ ALIASES
 
 _See code: [src\commands\reorder.ts](https://github.com/spikying/chptr/blob/v0.1.13/src\commands\reorder.ts)_
 
-## `chptr save [MESSAGE]`
+## `chptr save [NUMBERORFILENAME]`
 
 Parse modified text files, adjust sentence and paragraph endings, and commit files to repository.
 
 ```
 USAGE
-  $ chptr save [MESSAGE]
+  $ chptr save [NUMBERORFILENAME]
 
 ARGUMENTS
-  MESSAGE  Message to use in commit to repository
+  NUMBERORFILENAME  Chamber number to save, or tracked filename or filename pattern to save to repository
 
 OPTIONS
   -N, --notify             show a notification box when command is completed.
@@ -514,6 +527,8 @@ OPTIONS
                            repository
 
   -h, --help               show CLI help
+
+  -m, --message=message    Message to use in commit to repository
 
   -n, --number=number      Chapter number to filter which files to stage before saving to repository
 
