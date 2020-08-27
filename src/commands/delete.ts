@@ -18,6 +18,11 @@ export default class Delete extends Command {
       char: 'c',
       description: 'Compact chapter numbers at the same time',
       default: false
+    }),
+    save: flags.boolean({
+      char: 's',
+      description: 'Commit to git at the same time.',
+      default: false
     })
   }
 
@@ -39,6 +44,7 @@ export default class Delete extends Command {
     const { args, flags } = this.parse(Delete)
 
     const compact = flags.compact
+    const save = flags.save
 
     const queryBuilder = new QueryBuilder()
     if (!args.name) {
@@ -59,11 +65,8 @@ export default class Delete extends Command {
       commitMsg += `\nCompacted file numbers`
     }
 
-    await this.coreUtils.preProcessAndCommitFiles(
-      commitMsg,
-      undefined,
-      true
-    )
-
+    if (save) {
+      await this.coreUtils.preProcessAndCommitFiles(commitMsg, undefined, true)
+    }
   }
 }

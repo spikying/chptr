@@ -16,6 +16,11 @@ export default class Reorder extends Command {
       char: 'c',
       description: 'Compact chapter numbers at the same time',
       default: false
+    }),
+    save: flags.boolean({
+      char: 's',
+      description: 'Commit to git at the same time.',
+      default: false
     })
   }
 
@@ -61,6 +66,8 @@ export default class Reorder extends Command {
       commitMessage += '\nAdded digits to chapter numbers'
     }
 
-    await this.coreUtils.preProcessAndCommitFiles(commitMessage)
+    if (flags.save) {
+      await this.coreUtils.preProcessAndCommitFiles(commitMessage)
+    }
   }
 }

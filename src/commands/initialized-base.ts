@@ -74,6 +74,7 @@ export default abstract class extends Command {
 
     Container.bind(SoftConfig).factory(softConfigFactory).scope(Scope.Singleton)
 
+    // const _singleGitUtils = new GitUtils(this.softConfig, this.rootPath)
     const gitUtilsFactory: ObjectFactory = () => {
       return new GitUtils(this.softConfig, this.rootPath)
     }

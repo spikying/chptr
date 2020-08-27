@@ -438,6 +438,7 @@ export class MarkupUtils {
 
       const initialObj = this.softConfig.parsePerStyle(initialContent)
       const updatedObj = JSON.parse(JSON.stringify(initialObj)) //used to create deep copy
+      delete updatedObj.extracted
       updatedObj.extracted = extractedMarkup
       updatedObj.computed = computedMarkup
       updatedObj.summary = summaryMarkup

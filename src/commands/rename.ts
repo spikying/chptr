@@ -18,7 +18,12 @@ export default class Rename extends Command {
     ...Command.flags,
     title: flags.boolean({
       char: 't',
-      description: "'Use chapter's title as new name.  Will supercede a `newName` argument.",
+      description: "Use chapter's title as new name.  Will supercede a `newName` argument.",
+      default: false
+    }),
+    save: flags.boolean({
+      char: 's',
+      description: 'Commit to git at the same time.',
       default: false
     })
   }
@@ -71,7 +76,7 @@ export default class Rename extends Command {
 
     debug(`chapter wildcard = ${this.softConfig.chapterWildcardWithNumber(chapterId)}`)
     debug(`chapter file = ${chapterFile}`)
-    const newName = flags.title ? await this.extractTitleFromFile(chapterFile) : (args.newName || queryResponses.newName || 'chapter')
+    const newName = flags.title ? await this.extractTitleFromFile(chapterFile) : args.newName || queryResponses.newName || 'chapter'
     const newNameForFile = this.fsUtils.sanitizeFileName(newName, true).replace(path.sep, '/')
 
     let didUpdates: {
@@ -144,9 +149,11 @@ export default class Rename extends Command {
     )
     cli.action.stop(toRenamePretty.actionStopColor())
 
-    const toCommitFiles = await this.gitUtils.GetGitListOfStageableFiles(chapterId)
-    debug(`toCommitFiles = ${JSON.stringify(toCommitFiles)}`)
-    await this.coreUtils.preProcessAndCommitFiles(`Renaming chapter ${chapterIdString} to ${newName}${toRenamePretty}`, toCommitFiles)
+    if (flags.save) {
+      const toCommitFiles = await this.gitUtils.GetGitListOfStageableFiles(chapterId)
+      debug(`toCommitFiles = ${JSON.stringify(toCommitFiles)}`)
+      await this.coreUtils.preProcessAndCommitFiles(`Renaming chapter ${chapterIdString} to ${newName}${toRenamePretty}`, toCommitFiles)
+    }
   }
 
   private async replaceTitleInMarkdown(actualFile: string, newTitle: string): Promise<boolean> {
