@@ -17,21 +17,24 @@ const debug = d('git-utils')
 export class GitUtils {
   private readonly _git: simplegit.SimpleGit
   private readonly softConfig: SoftConfig
+  private _gitConfigAdded: boolean
 
   constructor(softConfig: SoftConfig, rootPath: string) {
     debug('CONSTRUCTOR GIT-UTILS')
     this._git = simplegit(rootPath)
+    this._gitConfigAdded = false
     this.softConfig = softConfig
   }
 
   //todo: split git.add and git.commit to enable doing everything without committing, e.g. for functions like rename or others that don't need a commit automatically
-  
+
   public async CommitToGit(
     message: string,
     preProcessingCallback: (files: string[]) => Promise<void>,
     toStageFiles?: string[],
     forDeletes = false
   ) {
+    debug('git-utils.CommitToGit')
     const git = await this.git()
     toStageFiles = toStageFiles || (await this.GetGitListOfStageableFiles())
     if (toStageFiles.length > 0 || forDeletes) {
@@ -45,9 +48,6 @@ export class GitUtils {
       if (!forDeletes) {
         await git.add(toStageFiles)
       }
-      debug(`after adding files`)
-      await git.addConfig('user.name', this.softConfig.config.projectAuthor.name)
-      await git.addConfig('user.email', this.softConfig.config.projectAuthor.email)
 
       const commitSummary = await git.commit(message)
       const hasRemote: boolean = await git.getRemotes(false).then(result => {
@@ -74,14 +74,14 @@ export class GitUtils {
     const git = await this.git()
     const gitStatus = await git.status()
 
-    const unQuote = function(value: string) {
+    const unQuote = function (value: string) {
       if (!value) {
         return value
       }
       return value.replace(/"(.*)"/, '$1')
     }
 
-    const onlyUnique = function(value: any, index: number, self: any) {
+    const onlyUnique = function (value: any, index: number, self: any) {
       return self.indexOf(value) === index
     }
 
@@ -110,7 +110,7 @@ export class GitUtils {
     const git = await this.git()
     const gitStatus = await git.status()
 
-    const unQuote = function(value: string) {
+    const unQuote = function (value: string) {
       if (!value) {
         return value
       }
@@ -229,9 +229,7 @@ export class GitUtils {
     const allDates: string[] = []
     const allLastCommitsPerDay: LogFields[] = []
     allCommits.all.forEach(c => {
-      const commitDate = moment(c.date)
-        .startOf('day')
-        .toString()
+      const commitDate = moment(c.date).startOf('day').toString()
       if (allDates.indexOf(commitDate) === -1) {
         allDates.push(commitDate)
         allLastCommitsPerDay.push(c)
@@ -242,9 +240,17 @@ export class GitUtils {
   }
 
   private async git(): Promise<simplegit.SimpleGit> {
-    const quotepath = await this._git.addConfig('core.quotepath', '')
-    if (quotepath !== 'off') {
-      await this._git.addConfig('core.quotepath', 'off')
+    debug('getting git instance')
+    if (!this._gitConfigAdded) {
+      debug('adding config to git')
+      const quotepath = await this._git.addConfig('core.quotepath', '')
+      if (quotepath !== 'off') {
+        await this._git.addConfig('core.quotepath', 'off')
+      }
+      await this._git.addConfig('user.name', this.softConfig.config.projectAuthor.name)
+      await this._git.addConfig('user.email', this.softConfig.config.projectAuthor.email)
+
+      this._gitConfigAdded = true
     }
     return this._git
   }

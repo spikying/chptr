@@ -328,7 +328,7 @@ export class CoreUtils {
     const { tempDir } = await this.fsUtils.getTempDir(this.rootPath)
 
     // try {
-    const moveTempPromises: Promise<MoveSummary>[] = []
+    // const moveTempPromises: Promise<MoveSummary>[] = []
     for (const file of toRenameFiles.map(f => f.file)) {
       const fromFilename = this.softConfig.mapFileToBeRelativeToRootPath(file)
       const toFilename = this.softConfig.mapFileToBeRelativeToRootPath(path.join(tempDir, fromFilename))
@@ -336,9 +336,10 @@ export class CoreUtils {
 
       await this.fsUtils.createSubDirectoryFromFilePathIfNecessary(path.join(this.rootPath, toFilename))
 
-      moveTempPromises.push(this.gitUtils.mv(fromFilename, toFilename))
+      // moveTempPromises.push(this.gitUtils.mv(fromFilename, toFilename))
+      await this.gitUtils.mv(fromFilename, toFilename)
     }
-    await Promise.all(moveTempPromises)
+    // await Promise.all(moveTempPromises)
 
     // let aForAtNumbering = false
 
@@ -364,7 +365,7 @@ export class CoreUtils {
     let fileMovesPretty = ''
 
     // try {
-    const moveBackPromises: Promise<MoveSummary>[] = []
+    // const moveBackPromises: Promise<MoveSummary>[] = []
     for (const moveItem of toRenameFiles) {
       const filename = this.softConfig.mapFileToBeRelativeToRootPath(moveItem.file)
       const newFileNumber: number = moveItem.newFileNumber
@@ -378,9 +379,10 @@ export class CoreUtils {
       // debug(`TEMPed file: ${fromFilename} BACK TO ${toFilename}`)
 
       fileMovesPretty.concat(`\n    renaming from "${fromFilename}" to "${toFilename}"`)
-      moveBackPromises.push(this.gitUtils.mv(fromFilename, toFilename))
+      // moveBackPromises.push(this.gitUtils.mv(fromFilename, toFilename))
+      await this.gitUtils.mv(fromFilename, toFilename)
     }
-    await Promise.all(moveBackPromises)
+    // await Promise.all(moveBackPromises)
 
     // for (const file of this.softConfig.filesWithChapterNumbersInContent) {
     //   let content = await this.fsUtils.readFileContent(file)
@@ -468,10 +470,11 @@ export class CoreUtils {
 
   public async compactFileNumbers(): Promise<void> {
     cli.action.start('Compacting file numbers'.actionStartColor())
+    debug('core-utils.compactFileNumber()')
 
     const table = tableize('from', 'to')
     const moves: { fromFilename: string; toFilename: string; destDigits: number }[] = []
-    const movePromises: Promise<MoveSummary>[] = []
+    // const movePromises: Promise<MoveSummary>[] = []
     const fromFilenames: string[] = []
     const { tempDir, removeTempDir } = await this.fsUtils.getTempDir(this.rootPath)
     const tempDirForGit = this.softConfig.mapFileToBeRelativeToRootPath(tempDir)
@@ -498,20 +501,23 @@ export class CoreUtils {
 
           if (fromFilename !== toFilename) {
             moves.push({ fromFilename, toFilename, destDigits })
+            debug(`from: ${fromFilename} to: ${toFilename}`)
             table.accumulator(fromFilename, toFilename)
-            movePromises.push(this.gitUtils.mv(fromFilename, path.join(tempDirForGit, toFilename)))
+            // movePromises.push(this.gitUtils.mv(fromFilename, path.join(tempDirForGit, toFilename)))
+            await this.gitUtils.mv(fromFilename, path.join(tempDirForGit, toFilename))
             fromFilenames.push(file.filename)
           }
           currentNumber += this.softConfig.config.numberingStep
         }
       }
     }
-    await Promise.all(movePromises)
+    // await Promise.all(movePromises)
 
     for (const renumbering of moves) {
-      movePromises.push(this.gitUtils.mv(path.join(tempDirForGit, renumbering.toFilename), renumbering.toFilename))
+      // movePromises.push(this.gitUtils.mv(path.join(tempDirForGit, renumbering.toFilename), renumbering.toFilename))
+      await this.gitUtils.mv(path.join(tempDirForGit, renumbering.toFilename), renumbering.toFilename)
     }
-    await Promise.all(movePromises)
+    // await Promise.all(movePromises)
 
     const aForAtNumbering = await this.moveChapterNumbersInFileContentToTemp(fromFilenames)
     await this.moveChapterNumbersInFileContentToDestination(
@@ -988,7 +994,7 @@ export class CoreUtils {
   }
 
   private async addDigitsToFiles(files: string[], newDigitNumber: number, atNumberingStack: boolean): Promise<boolean> {
-    const promises: Promise<MoveSummary>[] = []
+    // const promises: Promise<MoveSummary>[] = []
     let hasMadeChanges = false
     const table = tableize('from', 'to')
     const filesWithInfo: { file: string; destId: ChapterId }[] = []
@@ -1011,7 +1017,8 @@ export class CoreUtils {
             // newFileNumber: this.softConfig.extractNumber(toFilename),
             // destIsAtNumber: this.softConfig.isAtNumbering(toFilename)
           })
-          promises.push(this.gitUtils.mv(fromFilename, toFilename))
+          // promises.push(this.gitUtils.mv(fromFilename, toFilename))
+          await this.gitUtils.mv(fromFilename, toFilename)
           hasMadeChanges = true
         }
       }
@@ -1020,7 +1027,7 @@ export class CoreUtils {
     await this.moveChapterNumbersInFileContentToDestination(filesWithInfo, aForAtNumbering)
     await this.rewriteLabelsInFilesWithNumbersInContent(aForAtNumbering)
 
-    await Promise.all(promises)
+    // await Promise.all(promises)
     await this.fsUtils.deleteEmptySubDirectories(this.rootPath)
 
     table.show('Adding digits to files')

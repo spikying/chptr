@@ -153,7 +153,7 @@ export default abstract class extends Command {
 
     const oldChapterPattern = lastConfigObj.chapterPattern
 
-    const movePromises: Promise<MoveSummary>[] = []
+    // const movePromises: Promise<MoveSummary>[] = []
     const movesToExecute: { originalFile: string; renamedFile: string }[] = []
     for (const oldAndNew of oldVsNew) {
       const files = (await this.softConfig.getAllFilesForPattern(oldAndNew.oldPattern)) || []
@@ -184,10 +184,11 @@ export default abstract class extends Command {
     }
     for (const moveToExec of movesToExecute) {
       result = true
-      movePromises.push(this.gitUtils.mv(moveToExec.originalFile, moveToExec.renamedFile))
+      // movePromises.push(this.gitUtils.mv(moveToExec.originalFile, moveToExec.renamedFile))
+      await this.gitUtils.mv(moveToExec.originalFile, moveToExec.renamedFile)
     }
 
-    await Promise.all(movePromises)
+    // await Promise.all(movePromises)
     return result
   }
 
