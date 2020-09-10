@@ -10,7 +10,7 @@ import { ChptrError } from './chptr-error'
 import { FsUtils } from './fs-utils'
 import { GitUtils } from './git-utils'
 import { SoftConfig, WordCountObject } from './soft-config'
-import { tableize } from './ui-utils'
+import { tableize, ITable } from './ui-utils'
 import { Singleton, Container } from 'typescript-ioc'
 
 const debug = d('markup-utils')
@@ -437,8 +437,49 @@ export class MarkupUtils {
       const initialContent = await this.fsUtils.readFileContent(metadataFilePath)
 
       const initialObj = this.softConfig.parsePerStyle(initialContent)
-      const updatedObj = JSON.parse(JSON.stringify(initialObj)) //used to create deep copy
+      let updatedObj = JSON.parse(JSON.stringify(initialObj)) //used to create deep copy
+
+      debug(`FILE: ${metadataFilename}`)
+      for (const key in updatedObj.manual) {
+        if (Object.prototype.hasOwnProperty.call(updatedObj.manual, key)) {
+          const element = updatedObj.manual[key]
+
+          debug(`key: ${key}`)
+          if (Array.isArray(element) && typeof element[0] === 'object') {
+            const hasEmptyObject = element.reduce((pv, cv) => {
+              let isEmpty = true
+              for (const fieldName in cv) {
+                debug(`fieldName: ${fieldName}`)
+                if (Object.prototype.hasOwnProperty.call(cv, fieldName)) {
+                  const testedValue = cv[fieldName]
+                  debug(`testedValue: ${testedValue}`)
+                  if (testedValue) {
+                    isEmpty = false
+                  }
+                }
+              }
+              return pv || isEmpty
+            }, false)
+            debug(
+              `element: ${JSON.stringify(element)}\nlength: ${
+                element.length
+              }\nTrue or False: ${!!element}\nhasEmptyObject: ${hasEmptyObject}`
+            )
+            if (hasEmptyObject || element.length === 0) {
+              debug(`(in array of object) deleted ${key}:${JSON.stringify(updatedObj.manual[key])}`)
+              delete updatedObj.manual[key]
+            }
+          } else if (!element || (Array.isArray(element) && element.length === 0)) {
+            debug(`(in else) deleted ${key}:${updatedObj.manual[key]}`)
+            delete updatedObj.manual[key]
+          }
+        }
+      }
+      const updatedResult = this.GetUpdatedMetadataFieldsFromDefaults(updatedObj)
+      updatedObj = updatedResult.replacedObj
+
       delete updatedObj.extracted
+
       updatedObj.extracted = extractedMarkup
       updatedObj.computed = computedMarkup
       updatedObj.summary = summaryMarkup
@@ -535,25 +576,36 @@ export class MarkupUtils {
       const initialContent = await this.fsUtils.readFileContent(file)
       try {
         const initialObj = this.softConfig.parsePerStyle(initialContent)
-        const replacedObj = this.softConfig.parsePerStyle(initialContent)
 
-        let changeApplied = false
-        observableDiff(replacedObj.manual, this.softConfig.metadataFieldsDefaults, d => {
-          if ((d.kind === 'D' && d.lhs === '') || d.kind === 'N') {
-            changeApplied = true
-            applyChange(replacedObj.manual, this.softConfig.metadataFieldsDefaults, d)
-          }
-        })
+        const { replacedObj, changeApplied } = this.GetUpdatedMetadataFieldsFromDefaults(
+          initialObj,
+          this.softConfig.mapFileToBeRelativeToRootPath(file),
+          table
+        )
+
         if (changeApplied) {
-          const diffs = diff(initialObj.manual, replacedObj.manual) || []
-          diffs.map(d => {
-            const expl = (d.kind === 'N' ? 'New ' : 'Deleted ') + d.path
-            table.accumulator(this.softConfig.mapFileToBeRelativeToRootPath(file), expl)
-          })
           const outputString = this.softConfig.stringifyPerStyle(replacedObj)
-
           await this.fsUtils.writeFile(file, outputString)
         }
+        // const replacedObj = JSON.parse(JSON.stringify(initialObj)) //used to create deep copy
+
+        // let changeApplied = false
+        // observableDiff(replacedObj.manual, this.softConfig.metadataFieldsDefaults, d => {
+        //   if ((d.kind === 'D' && d.lhs === '') || d.kind === 'N') {
+        //     changeApplied = true
+        //     applyChange(replacedObj.manual, this.softConfig.metadataFieldsDefaults, d)
+        //   }
+        // })
+        // if (changeApplied) {
+        //   const diffs = diff(initialObj.manual, replacedObj.manual) || []
+        //   diffs.map(d => {
+        //     const expl = (d.kind === 'N' ? 'New ' : 'Deleted ') + d.path
+        //     table.accumulator(this.softConfig.mapFileToBeRelativeToRootPath(file), expl)
+        //   })
+        //   const outputString = this.softConfig.stringifyPerStyle(replacedObj)
+
+        //   await this.fsUtils.writeFile(file, outputString)
+        // }
       } catch (err) {
         throw new ChptrError(
           `Error in updating all chapter's Metadata files.  ${err}`,
@@ -563,6 +615,31 @@ export class MarkupUtils {
       }
     }
     table.show('Metadata fields updated in files')
+  }
+
+  public GetUpdatedMetadataFieldsFromDefaults(
+    initialObj: any,
+    filename?: string,
+    table?: ITable
+  ): { replacedObj: any; changeApplied: boolean } {
+    const replacedObj = JSON.parse(JSON.stringify(initialObj)) //used to create deep copy
+
+    let changeApplied = false
+    observableDiff(replacedObj.manual, this.softConfig.metadataFieldsDefaults, d => {
+      if ((d.kind === 'D' && d.lhs === '') || d.kind === 'N') {
+        changeApplied = true
+        applyChange(replacedObj.manual, this.softConfig.metadataFieldsDefaults, d)
+      }
+    })
+    if (changeApplied && filename && table) {
+      const diffs = diff(initialObj.manual, replacedObj.manual) || []
+      diffs.map(d => {
+        const expl = (d.kind === 'N' ? 'New ' : 'Deleted ') + d.path
+        // table.accumulator(this.softConfig.mapFileToBeRelativeToRootPath(file), expl)
+        table.accumulator(filename, expl)
+      })
+    }
+    return { replacedObj, changeApplied }
   }
 
   private async contentHasChangedVersusFile(filepath: string, content: string) {

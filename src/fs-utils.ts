@@ -73,7 +73,18 @@ export class FsUtils {
       }
     }
     return triedWF(path, data)
-    // return wf(path, data, 'utf8')
+  }
+
+  public readonly writeFileSync = function(path: string, data: string) {
+    const wf = fs.writeFileSync
+    const triedWF = (path: string, data: string) => {
+      try {
+        return wf(path, data, 'utf8')
+      } catch (err) {
+        throw new ChptrError(err, 'fs-utils.writefile', 100)
+      }
+    }
+    return triedWF(path, data)
   }
 
   public async createSubDirectoryFromDirectoryPathIfNecessary(directoryPath: string): Promise<string | null> {

@@ -177,6 +177,7 @@ export class GitUtils {
   public async GetGitListOfHistoryFiles(
     sinceDays: number
   ): Promise<{ hash: string; date: moment.Moment; chapterFiles: string[]; summaryFiles: string[] }[]> {
+    debug('In GetGitListOfHistoryFiles')
     const allLastCommitsPerDay = await this.GetAllLastCommitsPerDay(sinceDays)
     const value: { hash: string; date: moment.Moment; chapterFiles: string[]; summaryFiles: string[] }[] = []
 
@@ -190,10 +191,12 @@ export class GitUtils {
       })
       value.push({ hash: commit.hash, date: moment(commit.date).startOf('day'), chapterFiles, summaryFiles })
     }
+    debug(`value: ${JSON.stringify(value)}`)
     return value
   }
 
   public async GetGitContentOfHistoryFile(hash: string, file: string): Promise<string> {
+    debug(`getting content of history file: ${file}`)
     const git = await this.git()
     const content = await git.show([`${hash}:${file}`])
     return content

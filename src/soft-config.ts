@@ -144,7 +144,9 @@ documentclass: bookest
       }
       return v
     })
-    this.fsUtils.writeFile(wordCountFilePath, this.stringifyPerStyle(dto))
+    debug('before writing wordcount file')
+    this.fsUtils.writeFileSync(wordCountFilePath, this.stringifyPerStyle(dto))
+    debug('after writing wordcount file')
   }
   public get WordCountData(): WordCountObject[] {
     const wordCountFilePath = path.join(this.buildDirectory, `wordCountData.${this.configStyle.toLowerCase()}`)

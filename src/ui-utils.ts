@@ -4,32 +4,31 @@ import inquirer = require('inquirer')
 
 import { FsUtils } from './fs-utils'
 
-  const chalk: any = require('chalk')
-  String.prototype.color = function (colorName: string) {
-    return chalk[colorName](this)
-  }
-  String.prototype.actionStartColor = function () {
-    return chalk.blue(this)
-  }
-  String.prototype.actionStopColor = function () {
-    return chalk.cyan(this)
-  }
-  String.prototype.resultHighlighColor = function () {
-    return chalk.yellow(this)
-  }
-  String.prototype.resultSecondaryColor = function () {
-    return chalk.magenta(this)
-  }
-  String.prototype.resultNormalColor = function () {
-    return chalk.whiteBright(this)
-  }
-  String.prototype.infoColor = function () {
-    return chalk.gray(this)
-  }
-  String.prototype.errorColor = function () {
-    return chalk.redBright(this)
-  }
-
+const chalk: any = require('chalk')
+String.prototype.color = function (colorName: string) {
+  return chalk[colorName](this)
+}
+String.prototype.actionStartColor = function () {
+  return chalk.blue(this)
+}
+String.prototype.actionStopColor = function () {
+  return chalk.cyan(this)
+}
+String.prototype.resultHighlighColor = function () {
+  return chalk.yellow(this)
+}
+String.prototype.resultSecondaryColor = function () {
+  return chalk.magenta(this)
+}
+String.prototype.resultNormalColor = function () {
+  return chalk.whiteBright(this)
+}
+String.prototype.infoColor = function () {
+  return chalk.gray(this)
+}
+String.prototype.errorColor = function () {
+  return chalk.redBright(this)
+}
 
 const debug = d('ui-utils')
 
@@ -148,12 +147,12 @@ export class QueryBuilder {
   }
 }
 
-export const tableize = function(col1: string, col2: string) {
+export const tableize = function (col1: string, col2: string) {
   const moves: { from: string; to: string }[] = []
-  const accumulator = function(from: string, to: string) {
+  const accumulator = function (from: string, to: string) {
     moves.push({ from, to })
   }
-  const accumulatorArray = function(arr: { from: string; to: string }[]) {
+  const accumulatorArray = function (arr: { from: string; to: string }[]) {
     for (const line of arr) {
       accumulator(line.from, line.to)
     }
@@ -165,21 +164,30 @@ export const tableize = function(col1: string, col2: string) {
         cli.info(`${title.actionStartColor()}... ${'done'.actionStopColor()}`.color('white'))
       }
 
-      cli.table(moves.map(o => ({ from: o.from.resultNormalColor(), to: o.to.resultHighlighColor() })), {
-        from: {
-          header: col1.infoColor(),
-          minWidth: 30
-        },
-        ' ->': {
-          get: () => ''
-        },
-        to: {
-          header: col2.infoColor()
+      cli.table(
+        moves.map(o => ({ from: o.from.resultNormalColor(), to: o.to.resultHighlighColor() })),
+        {
+          from: {
+            header: col1.infoColor(),
+            minWidth: 30
+          },
+          ' ->': {
+            get: () => ''
+          },
+          to: {
+            header: col2.infoColor()
+          }
         }
-      })
+      )
     }
   }
 
-  const returnObj = { accumulator, show, accumulatorArray }
+  const returnObj: ITable = { accumulator, show, accumulatorArray }
   return returnObj
+}
+
+export interface ITable {
+  accumulator: (from: string, to: string) => void
+  show: (title?: string | undefined) => void
+  accumulatorArray: (arr: { from: string; to: string }[]) => void
 }

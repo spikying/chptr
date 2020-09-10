@@ -24,10 +24,15 @@ export default class Metadata extends Command {
       default: false
     }),
     showWritingRate: flags.string({
-      char: 's',
+      char: 'w',
       description: 'Show word count per day.  Overwrite option recalculates it all from scratch.',
       options: ['yes', 'no', 'overwrite'],
       default: 'yes'
+    }),
+    save: flags.boolean({
+      char: 's',
+      description: 'Commit to git at the same time.',
+      default: false
     })
   }
 
@@ -63,7 +68,10 @@ export default class Metadata extends Command {
       // const showWritingRateDetails = wrOption === 'all' || wrOption === 'export'
       // const exportWritingRate = wrOption === 'export'
 
-      await this.coreUtils.preProcessAndCommitFiles('Autosave before build')
+      //todo: should this be done even if -save flag not on?
+      if (flags.save) {
+        await this.coreUtils.preProcessAndCommitFiles('Autosave before build')
+      }
 
       await this.markupUtils.UpdateAllMetadataFieldsFromDefaults()
 
@@ -79,12 +87,15 @@ export default class Metadata extends Command {
 
       await this.markupUtils.extractMarkupAndUpdateGlobalAndChapterMetadata(allChapterFilesArray, allSummaryFilesArray, this.outputFile)
       await this.coreUtils.rewriteLabelsInFilesWithNumbersInContent(true) //todo: get value for A-for-at-numbering
-      await this.coreUtils.preProcessAndCommitFiles('Autosave markup updates')
+      if (flags.save) {
+        await this.coreUtils.preProcessAndCommitFiles('Autosave markup updates')
+      }
 
       if (showWritingRate) {
         cli.action.start('Extracting word count stats for all content files'.actionStartColor())
-
+        debug('before getting wordCountHistory')
         const wordCountHistory = await this.markupUtils.extractWordCountHistory2(recalculateWritingRate)
+        debug('after getting wordCountHistory')
         const numDigits = (val: number) => {
           const digits = Math.max(Math.floor(Math.log10(Math.abs(val))), 0) + 1
           return Math.abs(val) === val ? digits : digits + 1
