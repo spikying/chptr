@@ -39,6 +39,8 @@ interface ConfigObject {
   numberingInitial: number
   metadataFields: object
   filesWithChapterNumbersInContent: string[]
+  timelineFile: string
+  timelineCharacters: string[]
   postBuildStep: string
   propEquivalents: PropEquivalent[]
 }
@@ -85,6 +87,14 @@ export class SoftConfig {
   public get filesWithChapterNumbersInContent(): string[] {
     return this.config.filesWithChapterNumbersInContent.map(f => path.join(this.rootPath, f))
   }
+
+  public get timelineFile(): string {
+    return path.join(this.rootPath, this.config.timelineFile)
+  }
+
+  // public get timelineCharacters(): string[] {
+  //   return this.config.timelineCharacters
+  // }
 
   public get postBuildStep(): string {
     return path.join(this.rootPath, this.config.postBuildStep)
@@ -154,7 +164,7 @@ documentclass: bookest
       try {
         const wordCountFileExists = this.fsUtils.fileExistsSync(wordCountFilePath)
         if (!wordCountFileExists) {
-          throw new Error(`File ${wordCountFilePath} doesn't exist`)          
+          throw new Error(`File ${wordCountFilePath} doesn't exist`)
         }
 
         const wordCountContent = this.fsUtils.loadFileSync(wordCountFilePath)
@@ -284,6 +294,14 @@ documentclass: bookest
       doc: 'File paths to files containing chapter numbers, to have them follow in reorder and compact operations.',
       default: []
     },
+    timelineFile: {
+      doc: 'File path to timeline file, in Mermaid syntax.',
+      default: ''
+    },
+    timelineCharacters: {
+      doc: 'Array of characters (as per their "final" propEquivalents) that will get a timeline built.',
+      default: []
+    },
     postBuildStep: {
       doc: 'Executable or script to run after Build, relative to root.',
       default: ''
@@ -360,7 +378,7 @@ documentclass: bookest
         if (this.configStyle === 'JSON5') {
           configFileString = this.fsUtils.loadFileSync(this.hardConfig.configJSON5FilePath)
           metadataFieldsString = this.fsUtils.loadFileSync(this.hardConfig.metadataFieldsJSON5FilePath)
-          
+
           objConfig = JSON5.parse(configFileString, undefined) //parse(configFileString, undefined, true)
           this._metadataFieldsObj = JSON5.parse(metadataFieldsString, undefined)
         } else if (this.configStyle === 'YAML') {

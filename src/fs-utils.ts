@@ -22,13 +22,13 @@ export class FsUtils {
   public readonly deleteDir = promisify(fs.rmdir)
   public readonly deleteFile = promisify(fs.unlink)
   public readonly mkdtemp = promisify(fs.mkdtemp)
-  
+
   private readonly readFileBuffer = promisify(fs.readFile)
-  public readonly accessSync = function(filePath: string): void {
+  public readonly accessSync = function (filePath: string): void {
     return fs.accessSync(filePath, fs.constants.R_OK)
   }
-  
-  public readonly fileStat = async function(path: fs.PathLike): Promise<{ path: fs.PathLike; stats: fs.Stats }> {
+
+  public readonly fileStat = async function (path: fs.PathLike): Promise<{ path: fs.PathLike; stats: fs.Stats }> {
     return new Promise((resolve, reject) => {
       fs.stat(path, (err, stats) => {
         if (err) {
@@ -39,11 +39,11 @@ export class FsUtils {
       })
     })
   }
-  
-  public readonly loadFileSync = function(path: string): string{
+
+  public readonly loadFileSync = function (path: string): string {
     return fs.readFileSync(path, 'utf-8')
   }
-  public readonly fileExists = async function(path: fs.PathLike): Promise<boolean> {
+  public readonly fileExists = async function (path: fs.PathLike): Promise<boolean> {
     return new Promise(resolve => {
       fs.access(path, err => {
         if (err) {
@@ -61,9 +61,9 @@ export class FsUtils {
     } catch (err) {
       return false
     }
-  } 
+  }
 
-  public readonly writeFile = async function(path: string, data: string) {
+  public readonly writeFile = async function (path: string, data: string) {
     const wf = promisify(fs.writeFile)
     const triedWF = (path: string, data: string) => {
       try {
@@ -75,7 +75,7 @@ export class FsUtils {
     return triedWF(path, data)
   }
 
-  public readonly writeFileSync = function(path: string, data: string) {
+  public readonly writeFileSync = function (path: string, data: string) {
     const wf = fs.writeFileSync
     const triedWF = (path: string, data: string) => {
       try {
@@ -104,7 +104,6 @@ export class FsUtils {
   public async createSubDirectoryFromFilePathIfNecessary(fullFilePath: string): Promise<string | null> {
     const directoryPath = path.dirname(fullFilePath)
     return this.createSubDirectoryFromDirectoryPathIfNecessary(directoryPath)
-
   }
 
   public async createFile(fullPathName: string, content: string) {
@@ -155,7 +154,7 @@ export class FsUtils {
     }
 
     const delDirFct = this.deleteDir
-    const removeTempDir = async function() {
+    const removeTempDir = async function () {
       try {
         debug(`Deleting temp dir: ${tempDir}`)
         await delDirFct(tempDir)
@@ -181,13 +180,18 @@ export class FsUtils {
     }
   }
 
-  public sanitizeFileName(original: string, keepFolders = false): string {
+  public sanitizeFileName(original: string, keepFolders = false, removeSpace = false): string {
     if (keepFolders) {
       original = original.replace(/[\/\\]/g, '\u2029')
     }
-    const sanitized = sanitize(original).replace(/\u2029/g, path.sep).replace('@', 'a')
-    const latinized = latinize(sanitized)
-    return latinized
+    let sanitized = sanitize(original)
+      .replace(/\u2029/g, path.sep)
+      .replace('@', 'a')
+    if (removeSpace) {
+      sanitized = sanitized.replace(' ', '_')
+    }
+    sanitized = latinize(sanitized)
+    return sanitized
   }
 
   public sanitizeUrl(original: string): string {
@@ -198,5 +202,4 @@ export class FsUtils {
     }
     return sanitized
   }
-
 }

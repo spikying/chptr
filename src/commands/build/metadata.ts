@@ -87,6 +87,7 @@ export default class Metadata extends Command {
 
       await this.markupUtils.extractMarkupAndUpdateGlobalAndChapterMetadata(allChapterFilesArray, allSummaryFilesArray, this.outputFile)
       await this.coreUtils.rewriteLabelsInFilesWithNumbersInContent(true) //todo: get value for A-for-at-numbering
+      await this.coreUtils.createCharacterTimelines()
       if (flags.save) {
         await this.coreUtils.preProcessAndCommitFiles('Autosave markup updates')
       }

@@ -993,6 +993,61 @@ export class CoreUtils {
     }
   }
 
+  public async createCharacterTimelines() {
+    if (!this.softConfig.timelineFile || this.softConfig.config.timelineCharacters.length === 0) {
+      debug('no timeline file or no timeline characters')
+      return
+    }
+
+    const timelineContent = await this.fsUtils.readFileContent(this.softConfig.timelineFile)
+    const allMetadataFiles = await this.softConfig.getAllMetadataFiles()
+    const characterTimelines = []
+
+    const metaObj = []
+    for (const metadataFile of allMetadataFiles) {
+      const metaNumber = this.softConfig.extractNumber(metadataFile)
+      const metaStringContent = await this.fsUtils.readFileContent(metadataFile)
+      const metadataObj = this.softConfig.parsePerStyle(metaStringContent)
+      const props = metadataObj.extracted.prop
+      // debug(`obj: ${JSON.stringify(metadataObj)}`)
+      // debug(`props: ${JSON.stringify(props)}`)
+      metaObj.push({ number: metaNumber, props: props || [] })
+    }
+
+    if (metaObj.length === 0) {
+      return
+    }
+
+    // debug(`metaObj: ${JSON.stringify(metaObj, null, 2)}`)
+    // debug(`timeline Characters: ${JSON.stringify(this.softConfig.config.timelineCharacters)}`)
+    for (const character of this.softConfig.config.timelineCharacters) {
+      // debug(`character = ${character}`)
+      const relevantChapters = metaObj.filter(f => {
+        // debug(`f = ${JSON.stringify(f)}`)
+        return f.props.indexOf(character) >= 0
+      })
+      const chapterList = relevantChapters.map(c => `(?:${c.number.toString()})`).reduce((pv, cv) => `${pv ? pv + '|' : ''}${cv}`)
+      const chapterListRegEx = new RegExp(`0*${chapterList}`)
+      const letterRegEx = new RegExp(/^\s*[^\d\s]/)
+
+      const thisCharacterTimeline = timelineContent
+        .split('\n')
+        .filter(f => {
+          debug(`full line: ${f}`)
+          const isLetterFirst = letterRegEx.test(f)
+          const isEmptyLine = f === ''
+          const isInChapterList = chapterListRegEx.test(f)
+          debug(`isLetterFirst: ${isLetterFirst}\nisInChapterList: ${isInChapterList}`)
+          return isLetterFirst || isEmptyLine || isInChapterList
+        })
+        .join('\n')
+      await this.fsUtils.writeFile(
+        path.join(this.softConfig.buildDirectory, `${this.fsUtils.sanitizeFileName(character, undefined, true)}_timeline.md`),
+        thisCharacterTimeline
+      )
+    }
+  }
+
   private async addDigitsToFiles(files: string[], newDigitNumber: number, atNumberingStack: boolean): Promise<boolean> {
     // const promises: Promise<MoveSummary>[] = []
     let hasMadeChanges = false
