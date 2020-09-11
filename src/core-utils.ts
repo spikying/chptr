@@ -1089,6 +1089,36 @@ export class CoreUtils {
     }
   }
 
+  public async setNumbersInWantToKnowItemsOfMetadata() {
+    const allMetadataFiles = await this.softConfig.getAllMetadataFiles(true)
+
+    for (const metadataFile of allMetadataFiles) {
+      const metaNumber = this.softConfig.extractNumber(metadataFile)
+      const metaStringContent = await this.fsUtils.readFileContent(metadataFile)
+      const metadataObj = this.softConfig.parsePerStyle(metaStringContent)
+      const wtkNumRE = new RegExp(/^#\d/)
+      let i = 0
+      metadataObj.manual.reader.wantsToKnow = metadataObj.manual.reader.wantsToKnow.map((wtk: string) => {
+        if (wtkNumRE.test(wtk.substr(0, 2))) {
+          const reResult = wtkNumRE.exec(wtk)
+          if (reResult) {
+            i = Math.max(parseInt(reResult[1], 10), 1)
+          }
+          return wtk
+        }
+        i += 1
+        return `#${i} ${wtk}`
+      })
+
+      const updatedContent = this.softConfig.stringifyPerStyle(metadataObj)
+
+      if (metaStringContent !== updatedContent) {
+        await this.fsUtils.writeFile(metadataFile, updatedContent)
+      }
+
+    }
+  }
+
   private async addDigitsToFiles(files: string[], newDigitNumber: number, atNumberingStack: boolean): Promise<boolean> {
     // const promises: Promise<MoveSummary>[] = []
     let hasMadeChanges = false
