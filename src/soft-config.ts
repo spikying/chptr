@@ -40,7 +40,6 @@ interface ConfigObject {
   metadataFields: object
   filesWithChapterNumbersInContent: string[]
   timelineFile: string
-  timelineCharacters: string[]
   postBuildStep: string
   propEquivalents: PropEquivalent[]
 }
@@ -91,10 +90,6 @@ export class SoftConfig {
   public get timelineFile(): string {
     return path.join(this.rootPath, this.config.timelineFile)
   }
-
-  // public get timelineCharacters(): string[] {
-  //   return this.config.timelineCharacters
-  // }
 
   public get postBuildStep(): string {
     return path.join(this.rootPath, this.config.postBuildStep)
@@ -297,10 +292,6 @@ documentclass: bookest
     timelineFile: {
       doc: 'File path to timeline file, in Mermaid syntax.',
       default: ''
-    },
-    timelineCharacters: {
-      doc: 'Array of characters (as per their "final" propEquivalents) that will get a timeline built.',
-      default: []
     },
     postBuildStep: {
       doc: 'Executable or script to run after Build, relative to root.',
@@ -589,8 +580,11 @@ documentclass: bookest
     return this.fsUtils.getAllFilesForWildcards(wildcards, this.rootPath)
   }
 
-  public async getAllMetadataFiles(): Promise<string[]> {
-    const wildcards = [this.metadataWildcard(true), this.metadataWildcard(false)]
+  public async getAllMetadataFiles(noAtNumber: boolean = false): Promise<string[]> {
+    const wildcards = [this.metadataWildcard(false)]
+    if (!noAtNumber) {
+      wildcards.push(this.metadataWildcard(true))
+    }
     return this.fsUtils.getAllFilesForWildcards(wildcards, this.rootPath)
   }
 

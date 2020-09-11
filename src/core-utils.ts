@@ -994,55 +994,96 @@ export class CoreUtils {
   }
 
   public async createCharacterTimelines() {
-    if (!this.softConfig.timelineFile || this.softConfig.config.timelineCharacters.length === 0) {
-      debug('no timeline file or no timeline characters')
+    if (!this.softConfig.timelineFile) {
+      debug('no timeline file')
       return
     }
 
     const timelineContent = await this.fsUtils.readFileContent(this.softConfig.timelineFile)
-    const allMetadataFiles = await this.softConfig.getAllMetadataFiles()
-    const characterTimelines = []
-
+    const allMetadataFiles = await this.softConfig.getAllMetadataFiles(true)
     const metaObj = []
+
     for (const metadataFile of allMetadataFiles) {
       const metaNumber = this.softConfig.extractNumber(metadataFile)
       const metaStringContent = await this.fsUtils.readFileContent(metadataFile)
       const metadataObj = this.softConfig.parsePerStyle(metaStringContent)
-      const props = metadataObj.extracted.prop
+      // const props = metadataObj.extracted.prop
+      const charactersInChapter: string[] = metadataObj.manual.characters.map((c: { character: string }) =>
+        this.softConfig.getFinalPropFor(c.character)
+      )
       // debug(`obj: ${JSON.stringify(metadataObj)}`)
       // debug(`props: ${JSON.stringify(props)}`)
-      metaObj.push({ number: metaNumber, props: props || [] })
+      // debug(`number: ${metaNumber}, characters: ${charactersInChapter || []}`)
+      metaObj.push({ number: metaNumber, characters: charactersInChapter || [] }) // props: props || [] })
     }
 
     if (metaObj.length === 0) {
       return
     }
+    const charactersWithTimelines = [
+      ...new Set(
+        metaObj
+          .map(m => m.characters)
+          .reduce((pv, cv) => pv.concat(cv), [])
+          .filter(f => f != '')
+      )
+    ]
 
-    // debug(`metaObj: ${JSON.stringify(metaObj, null, 2)}`)
-    // debug(`timeline Characters: ${JSON.stringify(this.softConfig.config.timelineCharacters)}`)
-    for (const character of this.softConfig.config.timelineCharacters) {
-      // debug(`character = ${character}`)
+    const cleanEmptySubgraphs = (content: string): string => {
+      const subgraphRE = new RegExp(/$\s*subgraph .*\n\s*end$/gm)
+      const result = content.replace(subgraphRE, '')
+      if (subgraphRE.test(result)) {
+        return cleanEmptySubgraphs(result)
+      } else {
+        return result
+      }
+    }
+    const cleanUnusedTimeReferences = (content: string, relevantChapterNumbers: number[]): string => {
+      let newContent = ''
+      const timeReferencesRE = new RegExp(/$\s*(?:j|v)\w+?(?:(?:-.*?>)|(?:={3}))(\d+)/gm)
+
+      let regexArray: RegExpExecArray | null
+      let lastIndex = 0
+
+      while ((regexArray = timeReferencesRE.exec(content)) !== null) {
+        const match = regexArray[1]
+        const catchedChapterInRelevantChapters = relevantChapterNumbers.indexOf(parseInt(match, 10)) >= 0
+        const endIndex = catchedChapterInRelevantChapters ? timeReferencesRE.lastIndex : regexArray.index
+        newContent += content.substring(lastIndex, endIndex)
+        lastIndex = timeReferencesRE.lastIndex
+      }
+      newContent += content.substring(lastIndex)
+      return newContent
+    }
+
+    for (const character of charactersWithTimelines) {
+      debug(`character = ${character}`)
       const relevantChapters = metaObj.filter(f => {
-        // debug(`f = ${JSON.stringify(f)}`)
-        return f.props.indexOf(character) >= 0
+        return f.characters.indexOf(character) >= 0
       })
+      debug(`relevantChapters: ${JSON.stringify(relevantChapters)}`)
       const chapterList = relevantChapters.map(c => `(?:${c.number.toString()})`).reduce((pv, cv) => `${pv ? pv + '|' : ''}${cv}`)
-      const chapterListRegEx = new RegExp(`0*${chapterList}`)
+      const chapterNumberList = relevantChapters.map(c => c.number)
+      const chapterListRegEx = new RegExp(`(?<!\\d)0*(?:${chapterList})(?!\\d|:|\\)|-)`)
       const letterRegEx = new RegExp(/^\s*[^\d\s]/)
+      debug(`chapterListRegex: ${chapterListRegEx}`)
 
-      const thisCharacterTimeline = timelineContent
-        .split('\n')
-        .filter(f => {
-          debug(`full line: ${f}`)
-          const isLetterFirst = letterRegEx.test(f)
-          const isEmptyLine = f === ''
-          const isInChapterList = chapterListRegEx.test(f)
-          debug(`isLetterFirst: ${isLetterFirst}\nisInChapterList: ${isInChapterList}`)
-          return isLetterFirst || isEmptyLine || isInChapterList
-        })
-        .join('\n')
+      const thisCharacterTimeline = cleanUnusedTimeReferences(
+        cleanEmptySubgraphs(
+          timelineContent
+            .split('\n')
+            .filter(f => {
+              const isLetterFirst = letterRegEx.test(f)
+              const isEmptyLine = f === ''
+              const isInChapterList = chapterListRegEx.test(f)
+              return isLetterFirst || isEmptyLine || isInChapterList
+            })
+            .join('\n')
+        ),
+        chapterNumberList
+      )
       await this.fsUtils.writeFile(
-        path.join(this.softConfig.buildDirectory, `${this.fsUtils.sanitizeFileName(character, undefined, true)}_timeline.md`),
+        path.join(this.softConfig.buildDirectory, `timeline_${this.fsUtils.sanitizeFileName(character, undefined, true)}.md`),
         thisCharacterTimeline
       )
     }
