@@ -1057,16 +1057,16 @@ export class CoreUtils {
     }
 
     for (const character of charactersWithTimelines) {
-      debug(`character = ${character}`)
+      // debug(`character = ${character}`)
       const relevantChapters = metaObj.filter(f => {
         return f.characters.indexOf(character) >= 0
       })
-      debug(`relevantChapters: ${JSON.stringify(relevantChapters)}`)
+      // debug(`relevantChapters: ${JSON.stringify(relevantChapters)}`)
       const chapterList = relevantChapters.map(c => `(?:${c.number.toString()})`).reduce((pv, cv) => `${pv ? pv + '|' : ''}${cv}`)
       const chapterNumberList = relevantChapters.map(c => c.number)
       const chapterListRegEx = new RegExp(`(?<!\\d)0*(?:${chapterList})(?!\\d|:|\\)|-)`)
       const letterRegEx = new RegExp(/^\s*[^\d\s]/)
-      debug(`chapterListRegex: ${chapterListRegEx}`)
+      // debug(`chapterListRegex: ${chapterListRegEx}`)
 
       const thisCharacterTimeline = cleanUnusedTimeReferences(
         cleanEmptySubgraphs(
@@ -1089,34 +1089,186 @@ export class CoreUtils {
     }
   }
 
-  public async setNumbersInWantToKnowItemsOfMetadata() {
+  public async setNumbersInChosenItemsOfMetadata() {
     const allMetadataFiles = await this.softConfig.getAllMetadataFiles(true)
 
+    const chosenItemsTOC: string[] = []
+    const perSectionTOC: { section: string; toc: string[] }[] = []
+
     for (const metadataFile of allMetadataFiles) {
-      const metaNumber = this.softConfig.extractNumber(metadataFile)
+      debug(`metadatafile: ${metadataFile}`)
+      const metaNumberAsString = this.softConfig.extractNumberWithLeadingZeroes(metadataFile)
+      const metaNumber = parseInt(metaNumberAsString, 10)
       const metaStringContent = await this.fsUtils.readFileContent(metadataFile)
       const metadataObj = this.softConfig.parsePerStyle(metaStringContent)
-      const wtkNumRE = new RegExp(/^#\d/)
-      let i = 0
-      metadataObj.manual.reader.wantsToKnow = metadataObj.manual.reader.wantsToKnow.map((wtk: string) => {
-        if (wtkNumRE.test(wtk.substr(0, 2))) {
-          const reResult = wtkNumRE.exec(wtk)
+      const itemNumerotationRE = new RegExp(/^#(\d+)\s(.*)/)
+      let currentNumber = 0
+
+      const getItemNumber = (itemString: string): number => {
+        if (itemNumerotationRE.test(itemString)) {
+          const reResult = itemNumerotationRE.exec(itemString)
           if (reResult) {
-            i = Math.max(parseInt(reResult[1], 10), 1)
+            return parseInt(reResult[1], 10)
           }
-          return wtk
         }
-        i += 1
-        return `#${i} ${wtk}`
+        return -1
+      }
+
+      const updateHighestNumber = (curStringArray: string[]): void => {
+        if (!curStringArray) {
+          return
+        }
+
+        curStringArray.map(curString => {
+          // debug(`updating highest number from ${JSON.stringify(curString)}`)
+          // if (itemNumerotationRE.test(curString)) {
+          //   const reResult = itemNumerotationRE.exec(curString)
+          //   if (reResult) {
+          //     currentNumber = Math.max(parseInt(reResult[1], 10), currentNumber)
+          //   }
+          // }
+          currentNumber = Math.max(getItemNumber(curString), currentNumber)
+          // debug(`currentNumber: ${currentNumber}`)
+        })
+      }
+
+      const applyNumerotation = (curStringArray: string[]): string[] => {
+        if (!curStringArray) {
+          return []
+        }
+
+        return curStringArray.map(curString => {
+          if (itemNumerotationRE.test(curString)) {
+            const curNumber = getItemNumber(curString)
+            let curTitle: string = ''
+            const reResult = itemNumerotationRE.exec(curString)
+            if (reResult) {
+              curTitle = reResult[2]
+            }
+            chosenItemsTOC.push(`${metaNumberAsString}#${curNumber}(${metaNumber}.${curNumber} ${curTitle})`)
+            // perSectionTOC.push({section: 'a', toc: `${metaNumberAsString}#${curNumber}`})
+            return curString
+          } else {
+            currentNumber += 1
+            chosenItemsTOC.push(`${metaNumberAsString}#${currentNumber}(${metaNumber}.${currentNumber} ${curString})`)
+            return `#${currentNumber} ${curString}`
+          }
+        })
+      }
+
+      // apply wildcards to real metadata manual fields
+      const allNumberedFieldsIntermediate: string[] = []
+      this.softConfig.config.metadataManualFieldsToNumber.forEach(fieldChain => {
+        const levels = fieldChain.split('.')
+        if (levels[levels.length - 1] === '*') {
+          const firstPart = fieldChain.substr(0, fieldChain.length - 2)
+          for (const lastLevel in metadataObj.manual[firstPart]) {
+            if (Object.prototype.hasOwnProperty.call(metadataObj.manual[firstPart], lastLevel)) {
+              const element = metadataObj.manual[firstPart][lastLevel]
+              const concFieldChain = `${firstPart}.${lastLevel}`
+              allNumberedFieldsIntermediate.push(concFieldChain)
+              debug('wildcard update')
+            }
+          }
+        } else {
+          allNumberedFieldsIntermediate.push(fieldChain)
+          debug('no wildcard update')
+        }
+      })
+      debug(`allNumberedFieldsIntermediate: ${allNumberedFieldsIntermediate}`)
+
+      // apply array notation to real metadata manual fields
+      const allNumberedFields: string[] = []
+      allNumberedFieldsIntermediate.forEach(fieldChain => {
+        const curObj = metadataObj.manual
+        const levels = fieldChain.split('.')
+        let hadArray = false
+        for (let i = 0; i < levels.length; i++) {
+          const curKey = levels[i]
+          debug(`i: ${i}  curKey: ${curKey}`)
+          if (curKey.substr(curKey.length - 2) === '[]') {
+            hadArray = true
+            const curArray: any[] = curObj[curKey.substr(0, curKey.length - 2)]
+            debug(`curArray: ${JSON.stringify(curArray)}`)
+            for (let j = 0; j < curArray.length; j++) {
+              const element = curArray[j]
+              const newFieldChain = `${fieldChain.substr(0, curKey.length - 2)}[${j}]${fieldChain.substr(curKey.length)}`
+              debug(`new FieldChain = ${newFieldChain}`)
+              allNumberedFields.push(newFieldChain)
+              debug('with array update')
+            }
+          }
+        }
+        if (!hadArray) {
+          debug('no array update')
+          allNumberedFields.push(fieldChain)
+        }
       })
 
-      const updatedContent = this.softConfig.stringifyPerStyle(metadataObj)
+      // debug(`allNumberedFields: ${allNumberedFields}`)
+      // debug(`currentNumber: ${currentNumber}`)
+      const applyFunctionToAllFieldchains = (callback: (content: string[], fieldChain: string) => string[] | void) =>
+        allNumberedFields.forEach(fieldChain => {
+          let curObj = metadataObj.manual
+          const levels = fieldChain.replace(/\[(\d+)\]/g, '.$1').split('.')
+          const reRes = new RegExp(/\.|(?:\[(\d+)\])/).exec(fieldChain)
+          debug(`fieldChain: ${fieldChain}\n  levels: ${levels}\n  length: ${levels.length}`)
+          let val: string[] | void = []
+          switch (levels.length) {
+            case 1:
+              val = callback(curObj[levels[0]], fieldChain)
+              if (val) {
+                curObj[levels[0]] = val
+              }
+              break
+            case 2:
+              debug(`case 2: var: ${curObj[levels[0]][levels[1]]}`)
+              val = callback(curObj[levels[0]][levels[1]], fieldChain)
+              if (val) {
+                curObj[levels[0]][levels[1]] = val
+              }
+              break
+            case 3:
+              debug(`case 3: var: ${curObj[levels[0]][levels[1]][levels[2]]}`)
+              val = callback(curObj[levels[0]][levels[1]][levels[2]], fieldChain)
+              if (val) {
+                curObj[levels[0]][levels[1]][levels[2]] = val
+              }
+              break
+            case 4:
+              val = callback(curObj[levels[0]][levels[1]][levels[2]][levels[3]], fieldChain)
+              if (val) {
+                curObj[levels[0]][levels[1]][levels[2]][levels[3]] = val
+              }
+              break
+            default:
+              break
+          }
+        })
 
+      applyFunctionToAllFieldchains(updateHighestNumber)
+      applyFunctionToAllFieldchains(applyNumerotation)
+
+      const updatedContent = this.softConfig.stringifyPerStyle(metadataObj)
       if (metaStringContent !== updatedContent) {
+        debug(`updatedContent = ${updatedContent}`)
         await this.fsUtils.writeFile(metadataFile, updatedContent)
       }
 
+      await this.updateFollowUpFile(chosenItemsTOC)
     }
+  }
+
+  private async updateFollowUpFile(toc: string[]) {
+    const followupFile = this.softConfig.followupFile
+    const content = await this.fsUtils.readFileContent(followupFile)
+    const updatedContent = content
+      .replace(
+        /^(.*)\n((?: |\t)*)%% region (\w*)\n.*?%% end region(.*)$/s,
+        `$1\n$2%% region $3\n$2${toc.join('\n    ')}\n$2%% end region\n$4`
+      )
+      .replace(/\n\n/g, '\n')
+    await this.fsUtils.writeFile(followupFile, updatedContent)
   }
 
   private async addDigitsToFiles(files: string[], newDigitNumber: number, atNumberingStack: boolean): Promise<boolean> {

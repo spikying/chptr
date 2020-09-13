@@ -40,6 +40,8 @@ interface ConfigObject {
   metadataFields: object
   filesWithChapterNumbersInContent: string[]
   timelineFile: string
+  followupFile: string
+  metadataManualFieldsToNumber: string[]
   postBuildStep: string
   propEquivalents: PropEquivalent[]
 }
@@ -64,7 +66,7 @@ export class SoftConfig {
       )
       jsonConfig.summaryPattern = this.fsUtils.sanitizeFileName(jsonConfig.summaryPattern, true)
       jsonConfig.metadataFields = {
-        manual: this._metadataFieldsObj,
+        manual: this._metadataManualFieldsObj,
         computed: { title: '###', wordCount: 0 },
         extracted: {}
       }
@@ -76,7 +78,7 @@ export class SoftConfig {
   }
 
   public get metadataFieldsDefaults(): any {
-    return this._metadataFieldsObj
+    return this._metadataManualFieldsObj
   }
 
   public get buildDirectory(): string {
@@ -89,6 +91,10 @@ export class SoftConfig {
 
   public get timelineFile(): string {
     return path.join(this.rootPath, this.config.timelineFile)
+  }
+
+  public get followupFile(): string {
+    return path.join(this.rootPath, this.config.followupFile)
   }
 
   public get postBuildStep(): string {
@@ -186,7 +192,7 @@ documentclass: bookest
   // public templateReadmeString = `\n# ${this.config.projectTitle}\n\nA novel by ${this.config.projectAuthor.name}.`
 
   private _config: ConfigObject | undefined
-  private readonly _metadataFieldsObj: any
+  private readonly _metadataManualFieldsObj: any
 
   private readonly configSchemaObject: any = {
     chapterPattern: {
@@ -293,6 +299,14 @@ documentclass: bookest
       doc: 'File path to timeline file, in Mermaid syntax.',
       default: ''
     },
+    followupFile: {
+      doc: 'File path to follow-up file, in Mermaid syntax.',
+      default: ''
+    },
+    metadataManualFieldsToNumber: {
+      doc: 'Array of metadataFields that will be numbered automatically.  Accepts fieldname.* and fieldname[].something as wildcards and array notation.',
+      default: []
+    },
     postBuildStep: {
       doc: 'Executable or script to run after Build, relative to root.',
       default: ''
@@ -371,7 +385,7 @@ documentclass: bookest
           metadataFieldsString = this.fsUtils.loadFileSync(this.hardConfig.metadataFieldsJSON5FilePath)
 
           objConfig = JSON5.parse(configFileString, undefined) //parse(configFileString, undefined, true)
-          this._metadataFieldsObj = JSON5.parse(metadataFieldsString, undefined)
+          this._metadataManualFieldsObj = JSON5.parse(metadataFieldsString, undefined)
         } else if (this.configStyle === 'YAML') {
           configFileString = this.fsUtils.loadFileSync(this.hardConfig.configYAMLFilePath)
           metadataFieldsString = this.fsUtils.loadFileSync(this.hardConfig.metadataFieldsYAMLFilePath)
@@ -380,8 +394,8 @@ documentclass: bookest
           debug(`configFileString:\n${configFileString}`)
           objConfig = yaml.safeLoad(configFileString) as any
           debug(`objConfig = ${JSON.stringify(objConfig)}`)
-          this._metadataFieldsObj = yaml.safeLoad(metadataFieldsString)
-          debug(`_metadataFieldsObj = ${JSON.stringify(this._metadataFieldsObj)}`)
+          this._metadataManualFieldsObj = yaml.safeLoad(metadataFieldsString)
+          debug(`_metadataFieldsObj = ${JSON.stringify(this._metadataManualFieldsObj)}`)
         } else {
           throw new ChptrError('config style must be JSON5 or YAML', 'soft-config:ctor', 308)
         }
@@ -493,7 +507,7 @@ documentclass: bookest
     return this.wildcardWithNumber(this.config.chapterPattern, id)
   }
   public metadataWildcardWithNumber(id: ChapterId): string {
-    debug(`this.config.metadataPattern=${this.config.metadataPattern}`)
+    // debug(`this.config.metadataPattern=${this.config.metadataPattern}`)
     return this.wildcardWithNumber(this.config.metadataPattern, id)
   }
   public summaryWildcardWithNumber(id: ChapterId): string {
@@ -556,6 +570,12 @@ documentclass: bookest
     return files.map<string>(filename => {
       return this.mapFileToBeRelativeToRootPath(filename)
     })
+  }
+
+  public extractNumberWithLeadingZeroes(filename: string): string {
+    const re = new RegExp(this.numbersPattern(false))
+    const match = re.exec(this.mapFileToBeRelativeToRootPath(filename))
+    return match ? match[1] : ''
   }
 
   public extractNumber(filename: string): number {
