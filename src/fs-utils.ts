@@ -202,4 +202,13 @@ export class FsUtils {
     }
     return sanitized
   }
+
+  public sanitizeMermaid(original: string): string {
+    const sanitized = original
+      .replace(/@/g, 'a')
+      .replace(/\(|\)/g, '_')
+
+    return sanitized
+    // return latinize(sanitized)
+  }
 }

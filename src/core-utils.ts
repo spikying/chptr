@@ -966,7 +966,7 @@ export class CoreUtils {
 
       allFilesWithChapterInfo.push({
         number: metaNumber,
-        title: this.fsUtils.sanitizeFileName(meta.computed.title).replace('(', '_').replace(')', '_'),
+        title: this.fsUtils.sanitizeMermaid(meta.computed.title),
         isAtNumber: this.softConfig.isAtNumbering(metadataFile),
         timeInterval: timeInterval
       })
@@ -990,6 +990,16 @@ export class CoreUtils {
       }
 
       await this.fsUtils.writeFile(file, content)
+    }
+  }
+
+  private cleanEmptySubgraphs = (content: string): string => {
+    const subgraphRE = new RegExp(/$\s*subgraph .*\n\s*end$/gm)
+    const result = content.replace(subgraphRE, '')
+    if (subgraphRE.test(result)) {
+      return this.cleanEmptySubgraphs(result)
+    } else {
+      return result
     }
   }
 
@@ -1029,15 +1039,6 @@ export class CoreUtils {
       )
     ]
 
-    const cleanEmptySubgraphs = (content: string): string => {
-      const subgraphRE = new RegExp(/$\s*subgraph .*\n\s*end$/gm)
-      const result = content.replace(subgraphRE, '')
-      if (subgraphRE.test(result)) {
-        return cleanEmptySubgraphs(result)
-      } else {
-        return result
-      }
-    }
     const cleanUnusedTimeReferences = (content: string, relevantChapterNumbers: number[]): string => {
       let newContent = ''
       const timeReferencesRE = new RegExp(/$\s*(?:j|v)\w+?(?:(?:-.*?>)|(?:={3}))(\d+)/gm)
@@ -1069,7 +1070,7 @@ export class CoreUtils {
       // debug(`chapterListRegex: ${chapterListRegEx}`)
 
       const thisCharacterTimeline = cleanUnusedTimeReferences(
-        cleanEmptySubgraphs(
+        this.cleanEmptySubgraphs(
           timelineContent
             .split('\n')
             .filter(f => {
@@ -1093,7 +1094,36 @@ export class CoreUtils {
     const allMetadataFiles = await this.softConfig.getAllMetadataFiles(true)
 
     const chosenItemsTOC: string[] = []
-    const perSectionTOC: { section: string; toc: string[] }[] = []
+    const perSectionTOC: {
+      section: string
+      subsections: {
+        subsection: string
+        toc: string[]
+      }[]
+    }[] = []
+    //{ section: string; subSection: string; toc: string[] }[] = []
+
+    const addToSectionTOC = (originalSection: string, originalSubSection: string, toc: string[]) => {
+      const section = this.softConfig.getFinalPropFor(originalSection).replace('reader', 'Lecteur')
+      const subsection = originalSubSection
+        .replace('learns', 'Apprend')
+        .replace('thinks', 'Pense -peut-être à tort-')
+        .replace('wantsToKnow', 'Veut savoir')
+      const foundSection = perSectionTOC.find(f => f.section === section)
+      const indexToc = toc.map(t => t.replace(/^([\d#]+).*$/m, '$1'))
+      if (foundSection) {
+        const foundSubSection = foundSection.subsections.find(ss => ss.subsection === subsection)
+        if (foundSubSection) {
+          foundSubSection.toc.push(...indexToc)
+        } else {
+          foundSection.subsections.push({ subsection, toc: indexToc })
+        }
+
+        // foundSection.toc.push(...indexToc)
+      } else {
+        perSectionTOC.push({ section, subsections: [{ subsection, toc: indexToc }] })
+      }
+    }
 
     for (const metadataFile of allMetadataFiles) {
       debug(`metadatafile: ${metadataFile}`)
@@ -1145,12 +1175,14 @@ export class CoreUtils {
             if (reResult) {
               curTitle = reResult[2]
             }
-            chosenItemsTOC.push(`${metaNumberAsString}#${curNumber}(${metaNumber}.${curNumber} ${curTitle})`)
+            chosenItemsTOC.push(`${metaNumberAsString}#${curNumber}(${metaNumber}.${curNumber} ${this.fsUtils.sanitizeMermaid(curTitle)})`)
             // perSectionTOC.push({section: 'a', toc: `${metaNumberAsString}#${curNumber}`})
             return curString
           } else {
             currentNumber += 1
-            chosenItemsTOC.push(`${metaNumberAsString}#${currentNumber}(${metaNumber}.${currentNumber} ${curString})`)
+            chosenItemsTOC.push(
+              `${metaNumberAsString}#${currentNumber}(${metaNumber}.${currentNumber} ${this.fsUtils.sanitizeMermaid(curString)})`
+            )
             return `#${currentNumber} ${curString}`
           }
         })
@@ -1207,38 +1239,65 @@ export class CoreUtils {
 
       // debug(`allNumberedFields: ${allNumberedFields}`)
       // debug(`currentNumber: ${currentNumber}`)
-      const applyFunctionToAllFieldchains = (callback: (content: string[], fieldChain: string) => string[] | void) =>
+      const applyFunctionToAllFieldchains = (callback: (content: string[]) => string[] | void) =>
         allNumberedFields.forEach(fieldChain => {
           let curObj = metadataObj.manual
           const levels = fieldChain.replace(/\[(\d+)\]/g, '.$1').split('.')
           const reRes = new RegExp(/\.|(?:\[(\d+)\])/).exec(fieldChain)
           debug(`fieldChain: ${fieldChain}\n  levels: ${levels}\n  length: ${levels.length}`)
           let val: string[] | void = []
+          let swObj = null
+          let tag = ''
           switch (levels.length) {
             case 1:
-              val = callback(curObj[levels[0]], fieldChain)
+              swObj = curObj[levels[0]]
+              val = callback(swObj)
               if (val) {
                 curObj[levels[0]] = val
+                addToSectionTOC(
+                  tag,
+                  '',
+                  val.map(v => `${metaNumberAsString}${v}`)
+                )
               }
               break
             case 2:
-              debug(`case 2: var: ${curObj[levels[0]][levels[1]]}`)
-              val = callback(curObj[levels[0]][levels[1]], fieldChain)
+              swObj = curObj[levels[0]][levels[1]]
+              tag = levels[0]
+              debug(`case 2: swObj: ${swObj}\n  upLvl: ${JSON.stringify(curObj[levels[0]])}`)
+              val = callback(swObj)
               if (val) {
                 curObj[levels[0]][levels[1]] = val
+                addToSectionTOC(
+                  tag,
+                  levels[1],
+                  val.map(v => `${metaNumberAsString}${v}`)
+                )
               }
               break
             case 3:
-              debug(`case 3: var: ${curObj[levels[0]][levels[1]][levels[2]]}`)
-              val = callback(curObj[levels[0]][levels[1]][levels[2]], fieldChain)
+              swObj = curObj[levels[0]][levels[1]][levels[2]]
+              tag = curObj[levels[0]][levels[1]]['character']
+              debug(`case 3: swObj: ${swObj}\n upLvl: ${JSON.stringify(curObj[levels[0]][levels[1]])}`)
+              val = callback(swObj)
               if (val) {
                 curObj[levels[0]][levels[1]][levels[2]] = val
+                addToSectionTOC(
+                  tag,
+                  levels[2],
+                  val.map(v => `${metaNumberAsString}${v}`)
+                )
               }
               break
             case 4:
-              val = callback(curObj[levels[0]][levels[1]][levels[2]][levels[3]], fieldChain)
+              val = callback(curObj[levels[0]][levels[1]][levels[2]][levels[3]])
               if (val) {
                 curObj[levels[0]][levels[1]][levels[2]][levels[3]] = val
+                addToSectionTOC(
+                  tag,
+                  levels[3],
+                  val.map(v => `${metaNumberAsString}${v}`)
+                )
               }
               break
             default:
@@ -1254,20 +1313,54 @@ export class CoreUtils {
         debug(`updatedContent = ${updatedContent}`)
         await this.fsUtils.writeFile(metadataFile, updatedContent)
       }
-
-      await this.updateFollowUpFile(chosenItemsTOC)
     }
+    await this.updateFollowUpFile(chosenItemsTOC, perSectionTOC)
   }
 
-  private async updateFollowUpFile(toc: string[]) {
+  private async updateFollowUpFile(
+    globalTOC: string[],
+    perSectionTOC: {
+      section: string
+      subsections: {
+        subsection: string
+        toc: string[]
+      }[]
+    }[]
+  ) {
     const followupFile = this.softConfig.followupFile
     const content = await this.fsUtils.readFileContent(followupFile)
-    const updatedContent = content
-      .replace(
-        /^(.*)\n((?: |\t)*)%% region (\w*)\n.*?%% end region(.*)$/s,
-        `$1\n$2%% region $3\n$2${toc.join('\n    ')}\n$2%% end region\n$4`
-      )
-      .replace(/\n\n/g, '\n')
+
+    const updateRegion = (str: string, regionContent: string, title: string): string => {
+      const re = new RegExp(`^(.*)\\n((?: |\\t)*)%% region ${title}\\n.*?%% end region(.*)$`, 's')
+      return str
+        .replace(
+          // /^(.*)\n((?: |\t)*)%% region (\w*)\n.*?%% end region(.*)$/s,
+          re,
+          `$1\n%% region ${title}\n${regionContent}\n%% end region\n$3`
+        )
+        .replace(/\n\n/g, '\n')
+    }
+
+    let updatedContent = updateRegion(content, '    ' + globalTOC.join('\n    '), 'TOC') + '\n'
+
+    let subgraphsContent = ''
+    perSectionTOC
+      .forEach(sec => {        
+        subgraphsContent += `    subgraph ${sec.section}\n`
+        sec.subsections.forEach(ss => {
+          subgraphsContent += `      subgraph ${ss.subsection}\n`
+          subgraphsContent += `        ${ss.toc.join('\n        ')}\n`
+          subgraphsContent += `      end\n`
+        })
+        subgraphsContent += `    end\n`
+      })
+      // .map(sec => `    subgraph ${sec.section}\n        ${sec.toc.join('\n        ')}\n    end\n`)
+      // .join('\n')
+
+    subgraphsContent = this.cleanEmptySubgraphs(subgraphsContent)
+
+    updatedContent = updateRegion(updatedContent, subgraphsContent, 'subgraphs') + '\n'
+
     await this.fsUtils.writeFile(followupFile, updatedContent)
   }
 
