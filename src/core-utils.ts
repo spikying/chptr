@@ -994,7 +994,7 @@ export class CoreUtils {
   }
 
   private cleanEmptySubgraphs = (content: string): string => {
-    const subgraphRE = new RegExp(/$\s*subgraph .*\n\s*end$/gm)
+    const subgraphRE = new RegExp(/^\s*?subgraph .*?\n\s*?end$/gm)
     const result = content.replace(subgraphRE, '')
     if (subgraphRE.test(result)) {
       return this.cleanEmptySubgraphs(result)
@@ -1314,7 +1314,16 @@ export class CoreUtils {
         await this.fsUtils.writeFile(metadataFile, updatedContent)
       }
     }
-    await this.updateFollowUpFile(chosenItemsTOC, perSectionTOC)
+
+    // const numRE = new RegExp(/^\s*?(\d*)#(\d*) /)
+    await this.updateFollowUpFile(
+      chosenItemsTOC.sort((a, b) => {
+        const aNum = parseFloat(a.replace('#', '.'))
+        const bNum = parseFloat(b.replace('#', '.'))
+        return aNum - bNum
+      }),
+      perSectionTOC
+    )
   }
 
   private async updateFollowUpFile(
@@ -1338,24 +1347,39 @@ export class CoreUtils {
           re,
           `$1\n%% region ${title}\n${regionContent}\n%% end region\n$3`
         )
-        .replace(/\n\n/g, '\n')
+        .replace(/\n(?=\n\n)/gs, '')
+      .replace(/\n\n(?=\s*?(?:subgraph|end))/gs, '\n')
     }
 
     let updatedContent = updateRegion(content, '    ' + globalTOC.join('\n    '), 'TOC') + '\n'
 
     let subgraphsContent = ''
+    const numRE = new RegExp(/^\s*?(\d*)#(\d*) /)
     perSectionTOC
-      .forEach(sec => {        
+      .sort((a, b) => {
+        return a.section.localeCompare(b.section, 'fr', { sensitivity: 'base' })
+      })
+      .forEach(sec => {
         subgraphsContent += `    subgraph ${sec.section}\n`
-        sec.subsections.forEach(ss => {
-          subgraphsContent += `      subgraph ${ss.subsection}\n`
-          subgraphsContent += `        ${ss.toc.join('\n        ')}\n`
-          subgraphsContent += `      end\n`
-        })
+        sec.subsections
+          .sort((a, b) => {
+            return a.subsection.localeCompare(b.subsection, 'fr', { sensitivity: 'base' })
+          })
+          .forEach(ss => {
+            subgraphsContent += `      subgraph ${sec.section} ${ss.subsection}\n`
+            subgraphsContent += `        ${ss.toc
+              .sort((a, b) => {
+                const aNum = parseFloat(a.replace(numRE, '$1.$2'))
+                const bNum = parseFloat(b.replace(numRE, '$1.$2'))
+                return aNum - bNum
+              })
+              .join('\n        ')}\n`
+            subgraphsContent += `      end\n`
+          })
         subgraphsContent += `    end\n`
       })
-      // .map(sec => `    subgraph ${sec.section}\n        ${sec.toc.join('\n        ')}\n    end\n`)
-      // .join('\n')
+    // .map(sec => `    subgraph ${sec.section}\n        ${sec.toc.join('\n        ')}\n    end\n`)
+    // .join('\n')
 
     subgraphsContent = this.cleanEmptySubgraphs(subgraphsContent)
 
