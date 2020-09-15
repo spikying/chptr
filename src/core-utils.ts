@@ -501,7 +501,7 @@ export class CoreUtils {
 
           if (fromFilename !== toFilename) {
             moves.push({ fromFilename, toFilename, destDigits })
-            debug(`from: ${fromFilename} to: ${toFilename}`)
+            // debug(`from: ${fromFilename} to: ${toFilename}`)
             table.accumulator(fromFilename, toFilename)
             // movePromises.push(this.gitUtils.mv(fromFilename, path.join(tempDirForGit, toFilename)))
             await this.gitUtils.mv(fromFilename, path.join(tempDirForGit, toFilename))
@@ -1110,7 +1110,8 @@ export class CoreUtils {
         .replace('thinks', 'Pense -peut-être à tort-')
         .replace('wantsToKnow', 'Veut savoir')
       const foundSection = perSectionTOC.find(f => f.section === section)
-      const indexToc = toc.map(t => t.replace(/^([\d#]+).*$/m, '$1'))
+      // const indexToc = toc.map(t => t.replace(/^([\d#]+).*$/m, '$1'))
+      const indexToc = toc.map(t => t.replace(/^([\d#]+).*$/m, '$1') + ` %% ${t.replace(/^[\d#]+ (.*)$/m, '$1')}`)
       if (foundSection) {
         const foundSubSection = foundSection.subsections.find(ss => ss.subsection === subsection)
         if (foundSubSection) {
@@ -1199,15 +1200,15 @@ export class CoreUtils {
               const element = metadataObj.manual[firstPart][lastLevel]
               const concFieldChain = `${firstPart}.${lastLevel}`
               allNumberedFieldsIntermediate.push(concFieldChain)
-              debug('wildcard update')
+              // debug('wildcard update')
             }
           }
         } else {
           allNumberedFieldsIntermediate.push(fieldChain)
-          debug('no wildcard update')
+          // debug('no wildcard update')
         }
       })
-      debug(`allNumberedFieldsIntermediate: ${allNumberedFieldsIntermediate}`)
+      // debug(`allNumberedFieldsIntermediate: ${allNumberedFieldsIntermediate}`)
 
       // apply array notation to real metadata manual fields
       const allNumberedFields: string[] = []
@@ -1217,22 +1218,22 @@ export class CoreUtils {
         let hadArray = false
         for (let i = 0; i < levels.length; i++) {
           const curKey = levels[i]
-          debug(`i: ${i}  curKey: ${curKey}`)
+          // debug(`i: ${i}  curKey: ${curKey}`)
           if (curKey.substr(curKey.length - 2) === '[]') {
             hadArray = true
             const curArray: any[] = curObj[curKey.substr(0, curKey.length - 2)]
-            debug(`curArray: ${JSON.stringify(curArray)}`)
+            // debug(`curArray: ${JSON.stringify(curArray)}`)
             for (let j = 0; j < curArray.length; j++) {
               const element = curArray[j]
               const newFieldChain = `${fieldChain.substr(0, curKey.length - 2)}[${j}]${fieldChain.substr(curKey.length)}`
-              debug(`new FieldChain = ${newFieldChain}`)
+              // debug(`new FieldChain = ${newFieldChain}`)
               allNumberedFields.push(newFieldChain)
-              debug('with array update')
+              // debug('with array update')
             }
           }
         }
         if (!hadArray) {
-          debug('no array update')
+          // debug('no array update')
           allNumberedFields.push(fieldChain)
         }
       })
@@ -1244,7 +1245,7 @@ export class CoreUtils {
           let curObj = metadataObj.manual
           const levels = fieldChain.replace(/\[(\d+)\]/g, '.$1').split('.')
           const reRes = new RegExp(/\.|(?:\[(\d+)\])/).exec(fieldChain)
-          debug(`fieldChain: ${fieldChain}\n  levels: ${levels}\n  length: ${levels.length}`)
+          // debug(`fieldChain: ${fieldChain}\n  levels: ${levels}\n  length: ${levels.length}`)
           let val: string[] | void = []
           let swObj = null
           let tag = ''
@@ -1264,7 +1265,7 @@ export class CoreUtils {
             case 2:
               swObj = curObj[levels[0]][levels[1]]
               tag = levels[0]
-              debug(`case 2: swObj: ${swObj}\n  upLvl: ${JSON.stringify(curObj[levels[0]])}`)
+              // debug(`case 2: swObj: ${swObj}\n  upLvl: ${JSON.stringify(curObj[levels[0]])}`)
               val = callback(swObj)
               if (val) {
                 curObj[levels[0]][levels[1]] = val
@@ -1278,7 +1279,7 @@ export class CoreUtils {
             case 3:
               swObj = curObj[levels[0]][levels[1]][levels[2]]
               tag = curObj[levels[0]][levels[1]]['character']
-              debug(`case 3: swObj: ${swObj}\n upLvl: ${JSON.stringify(curObj[levels[0]][levels[1]])}`)
+              // debug(`case 3: swObj: ${swObj}\n upLvl: ${JSON.stringify(curObj[levels[0]][levels[1]])}`)
               val = callback(swObj)
               if (val) {
                 curObj[levels[0]][levels[1]][levels[2]] = val
@@ -1317,11 +1318,7 @@ export class CoreUtils {
 
     // const numRE = new RegExp(/^\s*?(\d*)#(\d*) /)
     await this.updateFollowUpFile(
-      chosenItemsTOC.sort((a, b) => {
-        const aNum = parseFloat(a.replace('#', '.'))
-        const bNum = parseFloat(b.replace('#', '.'))
-        return aNum - bNum
-      }),
+      chosenItemsTOC,
       perSectionTOC
     )
   }
@@ -1348,10 +1345,30 @@ export class CoreUtils {
           `$1\n%% region ${title}\n${regionContent}\n%% end region\n$3`
         )
         .replace(/\n(?=\n\n)/gs, '')
-      .replace(/\n\n(?=\s*?(?:subgraph|end))/gs, '\n')
+        .replace(/\n\n(?=\s*?(?:subgraph|end))/gs, '\n')
     }
 
-    let updatedContent = updateRegion(content, '    ' + globalTOC.join('\n    '), 'TOC') + '\n'
+    const sortedGlobalTOC = globalTOC.sort((a, b) => {
+      const getFloatFromString = (str: string) => {
+        return parseFloat(
+          str.replace(/^\s*(\d+)#(\d)(\d)?/, (match, pre, one, two) => {
+            // debug(`in sort: match=${match}\n one=${one}\n two=${two}`)
+            if (two) {
+              return `${pre}.${one}${two}`
+            } else {
+              return `${pre}.0${one}`
+            }
+          })
+        )
+      }
+      return getFloatFromString(a)-getFloatFromString(b)
+      // const aNum = getFloatFromString(a)
+      // const bNum = parseFloat(b.replace('#', '.'))
+      // const bNum = getFloatFromString(b)
+      // return aNum - bNum
+    })
+
+    let updatedContent = updateRegion(content, '    ' + sortedGlobalTOC.join('\n    '), 'TOC') + '\n'
 
     let subgraphsContent = ''
     const numRE = new RegExp(/^\s*?(\d*)#(\d*) /)
