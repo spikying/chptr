@@ -12,6 +12,8 @@ import { GitUtils } from './git-utils'
 import { SoftConfig, WordCountObject } from './soft-config'
 import { tableize, ITable } from './ui-utils'
 import { Singleton, Container } from 'typescript-ioc'
+import { debugPort } from 'process'
+import { inherits } from 'util'
 
 const debug = d('markup-utils')
 
@@ -509,22 +511,21 @@ export class MarkupUtils {
     const paragraphBreakRegex = new RegExp(this.paragraphBreakChar + '{{\\d+}}\\n', 'g')
     const sentenceBreakRegex = new RegExp(this.sentenceBreakChar + '\\s?', 'g')
 
-    const replacedContent = initialContent
+    // var mkString = new MarkupString(initialContent)
+
+    const replacedContent = initialContent //mkString
       .replace(/—/gm, '--')
       .replace(paragraphBreakRegex, '')
-      // .replace(/ {.*?:.*?}([,;:.!?…*"])/gm, '$1')
-      // .replace(/ ?{.*?:.*?} ?/gm, ' ')
       .replace(/ {[^}]+?:.+?}([,;:.!?…*"])/gm, '$1')
       .replace(/ ?{[^}]+?:.+?} ?/gm, ' ')
       .replace(sentenceBreakRegex, '  ')
       .replace(/^### (.*)$/gm, '* * *')
       .replace(/^\\(.*)$/gm, '_% $1_')
-      .replace(this.propRegex, '$1')
-    // .replace(this.propRegex, '$2$3')
-
+      .replace(this.propRegex, '$1')      
+    
     return replacedContent
   }
-
+  
   public transformMarkupContent(initialContent: string): string {
     const paragraphBreakRegex = new RegExp(this.paragraphBreakChar + '{{(\\d+)}}\\n', 'g')
     const sentenceBreakRegex = new RegExp(this.sentenceBreakChar, 'g')
@@ -685,4 +686,23 @@ interface MarkupByFile {
 //   wordCountDiffChapters: number
 //   wordCountTotalSummaries: number
 //   wordCountDiffSummaries: number
+// }
+
+// class MarkupString extends String {
+  
+//   constructor(str: string) {
+//     super(str);    
+//   }
+
+//   sanitizeId = function(this: string): string {
+//     return latinize(sanitize(this)).replace(' ', '-')
+//   }
+  
+//   public indexIds = function (this : MarkupString): MarkupString { 
+//       return this.replace(/\n\[?([\w ()-]+?)\]? ?(?:{.+?})?\n\n: {4}(?=\w+)/gm, (match, one) => {
+//         return `\n[${one}]{.definition #${one.sanitizeId()}}\n\n:    `
+//       })
+//     }
+  
+
 // }

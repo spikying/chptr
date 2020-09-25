@@ -41,6 +41,7 @@ interface ConfigObject {
   filesWithChapterNumbersInContent: string[]
   timelineFile: string
   followupFile: string
+  indexFile: string
   metadataManualFieldsToNumber: string[]
   postBuildStep: string
   propEquivalents: PropEquivalent[]
@@ -95,6 +96,10 @@ export class SoftConfig {
 
   public get followupFile(): string {
     return path.join(this.rootPath, this.config.followupFile)
+  }
+
+  public get indexFile(): string {
+    return path.join(this.rootPath, this.config.indexFile)
   }
 
   public get postBuildStep(): string {
@@ -301,6 +306,10 @@ documentclass: bookest
     },
     followupFile: {
       doc: 'File path to follow-up file, in Mermaid syntax.',
+      default: ''
+    },
+    indexFile: {
+      doc: 'File path to index, in Markdown syntax (with definitions).',
       default: ''
     },
     metadataManualFieldsToNumber: {

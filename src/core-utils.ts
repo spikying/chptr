@@ -14,6 +14,9 @@ import { Statistics } from './statistics'
 import { QueryBuilder, tableize } from './ui-utils'
 import { Singleton, Container } from 'typescript-ioc'
 
+import latinize = require('latinize')
+import sanitize = require('sanitize-filename')
+
 import { file as tmpFile } from 'tmp-promise'
 import { BootstrapChptr } from './bootstrap-functions'
 import yaml = require('js-yaml')
@@ -565,12 +568,15 @@ export class CoreUtils {
 
       let fullOriginalContent = this.softConfig.globalMetadataContent
 
-      const readmeFile = path.join(this.rootPath, 'readme.md')
-      if (await this.fsUtils.fileExists(readmeFile)) {
-        let readme = await this.fsUtils.readFileContent(readmeFile)
-        readme = readme.replace(/^\n#+\s.*?\n+/s, '')
-        debug(`readme:\n${readme}`)
-        fullOriginalContent += '\n' + readme
+      //todo: get index from config
+      const toAddFiles = ['readme.md', 'index.md']
+      for await (const file of toAddFiles) {
+        const filePath = path.join(this.rootPath, file)
+        if (await this.fsUtils.fileExists(filePath)) {
+          let fileContent = await this.fsUtils.readFileContent(filePath)
+          // readme = readme.replace(/^\n#+\s.*?\n+/s, '')
+          fullOriginalContent += '\n' + fileContent
+        }
       }
 
       const bootstrapChptr = new BootstrapChptr(this.rootPath)
@@ -651,7 +657,7 @@ export class CoreUtils {
           pandocArgs = pandocArgs.concat([
             // '--number-sections',
             '--to',
-            'markdown-raw_html+smart+fancy_lists',
+            'markdown-raw_html+smart+fancy_lists+definition_lists',
             '--wrap=none',
             '--atx-headers'
           ])
@@ -670,7 +676,7 @@ export class CoreUtils {
 
           pandocArgs = pandocArgs.concat([
             '--to',
-            'docx+smart+fancy_lists+fenced_divs',
+            'docx+smart+fancy_lists+fenced_divs+definition_lists',
             '--top-level-division=chapter'
             // '--number-sections'
           ])
@@ -698,7 +704,7 @@ export class CoreUtils {
 
           pandocArgs = pandocArgs.concat([
             '--to',
-            'html5+smart+fancy_lists',
+            'html5+smart+fancy_lists+definition_lists',
             // '--toc',
             // '--toc-depth',
             // '1',
@@ -732,7 +738,7 @@ export class CoreUtils {
             '--top-level-division=chapter',
             '--pdf-engine=xelatex',
             '--to',
-            'latex+raw_tex+smart+fancy_lists-emoji'
+            'latex+raw_tex+smart+fancy_lists-emoji+definition_lists'
           ])
         } else {
           chapterFiles = '"' + tmpMDfile.path + '" '
@@ -741,7 +747,7 @@ export class CoreUtils {
         if (filetype === 'epub') {
           pandocArgs = pandocArgs.concat([
             '--to',
-            'epub+smart+fancy_lists',
+            'epub+smart+fancy_lists+definition_lists',
             // '--toc',
             // '--toc-depth',
             // '1',
@@ -1317,10 +1323,21 @@ export class CoreUtils {
     }
 
     // const numRE = new RegExp(/^\s*?(\d*)#(\d*) /)
-    await this.updateFollowUpFile(
-      chosenItemsTOC,
-      perSectionTOC
-    )
+    await this.updateFollowUpFile(chosenItemsTOC, perSectionTOC)
+  }
+
+  public async formatIndexFile() {
+    var indexFile = this.softConfig.indexFile
+    var indexExists = !!indexFile && (await this.fsUtils.fileExists(indexFile))
+    if (indexExists) {
+      var initialContent = await this.fsUtils.readFileContent(indexFile)
+      var updatedContent = initialContent.replace(/\n\[?([A-zÀ-ú ()-]+?)\]? ?(?:{.+?})?\n\n: {4}(?=\w+)/gm, (match, one) => {
+        return `\n[${one}]{.definition #${latinize(sanitize(one)).replace(/ /g, '-').replace(/[()]/g, '').toLowerCase()}}\n\n:    `
+      })
+      if (updatedContent !== initialContent) {
+        await this.fsUtils.writeFile(indexFile, updatedContent)
+      }
+    }
   }
 
   private async updateFollowUpFile(
@@ -1361,7 +1378,7 @@ export class CoreUtils {
           })
         )
       }
-      return getFloatFromString(a)-getFloatFromString(b)
+      return getFloatFromString(a) - getFloatFromString(b)
       // const aNum = getFloatFromString(a)
       // const bNum = parseFloat(b.replace('#', '.'))
       // const bNum = getFloatFromString(b)
