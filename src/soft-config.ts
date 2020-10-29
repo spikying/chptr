@@ -617,6 +617,14 @@ documentclass: bookest
     return this.fsUtils.getAllFilesForWildcards(wildcards, this.rootPath)
   }
 
+  public async getAllChapterFiles(noAtNumber: boolean = false): Promise<string[]> {
+    const wildcards = [this.chapterWildcard(false)]
+    if (!noAtNumber) {
+      wildcards.push(this.chapterWildcard(true))
+    }
+    return this.fsUtils.getAllFilesForWildcards(wildcards, this.rootPath)
+  }
+
   //TODO: make aware of which filetype it is and use real patterns for cases where the number is repeated
   public renumberedFilename(filename: string, newFilenumber: number, digits: number, atNumbering: boolean): string {
     //Identify if it's a chapter, summary or metadata

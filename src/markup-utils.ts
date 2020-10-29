@@ -521,14 +521,14 @@ export class MarkupUtils {
       .replace(sentenceBreakRegex, '  ')
       .replace(/^### (.*)$/gm, '* * *')
       .replace(/^\\(.*)$/gm, '_% $1_')
-      .replace(this.propRegex, '$1')      
-    
+      .replace(this.propRegex, '$1')
+
     return replacedContent
   }
-  
+
   public transformMarkupContent(initialContent: string): string {
     const paragraphBreakRegex = new RegExp(this.paragraphBreakChar + '{{(\\d+)}}\\n', 'g')
-    const sentenceBreakRegex = new RegExp(this.sentenceBreakChar, 'g')
+    const sentenceBreakRegex = new RegExp(this.sentenceBreakChar + '\\s?', 'g')
     let markupCounter = 0
 
     const transformInFootnote = function (initial: string): { replaced: string; didReplacement: boolean } {
@@ -549,7 +549,7 @@ export class MarkupUtils {
       .replace(/^\\(.*)$/gm, '_% $1_')
       .replace(this.propRegex, '**$1**')
       // .replace(this.propRegex, '$2**$3**')
-      .replace(sentenceBreakRegex, '')
+      .replace(sentenceBreakRegex, '  ')
 
     let continueReplacing = true
     while (continueReplacing) {
@@ -689,20 +689,19 @@ interface MarkupByFile {
 // }
 
 // class MarkupString extends String {
-  
+
 //   constructor(str: string) {
-//     super(str);    
+//     super(str);
 //   }
 
 //   sanitizeId = function(this: string): string {
 //     return latinize(sanitize(this)).replace(' ', '-')
 //   }
-  
-//   public indexIds = function (this : MarkupString): MarkupString { 
+
+//   public indexIds = function (this : MarkupString): MarkupString {
 //       return this.replace(/\n\[?([\w ()-]+?)\]? ?(?:{.+?})?\n\n: {4}(?=\w+)/gm, (match, one) => {
 //         return `\n[${one}]{.definition #${one.sanitizeId()}}\n\n:    `
 //       })
 //     }
-  
 
 // }
