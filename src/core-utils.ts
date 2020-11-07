@@ -1048,17 +1048,35 @@ export class CoreUtils {
     const cleanUnusedTimeReferences = (content: string, relevantChapterNumbers: number[]): string => {
       let newContent = ''
       // const timeReferencesRE = new RegExp(/$\s*(?:j|v)\w+?(?:(?:-.*?>)|(?:={3}))(\d+)/gm)
-      const timeReferencesRE = new RegExp(/$\s*(?:(?:(?:j|v)\w+?(?:(?:-.*?>)|(?:={3}))(\d+))|(?:(\d+)(?:(?:-.*?>)|(?:={3}))(?:j|v)\w+))/gm)
+      const timeReferencesRE = new RegExp(/$\s*([jv]?\d+) ?(?:(?:<?-\.?->)|(?:={3})) ?(?:\|.*?\|)?([jv]?\d+)$/gm)
+      const isTimeRefRE = new RegExp(/^[jv]\d+$/)
 
       let regexArray: RegExpExecArray | null
       let lastIndex = 0
 
       while ((regexArray = timeReferencesRE.exec(content)) !== null) {
+        // debug(`content=${content}\n\n`)
         const match1 = regexArray[1]
         const match2 = regexArray[2]
-        const catchedChapterInRelevantChapters =
-          relevantChapterNumbers.indexOf(parseInt(match1, 10)) >= 0 || relevantChapterNumbers.indexOf(parseInt(match2, 10)) >= 0
-        const endIndex = catchedChapterInRelevantChapters ? timeReferencesRE.lastIndex : regexArray.index
+        const catchedBothChapterInRelevantChapters =
+          relevantChapterNumbers.indexOf(parseInt(match1, 10)) >= 0 && relevantChapterNumbers.indexOf(parseInt(match2, 10)) >= 0
+        // const hasOneOrTwoTimeReferences = isTimeRefRE.test(match1) || isTimeRefRE.test(match2)
+        const catchedOneChapterInRelevantChaptersAndTimeReference =
+          (relevantChapterNumbers.indexOf(parseInt(match1, 10)) >= 0 && isTimeRefRE.test(match2)) ||
+          (relevantChapterNumbers.indexOf(parseInt(match2, 10)) >= 0 && isTimeRefRE.test(match1))
+        const areBothTimeReferences = isTimeRefRE.test(match1) && isTimeRefRE.test(match2)
+        debug(
+          `match0: ${regexArray[0]}\n
+          match1: ${match1}\n
+          match2: ${match2}\n
+          catchedBothChapterInRelevantChapters: ${catchedBothChapterInRelevantChapters}\n
+          catchedOneChapterInRelevantChaptersAndTimeReference: ${catchedOneChapterInRelevantChaptersAndTimeReference}\n
+          areBothTimeReferences: ${areBothTimeReferences}\n`
+        )
+        const endIndex =
+          catchedBothChapterInRelevantChapters || catchedOneChapterInRelevantChaptersAndTimeReference || areBothTimeReferences
+            ? timeReferencesRE.lastIndex
+            : regexArray.index
         newContent += content.substring(lastIndex, endIndex)
         lastIndex = timeReferencesRE.lastIndex
       }
@@ -1068,19 +1086,19 @@ export class CoreUtils {
 
     for (const character of charactersWithTimelines) {
       if (character == 'Paule Sainte-Marie') debug(`character = ${character}`)
-      
+
       const relevantChapters = metaObj.filter(f => {
         return f.characters.indexOf(character) >= 0
       })
 
       if (character == 'Paule') debug(`relevantChapters: ${JSON.stringify(relevantChapters)}`)
-      
+
       const chapterList = relevantChapters.map(c => `(?:${c.number.toString()})`).reduce((pv, cv) => `${pv ? pv + '|' : ''}${cv}`)
       const chapterNumberList = relevantChapters.map(c => c.number)
-      const chapterListRegEx = new RegExp(`(?<!\\d)0*(?:${chapterList})(?!\\d|:|\\)|-)`)
+      const chapterListRegEx = new RegExp(`(?<!\\d)0*(?:${chapterList})(?!\\d|:|\\))`)
       const letterRegEx = new RegExp(/^\s*[^\d\s]/)
 
-      if(character == 'Paule') debug(`chapterListRegex: ${chapterListRegEx}`)
+      if (character == 'Paule') debug(`chapterListRegex: ${chapterListRegEx}`)
 
       const thisCharacterTimeline = cleanUnusedTimeReferences(
         this.cleanEmptySubgraphs(
