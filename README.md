@@ -85,7 +85,7 @@ $ npm install -g chptr
 $ chptr COMMAND
 running command...
 $ chptr (-v|--version|version)
-chptr/0.1.13 win32-x64 node-v10.15.1
+chptr/0.2.0 win32-x64 node-v12.18.3
 $ chptr --help [COMMAND]
 USAGE
   $ chptr COMMAND
@@ -136,7 +136,7 @@ OPTIONS
   -p, --path=path  [default: .] Path where root of project files are
 ```
 
-_See code: [src\commands\add.ts](https://github.com/spikying/chptr/blob/v0.1.13/src\commands\add.ts)_
+_See code: [src\commands\add.ts](https://github.com/spikying/chptr/blob/v0.2.0/src\commands\add.ts)_
 
 ## `chptr build`
 
@@ -162,16 +162,18 @@ OPTIONS
 
   -p, --path=path                           [default: .] Path where root of project files are
 
-  -s, --showWritingRate=yes|no|overwrite    [default: yes] Show word count per day.  Overwrite option recalculates it
-                                            all from scratch.
+  -s, --save                                Commit to git at the same time.
 
   -t, --type=md|pdf|docx|html|epub|tex|all  filetype to export to.  Can be set multiple times.
+
+  -w, --showWritingRate=yes|no|overwrite    [default: yes] Show word count per day.  Overwrite option recalculates it
+                                            all from scratch.
 
 ALIASES
   $ chptr compile
 ```
 
-_See code: [src\commands\build\index.ts](https://github.com/spikying/chptr/blob/v0.1.13/src\commands\build\index.ts)_
+_See code: [src\commands\build\index.ts](https://github.com/spikying/chptr/blob/v0.2.0/src\commands\build\index.ts)_
 
 ## `chptr build:compact`
 
@@ -185,9 +187,10 @@ OPTIONS
   -N, --notify     show a notification box when command is completed.
   -h, --help       show CLI help
   -p, --path=path  [default: .] Path where root of project files are
+  -s, --save       Commit to git at the same time.
 ```
 
-_See code: [src\commands\build\compact.ts](https://github.com/spikying/chptr/blob/v0.1.13/src\commands\build\compact.ts)_
+_See code: [src\commands\build\compact.ts](https://github.com/spikying/chptr/blob/v0.2.0/src\commands\build\compact.ts)_
 
 ## `chptr build:metadata`
 
@@ -203,12 +206,13 @@ OPTIONS
   -d, --datetimestamp                     adds datetime stamp before output filename
   -h, --help                              show CLI help
   -p, --path=path                         [default: .] Path where root of project files are
+  -s, --save                              Commit to git at the same time.
 
-  -s, --showWritingRate=yes|no|overwrite  [default: yes] Show word count per day.  Overwrite option recalculates it all
+  -w, --showWritingRate=yes|no|overwrite  [default: yes] Show word count per day.  Overwrite option recalculates it all
                                           from scratch.
 ```
 
-_See code: [src\commands\build\metadata.ts](https://github.com/spikying/chptr/blob/v0.1.13/src\commands\build\metadata.ts)_
+_See code: [src\commands\build\metadata.ts](https://github.com/spikying/chptr/blob/v0.2.0/src\commands\build\metadata.ts)_
 
 ## `chptr build:output`
 
@@ -234,16 +238,18 @@ OPTIONS
 
   -p, --path=path                           [default: .] Path where root of project files are
 
-  -s, --showWritingRate=yes|no|overwrite    [default: yes] Show word count per day.  Overwrite option recalculates it
-                                            all from scratch.
+  -s, --save                                Commit to git at the same time.
 
   -t, --type=md|pdf|docx|html|epub|tex|all  filetype to export to.  Can be set multiple times.
+
+  -w, --showWritingRate=yes|no|overwrite    [default: yes] Show word count per day.  Overwrite option recalculates it
+                                            all from scratch.
 
 ALIASES
   $ chptr compile
 ```
 
-_See code: [src\commands\build\output.ts](https://github.com/spikying/chptr/blob/v0.1.13/src\commands\build\output.ts)_
+_See code: [src\commands\build\output.ts](https://github.com/spikying/chptr/blob/v0.2.0/src\commands\build\output.ts)_
 
 ## `chptr delete [NAME]`
 
@@ -261,12 +267,13 @@ OPTIONS
   -c, --compact    Compact chapter numbers at the same time
   -h, --help       show CLI help
   -p, --path=path  [default: .] Path where root of project files are
+  -s, --save       Commit to git at the same time.
 
 ALIASES
   $ chptr del
 ```
 
-_See code: [src\commands\delete.ts](https://github.com/spikying/chptr/blob/v0.1.13/src\commands\delete.ts)_
+_See code: [src\commands\delete.ts](https://github.com/spikying/chptr/blob/v0.2.0/src\commands\delete.ts)_
 
 ## `chptr edit [CHAPTERIDS]`
 
@@ -290,7 +297,7 @@ ALIASES
   $ chptr mod
 ```
 
-_See code: [src\commands\edit.ts](https://github.com/spikying/chptr/blob/v0.1.13/src\commands\edit.ts)_
+_See code: [src\commands\edit.ts](https://github.com/spikying/chptr/blob/v0.2.0/src\commands\edit.ts)_
 
 ## `chptr help [COMMAND]`
 
@@ -344,7 +351,7 @@ ALIASES
   $ chptr setup
 ```
 
-_See code: [src\commands\init.ts](https://github.com/spikying/chptr/blob/v0.1.13/src\commands\init.ts)_
+_See code: [src\commands\init.ts](https://github.com/spikying/chptr/blob/v0.2.0/src\commands\init.ts)_
 
 ## `chptr plugins`
 
@@ -477,12 +484,14 @@ ARGUMENTS
 
 OPTIONS
   -N, --notify     show a notification box when command is completed.
+  -a, --all        Will run on every chapter file.  Will ignore a `chapterIdOrFilename argument.`
   -h, --help       show CLI help
   -p, --path=path  [default: .] Path where root of project files are
-  -t, --title      'Use chapter's title as new name.  Will supercede a `newName` argument.
+  -s, --save       Commit to git at the same time.
+  -t, --title      Use chapter's title as new name.  Will supercede a `newName` argument.
 ```
 
-_See code: [src\commands\rename.ts](https://github.com/spikying/chptr/blob/v0.1.13/src\commands\rename.ts)_
+_See code: [src\commands\rename.ts](https://github.com/spikying/chptr/blob/v0.2.0/src\commands\rename.ts)_
 
 ## `chptr reorder [ORIGINID] [DESTINATIONID]`
 
@@ -501,12 +510,13 @@ OPTIONS
   -c, --compact    Compact chapter numbers at the same time
   -h, --help       show CLI help
   -p, --path=path  [default: .] Path where root of project files are
+  -s, --save       Commit to git at the same time.
 
 ALIASES
   $ chptr move
 ```
 
-_See code: [src\commands\reorder.ts](https://github.com/spikying/chptr/blob/v0.1.13/src\commands\reorder.ts)_
+_See code: [src\commands\reorder.ts](https://github.com/spikying/chptr/blob/v0.2.0/src\commands\reorder.ts)_
 
 ## `chptr save [NUMBERORFILENAME]`
 
@@ -540,7 +550,7 @@ ALIASES
   $ chptr commit
 ```
 
-_See code: [src\commands\save.ts](https://github.com/spikying/chptr/blob/v0.1.13/src\commands\save.ts)_
+_See code: [src\commands\save.ts](https://github.com/spikying/chptr/blob/v0.2.0/src\commands\save.ts)_
 
 ## `chptr track [FILENAME]`
 
@@ -559,5 +569,5 @@ OPTIONS
   -p, --path=path  [default: .] Path where root of project files are
 ```
 
-_See code: [src\commands\track.ts](https://github.com/spikying/chptr/blob/v0.1.13/src\commands\track.ts)_
+_See code: [src\commands\track.ts](https://github.com/spikying/chptr/blob/v0.2.0/src\commands\track.ts)_
 <!-- commandsstop -->
