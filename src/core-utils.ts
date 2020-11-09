@@ -1020,6 +1020,7 @@ export class CoreUtils {
     const metaObj = []
 
     for (const metadataFile of allMetadataFiles) {
+      const metaNumberWithZeroes = this.softConfig.extractNumberWithLeadingZeroes(metadataFile)
       const metaNumber = this.softConfig.extractNumber(metadataFile)
       const metaStringContent = await this.fsUtils.readFileContent(metadataFile)
       const metadataObj = this.softConfig.parsePerStyle(metaStringContent)
@@ -1030,7 +1031,7 @@ export class CoreUtils {
       // debug(`obj: ${JSON.stringify(metadataObj)}`)
       // debug(`props: ${JSON.stringify(props)}`)
       // debug(`number: ${metaNumber}, characters: ${charactersInChapter || []}`)
-      metaObj.push({ number: metaNumber, characters: charactersInChapter || [] }) // props: props || [] })
+      metaObj.push({ number: metaNumber, numberWithZeroes: metaNumberWithZeroes, characters: charactersInChapter || [] }) // props: props || [] })
     }
 
     if (metaObj.length === 0) {
@@ -1048,8 +1049,8 @@ export class CoreUtils {
     const cleanUnusedTimeReferences = (content: string, relevantChapterNumbers: number[]): string => {
       let newContent = ''
       // const timeReferencesRE = new RegExp(/$\s*(?:j|v)\w+?(?:(?:-.*?>)|(?:={3}))(\d+)/gm)
-      const timeReferencesRE = new RegExp(/$\s*([jv]?\d+) ?(?:(?:<?-\.?->)|(?:={3})) ?(?:\|.*?\|)?([jv]?\d+)$/gm)
-      const isTimeRefRE = new RegExp(/^[jv]\d+$/)
+      const timeReferencesRE = new RegExp(/$\s*([jav]?\d+) ?(?:(?:<?-\.?->)|(?:={3})) ?(?:\|.*?\|)?([jav]?\d+)$/gm)
+      const isTimeRefRE = new RegExp(/^[jav]\d+$/)
 
       let regexArray: RegExpExecArray | null
       let lastIndex = 0
@@ -1065,14 +1066,14 @@ export class CoreUtils {
           (relevantChapterNumbers.indexOf(parseInt(match1, 10)) >= 0 && isTimeRefRE.test(match2)) ||
           (relevantChapterNumbers.indexOf(parseInt(match2, 10)) >= 0 && isTimeRefRE.test(match1))
         const areBothTimeReferences = isTimeRefRE.test(match1) && isTimeRefRE.test(match2)
-        debug(
-          `match0: ${regexArray[0]}\n
-          match1: ${match1}\n
-          match2: ${match2}\n
-          catchedBothChapterInRelevantChapters: ${catchedBothChapterInRelevantChapters}\n
-          catchedOneChapterInRelevantChaptersAndTimeReference: ${catchedOneChapterInRelevantChaptersAndTimeReference}\n
-          areBothTimeReferences: ${areBothTimeReferences}\n`
-        )
+        // debug(
+        //   `match0: ${regexArray[0]}\n
+        //   match1: ${match1}\n
+        //   match2: ${match2}\n
+        //   catchedBothChapterInRelevantChapters: ${catchedBothChapterInRelevantChapters}\n
+        //   catchedOneChapterInRelevantChaptersAndTimeReference: ${catchedOneChapterInRelevantChaptersAndTimeReference}\n
+        //   areBothTimeReferences: ${areBothTimeReferences}\n`
+        // )
         const endIndex =
           catchedBothChapterInRelevantChapters || catchedOneChapterInRelevantChaptersAndTimeReference || areBothTimeReferences
             ? timeReferencesRE.lastIndex
@@ -1085,20 +1086,20 @@ export class CoreUtils {
     }
 
     for (const character of charactersWithTimelines) {
-      if (character == 'Paule Sainte-Marie') debug(`character = ${character}`)
+      // if (character == 'Paule Sainte-Marie') debug(`character = ${character}`)
 
       const relevantChapters = metaObj.filter(f => {
         return f.characters.indexOf(character) >= 0
       })
 
-      if (character == 'Paule') debug(`relevantChapters: ${JSON.stringify(relevantChapters)}`)
+      if (character == 'Mehdi') debug(`relevantChapters: ${JSON.stringify(relevantChapters)}`)
 
-      const chapterList = relevantChapters.map(c => `(?:${c.number.toString()})`).reduce((pv, cv) => `${pv ? pv + '|' : ''}${cv}`)
+      const chapterListWithZeroes = relevantChapters.map(c => `(?:${c.numberWithZeroes})`).reduce((pv, cv) => `${pv ? pv + '|' : ''}${cv}`)
       const chapterNumberList = relevantChapters.map(c => c.number)
-      const chapterListRegEx = new RegExp(`(?<!\\d)0*(?:${chapterList})(?!\\d|:|\\))`)
+      const chapterListRegEx = new RegExp(`(?<!\\d)(?:${chapterListWithZeroes})(?!\\d)`)
       const letterRegEx = new RegExp(/^\s*[^\d\s]/)
 
-      if (character == 'Paule') debug(`chapterListRegex: ${chapterListRegEx}`)
+      // if (character == 'Paule') debug(`chapterListRegex: ${chapterListRegEx}`)
 
       const thisCharacterTimeline = cleanUnusedTimeReferences(
         this.cleanEmptySubgraphs(

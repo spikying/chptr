@@ -187,7 +187,7 @@ export class FsUtils {
     let sanitized = sanitize(original)
       .replace(/\u2029/g, path.sep)
       .replace('@', 'a')
-      .replace('`', '')
+      .replace(/`/g, '')
     if (removeSpace) {
       sanitized = sanitized.replace(' ', '_')
     }
@@ -205,7 +205,7 @@ export class FsUtils {
   }
 
   public sanitizeMermaid(original: string): string {
-    const sanitized = original.replace(/@/g, 'a').replace(/\(|\)/g, '_').replace('`', '')
+    const sanitized = original.replace(/@/g, 'a').replace(/\(|\)/g, '_').replace(/`/g, '')
 
     return sanitized
     // return latinize(sanitized)
