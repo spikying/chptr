@@ -568,10 +568,10 @@ export class CoreUtils {
 
       let fullOriginalContent = this.softConfig.globalMetadataContent
 
-      //todo: get index from config
-      const toAddFiles = ['readme.md', 'index.md']
-      for await (const file of toAddFiles) {
-        const filePath = path.join(this.rootPath, file)
+      const toAddFilesBefore = this.softConfig.buildFilesBefore
+      // const toAddFiles = ['readme.md', 'index.md']
+      for await (const filePath of toAddFilesBefore) {
+        // const filePath = path.join(this.rootPath, file)
         if (await this.fsUtils.fileExists(filePath)) {
           let fileContent = await this.fsUtils.readFileContent(filePath)
           // readme = readme.replace(/^\n#+\s.*?\n+/s, '')
@@ -616,6 +616,15 @@ export class CoreUtils {
           fullOriginalContent += chapterContent
         }
       }
+ 
+      const toAddFilesAfter = this.softConfig.buildFilesAfter
+      for await (const filePath of toAddFilesAfter) {
+        if (await this.fsUtils.fileExists(filePath)) {
+          let fileContent = await this.fsUtils.readFileContent(filePath)
+          fullOriginalContent += '\n' + fileContent
+        }
+      }
+
       const fullCleanedOrTransformedContent = outputToProd
         ? this.markupUtils.cleanMarkupContent(fullOriginalContent)
         : this.markupUtils.transformMarkupContent(fullOriginalContent)
@@ -1352,18 +1361,20 @@ export class CoreUtils {
     await this.updateFollowUpFile(chosenItemsTOC, perSectionTOC)
   }
 
-  public async formatIndexFile() {
-    var indexFile = this.softConfig.indexFile
-    var indexExists = !!indexFile && (await this.fsUtils.fileExists(indexFile))
-    if (indexExists) {
-      var initialContent = await this.fsUtils.readFileContent(indexFile)
-      var updatedContent = initialContent.replace(/\n\[?([A-zÀ-ú ()-]+?)\]? ?(?:{.+?})?\n\n: {4}(?=\w+)/gm, (match, one) => {
-        return `\n[${one}]{.definition #${latinize(sanitize(one)).replace(/ /g, '-').replace(/[()]/g, '').toLowerCase()}}\n\n:    `
-      })
-      if (updatedContent !== initialContent) {
-        await this.fsUtils.writeFile(indexFile, updatedContent)
+  public async formatDefinitionFiles() {
+    var definitionFiles = this.softConfig.definitionFiles
+    definitionFiles.forEach(async definitionFile => {
+      var indexExists = !!definitionFile && (await this.fsUtils.fileExists(definitionFile))
+      if (indexExists) {
+        var initialContent = await this.fsUtils.readFileContent(definitionFile)
+        var updatedContent = initialContent.replace(/\n\[?([A-zÀ-ú ()-]+?)\]? ?(?:{.+?})?\n\n: {4}(?=\w+)/gm, (match, one) => {
+          return `\n[${one}]{.definition #${latinize(sanitize(one)).replace(/ /g, '-').replace(/[()]/g, '').toLowerCase()}}\n\n:    `
+        })
+        if (updatedContent !== initialContent) {
+          await this.fsUtils.writeFile(definitionFile, updatedContent)
+        }
       }
-    }
+    })
   }
 
   private async updateFollowUpFile(

@@ -41,7 +41,9 @@ interface ConfigObject {
   filesWithChapterNumbersInContent: string[]
   timelineFile: string
   followupFile: string
-  indexFile: string
+  definitionFiles: string[]
+  buildFilesBefore: string[]
+  buildFilesAfter: string[]
   metadataManualFieldsToNumber: string[]
   postBuildStep: string
   propEquivalents: PropEquivalent[]
@@ -98,8 +100,28 @@ export class SoftConfig {
     return path.join(this.rootPath, this.config.followupFile)
   }
 
-  public get indexFile(): string {
-    return path.join(this.rootPath, this.config.indexFile)
+  public get definitionFiles(): string[] {
+    const result: string[] = []
+    this.config.definitionFiles.forEach(file => {
+      result.push(path.join(this.rootPath, file))
+    })
+    return result
+  }
+
+  public get buildFilesBefore(): string[] {
+    const result: string[] = []
+    this.config.buildFilesBefore.forEach(file => {
+      result.push(path.join(this.rootPath, file))
+    })
+    return result
+  }
+
+  public get buildFilesAfter(): string[] {
+    const result: string[] = []
+    this.config.buildFilesAfter.forEach(file => {
+      result.push(path.join(this.rootPath, file))
+    })
+    return result
   }
 
   public get postBuildStep(): string {
@@ -308,12 +330,21 @@ documentclass: bookest
       doc: 'File path to follow-up file, in Mermaid syntax.',
       default: ''
     },
-    indexFile: {
-      doc: 'File path to index, in Markdown syntax (with definitions).',
-      default: ''
+    definitionFiles: {
+      doc: 'File paths to Markdown files to format with definition markup.',
+      default: []
+    },
+    buildFilesBefore: {
+      doc: 'File paths to Markdown files to compile before chapters.',
+      default: []
+    },
+    buildFilesAfter: {
+      doc: 'File paths to Markdown files to compile after chapters.',
+      default: []
     },
     metadataManualFieldsToNumber: {
-      doc: 'Array of metadataFields that will be numbered automatically.  Accepts fieldname.* and fieldname[].something as wildcards and array notation.',
+      doc:
+        'Array of metadataFields that will be numbered automatically.  Accepts fieldname.* and fieldname[].something as wildcards and array notation.',
       default: []
     },
     postBuildStep: {

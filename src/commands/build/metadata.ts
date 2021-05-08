@@ -89,7 +89,7 @@ export default class Metadata extends Command {
       await this.coreUtils.rewriteLabelsInFilesWithNumbersInContent(true) //todo: get value for A-for-at-numbering
       await this.coreUtils.createCharacterTimelines()
       await this.coreUtils.setNumbersInChosenItemsOfMetadata()
-      await this.coreUtils.formatIndexFile()
+      await this.coreUtils.formatDefinitionFiles()
       if (flags.save) {
         await this.coreUtils.preProcessAndCommitFiles('Autosave markup updates')
       }

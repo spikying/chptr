@@ -762,7 +762,7 @@
         "affectsGlobalScope": false
       },
       "./src/fs-utils.ts": {
-        "version": "9974b4b512b9e61123b16bbc6e2f77d204769709753b83e0d68047e1128da9b0",
+        "version": "19bebb692f8134d6f29103ac8e6b202ac773e850758eacd99d2c877cbcdfe22d",
         "signature": "3c234f7a8954cdef5e0327a3a7f82bae5a252634cb0cda5a86ce5d78dba73540",
         "affectsGlobalScope": false
       },
@@ -1287,8 +1287,8 @@
         "affectsGlobalScope": false
       },
       "./src/soft-config.ts": {
-        "version": "b851ea3f88ec48478c4ff067a44e15a2b2d0f956660414e18c9e28d2e45b6218",
-        "signature": "0b8b7b537e9b2efff9b850a7b39cafa0deeb40ee2c35522c587f65a9ff277750",
+        "version": "83b5ad12812a788139e9712e18ff9259adbce6638de947016b51113e8b328057",
+        "signature": "973d249ca93f1f3a6fbb92de272c3570246dac3fecac399de71f9e71d5492e2a",
         "affectsGlobalScope": false
       },
       "./src/git-utils.ts": {
@@ -1327,8 +1327,8 @@
         "affectsGlobalScope": false
       },
       "./src/core-utils.ts": {
-        "version": "fd71ffbb84857d739cb40f7a6d6a6758d1c55ca9bdb4df93fc9eb068b12d8cee",
-        "signature": "cec713e0453670b1313e32351b3d524827778315cf63161fa923f0e593daae71",
+        "version": "ea0cbedf817aa070c4cb0a0d350bca6ddde48c5a5d26ac155b93473d5a0e427d",
+        "signature": "0409290d7ecae6a530bb7964fff632401b6a12332ff237dd3691c05979cda52e",
         "affectsGlobalScope": false
       },
       "./src/imports.d.ts": {
@@ -1377,7 +1377,7 @@
         "affectsGlobalScope": false
       },
       "./src/commands/rename.ts": {
-        "version": "9a0ab959ea58fdc2247c27763dfcf6981f2b274654da7cd819ed970b1128e774",
+        "version": "9b993f347f8c8c568706975fcbdd239126c49cb2aa6b34e7640cdfb773636e1e",
         "signature": "110de9fca037dff71a43ffca1d5e950af5ba46aa1ad046977f6ea73e501a531d",
         "affectsGlobalScope": false
       },
@@ -1407,7 +1407,7 @@
         "affectsGlobalScope": false
       },
       "./src/commands/build/metadata.ts": {
-        "version": "fe2eff2cef597f7cc69d7992ddf7f1de32872429be1b898626f52421226e2f10",
+        "version": "2dec09b89c969d178f78b759777080c15a8bdaa4d9256efcadbe73dc15f58496",
         "signature": "bf20f408c7a3b223f75028095d4229e690f52dfd2fdac29c72b6629b9b9629dd",
         "affectsGlobalScope": false
       },
