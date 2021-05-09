@@ -552,15 +552,16 @@ export class CoreUtils {
     withIntermediary: boolean,
     outputFiletype: any,
     outputFile: string
-  ): Promise<void> {
+  ): Promise<string[]> {
     debug('Running Build Output')
 
     const outputToProd: boolean = buildType == BuildType.prod
     const outputToPreProd: boolean = buildType == BuildType.preProd
     const outputToDev: boolean = !outputToProd && !outputToPreProd
-
+    
     const tmpMDfile = await tmpFile()
     const tmpMDfileTex = await tmpFile()
+    const allOutputFilePath: string[] = []
     // debug(`temp files = ${tmpMDfile.path} and for tex = ${tmpMDfileTex.path}`)
 
     try {
@@ -655,10 +656,9 @@ export class CoreUtils {
       let chapterFiles = '"' + tmpMDfile.path + '" '
 
       const pandocRuns: Promise<string>[] = []
-      const allOutputFilePath: string[] = []
       const allLuaFilters = await this.fsUtils.listFiles(path.join(this.hardConfig.configPath, '*.all.lua'))
       const prodLuaFilters = await this.fsUtils.listFiles(path.join(this.hardConfig.configPath, '*.prod.lua'))
-      if (outputToProd) {
+      if (outputToProd || outputToPreProd) {
         allLuaFilters.push(...prodLuaFilters)
       }
 
@@ -824,6 +824,7 @@ export class CoreUtils {
 
       const allOutputFilePathPretty = allOutputFilePath.reduce((previous, current) => `${previous}\n    ${current}`, '')
       cli.action.stop(allOutputFilePathPretty.actionStopColor())
+      
     } catch (err) {
       throw new ChptrError(err, 'build.run', 3)
     } finally {
@@ -832,6 +833,7 @@ export class CoreUtils {
     }
 
     await this.runPostBuildStep()
+    return allOutputFilePath
   }
 
   private async luaFilters(wildcard: string, otherFiles: string[]): Promise<string[]> {
