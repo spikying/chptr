@@ -85,7 +85,7 @@ $ npm install -g chptr
 $ chptr COMMAND
 running command...
 $ chptr (-v|--version|version)
-chptr/0.3.0 win32-x64 node-v12.18.3
+chptr/0.3.1 win32-x64 node-v12.18.3
 $ chptr --help [COMMAND]
 USAGE
   $ chptr COMMAND
@@ -136,7 +136,7 @@ OPTIONS
   -p, --path=path  [default: .] Path where root of project files are
 ```
 
-_See code: [src\commands\add.ts](https://github.com/spikying/chptr/blob/v0.3.0/src\commands\add.ts)_
+_See code: [src\commands\add.ts](https://github.com/spikying/chptr/blob/v0.3.1/src\commands\add.ts)_
 
 ## `chptr build`
 
@@ -173,7 +173,7 @@ ALIASES
   $ chptr compile
 ```
 
-_See code: [src\commands\build\index.ts](https://github.com/spikying/chptr/blob/v0.3.0/src\commands\build\index.ts)_
+_See code: [src\commands\build\index.ts](https://github.com/spikying/chptr/blob/v0.3.1/src\commands\build\index.ts)_
 
 ## `chptr build:compact`
 
@@ -190,7 +190,7 @@ OPTIONS
   -s, --save       Commit to git at the same time.
 ```
 
-_See code: [src\commands\build\compact.ts](https://github.com/spikying/chptr/blob/v0.3.0/src\commands\build\compact.ts)_
+_See code: [src\commands\build\compact.ts](https://github.com/spikying/chptr/blob/v0.3.1/src\commands\build\compact.ts)_
 
 ## `chptr build:metadata`
 
@@ -212,7 +212,7 @@ OPTIONS
                                           from scratch.
 ```
 
-_See code: [src\commands\build\metadata.ts](https://github.com/spikying/chptr/blob/v0.3.0/src\commands\build\metadata.ts)_
+_See code: [src\commands\build\metadata.ts](https://github.com/spikying/chptr/blob/v0.3.1/src\commands\build\metadata.ts)_
 
 ## `chptr build:output`
 
@@ -249,7 +249,7 @@ ALIASES
   $ chptr compile
 ```
 
-_See code: [src\commands\build\output.ts](https://github.com/spikying/chptr/blob/v0.3.0/src\commands\build\output.ts)_
+_See code: [src\commands\build\output.ts](https://github.com/spikying/chptr/blob/v0.3.1/src\commands\build\output.ts)_
 
 ## `chptr delete [NAME]`
 
@@ -273,7 +273,7 @@ ALIASES
   $ chptr del
 ```
 
-_See code: [src\commands\delete.ts](https://github.com/spikying/chptr/blob/v0.3.0/src\commands\delete.ts)_
+_See code: [src\commands\delete.ts](https://github.com/spikying/chptr/blob/v0.3.1/src\commands\delete.ts)_
 
 ## `chptr edit [CHAPTERIDS]`
 
@@ -297,7 +297,7 @@ ALIASES
   $ chptr mod
 ```
 
-_See code: [src\commands\edit.ts](https://github.com/spikying/chptr/blob/v0.3.0/src\commands\edit.ts)_
+_See code: [src\commands\edit.ts](https://github.com/spikying/chptr/blob/v0.3.1/src\commands\edit.ts)_
 
 ## `chptr help [COMMAND]`
 
@@ -351,7 +351,7 @@ ALIASES
   $ chptr setup
 ```
 
-_See code: [src\commands\init.ts](https://github.com/spikying/chptr/blob/v0.3.0/src\commands\init.ts)_
+_See code: [src\commands\init.ts](https://github.com/spikying/chptr/blob/v0.3.1/src\commands\init.ts)_
 
 ## `chptr plugins`
 
@@ -491,7 +491,7 @@ OPTIONS
   -t, --title      Use chapter's title as new name.  Will supercede a `newName` argument.
 ```
 
-_See code: [src\commands\rename.ts](https://github.com/spikying/chptr/blob/v0.3.0/src\commands\rename.ts)_
+_See code: [src\commands\rename.ts](https://github.com/spikying/chptr/blob/v0.3.1/src\commands\rename.ts)_
 
 ## `chptr reorder [ORIGINID] [DESTINATIONID]`
 
@@ -516,7 +516,7 @@ ALIASES
   $ chptr move
 ```
 
-_See code: [src\commands\reorder.ts](https://github.com/spikying/chptr/blob/v0.3.0/src\commands\reorder.ts)_
+_See code: [src\commands\reorder.ts](https://github.com/spikying/chptr/blob/v0.3.1/src\commands\reorder.ts)_
 
 ## `chptr save [NUMBERORFILENAME]`
 
@@ -550,7 +550,7 @@ ALIASES
   $ chptr commit
 ```
 
-_See code: [src\commands\save.ts](https://github.com/spikying/chptr/blob/v0.3.0/src\commands\save.ts)_
+_See code: [src\commands\save.ts](https://github.com/spikying/chptr/blob/v0.3.1/src\commands\save.ts)_
 
 ## `chptr track [FILENAME]`
 
@@ -569,5 +569,5 @@ OPTIONS
   -p, --path=path  [default: .] Path where root of project files are
 ```
 
-_See code: [src\commands\track.ts](https://github.com/spikying/chptr/blob/v0.3.0/src\commands\track.ts)_
+_See code: [src\commands\track.ts](https://github.com/spikying/chptr/blob/v0.3.1/src\commands\track.ts)_
 <!-- commandsstop -->
