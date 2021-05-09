@@ -1,0 +1,16 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "npm",
+			"script": "prepack",
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"problemMatcher": [],
+			"label": "npm: prepack",
+			"detail": "tsc -b -v && oclif-dev manifest && oclif-dev readme"
+		}
+	]
+}
