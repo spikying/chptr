@@ -1327,8 +1327,8 @@
         "affectsGlobalScope": false
       },
       "./src/core-utils.ts": {
-        "version": "05e486b5924be35608833fe34672b200917533cbf6649172c3c935d46a1d14a8",
-        "signature": "5cc0649e36abf9d745ceed1e779920b74c0ab212d6952e07b330f5ead72a62dd",
+        "version": "0aebc5ad194d0797d68e23518ff56cc2603d9e4999ba08d52475901fb2c0f67f",
+        "signature": "2dc5f3ca58ad432d925f26f4c91b292d22176b3413ea78756eb82281f8e77f01",
         "affectsGlobalScope": false
       },
       "./src/imports.d.ts": {

@@ -653,7 +653,7 @@ export class CoreUtils {
         await this.fsUtils.createFile(tempMdFilePath, fullCleanedOrTransformedContent)
       }
 
-      let chaptersFile = '"' + tmpMDfile.path + '" '
+      let chaptersFile = tmpMDfile.path// '"' + tmpMDfile.path + '" '
 
       const pandocRuns: Promise<string>[] = []
       const allLuaFilters = await this.fsUtils.listFiles(path.join(this.hardConfig.configPath, '*.all.lua'))
@@ -714,7 +714,8 @@ export class CoreUtils {
     tmpMDfilePath : string,
     outputToProd: boolean,
     fullOutputFilePath: string
-  ) : Promise<string[]> {
+  ): Promise<string[]> {
+    debug(`chaptersFile = ${chaptersFile}`)
     let pandocArgs: string[] = ['--strip-comments', '--from', 'markdown+emoji']
 
     if (filetype === 'md') {
@@ -822,8 +823,10 @@ export class CoreUtils {
       pandocArgs = pandocArgs.concat(['--toc', '--toc-depth', '1'])
     }
 
+    debug(`chaptersFile = ${chaptersFile}`)
+
     pandocArgs = [
-      chaptersFile,
+      chaptersFile, //`"${chaptersFile}" `,
       // '--smart',
       '--standalone',
       '-o',
