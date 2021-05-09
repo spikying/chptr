@@ -9,6 +9,7 @@ import { file as tmpFile } from 'tmp-promise'
 import { BootstrapChptr } from '../../bootstrap-functions'
 import { ChapterId } from '../../chapter-id'
 import { ChptrError } from '../../chptr-error'
+import { BuildType } from '../../core-utils'
 import { QueryBuilder } from '../../ui-utils'
 import { d } from '../base'
 
@@ -45,7 +46,14 @@ export default class Build extends Command {
     outputToProd: flags.boolean({
       char: 'P',
       description: 'Remove paragraph numbers, clean markup in output and remove chapter titles.  When false, adds summaries in output.',
-      default: false
+      default: false,
+      exclusive: ['outputToPreProd']
+    }),
+    outputToPreProd: flags.boolean({
+      char: 'D',
+      description: 'Keep paragraph numbers, but clean markup as if doing an output to Prod.',
+      default: false,
+      exclusive: ['outputToeProd']
     }),
     withFullIntermediaryOutput: flags.boolean({
       char: 'i',
@@ -70,6 +78,7 @@ export default class Build extends Command {
     // const removeMarkup = flags.removemarkup
     // const withSummaries = flags.withsummaries
     const outputToProd = flags.outputToProd
+    const outputToPreProd = flags.outputToPreProd
     const withIntermediary = flags.withFullIntermediaryOutput
 
     let outputFiletype = flags.type
@@ -85,6 +94,14 @@ export default class Build extends Command {
 
     await this.RunMetadata(flags)
 
-    await this.coreUtils.buildOutput(outputToProd, withIntermediary, outputFiletype, this.outputFile)
+    let buildType: BuildType = BuildType.dev
+    if (outputToProd) {
+      buildType = BuildType.prod
+    }
+    else if (outputToPreProd) {
+      buildType = BuildType.preProd
+    }
+
+    await this.coreUtils.buildOutput(buildType, withIntermediary, outputFiletype, this.outputFile)
   }
 }

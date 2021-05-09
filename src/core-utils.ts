@@ -548,12 +548,16 @@ export class CoreUtils {
   public async buildOutput(
     // removeMarkup: boolean,
     // withSummaries: boolean,
-    outputToProd: boolean,
+    buildType: BuildType,
     withIntermediary: boolean,
     outputFiletype: any,
     outputFile: string
   ): Promise<void> {
     debug('Running Build Output')
+
+    const outputToProd: boolean = buildType == BuildType.prod
+    const outputToPreProd: boolean = buildType == BuildType.preProd
+    const outputToDev: boolean = !outputToProd && !outputToPreProd
 
     const tmpMDfile = await tmpFile()
     const tmpMDfileTex = await tmpFile()
@@ -584,7 +588,7 @@ export class CoreUtils {
       for (const file of originalChapterFilesArray) {
         fullOriginalContent += '\n'
         const chapterContent = await this.fsUtils.readFileContent(file)
-        if (!outputToProd) {
+        if (outputToDev) {
           const number = this.softConfig.extractNumber(file)
           const chapterId = new ChapterId(number, false)
 
@@ -616,7 +620,7 @@ export class CoreUtils {
           fullOriginalContent += chapterContent
         }
       }
- 
+
       const toAddFilesAfter = this.softConfig.buildFilesAfter
       for await (const filePath of toAddFilesAfter) {
         if (await this.fsUtils.fileExists(filePath)) {
@@ -626,8 +630,10 @@ export class CoreUtils {
       }
 
       const fullCleanedOrTransformedContent = outputToProd
-        ? this.markupUtils.cleanMarkupContent(fullOriginalContent)
-        : this.markupUtils.transformMarkupContent(fullOriginalContent)
+        ? this.markupUtils.transformToProdMarkupContent(fullOriginalContent)
+        : outputToPreProd
+        ? this.markupUtils.transformToPreProdMarkupContent(fullOriginalContent)
+        : this.markupUtils.transformToDevMarkupContent(fullOriginalContent)
       await this.fsUtils.writeInFile(tmpMDfile.fd, fullCleanedOrTransformedContent)
       await this.fsUtils.writeInFile(
         tmpMDfileTex.fd,
@@ -1499,4 +1505,10 @@ export class CoreUtils {
     table.show('Adding digits to files')
     return hasMadeChanges
   }
+}
+
+export enum BuildType {
+  dev = 'DEV',
+  preProd = 'PREPROD',
+  prod = 'PROD'
 }

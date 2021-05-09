@@ -507,7 +507,7 @@ export class MarkupUtils {
     }
     return modifiedFiles
   }
-  public cleanMarkupContent(initialContent: string): string {
+  public transformToProdMarkupContent(initialContent: string): string {
     const paragraphBreakRegex = new RegExp(this.paragraphBreakChar + '{{\\d+}}\\n', 'g')
     const sentenceBreakRegex = new RegExp(this.sentenceBreakChar + '\\s?', 'g')
 
@@ -526,7 +526,24 @@ export class MarkupUtils {
     return replacedContent
   }
 
-  public transformMarkupContent(initialContent: string): string {
+  public transformToPreProdMarkupContent(initialContent: string): string {
+    const paragraphBreakRegex = new RegExp(this.paragraphBreakChar + '{{(\\d+)}}\\n', 'g')
+    const sentenceBreakRegex = new RegExp(this.sentenceBreakChar + '\\s?', 'g')
+
+    const replacedContent = initialContent
+      .replace(/—/gm, '--')
+      .replace(paragraphBreakRegex, '^_($1)_^\t')
+      .replace(/ {[^}]+?:.+?}([,;:.!?…*"])/gm, '$1') // remove note, end of sequence
+      .replace(/ ?{[^}]+?:.+?} ?/gm, ' ') // remove note
+      .replace(sentenceBreakRegex, '  ')
+      .replace(/^### (.*)$/gm, '* * *')
+      .replace(/^\\(.*)$/gm, '_% $1_')
+      .replace(this.propRegex, '$1')
+
+    return replacedContent
+  }
+
+  public transformToDevMarkupContent(initialContent: string): string {
     const paragraphBreakRegex = new RegExp(this.paragraphBreakChar + '{{(\\d+)}}\\n', 'g')
     const sentenceBreakRegex = new RegExp(this.sentenceBreakChar + '\\s?', 'g')
     let markupCounter = 0
@@ -563,7 +580,7 @@ export class MarkupUtils {
 
   public GetWordCount(text: string): number {
     const wordRegex = require('word-regex')
-    const cleanedText = this.cleanMarkupContent(text)
+    const cleanedText = this.transformToProdMarkupContent(text)
     const match = cleanedText.match(wordRegex())
     const wordCount = match ? match.length : 0
     return wordCount
