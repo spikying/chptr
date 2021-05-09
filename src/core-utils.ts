@@ -558,7 +558,7 @@ export class CoreUtils {
     const outputToProd: boolean = buildType == BuildType.prod
     const outputToPreProd: boolean = buildType == BuildType.preProd
     const outputToDev: boolean = !outputToProd && !outputToPreProd
-    
+
     const tmpMDfile = await tmpFile()
     const tmpMDfileTex = await tmpFile()
     const allOutputFilePath: string[] = []
@@ -653,7 +653,7 @@ export class CoreUtils {
         await this.fsUtils.createFile(tempMdFilePath, fullCleanedOrTransformedContent)
       }
 
-      let chapterFiles = '"' + tmpMDfile.path + '" '
+      let chaptersFile = '"' + tmpMDfile.path + '" '
 
       const pandocRuns: Promise<string>[] = []
       const allLuaFilters = await this.fsUtils.listFiles(path.join(this.hardConfig.configPath, '*.all.lua'))
@@ -666,146 +666,17 @@ export class CoreUtils {
         const fullOutputFilePath = path.join(this.softConfig.buildDirectory, outputFile + '.' + filetype)
         allOutputFilePath.push(fullOutputFilePath)
 
-        let pandocArgs: string[] = ['--strip-comments', '--from', 'markdown+emoji']
-
-        if (filetype === 'md') {
-          pandocArgs = pandocArgs.concat([
-            // '--number-sections',
-            '--to',
-            'markdown-raw_html+smart+fancy_lists+definition_lists',
-            '--wrap=none',
-            '--atx-headers'
-          ])
-          pandocArgs = pandocArgs.concat(await this.luaFilters('*.md.lua', allLuaFilters))
-        }
-
-        if (filetype === 'docx') {
-          const referenceDocFullPath = path.join(this.hardConfig.configPath, 'reference.docx')
-          if (await this.fsUtils.fileExists(referenceDocFullPath)) {
-            pandocArgs = pandocArgs.concat([`--reference-doc="${referenceDocFullPath}"`])
-          } else {
-            cli.warn(`For a better output, create an empty styled Word doc at ${referenceDocFullPath}`)
-          }
-
-          pandocArgs = pandocArgs.concat(await this.luaFilters('*.docx.lua', allLuaFilters))
-
-          pandocArgs = pandocArgs.concat([
-            '--to',
-            'docx+smart+fancy_lists+fenced_divs+definition_lists',
-            '--top-level-division=chapter'
-            // '--number-sections'
-          ])
-
-          // if (!outputToProd) {
-          //   pandocArgs = pandocArgs.concat(['--toc', '--toc-depth', '1'])
-          // }
-        }
-
-        if (filetype === 'html') {
-          const templateFullPath = path.join(this.hardConfig.configPath, 'template.html')
-          if (await this.fsUtils.fileExists(templateFullPath)) {
-            pandocArgs = pandocArgs.concat([`--template`, `"${templateFullPath}"`])
-          } else {
-            cli.warn(`For a better output, create an html template at ${templateFullPath}`)
-          }
-          pandocArgs = pandocArgs.concat(await this.luaFilters('*.html.lua', allLuaFilters))
-
-          const cssFullPath = path.join(this.hardConfig.configPath, 'template.css')
-          if (await this.fsUtils.fileExists(cssFullPath)) {
-            pandocArgs = pandocArgs.concat([`--css`, `"${cssFullPath}"`])
-          } else {
-            cli.warn(`For a better output, create a css template at ${cssFullPath}`)
-          }
-
-          pandocArgs = pandocArgs.concat([
-            '--to',
-            'html5+smart+fancy_lists+definition_lists',
-            // '--toc',
-            // '--toc-depth',
-            // '1',
-            '--top-level-division=chapter',
-            '--self-contained'
-          ])
-        }
-
-        if (filetype === 'pdf' || filetype === 'tex') {
-          chapterFiles = '"' + tmpMDfileTex.path + '" '
-
-          const templateFullPath = path.join(this.hardConfig.configPath, 'template.latex')
-          if (await this.fsUtils.fileExists(templateFullPath)) {
-            pandocArgs = pandocArgs.concat([`--template`, `"${templateFullPath}"`])
-          } else {
-            cli.warn(`For a better output, create a latex template at ${templateFullPath}`)
-          }
-
-          pandocArgs = pandocArgs.concat(await this.luaFilters('*.latex.lua', allLuaFilters))
-          // const luaFilePaths = (await this.fsUtils.listFiles(path.join(this.hardConfig.configPath, '*.latex.lua'))).concat(allLuaFilters)
-          // // this.fsUtils.getAllFilesForWildcards(['*.lua'], this.hardConfig.configPath)
-          // for (const luaFilePath of luaFilePaths) {
-          //   pandocArgs = pandocArgs.concat([`--lua-filter="${path.join(luaFilePath)}"`])
-          //   debug(`lua-flter="${path.join(luaFilePath)}"`)
-          // }
-
-          pandocArgs = pandocArgs.concat([
-            // '--toc',
-            // '--toc-depth',
-            // '1',
-            '--top-level-division=chapter',
-            '--pdf-engine=xelatex',
-            '--to',
-            'latex+raw_tex+smart+fancy_lists-emoji+definition_lists'
-          ])
-        } else {
-          chapterFiles = '"' + tmpMDfile.path + '" '
-        }
-
-        if (filetype === 'epub') {
-          pandocArgs = pandocArgs.concat([
-            '--to',
-            'epub+smart+fancy_lists+definition_lists',
-            // '--toc',
-            // '--toc-depth',
-            // '1',
-            '--top-level-division=chapter'
-          ])
-
-          const cssFullPath = path.join(this.hardConfig.configPath, 'epub.css')
-          if (await this.fsUtils.fileExists(cssFullPath)) {
-            pandocArgs = pandocArgs.concat([`--css`, `"${cssFullPath}"`])
-          } else {
-            cli.warn(`For a better output, create a css template at ${cssFullPath}`)
-          }
-
-          const fontPath = path.join(this.hardConfig.configPath, 'DejaVuSans.ttf')
-          if (await this.fsUtils.fileExists(cssFullPath)) {
-            pandocArgs = pandocArgs.concat([`--epub-embed-font="${fontPath}"`])
-          }
-          pandocArgs = pandocArgs.concat(await this.luaFilters('*.epub.lua', allLuaFilters))
-        }
-
-        if (!outputToProd) {
-          pandocArgs = pandocArgs.concat(['--toc', '--toc-depth', '1'])
-        }
-
-        pandocArgs = [
-          chapterFiles,
-          // '--smart',
-          '--standalone',
-          '-o',
-          `"${fullOutputFilePath}"`
-        ].concat(pandocArgs)
+        const pandocArgs = await this.generatePandocArgs(
+          filetype,
+          allLuaFilters,
+          chaptersFile,
+          tmpMDfileTex.path,
+          tmpMDfile.path,
+          outputToProd,
+          fullOutputFilePath          
+        )
 
         pandocRuns.push(this.runPandoc(pandocArgs))
-        // await this.runPandoc(pandocArgs).catch(async err => {
-        //   await this.fsUtils.createFile(tempMdFilePath, fullCleanedOrTransformedContent)
-        //   throw new ChptrError(
-        //     `Error trying to run Pandoc.  You need to have it installed and accessible globally, with version 2.7.3 minimally.\nLook into ${tempMdFilePath.toString()} with following error:\n${err
-        //       .toString()
-        //       .errorColor()}\nYou can delete temp file afterwards.`,
-        //     'command:build:index',
-        //     52
-        //   )
-        // })
       }
 
       await Promise.all(pandocRuns).catch(async err => {
@@ -824,7 +695,6 @@ export class CoreUtils {
 
       const allOutputFilePathPretty = allOutputFilePath.reduce((previous, current) => `${previous}\n    ${current}`, '')
       cli.action.stop(allOutputFilePathPretty.actionStopColor())
-      
     } catch (err) {
       throw new ChptrError(err, 'build.run', 3)
     } finally {
@@ -834,6 +704,135 @@ export class CoreUtils {
 
     await this.runPostBuildStep()
     return allOutputFilePath
+  }
+
+  public async generatePandocArgs(
+    filetype: any,
+    allLuaFilters: string[],
+    chaptersFile: string,
+    tmpMDfileTexPath : string,
+    tmpMDfilePath : string,
+    outputToProd: boolean,
+    fullOutputFilePath: string
+  ) : Promise<string[]> {
+    let pandocArgs: string[] = ['--strip-comments', '--from', 'markdown+emoji']
+
+    if (filetype === 'md') {
+      pandocArgs = pandocArgs.concat([
+        // '--number-sections',
+        '--to',
+        'markdown-raw_html+smart+fancy_lists+definition_lists',
+        '--wrap=none',
+        '--atx-headers'
+      ])
+      pandocArgs = pandocArgs.concat(await this.luaFilters('*.md.lua', allLuaFilters))
+    }
+
+    if (filetype === 'docx') {
+      const referenceDocFullPath = path.join(this.hardConfig.configPath, 'reference.docx')
+      if (await this.fsUtils.fileExists(referenceDocFullPath)) {
+        pandocArgs = pandocArgs.concat([`--reference-doc="${referenceDocFullPath}"`])
+      } else {
+        cli.warn(`For a better output, create an empty styled Word doc at ${referenceDocFullPath}`)
+      }
+
+      pandocArgs = pandocArgs.concat(await this.luaFilters('*.docx.lua', allLuaFilters))
+
+      pandocArgs = pandocArgs.concat([
+        '--to',
+        'docx+smart+fancy_lists+fenced_divs+definition_lists',
+        '--top-level-division=chapter'
+        // '--number-sections'
+      ])
+    }
+
+    if (filetype === 'html') {
+      const templateFullPath = path.join(this.hardConfig.configPath, 'template.html')
+      if (await this.fsUtils.fileExists(templateFullPath)) {
+        pandocArgs = pandocArgs.concat([`--template`, `"${templateFullPath}"`])
+      } else {
+        cli.warn(`For a better output, create an html template at ${templateFullPath}`)
+      }
+      pandocArgs = pandocArgs.concat(await this.luaFilters('*.html.lua', allLuaFilters))
+
+      const cssFullPath = path.join(this.hardConfig.configPath, 'template.css')
+      if (await this.fsUtils.fileExists(cssFullPath)) {
+        pandocArgs = pandocArgs.concat([`--css`, `"${cssFullPath}"`])
+      } else {
+        cli.warn(`For a better output, create a css template at ${cssFullPath}`)
+      }
+
+      pandocArgs = pandocArgs.concat([
+        '--to',
+        'html5+smart+fancy_lists+definition_lists',
+        // '--toc',
+        // '--toc-depth',
+        // '1',
+        '--top-level-division=chapter',
+        '--self-contained'
+      ])
+    }
+
+    if (filetype === 'pdf' || filetype === 'tex') {
+      chaptersFile = '"' + tmpMDfileTexPath + '" '
+
+      const templateFullPath = path.join(this.hardConfig.configPath, 'template.latex')
+      if (await this.fsUtils.fileExists(templateFullPath)) {
+        pandocArgs = pandocArgs.concat([`--template`, `"${templateFullPath}"`])
+      } else {
+        cli.warn(`For a better output, create a latex template at ${templateFullPath}`)
+      }
+
+      pandocArgs = pandocArgs.concat(await this.luaFilters('*.latex.lua', allLuaFilters))
+      pandocArgs = pandocArgs.concat([
+        '--top-level-division=chapter',
+        '--pdf-engine=xelatex',
+        '--to',
+        'latex+raw_tex+smart+fancy_lists-emoji+definition_lists'
+      ])
+    } else {
+      chaptersFile = '"' + tmpMDfilePath + '" '
+    }
+
+    if (filetype === 'epub') {
+      pandocArgs = pandocArgs.concat([
+        '--to',
+        'epub+smart+fancy_lists+definition_lists',
+        // '--toc',
+        // '--toc-depth',
+        // '1',
+        '--top-level-division=chapter'
+      ])
+
+      const cssFullPath = path.join(this.hardConfig.configPath, 'epub.css')
+      if (await this.fsUtils.fileExists(cssFullPath)) {
+        pandocArgs = pandocArgs.concat([`--css`, `"${cssFullPath}"`])
+      } else {
+        cli.warn(`For a better output, create a css template at ${cssFullPath}`)
+      }
+
+      const fontPath = path.join(this.hardConfig.configPath, 'DejaVuSans.ttf')
+      if (await this.fsUtils.fileExists(cssFullPath)) {
+        pandocArgs = pandocArgs.concat([`--epub-embed-font="${fontPath}"`])
+      }
+      pandocArgs = pandocArgs.concat(await this.luaFilters('*.epub.lua', allLuaFilters))
+    }
+
+    if (!outputToProd) {
+      pandocArgs = pandocArgs.concat(['--toc', '--toc-depth', '1'])
+    }
+
+    pandocArgs = [
+      chaptersFile,
+      // '--smart',
+      '--standalone',
+      '-o',
+      `"${fullOutputFilePath}"`
+    ].concat(pandocArgs)
+
+    return pandocArgs;
+    // pandocRuns.push(this.runPandoc(pandocArgs))
+    // return chaptersFile
   }
 
   private async luaFilters(wildcard: string, otherFiles: string[]): Promise<string[]> {
@@ -870,7 +869,7 @@ export class CoreUtils {
       }
     })
   }
-  private async runPandoc(options: string[]): Promise<string> {
+  public async runPandoc(options: string[]): Promise<string> {
     return new Promise((resolve, reject) => {
       const command = 'pandoc ' + options.join(' ')
       cli.info(`Executing child process with command ${command.resultSecondaryColor()}`)
