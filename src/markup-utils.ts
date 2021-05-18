@@ -52,44 +52,8 @@ export class MarkupUtils {
     const flattenedSummaryMarkupArray = await this.extractMarkupFromFiles(allSummaryFilesArray)
     const flattenedMarkupArray = await this.combineChapterAndSummaryMetadata(flattenedChapterMarkupArray, flattenedSummaryMarkupArray)
     await this.updateGlobalAndChapterMetadata(flattenedMarkupArray, outputFile)
-    /*
-    const table = tableize('file', 'diff')
-    const extractPromises: Promise<MarkupObj[]>[] = []
-    allChapterFilesArray.forEach(cf => {
-      extractPromises.push(this.extractMarkupFromChapterFile(cf))
-    })
 
-    await Promise.all(extractPromises).then(async fullMarkupArray => {
-      const flattenedMarkupArray: MarkupObj[] = ([] as MarkupObj[]).concat(...fullMarkupArray)
-
-      // const { markupByFile, markupByType } = this.objectifyMarkupArray(flattenedMarkupArray)
-      const markupByFile = this.getMarkupByFile(flattenedMarkupArray)
-      const markupByType = this.getMarkupByType(flattenedMarkupArray)
-
-      const markupExt = this.softConfig.configStyle.toLowerCase()
-      const allMarkups = [
-        { markupObj: markupByFile, fullPath: path.join(this.softConfig.buildDirectory, `${outputFile}.markupByFile.${markupExt}`) },
-        { markupObj: markupByType, fullPath: path.join(this.softConfig.buildDirectory, `${outputFile}.markupByType.${markupExt}`) }
-      ]
-
-      for (const markup of allMarkups) {
-        debug(`markup.fullPath=${markup.fullPath}`)
-        const comparedString = this.softConfig.stringifyPerStyle(markup.markupObj)
-
-        if (await this.contentHasChangedVersusFile(markup.fullPath, comparedString)) {
-          await this.fsUtils.writeFile(markup.fullPath, comparedString)
-          table.accumulator(this.softConfig.mapFileToBeRelativeToRootPath(markup.fullPath), 'updated')
-        }
-      }
-
-      const modifiedMetadataFiles = await this.writeMetadataInEachFile(markupByFile)
-      table.accumulatorArray(
-        modifiedMetadataFiles.map(val => ({ from: this.softConfig.mapFileToBeRelativeToRootPath(val.file), to: val.diff }))
-      )
-    })
-*/
     cli.action.stop(`done`.actionStopColor())
-    // table.show()
   }
   public async extractMarkupFromFiles(allFilesArray: string[]): Promise<MarkupObj[]> {
     const extractPromises: Promise<MarkupObj[]>[] = []
