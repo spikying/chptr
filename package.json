@@ -68,6 +68,7 @@
     "@oclif/tslint": "3.1.1",
     "@types/node": "14.0.27",
     "globby": "11.0.1",
+    "lodash": ">=4.17.21",
     "nyc": "15.1.0",
     "pkg": "4.4.9",
     "prettify": "0.1.7",
