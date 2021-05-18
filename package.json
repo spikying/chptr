@@ -52,7 +52,7 @@
     "minimatch": "3.0.4",
     "mkdirp": "1.0.4",
     "moment": "2.27.0",
-    "node-notifier": "7.0.2",
+    "node-notifier": "8.0.1",
     "sanitize-filename": "1.6.3",
     "simple-git": "2.15.0",
     "tmp-promise": "3.0.2",
