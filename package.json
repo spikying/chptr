@@ -13,7 +13,7 @@
   },
   "bugs": "https://github.com/spikying/chptr/issues",
   "dependencies": {
-    "@braintree/sanitize-url": "4.1.1",
+    "@braintree/sanitize-url": "6.0.0",
     "@oclif/command": "1.7.0",
     "@oclif/config": "1.16.0",
     "@oclif/errors": "1.3.3",
