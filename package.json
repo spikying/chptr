@@ -54,7 +54,7 @@
     "moment": "2.27.0",
     "node-notifier": "8.0.1",
     "sanitize-filename": "1.6.3",
-    "simple-git": "2.15.0",
+    "simple-git": "3.5.0",
     "tmp-promise": "3.0.2",
     "tslib": "2.0.0",
     "typescript-ioc": "3.2.2",
