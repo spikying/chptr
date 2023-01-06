@@ -51,7 +51,7 @@
     "latinize": "0.4.1",
     "minimatch": "3.0.4",
     "mkdirp": "1.0.4",
-    "moment": "2.27.0",
+    "moment": "2.29.4",
     "node-notifier": "8.0.1",
     "sanitize-filename": "1.6.3",
     "simple-git": "3.15.0",
