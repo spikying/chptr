@@ -14,3 +14,4 @@ chptr-macos
 chptr-win.exe
 oclif.lock
 oclif.manifest.json
+tsconfig.tsbuildinfo
