@@ -23,7 +23,6 @@ import sanitize = require('sanitize-filename')
 
 const debug = require('debug')('core-utils')
 
-// TODO: implement IoC (DI) with https://www.npmjs.com/package/typescript-ioc
 @Singleton
 export class CoreUtils {
   private cleanEmptySubgraphs = (content: string): string => {
@@ -603,7 +602,7 @@ export class CoreUtils {
         '--to',
         'markdown-raw_html+smart+fancy_lists+definition_lists',
         '--wrap=none',
-        '--atx-headers'
+        '--markdown-headings=atx'
       ]
       pandocArgs = pandocArgs.concat(await this.luaFilters('*.md.lua', allLuaFilters))
     }
@@ -621,7 +620,7 @@ export class CoreUtils {
       pandocArgs = [
         ...pandocArgs,
         '--to',
-        'docx+smart+fancy_lists+fenced_divs+definition_lists',
+        'docx', //+smart+fenced_divs+fancy_lists+definition_lists',
         '--top-level-division=chapter'
         // '--number-sections'
       ]
@@ -672,7 +671,7 @@ export class CoreUtils {
         '--top-level-division=chapter',
         '--pdf-engine=xelatex',
         '--to',
-        'latex+raw_tex+smart+fancy_lists-emoji+definition_lists'
+        'latex+raw_tex+smart' //+fancy_lists-emoji+definition_lists'
       ]
     } else {
       chaptersFile = '"' + tmpMDfilePath + '" '
