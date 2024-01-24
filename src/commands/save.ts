@@ -1,85 +1,98 @@
-import { flags } from '@oclif/command'
-// import { cli } from 'cli-ux'
+import { Args, Flags } from '@oclif/core'
 import * as minimatch from 'minimatch'
-import * as path from 'path'
+import * as path from 'node:path'
 
-import { ChapterId } from '../chapter-id'
-import { ChptrError } from '../chptr-error'
-import { QueryBuilder } from '../ui-utils'
-
-import { d } from './base'
-import Command from './initialized-base'
+import { ChapterId } from '../shared/chapter-id'
+import { ChptrError } from '../shared/chptr-error'
+import { QueryBuilder } from '../shared/ui-utils'
+import BaseCommand, { d } from './base'
+import { compact } from '../flags/compact-flag'
+import { Container } from 'typescript-ioc'
+import { CoreUtils } from '../shared/core-utils'
+import { FsUtils } from '../shared/fs-utils'
+import { GitUtils } from '../shared/git-utils'
+import { MarkupUtils } from '../shared/markup-utils'
+import { SoftConfig } from '../shared/soft-config'
+// import Command from './initialized-base'
 
 const debug = d('save')
 
-export default class Save extends Command {
-  static description = 'Parse modified text files, adjust sentence and paragraph endings, and commit files to repository.'
+export default class Save extends BaseCommand<typeof Save> {
+  static aliases = ['commit']
 
-  static flags = {
-    ...Command.flags,
-    number: flags.string({
-      char: 'n',
-      required: false,
-      description: 'Chapter number to filter which files to stage before saving to repository',
-      exclusive: ['filename']
-    }),
-    filename: flags.string({
-      char: 'f',
-      required: false,
-      description: 'Tracked filename or filename pattern to filter which files to stage before saving to repository'
-    }),
-    track: flags.boolean({
-      char: 't',
-      required: false,
-      description: 'Force tracking of file if not already in repository',
-      dependsOn: ['filename']
-    }),
-    empty: flags.boolean({
-      char: 'e',
-      required: false,
-      default: false,
-      description: 'No manual message in commit',
-      exclusive: ['message']
-    }),
-    message: flags.string({
-      char: 'm',
-      required: false,
-      default: '',
-      description: 'Message to use in commit to repository'
-    })
-  }
-
-  static args = [
+  static args = {
     // {
     //   name: 'message',
     //   description: 'Message to use in commit to repository',
     //   required: false,
     //   default: ''
     // }
-    {
-      name: 'numberOrFilename',
-      description: 'Chamber number to save, or tracked filename or filename pattern to save to repository',
-      required: false,
+    numberOrFilename: Args.string({
       default: '',
-      exclusive: ['number', 'filename']
-    }
-  ]
+      description: 'Chamber number to save, or tracked filename or filename pattern to save to repository',
+      exclusive: ['number', 'filename'],
+      name: 'numberOrFilename',
+      required: false
+    })
+  }
 
-  static aliases = ['commit']
+  static description = 'Parse modified text files, adjust sentence and paragraph endings, and commit files to repository.'
+
+  static flags = {
+    compact: compact,
+    empty: Flags.boolean({
+      char: 'e',
+      default: false,
+      description: 'No manual message in commit',
+      exclusive: ['message'],
+      required: false
+    }),
+    filename: Flags.string({
+      char: 'f',
+      description: 'Tracked filename or filename pattern to filter which files to stage before saving to repository',
+      required: false
+    }),
+    message: Flags.string({
+      char: 'm',
+      default: '',
+      description: 'Message to use in commit to repository',
+      required: false
+    }),
+    number: Flags.string({
+      char: 'n',
+      description: 'Chapter number to filter which files to stage before saving to repository',
+      exclusive: ['filename'],
+      required: false
+    }),
+    track: Flags.boolean({
+      char: 't',
+      dependsOn: ['filename'],
+      description: 'Force tracking of file if not already in repository',
+      required: false
+    })
+  }
 
   static hidden = false
 
   async run() {
     debug('Running Save command')
-    const { args, flags } = this.parse(Save)
 
-    const numberOrFilename = args.numberOrFilename
+    const fsUtils = Container.get(FsUtils)
+    const rootPath = Container.getValue('rootPath')
+    const softConfig = Container.get(SoftConfig)
+    const markupUtils = Container.get(MarkupUtils)
+    const gitUtils = Container.get(GitUtils)
+    const coreUtils = Container.get(CoreUtils)
+
+    const { args, flags } = await this.parse(Save)
+
+    const { numberOrFilename } = args
     let inputNumber = flags.number
     let inputFilename = flags.filename
 
     if (numberOrFilename != '') {
-      const numAtRegex = new RegExp(`^${this.softConfig.numbersPattern(true)}$`)
-      const numRegex = new RegExp(`^${this.softConfig.numbersPattern(false)}$`)
+      const numAtRegex = new RegExp(`^${softConfig.numbersPattern(true)}$`)
+      const numRegex = new RegExp(`^${softConfig.numbersPattern(false)}$`)
       if (numAtRegex.test(numberOrFilename) || numRegex.test(numberOrFilename)) {
         inputNumber = numberOrFilename
       } else {
@@ -87,35 +100,34 @@ export default class Save extends Command {
       }
     }
 
-    const chapterIdFilter = inputNumber
-      ? new ChapterId(this.softConfig.extractNumber(inputNumber), this.softConfig.isAtNumbering(inputNumber))
-      : null
+    const chapterIdFilter = inputNumber ? new ChapterId(softConfig.extractNumber(inputNumber), softConfig.isAtNumbering(inputNumber)) : null
 
-    const preStageFiles = chapterIdFilter ? await this.gitUtils.GetGitListOfStageableFiles(chapterIdFilter) : []
+    const preStageFiles = chapterIdFilter ? await gitUtils.GetGitListOfStageableFiles(chapterIdFilter) : []
 
     for (const toStageFile of preStageFiles) {
       const isChapterFile = chapterIdFilter
-        ? minimatch(toStageFile, this.softConfig.chapterWildcardWithNumber(chapterIdFilter))
-        : minimatch(toStageFile, this.softConfig.chapterWildcard(true)) || minimatch(toStageFile, this.softConfig.chapterWildcard(false))
+        ? minimatch(toStageFile, softConfig.chapterWildcardWithNumber(chapterIdFilter))
+        : minimatch(toStageFile, softConfig.chapterWildcard(true)) || minimatch(toStageFile, softConfig.chapterWildcard(false))
 
       if (isChapterFile) {
-        await this.markupUtils.UpdateSingleMetadata(toStageFile)
+        await markupUtils.UpdateSingleMetadata(toStageFile)
       }
     }
+
     const toStageFiles = chapterIdFilter
-      ? await this.gitUtils.GetGitListOfStageableFiles(chapterIdFilter)
+      ? await gitUtils.GetGitListOfStageableFiles(chapterIdFilter)
       : inputFilename
-      ? (await this.gitUtils.GetGitListOfStageableFiles()).filter(f => {
-          debug(`f=${f}, inputFilename=${inputFilename}`)
-          return minimatch(f, inputFilename || '')
-        })
-      : await this.gitUtils.GetGitListOfStageableFiles()
+        ? (await gitUtils.GetGitListOfStageableFiles()).filter(f => {
+            debug(`f=${f}, inputFilename=${inputFilename}`)
+            return minimatch(f, inputFilename || '')
+          })
+        : await gitUtils.GetGitListOfStageableFiles()
 
     if (toStageFiles.length === 0) {
-      const filepath = path.join(this.rootPath, inputFilename || '')
-      if (inputFilename && (await this.fsUtils.fileExists(filepath))) {
+      const filepath = path.join(rootPath, inputFilename || '')
+      if (inputFilename && (await fsUtils.fileExists(filepath))) {
         if (flags.track) {
-          toStageFiles.push(this.softConfig.mapFileToBeRelativeToRootPath(filepath))
+          toStageFiles.push(softConfig.mapFileToBeRelativeToRootPath(filepath))
         } else {
           const warnMsg =
             `That file is not tracked.  You may want to run "` +
@@ -136,6 +148,7 @@ export default class Save extends Command {
     if (!messageFromFlag && !emptyCommitMessage) {
       queryBuilder.add('message', queryBuilder.textinput('Message to use in commit to repository?', ''))
     }
+
     const queryResponses: any = await queryBuilder.responses()
 
     debug(`emptyCommitMessage: ${JSON.stringify(emptyCommitMessage)}`)
@@ -145,17 +158,6 @@ export default class Save extends Command {
       'Modified files:\n    ' +
       `${toStageFiles.join('\n    ')}`
 
-    await this.coreUtils.preProcessAndCommitFiles(message, toStageFiles)
+    await coreUtils.preProcessAndCommitFiles(message, toStageFiles)
   }
-
-  // public async UpdateSingleMetadata(chapterFile: string) {
-  //   cli.action.start('Extracting single metadata'.actionStartColor())
-
-  //   const markupObjArr = await this.markupUtils.extractMarkupFromChapterFile(chapterFile)
-  //   const markupByFile = this.markupUtils.getMarkupByFile(markupObjArr)
-  //   const modifiedMetadataFiles = await this.markupUtils.writeMetadataInEachFile(markupByFile)
-  //   const modifiedFile = modifiedMetadataFiles[0]
-
-  //   cli.action.stop(`updated ${modifiedFile.file} with ${modifiedFile.diff}`.actionStopColor())
-  // }
 }

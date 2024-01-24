@@ -1,166 +1,138 @@
-import { flags } from '@oclif/command'
-import { cli } from 'cli-ux'
+import { Args, Flags, ux } from '@oclif/core'
+import { glob } from 'glob'
 import * as minimatch from 'minimatch'
-import * as path from 'path'
+import * as path from 'node:path'
 
-import { ChapterId } from '../chapter-id'
-import { ChptrError } from '../chptr-error'
-
-import { d } from './base'
-import Command from './compactable-base'
+import { ChptrError } from '../shared/chptr-error'
+import BaseCommand, { d } from './base'
+import { compact } from '../flags/compact-flag'
+import { Container } from 'typescript-ioc'
+import { CoreUtils } from '../shared/core-utils'
+import { SoftConfig } from '../shared/soft-config'
+import { FsUtils } from '../shared/fs-utils'
+import { Statistics } from '../shared/statistics'
+import { MarkupUtils } from '../shared/markup-utils'
+// import Command from './compactable-base'
 
 const debug = d('split')
 
-export default class Split extends Command {
+export default class Split extends BaseCommand<typeof Split> {
+  static aliases = ['divide']
+
+  static args = { origin: Args.string({ description: 'Chapter number to split', name: 'origin', required: false }) }
+
   static description = 'Outputs a chapter file for each `# Title level 1` in an original chapter.'
 
   static flags = {
-    ...Command.flags,
-    compact: flags.boolean({
-      char: 'c',
-      description: 'Compact chapter numbers at the same time',
-      default: false
-    }),
-    type: flags.string({
+    compact: compact,
+    // compact: Flags.boolean({
+    //   char: 'c',
+    //   default: false,
+    //   description: 'Compact chapter numbers at the same time'
+    // }),
+    type: Flags.string({
       char: 't',
-      description: 'Parse either chapter file or summary file.  The other file will be untouched.',
       default: 'chapter',
+      description: 'Parse either chapter file or summary file.  The other file will be untouched.',
       options: ['summary', 'chapter'],
       required: true
     })
   }
 
-  static args = [{ name: 'origin', description: 'Chapter number to split', required: false }]
-
-  static aliases = ['divide']
-
   async run() {
     debug('In Split command')
-    const { args, flags } = this.parse(Split)
-    const type = flags.type
-    const compact = flags.compact
+    const { args, flags } = await this.parse(Split)
+    const { type } = flags
+    const { compact } = flags
+
+    const coreUtils = Container.get(CoreUtils)
+    const softConfig = Container.get(SoftConfig)
+    const rootPath = Container.getValue('rootPath')
+    const fsUtils = Container.get(FsUtils)
+    const statistics = Container.get(Statistics)
+    const markupUtils = Container.get(MarkupUtils)
 
     debug(`args: ${JSON.stringify(args)}`)
-    const chapterId = await this.coreUtils.checkArgPromptAndExtractChapterId(args.origin, 'What chapter to split?')
+    const chapterId = await coreUtils.checkArgPromptAndExtractChapterId(args.origin || '', 'What chapter to split?')
     if (!chapterId) {
       throw new ChptrError('No chapter found with id given', 'split.run', 45)
     }
+
     debug(`chapterId = ${chapterId.toString()}`)
 
     let commitMsg = `Split ${type} ${chapterId.toString()} `
     const commitFiles: string[] = []
 
-    const toAnalyseFiles = await this.fsUtils.listFiles(
+    const toAnalyseFiles = await glob(
       path.join(
-        this.rootPath,
+        rootPath,
         type === 'chapter'
-          ? this.softConfig.chapterWildcardWithNumber(chapterId)
+          ? softConfig.chapterWildcardWithNumber(chapterId)
           : type === 'summary'
-          ? this.softConfig.summaryWildcardWithNumber(chapterId)
-          : ''
+            ? softConfig.summaryWildcardWithNumber(chapterId)
+            : ''
       )
     )
     const toAnalyseFile = toAnalyseFiles && toAnalyseFiles.length === 1 ? toAnalyseFiles[0] : null
-    if (!toAnalyseFile) {
-      throw new ChptrError('There should be one and only one file fitting this pattern.', 'split.run', 16)
-    } else {
+    if (toAnalyseFile) {
       commitFiles.push(toAnalyseFile)
+    } else {
+      throw new ChptrError('There should be one and only one file fitting this pattern.', 'split.run', 16)
     }
-    let toEditPretty = `\n    analyzing from file ${this.softConfig.mapFileToBeRelativeToRootPath(toAnalyseFile)}`
-    const initialContent = await this.fsUtils.readFileContent(toAnalyseFile)
+
+    const toEditPretty = `\n    analyzing from file ${softConfig.mapFileToBeRelativeToRootPath(toAnalyseFile)}`
+    const initialContent = await fsUtils.readFileContent(toAnalyseFile)
     const replacedContents = await this.splitContentByTitles(initialContent)
 
     if (replacedContents.length > 1) {
-      // cli.info('Stashing chapter files...'.resultNormalColor())
-      // const atEndNum = this.statistics.getHighestNumber(true)
-      //
-      // //move file to the end of the atnumber pile unless it's already there
-      // if (!chapterId.isAtNumber || chapterId.num !== atEndNum) {
-      //   await this.coreUtils.reorder(`${chapterId.toString()}`, '@end')
-      // }
+      ux.info('Reading and processing chapter...'.resultNormalColor())
 
-      cli.info('Reading and processing chapter...'.resultNormalColor())
+      await statistics.refreshStats()
 
-      await this.statistics.refreshStats()
-      // const stashedId = new ChapterId(this.statistics.getHighestNumber(true), true)
-      // debug(`stashedId=${stashedId.toString()}`)
-      // await cli.anykey()
-
-      cli.info('Adding new chapters...'.resultNormalColor())
+      ux.info('Adding new chapters...'.resultNormalColor())
       commitMsg += `in ${replacedContents.length} parts:`
 
       // TODO: first chapter keeps its files and name, and all others are put in @end queue
 
-      // const addedTempIds: ChapterId[] = []
       // not looping in first segment
       for (let i = 1; i < replacedContents.length; i++) {
         const titleAndContentPair = replacedContents[i]
-        const title = this.markupUtils.extractTitleFromString(titleAndContentPair[0]) || 'chapter'
+        const title = markupUtils.extractTitleFromString(titleAndContentPair[0]) || 'chapter'
         commitMsg += `\n    ${title}`
 
         debug(`titleAndContentPair=${JSON.stringify(titleAndContentPair)}`)
         // await cli.anykey()
 
-        await this.statistics.refreshStats()
+        await statistics.refreshStats()
 
-        const newContent = this.coreUtils.processContent(titleAndContentPair.join(''))
+        const newContent = coreUtils.processContent(titleAndContentPair.join(''))
         debug(`newContent:\n${newContent}`)
 
-        const addedFiles = await this.coreUtils.addChapterFiles(title, true, undefined, newContent)
+        const addedFiles = await coreUtils.addChapterFiles(title, true, undefined, newContent)
         // await this.gitUtils.add(addedFiles)
         commitFiles.push(...addedFiles)
-        cli.info(`Added\n    ${addedFiles.join('\n    ')}`)
-
-        // const newId = new ChapterId(stashedId.num + (i + 1) * this.softConfig.config.numberingStep, true)
-        // const filename =
-        //   type === 'chapter'
-        //     ? this.softConfig.chapterFileNameFromParameters(newId, title)
-        //     : type === 'summary'
-        //     ? this.softConfig.summaryFileNameFromParameters(newId, title)
-        //     : ''
-
-        // const filepath = path.join(this.rootPath, filename)
-        // // const newContent = this.coreUtils.processContent(titleAndContentPair.join(''))
-        // // debug(`filepath: ${filepath}\nnewContent:\n${newContent}`)
-        // await this.fsUtils.writeFile(filepath, newContent)
-
-        // if (type === 'chapter') {
-        //   await this.markupUtils.UpdateSingleMetadata(filepath)
-        // }
+        ux.info(`Added\n    ${addedFiles.join('\n    ')}`)
 
         addedFiles.forEach(async file => {
-          if (minimatch(file, this.softConfig.chapterWildcard(true))) {
-            await this.markupUtils.UpdateSingleMetadata(file)
+          if (minimatch(file, softConfig.chapterWildcard(true))) {
+            await markupUtils.UpdateSingleMetadata(file)
             // addedTempIds.push(new ChapterId(this.softConfig.extractNumber(file), true))
           }
         })
       }
 
-      await this.fsUtils.writeFile(toAnalyseFile, this.coreUtils.processContent(replacedContents[0].join('')))
+      await fsUtils.writeFile(toAnalyseFile, coreUtils.processContent(replacedContents[0].join('')))
 
-      // cli.info('Reinserting newly created chapters...'.resultNormalColor())
-      // commitMsg += `\nwith Ids `
-
-      // for (let i = 0; i < addedTempIds.length; i++) {
-      //   const addedId = addedTempIds[i]
-      //   toEditPretty += `\n    inserted chapter ${addedId.toString()}`
-
-      //   await this.statistics.refreshStats()
-      //   await this.coreUtils.reorder(addedId.toString(), `${chapterId.isAtNumber ? '@' : ''}${chapterId.num + i}`)
-      //   commitMsg += `${chapterId.isAtNumber ? '@' : ''}${chapterId.num + i}, `
-      // }
       commitMsg = commitMsg.replace(/, $/, '')
 
-      cli.info(`modified files:${toEditPretty.resultHighlighColor()}`.resultNormalColor())
-
-      // await this.coreUtils.deleteFilesFromRepo(stashedId.toString())
+      ux.info(`modified files:${toEditPretty.resultHighlighColor()}`.resultNormalColor())
 
       if (compact) {
-        await this.coreUtils.compactFileNumbers()
+        await coreUtils.compactFileNumbers()
         commitMsg += `\nCompacted file numbers`
       }
 
-      await this.coreUtils.preProcessAndCommitFiles(commitMsg, commitFiles)
+      await coreUtils.preProcessAndCommitFiles(commitMsg, commitFiles)
     } else {
       throw new ChptrError(`File with id ${chapterId.toString()} does not have many 1st level titles.  Nothing to split.`, 'split.run', 49)
     }
@@ -168,10 +140,7 @@ export default class Split extends Command {
 
   private splitContentByTitles(initialContent: string): string[][] {
     const titleRegex = /(\n# .*?\n\n)/gm
-    const preResult = initialContent
-      .split(titleRegex)
-      .filter(v => v)
-      .reverse()
+    const preResult = initialContent.split(titleRegex).filter(Boolean).reverse()
     const result: string[][] = []
     while (preResult.length > 0) {
       result.push([preResult.pop() || '', preResult.pop() || ''])

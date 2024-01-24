@@ -1,72 +1,86 @@
-import { flags } from '@oclif/command'
-import { cli } from 'cli-ux'
-import * as path from 'path'
+import { Args, Flags, ux } from '@oclif/core'
+import { glob } from 'glob'
+import * as path from 'node:path'
 
-import { ChapterId } from '../chapter-id'
-import { ChptrError } from '../chptr-error'
-import { QueryBuilder } from '../ui-utils'
-
-import { d } from './base'
-import Command from './initialized-base'
+import { ChapterId } from '../shared/chapter-id'
+import { ChptrError } from '../shared/chptr-error'
+import { QueryBuilder } from '../shared/ui-utils'
+import BaseCommand, { d } from './base'
+import { FsUtils } from '../shared/fs-utils'
+import { Container } from 'typescript-ioc'
+import { SoftConfig } from '../shared/soft-config'
+import { MarkupUtils } from '../shared/markup-utils'
+import { Statistics } from '../shared/statistics'
+import { GitUtils } from '../shared/git-utils'
+import { CoreUtils } from '../shared/core-utils'
+// import Command from './initialized-base'
 
 const debug = d('rename')
 
-export default class Rename extends Command {
-  static description = 'Modify chapter title in text, metadata and filename or tracked filename'
-
-  static flags = {
-    ...Command.flags,
-    title: flags.boolean({
-      char: 't',
-      description: "Use chapter's title as new name.  Will supercede a `newName` argument.",
-      default: false
+export default class Rename extends BaseCommand<typeof Rename> {
+  static args = {
+    chapterIdOrFilename: Args.string({
+      default: '',
+      description: 'Chapter number or tracked filename to modify',
+      name: 'chapterIdOrFilename',
+      required: false
     }),
-    all: flags.boolean({
-      char: 'a',
-      description: 'Will run on every chapter file.  Will ignore a `chapterIdOrFilename argument.`',
-      dependsOn: ['title'],
-      default: false
-    }),
-    save: flags.boolean({
-      char: 's',
-      description: 'Commit to git at the same time.',
-      default: false
+    newName: Args.string({
+      default: '',
+      description: 'New chapter name',
+      name: 'newName',
+      required: false
     })
   }
 
-  static args = [
-    {
-      name: 'chapterIdOrFilename',
-      description: 'Chapter number or tracked filename to modify',
-      required: false,
-      default: ''
-    },
-    {
-      name: 'newName',
-      description: 'New chapter name',
-      required: false,
-      default: ''
-    }
-  ]
+  static description = 'Modify chapter title in text, metadata and filename or tracked filename'
+
+  static flags = {
+    all: Flags.boolean({
+      char: 'a',
+      default: false,
+      dependsOn: ['title'],
+      description: 'Will run on every chapter file.  Will ignore a `chapterIdOrFilename argument.`'
+    }),
+    save: Flags.boolean({
+      char: 's',
+      default: false,
+      description: 'Commit to git at the same time.'
+    }),
+    title: Flags.boolean({
+      char: 't',
+      default: false,
+      description: "Use chapter's title as new name.  Will supercede a `newName` argument."
+    })
+  }
 
   static hidden = false
 
+  private fsUtils: FsUtils = Container.get(FsUtils)
+  private rootPath = Container.getValue('rootPath')
+  private softConfig = Container.get(SoftConfig)
+  private markupUtils = Container.get(MarkupUtils)
+  private statistics = Container.get(Statistics)
+  private gitUtils = Container.get(GitUtils)
+  private coreUtils = Container.get(CoreUtils)
+
   async run() {
     debug('Running Rename command')
-    const { args, flags } = this.parse(Rename)
+    const { args, flags } = await this.parse(Rename)
 
     const queryBuilder = new QueryBuilder()
 
     const allFlag = flags.all
 
     if (!args.chapterIdOrFilename && !allFlag) {
-      //no chapter given; must ask for it
+      // no chapter given; must ask for it
       queryBuilder.add('chapterIdOrFilename', queryBuilder.textinput('What chapter number to rename, or tracked filename?', ''))
     }
 
     if (!args.newName && !flags.title) {
       queryBuilder.add('newName', queryBuilder.textinput('What name to give it?', ''))
     }
+
     const queryResponses: any = await queryBuilder.responses()
 
     const chapterIdString = args.chapterIdOrFilename || queryResponses.chapterIdOrFilename || ''
@@ -86,15 +100,14 @@ export default class Rename extends Command {
     }
 
     for (const chapterId of chapterIds) {
-      cli.action.start(`Renaming files for chapter ${chapterId.toString()}`.actionStartColor())
+      ux.action.start(`Renaming files for chapter ${chapterId.toString()}`.actionStartColor())
 
-      const chapterFile = (await this.fsUtils.listFiles(path.join(this.rootPath, this.softConfig.chapterWildcardWithNumber(chapterId))))[0]
-      const summaryFile = (await this.fsUtils.listFiles(path.join(this.rootPath, this.softConfig.summaryWildcardWithNumber(chapterId))))[0]
-      const metadataFile = (
-        await this.fsUtils.listFiles(path.join(this.rootPath, this.softConfig.metadataWildcardWithNumber(chapterId)))
-      )[0]
-      debug(`tracked Files: ${JSON.stringify(await this.fsUtils.listFiles(path.join(this.rootPath, 'readme.md')))}`)
-      var trackedFile = (await this.fsUtils.listFiles(path.join(this.rootPath, chapterIdString)))[0]
+      const [chapterFile] = await glob(path.join(this.rootPath, this.softConfig.chapterWildcardWithNumber(chapterId)))
+      const [summaryFile] = await glob(path.join(this.rootPath, this.softConfig.summaryWildcardWithNumber(chapterId)))
+      const [metadataFile] = await glob(path.join(this.rootPath, this.softConfig.metadataWildcardWithNumber(chapterId)))
+
+      debug(`tracked Files: ${JSON.stringify(await glob(path.join(this.rootPath, 'readme.md')))}`)
+      let [trackedFile] = await glob(path.join(this.rootPath, chapterIdString))
       if (trackedFile == '.') {
         trackedFile = ''
       }
@@ -108,9 +121,9 @@ export default class Rename extends Command {
 
       let didUpdates: {
         filename: string
-        title: boolean
         newFileName: string
         rename: string
+        title: boolean
       }[]
 
       if (trackedFile) {
@@ -118,9 +131,9 @@ export default class Rename extends Command {
         didUpdates = [
           {
             filename: trackedFile,
-            title: false,
-            newFileName: `${newNameForFile}`, //${tfExt}`,
-            rename: ''
+            newFileName: `${newNameForFile}`, // ${tfExt}`,
+            rename: '',
+            title: false
           }
         ]
       } else {
@@ -144,21 +157,21 @@ export default class Rename extends Command {
 
         const didUpdateChapter = {
           filename: chapterFile,
-          title: await this.replaceTitleInMarkdown(chapterFile, newName),
           newFileName: this.softConfig.chapterFileNameFromParameters(chapterId, newNameForFile),
-          rename: ''
+          rename: '',
+          title: await this.replaceTitleInMarkdown(chapterFile, newName)
         }
         const didUpdateSummary = {
           filename: summaryFile,
-          title: await this.replaceTitleInMarkdown(summaryFile, newName),
           newFileName: this.softConfig.summaryFileNameFromParameters(chapterId, newNameForFile),
-          rename: ''
+          rename: '',
+          title: await this.replaceTitleInMarkdown(summaryFile, newName)
         }
         const didUpdateMetadata = {
           filename: metadataFile,
-          title: await this.replaceTitleInObject(metadataFile, newName),
           newFileName: this.softConfig.metadataFileNameFromParameters(chapterId, newNameForFile),
-          rename: ''
+          rename: '',
+          title: await this.replaceTitleInObject(metadataFile, newName)
         }
         didUpdates = [didUpdateChapter, didUpdateSummary, didUpdateMetadata]
         debug(`didUpdates: ${JSON.stringify(didUpdates)}`)
@@ -170,6 +183,7 @@ export default class Rename extends Command {
           didUpdate.rename = didUpdate.newFileName
           await this.gitUtils.mv(this.softConfig.mapFileToBeRelativeToRootPath(didUpdate.filename), didUpdate.newFileName)
         }
+
         debug('pong')
       }
 
@@ -180,7 +194,7 @@ export default class Rename extends Command {
           })`,
         ''
       )
-      cli.action.stop(toRenamePretty.actionStopColor())
+      ux.action.stop(toRenamePretty.actionStopColor())
 
       if (flags.save) {
         const toCommitFiles = await this.gitUtils.GetGitListOfStageableFiles(chapterId)
@@ -190,6 +204,11 @@ export default class Rename extends Command {
     }
   }
 
+  private async extractTitleFromFile(chapterFile: string): Promise<null | string> {
+    const initialContent = await this.fsUtils.readFileContent(path.join(this.rootPath, chapterFile))
+    return this.markupUtils.extractTitleFromString(initialContent)
+  }
+
   private async replaceTitleInMarkdown(actualFile: string, newTitle: string): Promise<boolean> {
     const initialContent = await this.fsUtils.readFileContent(actualFile)
     const replacedContent = initialContent.replace(this.markupUtils.titleRegex, `\n# ${newTitle}\n`)
@@ -197,6 +216,7 @@ export default class Rename extends Command {
       await this.fsUtils.writeFile(actualFile, replacedContent)
       return true
     }
+
     return false
   }
 
@@ -210,9 +230,9 @@ export default class Rename extends Command {
       obj.computed.title = newTitle
       obj.summary.title = newTitle
       // extractedMarkup.title = newTitle
-    } catch (err) {
+    } catch (error: any) {
       throw new ChptrError(
-        `Could not load and extract metadata from ${metadataFile}.  ${err.toString().errorColor()}`,
+        `Could not load and extract metadata from ${metadataFile}.  ${error.toString().errorColor()}`,
         'rename.replacetitleinobject',
         48
       )
@@ -223,13 +243,8 @@ export default class Rename extends Command {
     if (initialContent !== updatedContent) {
       await this.fsUtils.writeFile(metadataFile, updatedContent)
       return true
-    } else {
-      return false
     }
-  }
 
-  private async extractTitleFromFile(chapterFile: string): Promise<string | null> {
-    const initialContent = await this.fsUtils.readFileContent(path.join(this.rootPath, chapterFile))
-    return this.markupUtils.extractTitleFromString(initialContent)
+    return false
   }
 }

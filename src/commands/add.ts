@@ -1,20 +1,34 @@
-import { flags } from '@oclif/command'
-// import { cli } from 'cli-ux'
+import { Args, Flags } from '@oclif/core'
 
-// import { ChptrError } from '../chptr-error'
-import { QueryBuilder } from '../ui-utils'
-
-import { d } from './base'
-import Command from './compactable-base'
-import { ChapterId } from '../chapter-id'
+import BaseCommand, { d } from './base'
+import { compact } from '../flags/compact-flag'
+import { Container } from 'typescript-ioc'
+import { CoreUtils } from '../shared/core-utils'
+import { QueryBuilder } from '../shared/ui-utils'
+// import Command from './compactable-base'
 
 const debug = d('add')
 
-export default class Add extends Command {
+export default class Add extends BaseCommand<typeof Add> {
+  static args = {
+    name: Args.string({
+      default: '',
+      description: 'name of chapter to add',
+      name: 'name',
+      required: false
+    }),
+    number: Args.string({
+      default: 'end',
+      description:
+        'force this number to be used, if available.  AtNumbering will be determined by the presence or absence of @ sign.  Defaults to `end`.',
+      required: false
+    })
+  }
+
   static description = 'Adds a file or set of files as a new chapter, locally and in repository'
 
   static flags = {
-    ...Command.flags
+    compact: compact
     // atnumbered: flags.boolean({
     //   char: 'a',
     //   description: 'Add an @numbered chapter',
@@ -22,27 +36,13 @@ export default class Add extends Command {
     // })
   }
 
-  static args = [
-    {
-      name: 'number',
-      description:
-        'force this number to be used, if available.  AtNumbering will be determined by the presence or absence of @ sign.  Defaults to `end`.',
-      required: false,
-      default: 'end'
-    },
-    {
-      name: 'name',
-      description: 'name of chapter to add',
-      required: false,
-      default: ''
-    }
-  ]
-
   static hidden = false
 
   async run() {
     debug(`Running Add command`)
-    const { args, flags } = this.parse(Add)
+    const { args, flags } = await this.parse(Add)
+
+    const coreUtils = Container.get(CoreUtils)
 
     const queryBuilder = new QueryBuilder()
     if (!args.name) {
@@ -53,17 +53,17 @@ export default class Add extends Command {
 
     const name: string = args.name || queryResponses.name
 
-    const futureId = await this.coreUtils.checkArgPromptAndExtractChapterId(args.number, '', true)
+    const futureId = await coreUtils.checkArgPromptAndExtractChapterId(args.number, '', true)
 
-    const toStageFiles = await this.coreUtils.addChapterFiles(
+    const toStageFiles = await coreUtils.addChapterFiles(
       name,
       futureId ? futureId.isAtNumber : false,
       futureId ? futureId.num.toString() : ''
-    ) // flags.atnumbered, args.number)
+    )
 
     const commitMessage = `added\n    ${toStageFiles.join('\n    ')}`
 
-    await this.coreUtils.addDigitsToNecessaryStacks()
-    await this.coreUtils.preProcessAndCommitFiles(commitMessage, toStageFiles)
+    await coreUtils.addDigitsToNecessaryStacks()
+    await coreUtils.preProcessAndCommitFiles(commitMessage, toStageFiles)
   }
 }

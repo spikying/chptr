@@ -1,37 +1,28 @@
-import { flags } from '@oclif/command'
-import { Input } from '@oclif/parser'
-import { exec } from 'child_process'
-import cli from 'cli-ux'
-import yaml = require('js-yaml')
-import * as path from 'path'
-import { file as tmpFile } from 'tmp-promise'
+import { Flags } from '@oclif/core'
 
-import { BootstrapChptr } from '../../bootstrap-functions'
-import { ChapterId } from '../../chapter-id'
-import { ChptrError } from '../../chptr-error'
-import { BuildType } from '../../core-utils'
-import { QueryBuilder } from '../../ui-utils'
-import { d } from '../base'
-
-import Command from './metadata'
+import { BuildType, CoreUtils } from '../../shared/core-utils'
+import { QueryBuilder } from '../../shared/ui-utils'
+import BaseCommand, { d } from '../base'
+import { Container } from 'typescript-ioc'
+import MetadataExecutor from '../../shared/metadata-executor'
+import { metadataFlags } from './metadata'
 
 const debug = d('build')
 
-export default class Build extends Command {
+export default class Build extends BaseCommand<typeof Build> {
+  static aliases = ['compile']
   static readonly exportableFileTypes = ['md', 'pdf', 'docx', 'html', 'epub', 'tex']
-
   static description = `Takes all original Markdown files and outputs a single file without metadata and comments.  Handles these output formats: ${Build.exportableFileTypes.join(
     ', '
   )}.  Gives some insight into writing rate.`
 
   static flags = {
-    ...Command.flags,
-    type: flags.string({
-      char: 't',
-      description: 'filetype to export to.  Can be set multiple times.',
-      options: Build.exportableFileTypes.concat('all'),
-      default: '',
-      multiple: true
+    ...metadataFlags,
+    outputToPreProd: Flags.boolean({
+      char: 'D',
+      default: false,
+      description: 'Keep paragraph numbers, but clean markup as if doing an output to Prod.',
+      exclusive: ['outputToeProd']
     }),
     // removemarkup: flags.boolean({
     //   char: 'r',
@@ -43,65 +34,67 @@ export default class Build extends Command {
     //   description: 'Add summaries in output, before actual content',
     //   default: false
     // }),
-    outputToProd: flags.boolean({
+    outputToProd: Flags.boolean({
       char: 'P',
-      description: 'Remove paragraph numbers, clean markup in output and remove chapter titles.  When false, adds summaries in output.',
       default: false,
+      description: 'Remove paragraph numbers, clean markup in output and remove chapter titles.  When false, adds summaries in output.',
       exclusive: ['outputToPreProd']
     }),
-    outputToPreProd: flags.boolean({
-      char: 'D',
-      description: 'Keep paragraph numbers, but clean markup as if doing an output to Prod.',
-      default: false,
-      exclusive: ['outputToeProd']
+    type: Flags.string({
+      char: 't',
+      description: 'filetype to export to.  Can be set multiple times.',
+      multiple: true,
+      options: [...Build.exportableFileTypes, 'all']
     }),
-    withFullIntermediaryOutput: flags.boolean({
+    withFullIntermediaryOutput: Flags.boolean({
       char: 'i',
-      description: 'With full intermediary output as .md file',
-      default: false
+      default: false,
+      description: 'With full intermediary output as .md file'
     })
   }
 
-  static aliases = ['compile']
   static hidden = false
 
-  async run() {
+  public async run() {
     debug('Running Build command')
 
-    // const tmpMDfile = await tmpFile()
-    // const tmpMDfileTex = await tmpFile()
-    // debug(`temp files = ${tmpMDfile.path} and ${tmpMDfileTex.path}`)
-
-    // try {
-    const { flags } = this.parse(this.constructor as Input<any>)
+    // const { flags } = await this.parse({
+    //   args: this.ctor.args,
+    //   baseFlags: (super.ctor as typeof Build).baseFlags,
+    //   enableJsonFlag: this.ctor.enableJsonFlag,
+    //   flags: this.ctor.flags,
+    //   strict: this.ctor.strict
+    // })
 
     // const removeMarkup = flags.removemarkup
     // const withSummaries = flags.withsummaries
-    const outputToProd = flags.outputToProd
-    const outputToPreProd = flags.outputToPreProd
-    const withIntermediary = flags.withFullIntermediaryOutput
+    const { outputToProd } = this.flags
+    const { outputToPreProd } = this.flags
+    const withIntermediary = this.flags.withFullIntermediaryOutput
 
-    let outputFiletype = flags.type
+    let outputFiletype = this.flags.type
     if (!outputFiletype) {
       const queryBuilder = new QueryBuilder()
       queryBuilder.add('type', queryBuilder.checkboxinput(Build.exportableFileTypes, 'Which filetype(s) to output?', ['md']))
       const queryResponses: any = await queryBuilder.responses()
       outputFiletype = queryResponses.type
     }
-    if (outputFiletype.indexOf('all') >= 0) {
+
+    if (outputFiletype!.includes('all')) {
       outputFiletype = Build.exportableFileTypes
     }
 
-    await this.RunMetadata(flags)
+    const executor = Container.get(MetadataExecutor)
+    await executor.RunMetadata(this.flags)
 
     let buildType: BuildType = BuildType.dev
     if (outputToProd) {
       buildType = BuildType.prod
-    }
-    else if (outputToPreProd) {
+    } else if (outputToPreProd) {
       buildType = BuildType.preProd
     }
 
-    await this.coreUtils.buildOutput(buildType, withIntermediary, outputFiletype, this.outputFile)
+    const coreUtils = Container.get(CoreUtils)
+    await coreUtils.buildOutput(buildType, withIntermediary, outputFiletype, executor.GetOutputFile(this.flags))
   }
 }

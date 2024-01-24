@@ -1,115 +1,113 @@
-import { flags } from '@oclif/command'
-import { cli } from 'cli-ux'
-import * as path from 'path'
-import * as simplegit from 'simple-git/promise'
+import { Args, Flags, ux } from '@oclif/core'
+import * as path from 'node:path'
+import { SimpleGit } from 'simple-git'
 import * as validator from 'validator'
 
-import { ChptrError } from '../chptr-error'
-import { Author, SoftConfig } from '../soft-config'
-import { QueryBuilder, tableize } from '../ui-utils'
-
-import Command, { d } from './base'
+import { ChptrError } from '../shared/chptr-error'
+import { Author, SoftConfig } from '../shared/soft-config'
+import { QueryBuilder, tableize } from '../shared/ui-utils'
+import BaseCommand, { d } from './base'
+import { Container } from 'typescript-ioc'
+import { FsUtils } from '../shared/fs-utils'
+import { HardConfig } from '../shared/hard-config'
 
 const debug = d('command:init')
 
-export default class Init extends Command {
-  static readonly directoryStructureList = [
-    { id: '/', chapterPattern: 'NUM NAME.chptr', summaryPattern: 'NUM.summary.md', metadataPattern: 'NUM.metadata.<ext>' },
-    {
-      id: 'chapters/',
-      chapterPattern: 'chapters/NUM NAME.chptr',
-      summaryPattern: 'chapters/NUM.summary.md',
-      metadataPattern: 'chapters/NUM.metadata.<ext>'
-    },
-    {
-      id: 'chapters/number/',
-      chapterPattern: 'chapters/NUM NAME/chptr.md',
-      summaryPattern: 'chapters/NUM NAME/summary.md',
-      metadataPattern: 'chapters/NUM NAME/metadata.<ext>'
-    }
-  ]
-  static readonly directoryStructureOptions = Init.directoryStructureList.map(d => d.id)
+export default class Init extends BaseCommand<typeof Init> {
+  static aliases = ['setup']
+  static args = {
+    name: Args.string({
+      default: '',
+      description: 'Name of project',
+      name: 'name',
+      required: false
+      // parse: sanitizeFileName
+    })
+  }
+
   static description = 'Generates basic config files for a new novel project'
 
+  static readonly directoryStructureList = [
+    { chapterPattern: 'NUM NAME.chptr', id: '/', metadataPattern: 'NUM.metadata.<ext>', summaryPattern: 'NUM.summary.md' },
+    {
+      chapterPattern: 'chapters/NUM NAME.chptr',
+      id: 'chapters/',
+      metadataPattern: 'chapters/NUM.metadata.<ext>',
+      summaryPattern: 'chapters/NUM.summary.md'
+    },
+    {
+      chapterPattern: 'chapters/NUM NAME/chptr.md',
+      id: 'chapters/number/',
+      metadataPattern: 'chapters/NUM NAME/metadata.<ext>',
+      summaryPattern: 'chapters/NUM NAME/summary.md'
+    }
+  ]
+
+  static readonly directoryStructureOptions = Init.directoryStructureList.map(d => d.id)
+
   static flags = {
-    ...Command.flags,
-    gitRemote: flags.string({
-      char: 'r',
-      required: false,
-      description: 'Git address of remote repository.'
-    }),
-    force: flags.string({
-      char: 'f',
-      description: 'Overwrite config files if they exist.  Specify a filename to overwrite only one; write `true` to overwrite all.',
-      default: 'false'
-    }),
-    author: flags.string({
+    author: Flags.string({
       char: 'a',
       description: 'Name of author of project'
     }),
-    email: flags.string({
+    directorystructure: Flags.string({
+      char: 'd',
+      default: '',
+      description: 'Directory structure initially written in config file',
+      options: [...Init.directoryStructureOptions, '']
+    }),
+    email: Flags.string({
       char: 'e',
       description: 'Email of author of project'
     }),
-    language: flags.string({
+    force: Flags.string({
+      char: 'f',
+      default: 'false',
+      description: 'Overwrite config files if they exist.  Specify a filename to overwrite only one; write `true` to overwrite all.'
+    }),
+    gitRemote: Flags.string({
+      char: 'r',
+      description: 'Git address of remote repository.',
+      required: false
+    }),
+    language: Flags.string({
       char: 'l',
       description: 'Language of project'
     }),
-    style: flags.string({
+    style: Flags.string({
       char: 's',
+      // options: ['YAML', 'JSON5', ''],
+      default: '',
       description: 'Config files in JSON5 or YAML?',
-      parse: input => {
+      async parse(input) {
         let ucased = input.toUpperCase()
         if (ucased === 'JSON') {
           ucased = 'JSON5'
         }
+
         if (ucased === 'YAML' || ucased === 'JSON5' || ucased === '') {
           return ucased
-        } else {
-          throw new ChptrError('Expected `style` flag to be one of: YAML, JSON5', 'init:flags', 5)
         }
-      },
-      // options: ['YAML', 'JSON5', ''],
-      default: ''
-    }),
-    directorystructure: flags.string({
-      char: 'd',
-      description: 'Directory structure initially written in config file',
-      options: Init.directoryStructureOptions.concat(['']),
-      default: ''
+
+        throw new ChptrError('Expected `style` flag to be one of: YAML, JSON5', 'init:flags', 5)
+      }
     })
   }
 
-  static args = [
-    {
-      name: 'name',
-      description: 'Name of project',
-      required: false,
-      default: ''
-      // parse: sanitizeFileName
-    }
-  ]
-
-  static strict = false
-
   static hidden = false
 
-  static aliases = ['setup']
+  static strict = false
   // private flagForce = 'false'
 
-  private get git(): simplegit.SimpleGit {
-    if (!this._git) {
-      this._git = simplegit(this.rootPath)
-    }
-    return this._git
-  }
-  private _git: simplegit.SimpleGit | undefined
+  private git: SimpleGit = Container.getValue('git') as SimpleGit
+  private fsUtils: FsUtils = Container.get(FsUtils)
+  private hardConfig: HardConfig = Container.get(HardConfig)
 
   async run() {
     debug('Running Init command')
-    const { args, flags } = this.parse(Init)
+    const { args, flags } = await this.parse(Init)
 
-    const force = flags.force
+    const { force } = flags
     const forceAll = force === 'true' || force === 'all'
 
     // Create folder structure, with /config
@@ -117,11 +115,11 @@ export default class Init extends Command {
       const madeDir = await this.fsUtils.createSubDirectoryFromDirectoryPathIfNecessary(this.hardConfig.configPath)
 
       if (madeDir) {
-        cli.info(`Created directory ${this.hardConfig.configPath.resultHighlighColor()}`.resultNormalColor())
+        ux.info(`Created directory ${this.hardConfig.configPath.resultHighlighColor()}`.resultNormalColor())
       }
-    } catch (err) {
+    } catch (error) {
       // If directory already exists, silently swallow the error
-      debug(err)
+      debug(error)
     }
 
     // Prompt config options if necessary
@@ -132,19 +130,20 @@ export default class Init extends Command {
       force === path.basename(this.hardConfig.configJSON5FilePath) ||
       force === path.basename(this.hardConfig.configYAMLFilePath)
 
-    const notEmptyString = function(val: string): string {
-      if (!val) {
-        throw new ChptrError('Must not be empty', 'init.run.notemptystring', 6)
-      } else {
+    const notEmptyString = function (val: string): string {
+      if (val) {
         return val
       }
+
+      throw new ChptrError('Must not be empty', 'init.run.notemptystring', 6)
     }
-    const emailString = function(val: string): string {
-      if (!validator.default.isEmail(val)) {
-        throw new ChptrError('Must be an email address', 'init.run.emailstring', 7)
-      } else {
+
+    const emailString = function (val: string): string {
+      if (validator.default.isEmail(val)) {
         return val
       }
+
+      throw new ChptrError('Must be an email address', 'init.run.emailstring', 7)
     }
 
     const hasYAMLConfigFile = await this.fsUtils.fileExists(this.hardConfig.configYAMLFilePath)
@@ -160,13 +159,13 @@ export default class Init extends Command {
 
     if (forceConfigFile || (!hasYAMLConfigFile && !hasJSON5ConfigFile)) {
       const options: any = {
-        name: {
-          arg: args.name,
-          query: queryBuilder.textinput('What is the project working name?', 'MyNovel', notEmptyString)
-        },
         author: {
           arg: flags.author,
           query: queryBuilder.textinput('What is the name of the author?', undefined, notEmptyString)
+        },
+        directorystructure: {
+          arg: flags.directorystructure,
+          query: queryBuilder.list(Init.directoryStructureOptions, 'What directory structure do you initially want?', 'chapters/')
         },
         email: {
           arg: flags.email,
@@ -176,9 +175,9 @@ export default class Init extends Command {
           arg: flags.language,
           query: queryBuilder.textinput('What language code do you use? (ex. en, fr, es...)', 'en')
         },
-        directorystructure: {
-          arg: flags.directorystructure,
-          query: queryBuilder.list(Init.directoryStructureOptions, 'What directory structure do you initially want?', 'chapters/')
+        name: {
+          arg: args.name,
+          query: queryBuilder.textinput('What is the project working name?', 'MyNovel', notEmptyString)
         }
       }
 
@@ -189,14 +188,12 @@ export default class Init extends Command {
       }
     }
 
-    //check if we prompt for gitRemote and keep doGitOperation=true
+    // check if we prompt for gitRemote and keep doGitOperation=true
     let doGitOperation = true
     if (!flags.gitRemote) {
       const isRepoWithRemote =
         (await this.git.checkIsRepo()) &&
-        (await this.git.getRemotes(false).then(result => {
-          return result.find(value => value.name === 'origin') !== undefined
-        }))
+        (await this.git.getRemotes(false).then((result: any[]) => result.find(value => value.name === 'origin') !== undefined))
 
       const forceConfig = forceAll || force === 'gitRemote'
       if (!isRepoWithRemote || forceConfig) {
@@ -206,7 +203,7 @@ export default class Init extends Command {
       }
     }
 
-    //do prompt what's necessary
+    // do prompt what's necessary
     const queryResponses: any = await queryBuilder.responses()
 
     const name = args.name || queryResponses.name
@@ -217,36 +214,36 @@ export default class Init extends Command {
     const style = existingStyle || flags.style || queryResponses.style
     const directorystructure = flags.directorystructure || queryResponses.directorystructure
 
-    //prepare for creating config files
+    // prepare for creating config files
 
-    const virginSoftConfig = new SoftConfig(path.join(flags.path as string), false)
+    const virginSoftConfig = new SoftConfig(false)
     virginSoftConfig.configStyle = style
 
-    const directoryOverrides = Init.directoryStructureList.filter(dsl => dsl.id === directorystructure)[0]
+    const directoryOverrides = Init.directoryStructureList.find(dsl => dsl.id === directorystructure)
 
     const overrideObj = {
-      projectTitle: name,
-      projectAuthor: { name: authorName, email: authorEmail } as Author,
+      projectAuthor: { email: authorEmail, name: authorName } as Author,
       projectLang: language,
+      projectTitle: name,
       ...directoryOverrides
     }
 
     const allConfigOperations = [
       {
-        fullPathName: this.hardConfig.emptyFilePath,
-        content: this.hardConfig.templateEmptyFileString
+        content: this.hardConfig.templateEmptyFileString,
+        fullPathName: this.hardConfig.emptyFilePath
       },
       {
-        fullPathName: this.hardConfig.readmeFilePath,
-        content: `\n# ${name}\n\nA novel by ${authorName}.` // can't be moved to HardConfig because it depends on not-yet-initialized soft config values
+        content: `\n# ${name}\n\nA novel by ${authorName}.`, // can't be moved to HardConfig because it depends on not-yet-initialized soft config values
+        fullPathName: this.hardConfig.readmeFilePath
       },
       {
-        fullPathName: this.hardConfig.gitignoreFilePath,
-        content: this.hardConfig.templateGitignoreString
+        content: this.hardConfig.templateGitignoreString,
+        fullPathName: this.hardConfig.gitignoreFilePath
       },
       {
-        fullPathName: this.hardConfig.gitattributesFilePath,
-        content: this.hardConfig.templateGitattributesString
+        content: this.hardConfig.templateGitattributesString,
+        fullPathName: this.hardConfig.gitattributesFilePath
       }
     ]
 
@@ -254,23 +251,23 @@ export default class Init extends Command {
     if (style === 'YAML') {
       allConfigOperations.push(
         {
-          fullPathName: this.hardConfig.configYAMLFilePath,
-          content: virginSoftConfig.configDefaultsWithMetaYAMLString(overrideObj)
+          content: virginSoftConfig.configDefaultsWithMetaYAMLString(overrideObj),
+          fullPathName: this.hardConfig.configYAMLFilePath
         },
         {
-          fullPathName: this.hardConfig.metadataFieldsYAMLFilePath,
-          content: this.hardConfig.metadataFieldsDefaultsYAMLString
+          content: this.hardConfig.metadataFieldsDefaultsYAMLString,
+          fullPathName: this.hardConfig.metadataFieldsYAMLFilePath
         }
       )
     } else if (style === 'JSON5') {
       allConfigOperations.push(
         {
-          fullPathName: this.hardConfig.configJSON5FilePath,
-          content: virginSoftConfig.configDefaultsWithMetaJSON5String(overrideObj)
+          content: virginSoftConfig.configDefaultsWithMetaJSON5String(overrideObj),
+          fullPathName: this.hardConfig.configJSON5FilePath
         },
         {
-          fullPathName: this.hardConfig.metadataFieldsJSON5FilePath,
-          content: this.hardConfig.metadataFieldsDefaultsJSONString
+          content: this.hardConfig.metadataFieldsDefaultsJSONString,
+          fullPathName: this.hardConfig.metadataFieldsJSON5FilePath
         }
       )
     } else {
@@ -279,7 +276,7 @@ export default class Init extends Command {
 
     debug(`before file validation and creation`)
 
-    //validate which config files to create and create them
+    // validate which config files to create and create them
     // const allConfigFiles: { fullPathName: string; content: string }[] = []
     const table = tableize('file', '')
     const allConfigPromises: Promise<void>[] = []
@@ -314,7 +311,7 @@ export default class Init extends Command {
       let didSyncRemote = false
 
       try {
-        cli.action.start('Working on git repository'.actionStartColor())
+        ux.action.start('Working on git repository'.actionStartColor())
 
         const isRepo = await this.git.checkIsRepo()
         if (!isRepo) {
@@ -324,24 +321,25 @@ export default class Init extends Command {
           didGitInit = true
         }
 
-        const hasRemote: boolean = await this.git.getRemotes(false).then(result => {
-          return result.find(value => value.name === 'origin') !== undefined
-        })
+        const hasRemote: boolean = await this.git
+          .getRemotes(false)
+          .then((result: any[]) => result.find(value => value.name === 'origin') !== undefined)
         if (!hasRemote && remoteRepo) {
           await this.git.addRemote('origin', remoteRepo)
           didAddRemote = true
         }
-        const hasRemote2: boolean = await this.git.getRemotes(false).then(result => {
-          return result.find(value => value.name === 'origin') !== undefined
-        })
+
+        const hasRemote2: boolean = await this.git
+          .getRemotes(false)
+          .then((result: any[]) => result.find(value => value.name === 'origin') !== undefined)
         if (hasRemote2) {
-          await this.git.pull('origin', 'master', { '--commit': null, '--allow-unrelated-histories': null })
+          await this.git.pull('origin', 'master', { '--allow-unrelated-histories': null, '--commit': null })
           await this.git.push('origin', 'master', { '-u': null })
           await this.git.pull('origin', 'master')
           didSyncRemote = true
         }
-      } catch (err) {
-        this.warn(err.toString().errorColor())
+      } catch (error: any) {
+        this.warn(error.toString().errorColor())
       } finally {
         let msg = ''
         if (!didGitInit && !didAddRemote && !didSyncRemote) {
@@ -350,37 +348,36 @@ export default class Init extends Command {
           if (didGitInit) {
             msg += `\n    initialized repo`.resultNormalColor()
           }
-          if (didAddRemote) {
-            msg += `\n    added remote ${remoteRepo.resultHighlighColor()}`.resultNormalColor()
-          } else {
-            msg += `\n    no remote added`.resultHighlighColor()
-          }
+
+          msg += didAddRemote
+            ? `\n    added remote ${remoteRepo.resultHighlighColor()}`.resultNormalColor()
+            : `\n    no remote added`.resultHighlighColor()
           if (didSyncRemote) {
             msg += `\n    synched remote`.resultNormalColor()
           }
         }
-        cli.action.stop(msg.actionStopColor())
+
+        ux.action.stop(msg.actionStopColor())
       }
     } else {
       // show why remote was not updated
-      const remote = await this.git.getRemotes(true).then(result => {
-        return result.find(value => value.name === 'origin')
-      })
+      const remote = await this.git.getRemotes(true).then((result: any[]) => result.find(value => value.name === 'origin'))
       const remoteName = remote ? remote.refs.fetch : ''
       table.accumulator(
         `git repository already exists with remote ${remoteName.resultNormalColor()}`.infoColor(),
         `Use option --force=gitRemote to overwrite this one or -f, --force=true to overwrite all.`.infoColor()
       )
     }
+
     table.show('Init operations not done')
 
-    //save other created files
+    // save other created files
     await this.git.add('./**/*.*')
     const commitSummary = await this.git.commit('Init command has created some new files')
     if (commitSummary.commit) {
-      cli.info(`Commited all available files ${commitSummary.commit.resultHighlighColor()}`)
+      ux.info(`Commited all available files ${commitSummary.commit.resultHighlighColor()}`)
     }
 
-    cli.info('End of initialization'.infoColor())
+    ux.info('End of initialization'.infoColor())
   }
 }

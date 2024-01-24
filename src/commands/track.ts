@@ -1,41 +1,47 @@
-import { cli } from 'cli-ux'
-import * as path from 'path'
+import { Args, ux } from '@oclif/core'
+import * as path from 'node:path'
 
-import { ChptrError } from '../chptr-error'
-import { QueryBuilder } from '../ui-utils'
-
-import { d } from './base'
-import Command from './initialized-base'
+import { ChptrError } from '../shared/chptr-error'
+import { QueryBuilder } from '../shared/ui-utils'
+import BaseCommand, { d } from './base'
+import { Container } from 'typescript-ioc'
+import { GitUtils } from '../shared/git-utils'
+import { CoreUtils } from '../shared/core-utils'
+import { SoftConfig } from '../shared/soft-config'
+// import Command from './initialized-base'
 
 const debug = d('track')
 
-export default class Track extends Command {
-  static description = 'Add a file to be tracked in repository that is not a chapter, summary or metadata file.'
-
-  static flags = {
-    ...Command.flags
+export default class Track extends BaseCommand<typeof Track> {
+  static args = {
+    filename: Args.string({
+      default: '',
+      description: 'Filename to track',
+      name: 'filename',
+      required: false
+    })
   }
 
-  static args = [
-    {
-      name: 'filename',
-      description: 'Filename to track',
-      required: false,
-      default: ''
-    }
-  ]
+  static description = 'Add a file to be tracked in repository that is not a chapter, summary or metadata file.'
+
+  static flags = {}
 
   static hidden = false
 
   async run() {
     debug('Running Track command')
-    const { args } = this.parse(Track)
+    const { args } = await this.parse(Track)
+
+    const gitUtils = Container.get(GitUtils)
+    const coreUtils = Container.get(CoreUtils)
+    const softConfig = Container.get(SoftConfig)
+    const root = Container.getValue('rootPath')
 
     const queryBuilder = new QueryBuilder(true)
 
     if (!args.filename) {
-      const untrackedGitFiles = await this.gitUtils.GetGitListOfUntrackedFiles()
-      let untrackedGitFilesFlat: string[] = []
+      const untrackedGitFiles = await gitUtils.GetGitListOfUntrackedFiles()
+      const untrackedGitFilesFlat: string[] = []
       for (const utFile of untrackedGitFiles) {
         untrackedGitFilesFlat.push(...utFile.split('/'))
       }
@@ -43,10 +49,9 @@ export default class Track extends Command {
       if (!untrackedGitFiles) {
         throw new ChptrError(`No file untracked by repository`, 'track.run', 17)
       }
-      const root = this.rootPath
 
       debug(`untrackedGitFiles=${JSON.stringify(untrackedGitFiles, null, 4)}`)
-      const toExcludeFiles = function(file: string): boolean {
+      const toExcludeFiles = function (file: string): boolean {
         // return TRUE to EXCLUDE file, FALSE to keep it
         debug(`In Exclude function for file ${file}`)
         const isRoot = file === root
@@ -55,18 +60,19 @@ export default class Track extends Command {
           return false
         }
 
-        const isGitDir = file.indexOf('.git') >= 0
+        const isGitDir = file.includes('.git')
         if (isGitDir) {
           debug('isGitDir')
           return true
         }
 
-        const isInUntrackedFiles = untrackedGitFilesFlat.indexOf(path.basename(file)) >= 0
+        const isInUntrackedFiles = untrackedGitFilesFlat.includes(path.basename(file))
 
         debug(`isInUntrackedFiles? ${isInUntrackedFiles}`)
         return !isInUntrackedFiles
       }
-      queryBuilder.add('filename', queryBuilder.fuzzyFilename(this.rootPath, toExcludeFiles, 'What file to track?'))
+
+      queryBuilder.add('filename', queryBuilder.fuzzyFilename(root, toExcludeFiles, 'What file to track?'))
     }
 
     const queryResponses: any = await queryBuilder.responses()
@@ -76,13 +82,12 @@ export default class Track extends Command {
       throw new ChptrError('No filename to track', 'track.run', 22)
     }
 
-    cli.action.start('Tracking file'.actionStartColor())
+    ux.action.start('Tracking file'.actionStartColor())
 
-    const toCommitFiles = [this.softConfig.mapFileToBeRelativeToRootPath(filename)]
+    const toCommitFiles = [softConfig.mapFileToBeRelativeToRootPath(filename)]
 
-    await this.coreUtils.preProcessAndCommitFiles(`Tracking file ${filename}`, toCommitFiles)
+    await coreUtils.preProcessAndCommitFiles(`Tracking file ${filename}`, toCommitFiles)
 
-    cli.action.stop('done'.actionStopColor())
+    ux.action.stop('done'.actionStopColor())
   }
-
 }

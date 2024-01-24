@@ -1,142 +1,85 @@
-# chptr
+oclif-hello-world
+=================
 
-Command Line tool to handle separate Markdown files with special markup notations and export as a complete document.
+oclif example Hello World CLI
 
 [![oclif](https://img.shields.io/badge/cli-oclif-brightgreen.svg)](https://oclif.io)
-[![Version](https://img.shields.io/npm/v/chptr.svg)](https://npmjs.org/package/chptr)
-[![Downloads/week](https://img.shields.io/npm/dw/chptr.svg)](https://npmjs.org/package/chptr)
-[![License](https://img.shields.io/npm/l/chptr.svg)](https://github.com/spikying/chptr/blob/master/package.json)
-
-It is aimed at helping writing fiction, but could be used for managing any complicated long document.
-
-# Table of Contents
+[![CircleCI](https://circleci.com/gh/oclif/hello-world/tree/main.svg?style=shield)](https://circleci.com/gh/oclif/hello-world/tree/main)
+[![GitHub license](https://img.shields.io/github/license/oclif/hello-world)](https://github.com/oclif/hello-world/blob/main/LICENSE)
 
 <!-- toc -->
-* [chptr](#chptr)
-* [Table of Contents](#table-of-contents)
 * [Usage](#usage)
 * [Commands](#commands)
 <!-- tocstop -->
-
-## Key features
-
-- Wrapping [Git](https://git-scm.com/) basic functions for versionning and remote repository backup
-- Wrapping [Pandoc](https://pandoc.org/) basic functions for building assembled files in Markdown (.md), Word (.docx), LaTex (.tex), PDF (.pdf), Html (.html) and ePub (.epub).
-- Every "chapter" has three files:
-  - Main content, in Markdown (.chptr file)
-  - Summary content, in Markdown (.md file)
-  - Metadata, in either YAML or JSON5.
-- Commands to
-  - `Init` a new project and create a few required files
-  - `Add` new chapters
-  - `Delete` chapters
-  - `Reorder` chapters
-  - `Build` output and recomputing some metadata
-  - Help with `Antidote` [language checker](https://antidote.info/) workflow
-  - `Save` to repository, in sentence-by-line style
-  - Put chapters back to `Edit` mode, by removing paragraph markup and bringing back file in paragraphs
-  - `Rename` chapters
-  - `Split` chapters when many first-level titles are found in them
-  - `Track` other files in repository system, for notes-taking
-- An extension is available for [Antidote](https://antidote.info/) spell-checker workflow in [Github](https://github.com/spikying/chptr-antidote-plugin) and [npm](https://www.npmjs.com/package/chptr-antidote-plugin)
-
-## Philosophy
-
-That project was (and is still) a personal take on the fiction (and non-fiction) writing softwares. I like to separate content from format<sup id="l1">[1](#f1)</sup>, track all references and notes as I write<sup id="l2">[2](#f2)</sup>, have precise history of the files with source control<sup id="l3">[3](#f3)</sup>, and use the editing software of my choice<sup id="l4">[4](#f4)</sup>. Many other tools exist and have other philosophies, and they fit better for most people. They just don't work so well for me. This is a geeky tool, that I wanted to be simple (even if it is growing to be more than I first expected). It is aimed at me alone, but if you're another geek that thinks like me, enjoy, I hope you like it.
-
-- Every file has LF (\n) line endings; CRLF (\r\n) are converted. You can still work on Windows but the original Notepad won't do.
-- Every file is a UTF8 file without BOM. When sending a file to [Antidote](#chptr-antidote-filter), files are converted to UTF8-BOM (because of limitations in that software) and have a .antidote extension added. When the Antidote work is done, that file is processed back to its original extension and the .antidote one is deleted.
-- Sentences are marked by a sentence termination character _and two spaces_. In the output files, the parsers will take all those double-spaces and convert them to single-spaces. That helps Chptr to identify sentence endings and put them on separate lines before saving them to repository, helping track evolution of the text with Git tools on a sentence-by-sentence basis, instead of paragraph-by-paragraph basis.
-- Metadata written inline has this structure: `{key: possibly long value}`. In the output, this metadata is either kept (and visually reorganized) or removed completely (for eventual outside review and publishing), depending on a `--removemarkup` flag in the `build` command. It is parsed and indexed in some metadata files.
-- Characters, places, hints (and possibly any other important things to track) have a special notation too, called **props**: `{Batman} is a superhero in Gotham City.` In this case, the word(s) between the brackets are kept in the output, either with ou without some outlining, depending on the `--removemarkup` flag of the `build` command again. They are indexed also in some metadata files to help finding them back easily.
-- Config folder has a few files that can be customized to fit many preferences:
-  - YAML vs JSON5
-  - Project's title, language, file naming patterns, etc.
-  - What to put in an empty (new) chapter
-  - What manual fields to track on each chapter's metadata
-
-<b id="f1">[1]:</b> Pandoc does that[↩](#l1)
-
-<b id="f2">[2]:</b> The markup format that I use to extend Markdown does that[↩](#l2)
-
-<b id="f3">[3]:</b> Git does that[↩](#l3)
-
-<b id="f1">[4]:</b> VSCode is nice![↩](#l4)
-
-## Prerequisites
-
-To make it work, you'll need to have [Git](https://git-scm.com/) and [Pandoc](https://pandoc.org/) globally installed first (refer to those sites to download and install if needed). Also, [Node](https://nodejs.org) (with it's companion NPM) are necessary to use as explained down here. There are ways to build a standalone executable from there but I won't publish those online, as I expect that if you want to use this tool, you probably already have Node and NPM installed. Instructions on how to build those executables is described [here](https://oclif.io/docs/releasing#standalone-tarballs).
-
-## Roadmap, todos and warnings
-
-This app doesn't have tests at this point, is not documented and will be liberately refactored as intensely as needed. **It is not mature at all** but I decided I wouldn't wait until it was to open-source it. Any and all breaking changes may appear between now and version 1.0.0.
-
-In some future, I wish to do these things:
-
-- Include all sorts of tests
-- Document properly
-- Improve the code structure, code reusability and general code cleanliness
-
 # Usage
-
 <!-- usage -->
 ```sh-session
 $ npm install -g chptr
 $ chptr COMMAND
 running command...
-$ chptr (-v|--version|version)
-chptr/0.3.6 win32-x64 node-v12.18.3
+$ chptr (--version)
+chptr/1.0.0 darwin-arm64 node-v20.10.0
 $ chptr --help [COMMAND]
 USAGE
   $ chptr COMMAND
 ...
 ```
 <!-- usagestop -->
-
 # Commands
-
 <!-- commands -->
-* [`chptr add [NUMBER] [NAME]`](#chptr-add-number-name)
+* [`chptr add [NAME] [NUMBER]`](#chptr-add-name-number)
 * [`chptr build`](#chptr-build)
-* [`chptr build:compact`](#chptr-buildcompact)
-* [`chptr build:metadata`](#chptr-buildmetadata)
-* [`chptr build:output`](#chptr-buildoutput)
+* [`chptr build compact`](#chptr-build-compact)
+* [`chptr build metadata`](#chptr-build-metadata)
+* [`chptr commit [NUMBERORFILENAME]`](#chptr-commit-numberorfilename)
+* [`chptr compile`](#chptr-compile)
+* [`chptr del [NAME]`](#chptr-del-name)
 * [`chptr delete [NAME]`](#chptr-delete-name)
 * [`chptr edit [CHAPTERIDS]`](#chptr-edit-chapterids)
-* [`chptr help [COMMAND]`](#chptr-help-command)
+* [`chptr hello PERSON`](#chptr-hello-person)
+* [`chptr hello world`](#chptr-hello-world)
+* [`chptr help [COMMANDS]`](#chptr-help-commands)
 * [`chptr init [NAME]`](#chptr-init-name)
+* [`chptr mod [CHAPTERIDS]`](#chptr-mod-chapterids)
+* [`chptr modify [CHAPTERIDS]`](#chptr-modify-chapterids)
+* [`chptr move [DESTINATIONID] [ORIGINID]`](#chptr-move-destinationid-originid)
 * [`chptr plugins`](#chptr-plugins)
 * [`chptr plugins:install PLUGIN...`](#chptr-pluginsinstall-plugin)
+* [`chptr plugins:inspect PLUGIN...`](#chptr-pluginsinspect-plugin)
+* [`chptr plugins:install PLUGIN...`](#chptr-pluginsinstall-plugin-1)
 * [`chptr plugins:link PLUGIN`](#chptr-pluginslink-plugin)
 * [`chptr plugins:uninstall PLUGIN...`](#chptr-pluginsuninstall-plugin)
-* [`chptr plugins:update`](#chptr-pluginsupdate)
+* [`chptr plugins reset`](#chptr-plugins-reset)
+* [`chptr plugins:uninstall PLUGIN...`](#chptr-pluginsuninstall-plugin-1)
+* [`chptr plugins:uninstall PLUGIN...`](#chptr-pluginsuninstall-plugin-2)
+* [`chptr plugins update`](#chptr-plugins-update)
 * [`chptr rename [CHAPTERIDORFILENAME] [NEWNAME]`](#chptr-rename-chapteridorfilename-newname)
-* [`chptr reorder [ORIGINID] [DESTINATIONID]`](#chptr-reorder-originid-destinationid)
+* [`chptr reorder [DESTINATIONID] [ORIGINID]`](#chptr-reorder-destinationid-originid)
 * [`chptr save [NUMBERORFILENAME]`](#chptr-save-numberorfilename)
+* [`chptr setup [NAME]`](#chptr-setup-name)
 * [`chptr track [FILENAME]`](#chptr-track-filename)
 
-## `chptr add [NUMBER] [NAME]`
+## `chptr add [NAME] [NUMBER]`
 
 Adds a file or set of files as a new chapter, locally and in repository
 
 ```
 USAGE
-  $ chptr add [NUMBER] [NAME]
+  $ chptr add [NAME] [NUMBER] [-c]
 
 ARGUMENTS
+  NAME    name of chapter to add
   NUMBER  [default: end] force this number to be used, if available.  AtNumbering will be determined by the presence or
           absence of @ sign.  Defaults to `end`.
 
-  NAME    name of chapter to add
+FLAGS
+  -c, --compact  Compact chapter numbers at the same time
 
-OPTIONS
-  -N, --notify     show a notification box when command is completed.
-  -c, --compact    Compact chapter numbers at the same time
-  -h, --help       show CLI help
-  -p, --path=path  [default: .] Path where root of project files are
+DESCRIPTION
+  Adds a file or set of files as a new chapter, locally and in repository
 ```
 
-_See code: [src\commands\add.ts](https://github.com/spikying/chptr/blob/v0.3.6/src\commands\add.ts)_
+_See code: [src/commands/add.ts](https://github.com/spikying/chptr/blob/v1.0.0/src/commands/add.ts)_
 
 ## `chptr build`
 
@@ -144,113 +87,149 @@ Takes all original Markdown files and outputs a single file without metadata and
 
 ```
 USAGE
-  $ chptr build
+  $ chptr build [-c] [-d] [-s] [-w yes|no|overwrite] [-P | [-D | ]] [-t md|pdf|docx|html|epub|tex|all] [-i]
 
-OPTIONS
-  -D, --outputToPreProd                     Keep paragraph numbers, but clean markup as if doing an output to Prod.
-  -N, --notify                              show a notification box when command is completed.
+FLAGS
+  -D, --outputToPreProd             Keep paragraph numbers, but clean markup as if doing an output to Prod.
+  -P, --outputToProd                Remove paragraph numbers, clean markup in output and remove chapter titles.  When
+                                    false, adds summaries in output.
+  -c, --compact                     Compact chapter numbers at the same time
+  -d, --datetimestamp               adds datetime stamp before output filename
+  -i, --withFullIntermediaryOutput  With full intermediary output as .md file
+  -s, --save                        Commit to git at the same time.
+  -t, --type=<option>...            filetype to export to.  Can be set multiple times.
+                                    <options: md|pdf|docx|html|epub|tex|all>
+  -w, --showWritingRate=<option>    [default: yes] Show word count per day.  Overwrite option recalculates it all from
+                                    scratch.
+                                    <options: yes|no|overwrite>
 
-  -P, --outputToProd                        Remove paragraph numbers, clean markup in output and remove chapter titles.
-                                            When false, adds summaries in output.
-
-  -c, --compact                             Compact chapter numbers at the same time
-
-  -d, --datetimestamp                       adds datetime stamp before output filename
-
-  -h, --help                                show CLI help
-
-  -i, --withFullIntermediaryOutput          With full intermediary output as .md file
-
-  -p, --path=path                           [default: .] Path where root of project files are
-
-  -s, --save                                Commit to git at the same time.
-
-  -t, --type=md|pdf|docx|html|epub|tex|all  filetype to export to.  Can be set multiple times.
-
-  -w, --showWritingRate=yes|no|overwrite    [default: yes] Show word count per day.  Overwrite option recalculates it
-                                            all from scratch.
+DESCRIPTION
+  Takes all original Markdown files and outputs a single file without metadata and comments.  Handles these output
+  formats: md, pdf, docx, html, epub, tex.  Gives some insight into writing rate.
 
 ALIASES
   $ chptr compile
 ```
 
-_See code: [src\commands\build\index.ts](https://github.com/spikying/chptr/blob/v0.3.6/src\commands\build\index.ts)_
+_See code: [src/commands/build/index.ts](https://github.com/spikying/chptr/blob/v1.0.0/src/commands/build/index.ts)_
 
-## `chptr build:compact`
+## `chptr build compact`
 
 Only compacts numbers of files
 
 ```
 USAGE
-  $ chptr build:compact
+  $ chptr build compact [-s]
 
-OPTIONS
-  -N, --notify     show a notification box when command is completed.
-  -h, --help       show CLI help
-  -p, --path=path  [default: .] Path where root of project files are
-  -s, --save       Commit to git at the same time.
+FLAGS
+  -s, --save  Commit to git at the same time.
+
+DESCRIPTION
+  Only compacts numbers of files
 ```
 
-_See code: [src\commands\build\compact.ts](https://github.com/spikying/chptr/blob/v0.3.6/src\commands\build\compact.ts)_
+_See code: [src/commands/build/compact.ts](https://github.com/spikying/chptr/blob/v1.0.0/src/commands/build/compact.ts)_
 
-## `chptr build:metadata`
+## `chptr build metadata`
 
 Updates only metadata files
 
 ```
 USAGE
-  $ chptr build:metadata
+  $ chptr build metadata [-c] [-d] [-s] [-w yes|no|overwrite]
 
-OPTIONS
-  -N, --notify                            show a notification box when command is completed.
-  -c, --compact                           Compact chapter numbers at the same time
-  -d, --datetimestamp                     adds datetime stamp before output filename
-  -h, --help                              show CLI help
-  -p, --path=path                         [default: .] Path where root of project files are
-  -s, --save                              Commit to git at the same time.
+FLAGS
+  -c, --compact                   Compact chapter numbers at the same time
+  -d, --datetimestamp             adds datetime stamp before output filename
+  -s, --save                      Commit to git at the same time.
+  -w, --showWritingRate=<option>  [default: yes] Show word count per day.  Overwrite option recalculates it all from
+                                  scratch.
+                                  <options: yes|no|overwrite>
 
-  -w, --showWritingRate=yes|no|overwrite  [default: yes] Show word count per day.  Overwrite option recalculates it all
-                                          from scratch.
+DESCRIPTION
+  Updates only metadata files
 ```
 
-_See code: [src\commands\build\metadata.ts](https://github.com/spikying/chptr/blob/v0.3.6/src\commands\build\metadata.ts)_
+_See code: [src/commands/build/metadata.ts](https://github.com/spikying/chptr/blob/v1.0.0/src/commands/build/metadata.ts)_
 
-## `chptr build:output`
+## `chptr commit [NUMBERORFILENAME]`
+
+Parse modified text files, adjust sentence and paragraph endings, and commit files to repository.
+
+```
+USAGE
+  $ chptr commit [NUMBERORFILENAME] [-c] [-e | -m <value>] [-n <value> | -f <value>] [-t ]
+
+ARGUMENTS
+  NUMBERORFILENAME  Chamber number to save, or tracked filename or filename pattern to save to repository
+
+FLAGS
+  -c, --compact           Compact chapter numbers at the same time
+  -e, --empty             No manual message in commit
+  -f, --filename=<value>  Tracked filename or filename pattern to filter which files to stage before saving to
+                          repository
+  -m, --message=<value>   Message to use in commit to repository
+  -n, --number=<value>    Chapter number to filter which files to stage before saving to repository
+  -t, --track             Force tracking of file if not already in repository
+
+DESCRIPTION
+  Parse modified text files, adjust sentence and paragraph endings, and commit files to repository.
+
+ALIASES
+  $ chptr commit
+```
+
+## `chptr compile`
 
 Takes all original Markdown files and outputs a single file without metadata and comments.  Handles these output formats: md, pdf, docx, html, epub, tex.  Gives some insight into writing rate.
 
 ```
 USAGE
-  $ chptr build:output
+  $ chptr compile [-c] [-d] [-s] [-w yes|no|overwrite] [-P | [-D | ]] [-t md|pdf|docx|html|epub|tex|all] [-i]
 
-OPTIONS
-  -N, --notify                              show a notification box when command is completed.
+FLAGS
+  -D, --outputToPreProd             Keep paragraph numbers, but clean markup as if doing an output to Prod.
+  -P, --outputToProd                Remove paragraph numbers, clean markup in output and remove chapter titles.  When
+                                    false, adds summaries in output.
+  -c, --compact                     Compact chapter numbers at the same time
+  -d, --datetimestamp               adds datetime stamp before output filename
+  -i, --withFullIntermediaryOutput  With full intermediary output as .md file
+  -s, --save                        Commit to git at the same time.
+  -t, --type=<option>...            filetype to export to.  Can be set multiple times.
+                                    <options: md|pdf|docx|html|epub|tex|all>
+  -w, --showWritingRate=<option>    [default: yes] Show word count per day.  Overwrite option recalculates it all from
+                                    scratch.
+                                    <options: yes|no|overwrite>
 
-  -P, --outputToProd                        Remove paragraph numbers, clean markup in output and remove chapter titles.
-                                            When false, adds summaries in output.
-
-  -c, --compact                             Compact chapter numbers at the same time
-
-  -d, --datetimestamp                       adds datetime stamp before output filename
-
-  -h, --help                                show CLI help
-
-  -i, --withFullIntermediaryOutput          With full intermediary output as .md file
-
-  -p, --path=path                           [default: .] Path where root of project files are
-
-  -s, --save                                Commit to git at the same time.
-
-  -t, --type=md|pdf|docx|html|epub|tex|all  filetype to export to.  Can be set multiple times.
-
-  -w, --showWritingRate=yes|no|overwrite    [default: yes] Show word count per day.  Overwrite option recalculates it
-                                            all from scratch.
+DESCRIPTION
+  Takes all original Markdown files and outputs a single file without metadata and comments.  Handles these output
+  formats: md, pdf, docx, html, epub, tex.  Gives some insight into writing rate.
 
 ALIASES
   $ chptr compile
 ```
 
-_See code: [src\commands\build\output.ts](https://github.com/spikying/chptr/blob/v0.3.6/src\commands\build\output.ts)_
+## `chptr del [NAME]`
+
+Delete a chapter or tracked file locally and in the repository
+
+```
+USAGE
+  $ chptr del [NAME] [-c] [-s]
+
+ARGUMENTS
+  NAME  chapter number or filename to delete
+
+FLAGS
+  -c, --compact  Compact chapter numbers at the same time
+  -s, --save     Commit to git at the same time.
+
+DESCRIPTION
+  Delete a chapter or tracked file locally and in the repository
+
+ALIASES
+  $ chptr del
+```
 
 ## `chptr delete [NAME]`
 
@@ -258,23 +237,23 @@ Delete a chapter or tracked file locally and in the repository
 
 ```
 USAGE
-  $ chptr delete [NAME]
+  $ chptr delete [NAME] [-c] [-s]
 
 ARGUMENTS
   NAME  chapter number or filename to delete
 
-OPTIONS
-  -N, --notify     show a notification box when command is completed.
-  -c, --compact    Compact chapter numbers at the same time
-  -h, --help       show CLI help
-  -p, --path=path  [default: .] Path where root of project files are
-  -s, --save       Commit to git at the same time.
+FLAGS
+  -c, --compact  Compact chapter numbers at the same time
+  -s, --save     Commit to git at the same time.
+
+DESCRIPTION
+  Delete a chapter or tracked file locally and in the repository
 
 ALIASES
   $ chptr del
 ```
 
-_See code: [src\commands\delete.ts](https://github.com/spikying/chptr/blob/v0.3.6/src\commands\delete.ts)_
+_See code: [src/commands/delete.ts](https://github.com/spikying/chptr/blob/v1.0.0/src/commands/delete.ts)_
 
 ## `chptr edit [CHAPTERIDS]`
 
@@ -282,40 +261,86 @@ Adjust sentence and paragraph endings to allow for easier editing.  Commit chang
 
 ```
 USAGE
-  $ chptr edit [CHAPTERIDS]
+  $ chptr edit [CHAPTERIDS] [-t all|summary|chapter]
 
 ARGUMENTS
   CHAPTERIDS  Chapter number(s) to modify, comma-separated or dash-separated for a range.
 
-OPTIONS
-  -N, --notify                    show a notification box when command is completed.
-  -h, --help                      show CLI help
-  -p, --path=path                 [default: .] Path where root of project files are
-  -t, --type=all|summary|chapter  [default: all] Edit either chapter file, summary file or all.
+FLAGS
+  -t, --type=<option>  [default: all] Edit either chapter file, summary file or all.
+                       <options: all|summary|chapter>
+
+DESCRIPTION
+  Adjust sentence and paragraph endings to allow for easier editing.  Commit changes with SAVE command.
 
 ALIASES
   $ chptr modify
   $ chptr mod
 ```
 
-_See code: [src\commands\edit.ts](https://github.com/spikying/chptr/blob/v0.3.6/src\commands\edit.ts)_
+_See code: [src/commands/edit.ts](https://github.com/spikying/chptr/blob/v1.0.0/src/commands/edit.ts)_
 
-## `chptr help [COMMAND]`
+## `chptr hello PERSON`
 
-display help for chptr
+Say hello
 
 ```
 USAGE
-  $ chptr help [COMMAND]
+  $ chptr hello PERSON -f <value>
 
 ARGUMENTS
-  COMMAND  command to show help for
+  PERSON  Person to say hello to
 
-OPTIONS
-  --all  see all commands in CLI
+FLAGS
+  -f, --from=<value>  (required) Who is saying hello
+
+DESCRIPTION
+  Say hello
+
+EXAMPLES
+  $ oex hello friend --from oclif
+  hello friend from oclif! (./src/commands/hello/index.ts)
 ```
 
-_See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v3.1.0/src\commands\help.ts)_
+_See code: [src/commands/hello/index.ts](https://github.com/spikying/chptr/blob/v1.0.0/src/commands/hello/index.ts)_
+
+## `chptr hello world`
+
+Say hello world
+
+```
+USAGE
+  $ chptr hello world
+
+DESCRIPTION
+  Say hello world
+
+EXAMPLES
+  $ chptr hello world
+  hello world! (./src/commands/hello/world.ts)
+```
+
+_See code: [src/commands/hello/world.ts](https://github.com/spikying/chptr/blob/v1.0.0/src/commands/hello/world.ts)_
+
+## `chptr help [COMMANDS]`
+
+Display help for chptr.
+
+```
+USAGE
+  $ chptr help [COMMANDS] [-n]
+
+ARGUMENTS
+  COMMANDS  Command to show help for.
+
+FLAGS
+  -n, --nested-commands  Include all nested commands in the output.
+
+DESCRIPTION
+  Display help for chptr.
+```
+
+_See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v6.0.12/src/commands/help.ts)_
 
 ## `chptr init [NAME]`
 
@@ -323,93 +348,240 @@ Generates basic config files for a new novel project
 
 ```
 USAGE
-  $ chptr init [NAME]
+  $ chptr init [NAME] [-a <value>] [-d /|chapters/|chapters/number/|] [-e <value>] [-f <value>] [-r
+    <value>] [-l <value>] [-s <value>]
 
 ARGUMENTS
   NAME  Name of project
 
-OPTIONS
-  -N, --notify                                            show a notification box when command is completed.
-  -a, --author=author                                     Name of author of project
-  -d, --directorystructure=/|chapters/|chapters/number/|  Directory structure initially written in config file
-  -e, --email=email                                       Email of author of project
+FLAGS
+  -a, --author=<value>               Name of author of project
+  -d, --directorystructure=<option>  Directory structure initially written in config file
+                                     <options: /|chapters/|chapters/number/|>
+  -e, --email=<value>                Email of author of project
+  -f, --force=<value>                [default: false] Overwrite config files if they exist.  Specify a filename to
+                                     overwrite only one; write `true` to overwrite all.
+  -l, --language=<value>             Language of project
+  -r, --gitRemote=<value>            Git address of remote repository.
+  -s, --style=<value>                Config files in JSON5 or YAML?
 
-  -f, --force=force                                       [default: false] Overwrite config files if they exist.
-                                                          Specify a filename to overwrite only one; write `true` to
-                                                          overwrite all.
-
-  -h, --help                                              show CLI help
-
-  -l, --language=language                                 Language of project
-
-  -p, --path=path                                         [default: .] Path where root of project files are
-
-  -r, --gitRemote=gitRemote                               Git address of remote repository.
-
-  -s, --style=style                                       Config files in JSON5 or YAML?
+DESCRIPTION
+  Generates basic config files for a new novel project
 
 ALIASES
   $ chptr setup
 ```
 
-_See code: [src\commands\init.ts](https://github.com/spikying/chptr/blob/v0.3.6/src\commands\init.ts)_
+_See code: [src/commands/init.ts](https://github.com/spikying/chptr/blob/v1.0.0/src/commands/init.ts)_
 
-## `chptr plugins`
+## `chptr mod [CHAPTERIDS]`
 
-list installed plugins
+Adjust sentence and paragraph endings to allow for easier editing.  Commit changes with SAVE command.
 
 ```
 USAGE
-  $ chptr plugins
+  $ chptr mod [CHAPTERIDS] [-t all|summary|chapter]
 
-OPTIONS
-  --core  show core plugins
+ARGUMENTS
+  CHAPTERIDS  Chapter number(s) to modify, comma-separated or dash-separated for a range.
 
-EXAMPLE
+FLAGS
+  -t, --type=<option>  [default: all] Edit either chapter file, summary file or all.
+                       <options: all|summary|chapter>
+
+DESCRIPTION
+  Adjust sentence and paragraph endings to allow for easier editing.  Commit changes with SAVE command.
+
+ALIASES
+  $ chptr modify
+  $ chptr mod
+```
+
+## `chptr modify [CHAPTERIDS]`
+
+Adjust sentence and paragraph endings to allow for easier editing.  Commit changes with SAVE command.
+
+```
+USAGE
+  $ chptr modify [CHAPTERIDS] [-t all|summary|chapter]
+
+ARGUMENTS
+  CHAPTERIDS  Chapter number(s) to modify, comma-separated or dash-separated for a range.
+
+FLAGS
+  -t, --type=<option>  [default: all] Edit either chapter file, summary file or all.
+                       <options: all|summary|chapter>
+
+DESCRIPTION
+  Adjust sentence and paragraph endings to allow for easier editing.  Commit changes with SAVE command.
+
+ALIASES
+  $ chptr modify
+  $ chptr mod
+```
+
+## `chptr move [DESTINATIONID] [ORIGINID]`
+
+Takes a chapter and modifies its index number to fit another ordering place
+
+```
+USAGE
+  $ chptr move [DESTINATIONID] [ORIGINID] [-c] [-s]
+
+ARGUMENTS
+  DESTINATIONID  Number it will become (write `end` or `@end`to put at the end of each stack).
+  ORIGINID       Chapter number to move
+
+FLAGS
+  -c, --compact  Compact chapter numbers at the same time
+  -s, --save     Commit to git at the same time.
+
+DESCRIPTION
+  Takes a chapter and modifies its index number to fit another ordering place
+
+ALIASES
+  $ chptr move
+```
+
+## `chptr plugins`
+
+List installed plugins.
+
+```
+USAGE
+  $ chptr plugins [--json] [--core]
+
+FLAGS
+  --core  Show core plugins.
+
+GLOBAL FLAGS
+  --json  Format output as json.
+
+DESCRIPTION
+  List installed plugins.
+
+EXAMPLES
   $ chptr plugins
 ```
 
-_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v1.9.0/src\commands\plugins\index.ts)_
+_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v4.1.21/src/commands/plugins/index.ts)_
 
 ## `chptr plugins:install PLUGIN...`
 
-installs a plugin into the CLI
+Installs a plugin into the CLI.
 
 ```
 USAGE
   $ chptr plugins:install PLUGIN...
 
 ARGUMENTS
-  PLUGIN  plugin to install
+  PLUGIN  Plugin to install.
 
-OPTIONS
-  -f, --force    yarn install with force flag
-  -h, --help     show CLI help
-  -v, --verbose
+FLAGS
+  -f, --force    Run yarn install with force flag.
+  -h, --help     Show CLI help.
+  -s, --silent   Silences yarn output.
+  -v, --verbose  Show verbose yarn output.
+
+GLOBAL FLAGS
+  --json  Format output as json.
 
 DESCRIPTION
+  Installs a plugin into the CLI.
   Can be installed from npm or a git url.
 
   Installation of a user-installed plugin will override a core plugin.
 
-  e.g. If you have a core plugin that has a 'hello' command, installing a user-installed plugin with a 'hello' command 
-  will override the core plugin implementation. This is useful if a user needs to update core plugin functionality in 
+  e.g. If you have a core plugin that has a 'hello' command, installing a user-installed plugin with a 'hello' command
+  will override the core plugin implementation. This is useful if a user needs to update core plugin functionality in
   the CLI without the need to patch and update the whole CLI.
 
+
 ALIASES
-  $ chptr plugins:add
+  $ chptr plugins add
 
 EXAMPLES
-  $ chptr plugins:install myplugin 
-  $ chptr plugins:install https://github.com/someuser/someplugin
-  $ chptr plugins:install someuser/someplugin
+  $ chptr plugins add myplugin 
+
+  $ chptr plugins add https://github.com/someuser/someplugin
+
+  $ chptr plugins add someuser/someplugin
 ```
 
-_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v1.9.0/src\commands\plugins\install.ts)_
+## `chptr plugins:inspect PLUGIN...`
+
+Displays installation properties of a plugin.
+
+```
+USAGE
+  $ chptr plugins:inspect PLUGIN...
+
+ARGUMENTS
+  PLUGIN  [default: .] Plugin to inspect.
+
+FLAGS
+  -h, --help     Show CLI help.
+  -v, --verbose
+
+GLOBAL FLAGS
+  --json  Format output as json.
+
+DESCRIPTION
+  Displays installation properties of a plugin.
+
+EXAMPLES
+  $ chptr plugins inspect myplugin
+```
+
+_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v4.1.21/src/commands/plugins/inspect.ts)_
+
+## `chptr plugins:install PLUGIN...`
+
+Installs a plugin into the CLI.
+
+```
+USAGE
+  $ chptr plugins:install PLUGIN...
+
+ARGUMENTS
+  PLUGIN  Plugin to install.
+
+FLAGS
+  -f, --force    Run yarn install with force flag.
+  -h, --help     Show CLI help.
+  -s, --silent   Silences yarn output.
+  -v, --verbose  Show verbose yarn output.
+
+GLOBAL FLAGS
+  --json  Format output as json.
+
+DESCRIPTION
+  Installs a plugin into the CLI.
+  Can be installed from npm or a git url.
+
+  Installation of a user-installed plugin will override a core plugin.
+
+  e.g. If you have a core plugin that has a 'hello' command, installing a user-installed plugin with a 'hello' command
+  will override the core plugin implementation. This is useful if a user needs to update core plugin functionality in
+  the CLI without the need to patch and update the whole CLI.
+
+
+ALIASES
+  $ chptr plugins add
+
+EXAMPLES
+  $ chptr plugins install myplugin 
+
+  $ chptr plugins install https://github.com/someuser/someplugin
+
+  $ chptr plugins install someuser/someplugin
+```
+
+_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v4.1.21/src/commands/plugins/install.ts)_
 
 ## `chptr plugins:link PLUGIN`
 
-links a plugin into the CLI for development
+Links a plugin into the CLI for development.
 
 ```
 USAGE
@@ -418,25 +590,28 @@ USAGE
 ARGUMENTS
   PATH  [default: .] path to plugin
 
-OPTIONS
-  -h, --help     show CLI help
+FLAGS
+  -h, --help      Show CLI help.
   -v, --verbose
+  --[no-]install  Install dependencies after linking the plugin.
 
 DESCRIPTION
+  Links a plugin into the CLI for development.
   Installation of a linked plugin will override a user-installed or core plugin.
 
-  e.g. If you have a user-installed or core plugin that has a 'hello' command, installing a linked plugin with a 'hello' 
+  e.g. If you have a user-installed or core plugin that has a 'hello' command, installing a linked plugin with a 'hello'
   command will override the user-installed or core plugin implementation. This is useful for development work.
 
-EXAMPLE
-  $ chptr plugins:link myplugin
+
+EXAMPLES
+  $ chptr plugins link myplugin
 ```
 
-_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v1.9.0/src\commands\plugins\link.ts)_
+_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v4.1.21/src/commands/plugins/link.ts)_
 
 ## `chptr plugins:uninstall PLUGIN...`
 
-removes a plugin from the CLI
+Removes a plugin from the CLI.
 
 ```
 USAGE
@@ -445,31 +620,103 @@ USAGE
 ARGUMENTS
   PLUGIN  plugin to uninstall
 
-OPTIONS
-  -h, --help     show CLI help
+FLAGS
+  -h, --help     Show CLI help.
   -v, --verbose
 
+DESCRIPTION
+  Removes a plugin from the CLI.
+
 ALIASES
-  $ chptr plugins:unlink
-  $ chptr plugins:remove
+  $ chptr plugins unlink
+  $ chptr plugins remove
+
+EXAMPLES
+  $ chptr plugins remove myplugin
 ```
 
-_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v1.9.0/src\commands\plugins\uninstall.ts)_
+## `chptr plugins reset`
 
-## `chptr plugins:update`
-
-update installed plugins
+Remove all user-installed and linked plugins.
 
 ```
 USAGE
-  $ chptr plugins:update
-
-OPTIONS
-  -h, --help     show CLI help
-  -v, --verbose
+  $ chptr plugins reset
 ```
 
-_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v1.9.0/src\commands\plugins\update.ts)_
+_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v4.1.21/src/commands/plugins/reset.ts)_
+
+## `chptr plugins:uninstall PLUGIN...`
+
+Removes a plugin from the CLI.
+
+```
+USAGE
+  $ chptr plugins:uninstall PLUGIN...
+
+ARGUMENTS
+  PLUGIN  plugin to uninstall
+
+FLAGS
+  -h, --help     Show CLI help.
+  -v, --verbose
+
+DESCRIPTION
+  Removes a plugin from the CLI.
+
+ALIASES
+  $ chptr plugins unlink
+  $ chptr plugins remove
+
+EXAMPLES
+  $ chptr plugins uninstall myplugin
+```
+
+_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v4.1.21/src/commands/plugins/uninstall.ts)_
+
+## `chptr plugins:uninstall PLUGIN...`
+
+Removes a plugin from the CLI.
+
+```
+USAGE
+  $ chptr plugins:uninstall PLUGIN...
+
+ARGUMENTS
+  PLUGIN  plugin to uninstall
+
+FLAGS
+  -h, --help     Show CLI help.
+  -v, --verbose
+
+DESCRIPTION
+  Removes a plugin from the CLI.
+
+ALIASES
+  $ chptr plugins unlink
+  $ chptr plugins remove
+
+EXAMPLES
+  $ chptr plugins unlink myplugin
+```
+
+## `chptr plugins update`
+
+Update installed plugins.
+
+```
+USAGE
+  $ chptr plugins update [-h] [-v]
+
+FLAGS
+  -h, --help     Show CLI help.
+  -v, --verbose
+
+DESCRIPTION
+  Update installed plugins.
+```
+
+_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v4.1.21/src/commands/plugins/update.ts)_
 
 ## `chptr rename [CHAPTERIDORFILENAME] [NEWNAME]`
 
@@ -477,47 +724,47 @@ Modify chapter title in text, metadata and filename or tracked filename
 
 ```
 USAGE
-  $ chptr rename [CHAPTERIDORFILENAME] [NEWNAME]
+  $ chptr rename [CHAPTERIDORFILENAME] [NEWNAME] [-a -t] [-s]
 
 ARGUMENTS
   CHAPTERIDORFILENAME  Chapter number or tracked filename to modify
   NEWNAME              New chapter name
 
-OPTIONS
-  -N, --notify     show a notification box when command is completed.
-  -a, --all        Will run on every chapter file.  Will ignore a `chapterIdOrFilename argument.`
-  -h, --help       show CLI help
-  -p, --path=path  [default: .] Path where root of project files are
-  -s, --save       Commit to git at the same time.
-  -t, --title      Use chapter's title as new name.  Will supercede a `newName` argument.
+FLAGS
+  -a, --all    Will run on every chapter file.  Will ignore a `chapterIdOrFilename argument.`
+  -s, --save   Commit to git at the same time.
+  -t, --title  Use chapter's title as new name.  Will supercede a `newName` argument.
+
+DESCRIPTION
+  Modify chapter title in text, metadata and filename or tracked filename
 ```
 
-_See code: [src\commands\rename.ts](https://github.com/spikying/chptr/blob/v0.3.6/src\commands\rename.ts)_
+_See code: [src/commands/rename.ts](https://github.com/spikying/chptr/blob/v1.0.0/src/commands/rename.ts)_
 
-## `chptr reorder [ORIGINID] [DESTINATIONID]`
+## `chptr reorder [DESTINATIONID] [ORIGINID]`
 
 Takes a chapter and modifies its index number to fit another ordering place
 
 ```
 USAGE
-  $ chptr reorder [ORIGINID] [DESTINATIONID]
+  $ chptr reorder [DESTINATIONID] [ORIGINID] [-c] [-s]
 
 ARGUMENTS
-  ORIGINID       Chapter number to move
   DESTINATIONID  Number it will become (write `end` or `@end`to put at the end of each stack).
+  ORIGINID       Chapter number to move
 
-OPTIONS
-  -N, --notify     show a notification box when command is completed.
-  -c, --compact    Compact chapter numbers at the same time
-  -h, --help       show CLI help
-  -p, --path=path  [default: .] Path where root of project files are
-  -s, --save       Commit to git at the same time.
+FLAGS
+  -c, --compact  Compact chapter numbers at the same time
+  -s, --save     Commit to git at the same time.
+
+DESCRIPTION
+  Takes a chapter and modifies its index number to fit another ordering place
 
 ALIASES
   $ chptr move
 ```
 
-_See code: [src\commands\reorder.ts](https://github.com/spikying/chptr/blob/v0.3.6/src\commands\reorder.ts)_
+_See code: [src/commands/reorder.ts](https://github.com/spikying/chptr/blob/v1.0.0/src/commands/reorder.ts)_
 
 ## `chptr save [NUMBERORFILENAME]`
 
@@ -525,33 +772,58 @@ Parse modified text files, adjust sentence and paragraph endings, and commit fil
 
 ```
 USAGE
-  $ chptr save [NUMBERORFILENAME]
+  $ chptr save [NUMBERORFILENAME] [-c] [-e | -m <value>] [-n <value> | -f <value>] [-t ]
 
 ARGUMENTS
   NUMBERORFILENAME  Chamber number to save, or tracked filename or filename pattern to save to repository
 
-OPTIONS
-  -N, --notify             show a notification box when command is completed.
-  -e, --empty              No manual message in commit
+FLAGS
+  -c, --compact           Compact chapter numbers at the same time
+  -e, --empty             No manual message in commit
+  -f, --filename=<value>  Tracked filename or filename pattern to filter which files to stage before saving to
+                          repository
+  -m, --message=<value>   Message to use in commit to repository
+  -n, --number=<value>    Chapter number to filter which files to stage before saving to repository
+  -t, --track             Force tracking of file if not already in repository
 
-  -f, --filename=filename  Tracked filename or filename pattern to filter which files to stage before saving to
-                           repository
-
-  -h, --help               show CLI help
-
-  -m, --message=message    Message to use in commit to repository
-
-  -n, --number=number      Chapter number to filter which files to stage before saving to repository
-
-  -p, --path=path          [default: .] Path where root of project files are
-
-  -t, --track              Force tracking of file if not already in repository
+DESCRIPTION
+  Parse modified text files, adjust sentence and paragraph endings, and commit files to repository.
 
 ALIASES
   $ chptr commit
 ```
 
-_See code: [src\commands\save.ts](https://github.com/spikying/chptr/blob/v0.3.6/src\commands\save.ts)_
+_See code: [src/commands/save.ts](https://github.com/spikying/chptr/blob/v1.0.0/src/commands/save.ts)_
+
+## `chptr setup [NAME]`
+
+Generates basic config files for a new novel project
+
+```
+USAGE
+  $ chptr setup [NAME] [-a <value>] [-d /|chapters/|chapters/number/|] [-e <value>] [-f <value>] [-r
+    <value>] [-l <value>] [-s <value>]
+
+ARGUMENTS
+  NAME  Name of project
+
+FLAGS
+  -a, --author=<value>               Name of author of project
+  -d, --directorystructure=<option>  Directory structure initially written in config file
+                                     <options: /|chapters/|chapters/number/|>
+  -e, --email=<value>                Email of author of project
+  -f, --force=<value>                [default: false] Overwrite config files if they exist.  Specify a filename to
+                                     overwrite only one; write `true` to overwrite all.
+  -l, --language=<value>             Language of project
+  -r, --gitRemote=<value>            Git address of remote repository.
+  -s, --style=<value>                Config files in JSON5 or YAML?
+
+DESCRIPTION
+  Generates basic config files for a new novel project
+
+ALIASES
+  $ chptr setup
+```
 
 ## `chptr track [FILENAME]`
 
@@ -564,11 +836,9 @@ USAGE
 ARGUMENTS
   FILENAME  Filename to track
 
-OPTIONS
-  -N, --notify     show a notification box when command is completed.
-  -h, --help       show CLI help
-  -p, --path=path  [default: .] Path where root of project files are
+DESCRIPTION
+  Add a file to be tracked in repository that is not a chapter, summary or metadata file.
 ```
 
-_See code: [src\commands\track.ts](https://github.com/spikying/chptr/blob/v0.3.6/src\commands\track.ts)_
+_See code: [src/commands/track.ts](https://github.com/spikying/chptr/blob/v1.0.0/src/commands/track.ts)_
 <!-- commandsstop -->

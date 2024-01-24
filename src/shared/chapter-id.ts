@@ -1,10 +1,9 @@
-import * as d from 'debug'
+const debug = require('debug')('chapter-id')
 
-const debug = d('chapter-id')
 export class ChapterId {
-  public num: number
-  public isAtNumber: boolean
   public fixedDigits: number
+  public isAtNumber: boolean
+  public num: number
 
   constructor(num: number, isAtNumber: boolean, fixedDigits?: number) {
     this.num = num
@@ -17,19 +16,19 @@ export class ChapterId {
     return Math.max(Math.floor(Math.log10(Math.abs(this.num + buffer))), 0) + 1
   }
 
+  public equals(obj: ChapterId): boolean {
+    debug(`comparing chapter id ${this.toString()} with ${obj.toString()}`)
+    return this.num === obj.num && this.isAtNumber === obj.isAtNumber
+  }
+
   public stringifyNumber(): string {
     const s = this.num.toString()
     const zeroes = Math.max(this.fixedDigits - s.length, 0)
     if (zeroes > 0) {
       return '0'.repeat(zeroes).concat(s)
-    } else {
-      return s
     }
-  }
 
-  public equals(obj: ChapterId): boolean {
-    debug(`comparing chapter id ${this.toString()} with ${obj.toString()}`)
-    return this.num === obj.num && this.isAtNumber === obj.isAtNumber
+    return s
   }
 
   public toString(): string {

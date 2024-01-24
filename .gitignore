@@ -1,11 +1,16 @@
+**/.DS_Store
 *-debug.log
 *-error.log
+/.idea
 /.nyc_output
 /dist
 /lib
 /tmp
+/package-lock.json
 /yarn.lock
 node_modules
 chptr-linux
 chptr-macos
 chptr-win.exe
+oclif.lock
+oclif.manifest.json

@@ -1,18 +1,20 @@
-import { d } from '../base'
-import { flags } from '@oclif/command'
-import Command from '../initialized-base'
+import { Flags } from '@oclif/core'
 
-const debug = d('build:compact')
+import BaseCommand, { d } from '../base'
+// import Command from '../initialized-base'
+import { Container } from 'typescript-ioc'
+import { CoreUtils } from '../../shared/core-utils'
 
-export class Compact extends Command {
+const debug: (msg: string) => void = d('build:compact')
+
+export class Compact extends BaseCommand<typeof Compact> {
   static description = `Only compacts numbers of files`
 
   static flags = {
-    ...Command.flags,
-    save: flags.boolean({
+    save: Flags.boolean({
       char: 's',
-      description: 'Commit to git at the same time.',
-      default: false
+      default: false,
+      description: 'Commit to git at the same time.'
     })
   }
 
@@ -20,12 +22,13 @@ export class Compact extends Command {
 
   async run() {
     debug('Running Build:compact command')
-    const { args, flags } = this.parse(Compact)
+    const { flags } = await this.parse(Compact)
 
-    await this.coreUtils.preProcessAndCommitFiles('Before compacting file numbers')
-    await this.coreUtils.compactFileNumbers()
+    const coreUtils = Container.get(CoreUtils)
+    await coreUtils.preProcessAndCommitFiles('Before compacting file numbers')
+    await coreUtils.compactFileNumbers()
     if (flags.save) {
-      await this.coreUtils.preProcessAndCommitFiles('Compacted file numbers')
+      await coreUtils.preProcessAndCommitFiles('Compacted file numbers')
     }
   }
 }

@@ -1,73 +1,82 @@
-import { flags } from '@oclif/command'
+import { Args, Flags } from '@oclif/core'
 
-import { QueryBuilder } from '../ui-utils'
-
-import { d } from './base'
-import Command from './compactable-base'
+import { QueryBuilder } from '../shared/ui-utils'
+import BaseCommand, { d } from './base'
+import { compact } from '../flags/compact-flag'
+import { Container } from 'typescript-ioc'
+import { CoreUtils } from '../shared/core-utils'
+// import Command from './compactable-base'
 
 const debug = d('reorder')
 
-export default class Reorder extends Command {
+export default class Reorder extends BaseCommand<typeof Reorder> {
+  static aliases = ['move']
+
+  static args = {
+    destinationId: Args.string({
+      description: 'Number it will become (write `end` or `@end`to put at the end of each stack).',
+      name: 'destinationId',
+      required: false
+    }),
+    originId: Args.string({ description: 'Chapter number to move', name: 'originId', required: false })
+  }
+
   static description = 'Takes a chapter and modifies its index number to fit another ordering place'
 
   static flags = {
-    ...Command.flags,
-    compact: flags.boolean({
-      char: 'c',
-      description: 'Compact chapter numbers at the same time',
-      default: false
-    }),
-    save: flags.boolean({
+    compact: compact,
+    // compact: Flags.boolean({
+    //   char: 'c',
+    //   default: false,
+    //   description: 'Compact chapter numbers at the same time'
+    // }),
+    save: Flags.boolean({
       char: 's',
-      description: 'Commit to git at the same time.',
-      default: false
+      default: false,
+      description: 'Commit to git at the same time.'
     })
   }
 
-  static args = [
-    { name: 'originId', description: 'Chapter number to move', required: false },
-    {
-      name: 'destinationId',
-      description: 'Number it will become (write `end` or `@end`to put at the end of each stack).',
-      required: false
-    }
-  ]
-
-  static aliases = ['move']
   static hidden = false
 
   async run() {
     debug('Running command Reorder')
-    const { args, flags } = this.parse(Reorder)
 
-    const compact = flags.compact
+    const coreUtils = Container.get(CoreUtils)
+
+    const { args, flags } = await this.parse(Reorder)
+
+    const { compact } = flags
 
     const queryBuilder = new QueryBuilder()
     if (!args.originId) {
       queryBuilder.add('originId', queryBuilder.textinput('What chapter to use as origin?', ''))
     }
+
     if (!args.destinationId) {
       queryBuilder.add('destinationId', queryBuilder.textinput('What chapter to use as destination?'))
     }
+
     const queryResponses: any = await queryBuilder.responses()
     const originId = args.originId || queryResponses.originId
     const destinationId = args.destinationId || queryResponses.destinationId
 
-    await this.coreUtils.reorder(originId, destinationId)
+    await coreUtils.reorder(originId, destinationId)
 
-    const didAddDigits = await this.coreUtils.addDigitsToNecessaryStacks()
+    const didAddDigits = await coreUtils.addDigitsToNecessaryStacks()
 
     let commitMessage = `Reordered files from ${originId} to ${destinationId}`
     if (compact) {
       commitMessage += '\nCompacted file numbers'
-      await this.coreUtils.compactFileNumbers()
+      await coreUtils.compactFileNumbers()
     }
+
     if (didAddDigits) {
       commitMessage += '\nAdded digits to chapter numbers'
     }
 
     if (flags.save) {
-      await this.coreUtils.preProcessAndCommitFiles(commitMessage)
+      await coreUtils.preProcessAndCommitFiles(commitMessage)
     }
   }
 }

@@ -1,9 +1,8 @@
 import { CLIError } from '@oclif/errors'
-import * as d from 'debug'
 
-const debug = d('errors')
+const debug = require('debug')('ChptrError')
 export class ChptrError extends CLIError {
-  constructor(error: string | Error, code: string, exit: number) {
+  constructor(error: Error | string, code: string, exit: number) {
     super(error, { code, exit })
     debug(
       `${this.bang} ${'CHPTR ERROR'.errorColor()}\n  message:  ${this.message}\n  number:   ${exit}\n  code:     ${

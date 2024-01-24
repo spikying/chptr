@@ -2,14 +2,14 @@
 declare module 'ps-node'
 
 declare interface String {
-  color: any
   actionStartColor(): string
   actionStopColor(): string
-  resultHighlighColor(): string
-  resultSecondaryColor(): string
-  resultNormalColor(): string
-  infoColor(): string
+  color: any
   errorColor(): string
+  infoColor(): string
+  resultHighlighColor(): string
+  resultNormalColor(): string
+  resultSecondaryColor(): string
 }
 /*
 Colors
