@@ -13,6 +13,7 @@ import { MarkupUtils } from '../shared/markup-utils'
 import { Statistics } from '../shared/statistics'
 import { GitUtils } from '../shared/git-utils'
 import { CoreUtils } from '../shared/core-utils'
+import { actionStartColor, actionStopColor } from '../shared/colorize'
 // import Command from './initialized-base'
 
 const debug = d('rename')
@@ -100,7 +101,7 @@ export default class Rename extends BaseCommand<typeof Rename> {
     }
 
     for (const chapterId of chapterIds) {
-      ux.action.start(`Renaming files for chapter ${chapterId.toString()}`.actionStartColor())
+      ux.action.start(actionStartColor(`Renaming files for chapter ${chapterId.toString()}`))
 
       const [chapterFile] = await glob(path.join(this.rootPath, this.softConfig.chapterWildcardWithNumber(chapterId)))
       const [summaryFile] = await glob(path.join(this.rootPath, this.softConfig.summaryWildcardWithNumber(chapterId)))
@@ -194,7 +195,7 @@ export default class Rename extends BaseCommand<typeof Rename> {
           })`,
         ''
       )
-      ux.action.stop(toRenamePretty.actionStopColor())
+      ux.action.stop(actionStopColor(toRenamePretty))
 
       if (flags.save) {
         const toCommitFiles = await this.gitUtils.GetGitListOfStageableFiles(chapterId)

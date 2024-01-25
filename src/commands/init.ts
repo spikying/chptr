@@ -10,6 +10,7 @@ import BaseCommand, { d } from './base'
 import { Container } from 'typescript-ioc'
 import { FsUtils } from '../shared/fs-utils'
 import { HardConfig } from '../shared/hard-config'
+import { resultNormalColor, resultHighlighColor, infoColor, actionStartColor, actionStopColor } from '../shared/colorize'
 
 const debug = d('command:init')
 
@@ -115,7 +116,7 @@ export default class Init extends BaseCommand<typeof Init> {
       const madeDir = await this.fsUtils.createSubDirectoryFromDirectoryPathIfNecessary(this.hardConfig.configPath)
 
       if (madeDir) {
-        ux.info(`Created directory ${this.hardConfig.configPath.resultHighlighColor()}`.resultNormalColor())
+        ux.info(resultNormalColor(`Created directory ${resultHighlighColor(this.hardConfig.configPath)}`))
       }
     } catch (error) {
       // If directory already exists, silently swallow the error
@@ -286,10 +287,10 @@ export default class Init extends BaseCommand<typeof Init> {
       if (!forceConfig && (await this.fsUtils.fileExists(operation.fullPathName))) {
         if (!force) {
           table.accumulator(
-            `${operation.fullPathName.resultNormalColor()} already exists.`.infoColor(),
-            `Use option --force=${path.basename(
+            infoColor(`${resultNormalColor(operation.fullPathName)} already exists.`),
+            infoColor(`Use option --force=${path.basename(
               operation.fullPathName
-            )} to overwrite this one or -f, --force=true to overwrite all.`.infoColor()
+            )} to overwrite this one or -f, --force=true to overwrite all.`)
           )
         }
       } else {
@@ -311,7 +312,7 @@ export default class Init extends BaseCommand<typeof Init> {
       let didSyncRemote = false
 
       try {
-        ux.action.start('Working on git repository'.actionStartColor())
+        ux.action.start(actionStartColor('Working on git repository'))
 
         const isRepo = await this.git.checkIsRepo()
         if (!isRepo) {
@@ -346,26 +347,26 @@ export default class Init extends BaseCommand<typeof Init> {
           msg = 'no remote was supplied'
         } else {
           if (didGitInit) {
-            msg += `\n    initialized repo`.resultNormalColor()
+            msg += resultNormalColor(`\n    initialized repo`)
           }
 
           msg += didAddRemote
-            ? `\n    added remote ${remoteRepo.resultHighlighColor()}`.resultNormalColor()
-            : `\n    no remote added`.resultHighlighColor()
+            ? resultNormalColor(`\n    added remote ${remoteRepo.resultHighlighColor()}`)
+            : resultHighlighColor(`\n    no remote added`)
           if (didSyncRemote) {
-            msg += `\n    synched remote`.resultNormalColor()
+            msg += resultNormalColor(`\n    synched remote`)
           }
         }
 
-        ux.action.stop(msg.actionStopColor())
+        ux.action.stop(actionStopColor(msg))
       }
     } else {
       // show why remote was not updated
       const remote = await this.git.getRemotes(true).then((result: any[]) => result.find(value => value.name === 'origin'))
       const remoteName = remote ? remote.refs.fetch : ''
       table.accumulator(
-        `git repository already exists with remote ${remoteName.resultNormalColor()}`.infoColor(),
-        `Use option --force=gitRemote to overwrite this one or -f, --force=true to overwrite all.`.infoColor()
+        infoColor(`git repository already exists with remote ${remoteName.resultNormalColor()}`),
+        infoColor(`Use option --force=gitRemote to overwrite this one or -f, --force=true to overwrite all.`)
       )
     }
 
@@ -375,9 +376,9 @@ export default class Init extends BaseCommand<typeof Init> {
     await this.git.add('./**/*.*')
     const commitSummary = await this.git.commit('Init command has created some new files')
     if (commitSummary.commit) {
-      ux.info(`Commited all available files ${commitSummary.commit.resultHighlighColor()}`)
+      ux.info(`Commited all available files ${resultHighlighColor(commitSummary.commit)}`)
     }
 
-    ux.info('End of initialization'.infoColor())
+    ux.info(infoColor('End of initialization'))
   }
 }

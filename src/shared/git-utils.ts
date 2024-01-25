@@ -7,6 +7,7 @@ import { ChapterId } from './chapter-id'
 import { SoftConfig } from './soft-config'
 
 import minimatch = require('minimatch')
+import { actionStartColor, infoColor, actionStopColor, resultHighlighColor } from './colorize'
 
 const debug = require('debug')('git-utils')
 
@@ -41,7 +42,7 @@ export class GitUtils {
     toStageFiles = toStageFiles || (await this.GetGitListOfStageableFiles())
     if (toStageFiles.length > 0 || forDeletes) {
       // try {
-      ux.action.start('Saving file(s) in repository'.actionStartColor())
+      ux.action.start(actionStartColor('Saving file(s) in repository'))
 
       // await this.coreUtils.processChapterFilesBeforeSaving(toStageFiles)
       await preProcessingCallback(toStageFiles)
@@ -58,11 +59,11 @@ export class GitUtils {
         await git.pull()
       }
 
-      const toStagePretty = toStageFiles.map(f => `\n    ${f}`.infoColor())
+      const toStagePretty = toStageFiles.map(f => infoColor(`\n    ${f}`))
       ux.action.stop(
-        `\nCommited and pushed ${commitSummary.commit.resultHighlighColor()}:\n${message.infoColor()}\nFile${
+        actionStopColor(`\nCommited and pushed ${resultHighlighColor(commitSummary.commit)}:\n${infoColor(message)}\nFile${
           toStageFiles.length > 1 ? 's' : ''
-        }:${toStagePretty}`.actionStopColor()
+        }:${toStagePretty}`)
       )
       // } catch (err) {
       //   this.error(err.toString().errorColor())
@@ -104,6 +105,7 @@ export class GitUtils {
   }
 
   public async GetGitListOfStageableFiles(chapterId?: ChapterId): Promise<string[]> {
+    debug('In GetGitListOfStageableFiles')
     const git = await this.git()
     const gitStatus = await git.status()
 

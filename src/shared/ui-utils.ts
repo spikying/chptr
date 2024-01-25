@@ -1,39 +1,6 @@
 import { ux } from '@oclif/core'
 import { FsUtils } from './fs-utils'
-
-import chalk = require('chalk')
-
-// String.prototype.color = function (colorName: string) {
-//   return chalk[colorName](this)
-// }
-
-String.prototype.actionStartColor = function () {
-  return chalk.blue(this)
-}
-
-String.prototype.actionStopColor = function () {
-  return chalk.cyan(this)
-}
-
-String.prototype.resultHighlighColor = function () {
-  return chalk.yellow(this)
-}
-
-String.prototype.resultSecondaryColor = function () {
-  return chalk.magenta(this)
-}
-
-String.prototype.resultNormalColor = function () {
-  return chalk.whiteBright(this)
-}
-
-String.prototype.infoColor = function () {
-  return chalk.gray(this)
-}
-
-String.prototype.errorColor = function () {
-  return chalk.redBright(this)
-}
+import { actionStartColor, actionStopColor, infoColor, normalColor, resultHighlighColor, resultNormalColor } from './colorize'
 
 const debug = require('debug')('ui-utils')
 
@@ -159,21 +126,22 @@ export const tableize = function (col1: string, col2: string) {
   const show = (title?: string) => {
     if (moves.length > 0) {
       if (title) {
-        ux.info(`${title.actionStartColor()}... ${'done'.actionStopColor()}`.color('white'))
+        debug(`showing info for title ${title}`)
+        ux.info(normalColor(`${actionStartColor(title)}... ${actionStopColor('done')}`))
       }
 
       ux.table(
-        moves.map(o => ({ from: o.from.resultNormalColor(), to: o.to.resultHighlighColor() })),
+        moves.map(o => ({ from: resultNormalColor(o.from), to: resultHighlighColor(o.to) })),
         {
           ' ->': {
             get: () => ''
           },
           from: {
-            header: col1.infoColor(),
+            header: infoColor(col1),
             minWidth: 30
           },
           to: {
-            header: col2.infoColor()
+            header: infoColor(col2)
           }
         }
       )

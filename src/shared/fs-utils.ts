@@ -9,6 +9,7 @@ import { promisify } from 'node:util'
 import sanitize = require('sanitize-filename')
 import { Singleton } from 'typescript-ioc'
 import { ChptrError } from './chptr-error'
+import { resultNormalColor, resultHighlighColor, errorColor } from './colorize'
 
 const debug = require('debug')('fs-utils')
 
@@ -101,7 +102,7 @@ export class FsUtils {
       throw new ChptrError(error, 'fs-utils.createfile', 101)
     }
 
-    debug(`Created ${fullPathName.resultHighlighColor()}`.resultNormalColor())
+    debug(resultNormalColor(`Created ${resultHighlighColor(fullPathName)}`))
   }
 
   public async createSubDirectoryFromDirectoryPathIfNecessary(directoryPath: string): Promise<null | string> {
@@ -182,7 +183,7 @@ export class FsUtils {
       return content
     } catch (error: any) {
       debug(error.toString().errorColor())
-      ux.warn(`Could not read file content of ${filepath}`.errorColor())
+      ux.warn(errorColor(`Could not read file content of ${filepath}`))
       return ''
     }
   }

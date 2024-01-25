@@ -43,7 +43,7 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
   }
 
   async finally(_: Error | undefined) {
-    debug(`Base Finally`)
+    debug(`Base finally`)
     // const { flags } = this.parse(this.constructor as any) as any
     if (this.flags.notify) {
       notifier.notify({
@@ -58,6 +58,7 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
       await coreUtils.compactFileNumbers()
       await coreUtils.preProcessAndCommitFiles('Compacted file numbers')
     }
+    debug(`Base super.finally`)
     return super.finally(_)
   }
 

@@ -20,6 +20,7 @@ import { QueryBuilder, tableize } from './ui-utils'
 
 import yaml = require('js-yaml')
 import sanitize = require('sanitize-filename')
+import { actionStartColor, actionStopColor, errorColor, resultSecondaryColor } from './colorize'
 
 const debug = require('debug')('core-utils')
 
@@ -118,7 +119,7 @@ export class CoreUtils {
       }
     ]
 
-    ux.action.start('Creating file(s)'.actionStartColor())
+    ux.action.start(actionStartColor('Creating file(s)'))
 
     const allPromises: Promise<void>[] = []
     for (const pathAndData of fullPathsAndData) {
@@ -126,13 +127,7 @@ export class CoreUtils {
     }
 
     await Promise.all(allPromises)
-    ux.action.stop(
-      '\n    ' +
-        fullPathsAndData
-          .map(pad => pad.path)
-          .join('\n    ')
-          .actionStopColor()
-    )
+    ux.action.stop(actionStopColor('\n    ' + fullPathsAndData.map(pad => pad.path).join('\n    ')))
 
     return this.softConfig.mapFilesToBeRelativeToRootPath(fullPathsAndData.map(pad => pad.path))
   }
@@ -177,7 +172,7 @@ export class CoreUtils {
     try {
       const originalChapterFilesArray = (await glob(path.join(this.rootPath, this.softConfig.chapterWildcard(false)))).sort()
 
-      ux.action.start('Compiling and generating output files'.actionStartColor())
+      ux.action.start(actionStartColor('Compiling and generating output files'))
 
       let fullOriginalContent = this.softConfig.globalMetadataContent
 
@@ -300,7 +295,7 @@ export class CoreUtils {
       }
 
       const allOutputFilePathPretty = allOutputFilePath.reduce((previous, current) => `${previous}\n    ${current}`, '')
-      ux.action.stop(allOutputFilePathPretty.actionStopColor())
+      ux.action.stop(actionStopColor(allOutputFilePathPretty))
     } catch (error: any) {
       throw new ChptrError(error, 'build.run', 3)
     } finally {
@@ -350,7 +345,7 @@ export class CoreUtils {
   }
 
   public async compactFileNumbers(): Promise<void> {
-    ux.action.start('Compacting file numbers'.actionStartColor())
+    ux.action.start(actionStartColor('Compacting file numbers'))
     debug('core-utils.compactFileNumber()')
 
     const table = tableize('from', 'to')
@@ -414,10 +409,10 @@ export class CoreUtils {
     await removeTempDir()
 
     if (moves.length === 0) {
-      ux.action.stop(`no compacting was needed`.actionStopColor())
+      ux.action.stop(actionStopColor(`no compacting was needed`))
     } else {
       await this.addDigitsToNecessaryStacks()
-      ux.action.stop(`done:`.actionStopColor())
+      ux.action.stop(actionStopColor(`done:`))
       table.show()
     }
   }
@@ -551,14 +546,14 @@ export class CoreUtils {
     }
 
     if (toDeleteFiles.length === 0) {
-      ux.warn('No files to delete.'.errorColor())
+      ux.warn(errorColor('No files to delete.'))
       return ''
     }
 
-    ux.action.start('Deleting file(s) locally and from repository'.actionStartColor())
+    ux.action.start(actionStartColor('Deleting file(s) locally and from repository'))
     await this.gitUtils.rm(this.softConfig.mapFilesToBeRelativeToRootPath(toDeleteFiles))
     const toDeletePretty = toDeleteFiles.map(f => `\n    ${f}`)
-    ux.action.stop(`${toDeletePretty}\nwere deleted`.actionStopColor())
+    ux.action.stop(actionStopColor(`${toDeletePretty}\nwere deleted`))
 
     const commitMsg = `Removed files:\n    ${this.softConfig.mapFilesToBeRelativeToRootPath(toDeleteFiles).join('\n    ')}`
     return commitMsg
@@ -646,12 +641,13 @@ export class CoreUtils {
       pandocArgs = [
         ...pandocArgs,
         '--to',
-        'html5+smart+fancy_lists+definition_lists',
+        'html5+smart', //+fancy_lists+definition_lists',
         // '--toc',
         // '--toc-depth',
         // '1',
         '--top-level-division=chapter',
-        '--self-contained'
+        '--embed-resources',
+        '--standalone'
       ]
     }
 
@@ -681,7 +677,7 @@ export class CoreUtils {
       pandocArgs = [
         ...pandocArgs,
         '--to',
-        'epub+smart+fancy_lists+definition_lists',
+        'epub+smart', //+fancy_lists+definition_lists',
         // '--toc',
         // '--toc-depth',
         // '1',
@@ -793,7 +789,7 @@ export class CoreUtils {
   }
 
   public async reorder(origin: string, destination: string): Promise<void> {
-    ux.action.start('Analyzing files'.actionStartColor())
+    ux.action.start(actionStartColor('Analyzing files'))
 
     await this.statistics.refreshStats()
 
@@ -887,8 +883,8 @@ export class CoreUtils {
       }
     }
 
-    ux.action.stop(`from ${origin.toString()} to ${destinationId.toString()}`.actionStopColor())
-    ux.action.start('Moving files to temp directory'.actionStartColor())
+    ux.action.stop(actionStopColor(`from ${origin.toString()} to ${destinationId.toString()}`))
+    ux.action.start(actionStartColor('Moving files to temp directory'))
 
     const { tempDir } = await this.fsUtils.getTempDir(this.rootPath)
 
@@ -924,9 +920,9 @@ export class CoreUtils {
     //   await this.fsUtils.writeFile(file, content)
     // }
 
-    ux.action.stop(tempDir.actionStopColor())
+    ux.action.stop(actionStopColor(tempDir))
 
-    ux.action.start('Moving files to their final states'.actionStartColor())
+    ux.action.start(actionStartColor('Moving files to their final states'))
     const fileMovesPretty = ''
 
     // try {
@@ -975,7 +971,7 @@ export class CoreUtils {
 
     await this.fsUtils.deleteEmptySubDirectories(this.rootPath)
 
-    ux.action.stop('done'.actionStopColor())
+    ux.action.stop(actionStopColor('done'))
   }
 
   // todo: make sure this is called from all places needed (all builds, move, compact, etc.)
@@ -1037,7 +1033,7 @@ export class CoreUtils {
   public async runPandoc(options: string[]): Promise<string> {
     return new Promise((resolve, reject) => {
       const command = 'pandoc ' + options.join(' ')
-      ux.info(`Executing child process with command ${command.resultSecondaryColor()}`)
+      ux.info(`Executing child process with command ${resultSecondaryColor(command)}`)
       exec(command, (err, pout, perr) => {
         if (err) {
           // this.error(err.toString().errorColor())
@@ -1423,7 +1419,7 @@ export class CoreUtils {
     return new Promise((resolve, reject) => {
       if (this.softConfig.config.postBuildStep) {
         try {
-          ux.action.start('Running post-build step'.actionStartColor())
+          ux.action.start(actionStartColor('Running post-build step'))
           exec(this.softConfig.postBuildStep, (err, pout, perr) => {
             if (err) {
               reject(err)
@@ -1436,7 +1432,7 @@ export class CoreUtils {
             ux.info(pout)
             resolve()
           })
-          ux.action.stop(this.softConfig.postBuildStep.actionStopColor())
+          ux.action.stop(actionStopColor(this.softConfig.postBuildStep))
         } catch (error: any) {
           throw new ChptrError(error, 'build.run', 331)
         }

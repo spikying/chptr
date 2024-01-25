@@ -9,6 +9,7 @@ import { ux } from '@oclif/core'
 import { tableize } from './ui-utils'
 import { ChptrError } from './chptr-error'
 import * as moment from 'moment'
+import { actionStartColor, actionStopColor } from './colorize'
 
 const debug = require('debug')('build:metadata-executor')
 
@@ -78,7 +79,7 @@ export default class MetadataExecutor {
       }
 
       if (showWritingRate) {
-        ux.action.start('Extracting word count stats for all content files'.actionStartColor())
+        ux.action.start(actionStartColor('Extracting word count stats for all content files'))
         debug('before getting wordCountHistory')
         const wordCountHistory = await this.markupUtils.extractWordCountHistory2(recalculateWritingRate)
         debug('after getting wordCountHistory')
@@ -127,7 +128,7 @@ export default class MetadataExecutor {
           ux.warn('No history in repository')
         }
 
-        ux.action.stop('done'.actionStopColor())
+        ux.action.stop(actionStopColor('done'))
       }
     } catch (error: any) {
       throw new ChptrError(error, 'build:RunMetadata', 3)

@@ -8,6 +8,7 @@ import { Container } from 'typescript-ioc'
 import { GitUtils } from '../shared/git-utils'
 import { CoreUtils } from '../shared/core-utils'
 import { SoftConfig } from '../shared/soft-config'
+import { actionStartColor, actionStopColor } from '../shared/colorize'
 // import Command from './initialized-base'
 
 const debug = d('track')
@@ -82,12 +83,12 @@ export default class Track extends BaseCommand<typeof Track> {
       throw new ChptrError('No filename to track', 'track.run', 22)
     }
 
-    ux.action.start('Tracking file'.actionStartColor())
+    ux.action.start(actionStartColor('Tracking file'))
 
     const toCommitFiles = [softConfig.mapFileToBeRelativeToRootPath(filename)]
 
     await coreUtils.preProcessAndCommitFiles(`Tracking file ${filename}`, toCommitFiles)
 
-    ux.action.stop('done'.actionStopColor())
+    ux.action.stop(actionStopColor('done'))
   }
 }

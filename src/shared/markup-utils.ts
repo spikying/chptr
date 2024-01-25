@@ -11,6 +11,7 @@ import { FsUtils } from './fs-utils'
 import { GitUtils } from './git-utils'
 import { SoftConfig, WordCountObject } from './soft-config'
 import { ITable, tableize } from './ui-utils'
+import { actionStartColor, actionStopColor } from './colorize'
 
 const debug = require('debug')('markup-utils')
 
@@ -66,7 +67,7 @@ export class MarkupUtils {
     allSummaryFilesArray: string[],
     outputFile: string
   ) {
-    ux.action.start('Extracting markup and updating metadata'.actionStartColor())
+    ux.action.start(actionStartColor('Extracting markup and updating metadata'))
     // debug(`starting extractGlobalMetadata`)
 
     const flattenedChapterMarkupArray = await this.extractMarkupFromFiles(allChapterFilesArray)
@@ -74,7 +75,7 @@ export class MarkupUtils {
     const flattenedMarkupArray = await this.combineChapterAndSummaryMetadata(flattenedChapterMarkupArray, flattenedSummaryMarkupArray)
     await this.updateGlobalAndChapterMetadata(flattenedMarkupArray, outputFile)
 
-    ux.action.stop(`done`.actionStopColor())
+    ux.action.stop(actionStopColor(`done`))
   }
 
   public async extractMarkupFromFile(filepath: string): Promise<MarkupObj[]> {
@@ -510,14 +511,19 @@ export class MarkupUtils {
   }
 
   public async UpdateSingleMetadata(chapterFile: string) {
-    ux.action.start(`Extracting markup from ${chapterFile}`.actionStartColor())
+    debug(`Update single metadata for ${chapterFile}`)
+    ux.action.start(`Extracting markup from ${chapterFile}`) //.actionStartColor())
 
+    debug('will extract markup from file')
     const markupObjArr = await this.extractMarkupFromFile(chapterFile)
+    debug('will get markup by file')
     const markupByFile = this.getMarkupByFile(markupObjArr)
+    debug('will write metadata in each file')
     const modifiedMetadataFiles = await this.writeMetadataInEachFile(markupByFile)
     const modifiedFile = modifiedMetadataFiles[0]
+    debug(`modified file = ${JSON.stringify(modifiedFile)}`)
 
-    const msg = modifiedFile ? `updated ${modifiedFile.file} with ${modifiedFile.diff}`.actionStopColor() : 'updated nothing'
+    const msg = modifiedFile ? actionStopColor(`updated ${modifiedFile.file} with ${modifiedFile.diff}`) : 'updated nothing'
     ux.action.stop(msg)
   }
 

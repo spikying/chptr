@@ -13,6 +13,7 @@ import { FsUtils } from '../shared/fs-utils'
 import { GitUtils } from '../shared/git-utils'
 import { MarkupUtils } from '../shared/markup-utils'
 import { SoftConfig } from '../shared/soft-config'
+import { resultNormalColor } from '../shared/colorize'
 // import Command from './initialized-base'
 
 const debug = d('save')
@@ -84,11 +85,11 @@ export default class Save extends BaseCommand<typeof Save> {
     const gitUtils = Container.get(GitUtils)
     const coreUtils = Container.get(CoreUtils)
 
-    const { args, flags } = await this.parse(Save)
+    // const { args, flags } = await this.parse(Save)
 
-    const { numberOrFilename } = args
-    let inputNumber = flags.number
-    let inputFilename = flags.filename
+    const { numberOrFilename } = this.args
+    let inputNumber = this.flags.number
+    let inputFilename = this.flags.filename
 
     if (numberOrFilename != '') {
       const numAtRegex = new RegExp(`^${softConfig.numbersPattern(true)}$`)
@@ -101,8 +102,10 @@ export default class Save extends BaseCommand<typeof Save> {
     }
 
     const chapterIdFilter = inputNumber ? new ChapterId(softConfig.extractNumber(inputNumber), softConfig.isAtNumbering(inputNumber)) : null
+    debug(`chapterIdFilter: ${JSON.stringify(chapterIdFilter)}`)
 
     const preStageFiles = chapterIdFilter ? await gitUtils.GetGitListOfStageableFiles(chapterIdFilter) : []
+    debug(`preStageFiles: ${JSON.stringify(preStageFiles)}`)
 
     for (const toStageFile of preStageFiles) {
       const isChapterFile = chapterIdFilter
@@ -110,6 +113,7 @@ export default class Save extends BaseCommand<typeof Save> {
         : minimatch(toStageFile, softConfig.chapterWildcard(true)) || minimatch(toStageFile, softConfig.chapterWildcard(false))
 
       if (isChapterFile) {
+        debug(`will update single metadata for ${toStageFile}`)
         await markupUtils.UpdateSingleMetadata(toStageFile)
       }
     }
@@ -122,28 +126,32 @@ export default class Save extends BaseCommand<typeof Save> {
             return minimatch(f, inputFilename || '')
           })
         : await gitUtils.GetGitListOfStageableFiles()
+    debug(`toStageFiles = ${JSON.stringify(toStageFiles)}`)
 
     if (toStageFiles.length === 0) {
+      debug(`toStageFiles is empty`)
       const filepath = path.join(rootPath, inputFilename || '')
       if (inputFilename && (await fsUtils.fileExists(filepath))) {
-        if (flags.track) {
+        if (this.flags.track) {
           toStageFiles.push(softConfig.mapFileToBeRelativeToRootPath(filepath))
         } else {
           const warnMsg =
             `That file is not tracked.  You may want to run "` +
-            `track '${inputFilename}'`.resultNormalColor() +
+            resultNormalColor(`track '${inputFilename}'`) +
             `" or add ` +
-            `--track`.resultNormalColor() +
+            resultNormalColor(`--track`) +
             ` flag to this command.`
+          debug(`will throw error ${warnMsg}`)
           throw new ChptrError(warnMsg, 'save.run', 46)
         }
       } else {
+        debug(`will throw error No files to save`)
         throw new ChptrError('No files to save to repository', 'save.run', 47)
       }
     }
 
-    const emptyCommitMessage = flags.empty
-    const messageFromFlag = flags.message
+    const emptyCommitMessage = this.flags.empty
+    const messageFromFlag = this.flags.message
     const queryBuilder = new QueryBuilder()
     if (!messageFromFlag && !emptyCommitMessage) {
       queryBuilder.add('message', queryBuilder.textinput('Message to use in commit to repository?', ''))
@@ -159,5 +167,6 @@ export default class Save extends BaseCommand<typeof Save> {
       `${toStageFiles.join('\n    ')}`
 
     await coreUtils.preProcessAndCommitFiles(message, toStageFiles)
+    debug('done running save')
   }
 }

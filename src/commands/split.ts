@@ -12,6 +12,7 @@ import { SoftConfig } from '../shared/soft-config'
 import { FsUtils } from '../shared/fs-utils'
 import { Statistics } from '../shared/statistics'
 import { MarkupUtils } from '../shared/markup-utils'
+import { resultNormalColor, resultHighlighColor } from '../shared/colorize'
 // import Command from './compactable-base'
 
 const debug = d('split')
@@ -85,11 +86,11 @@ export default class Split extends BaseCommand<typeof Split> {
     const replacedContents = await this.splitContentByTitles(initialContent)
 
     if (replacedContents.length > 1) {
-      ux.info('Reading and processing chapter...'.resultNormalColor())
+      ux.info(resultNormalColor('Reading and processing chapter...'))
 
       await statistics.refreshStats()
 
-      ux.info('Adding new chapters...'.resultNormalColor())
+      ux.info(resultNormalColor('Adding new chapters...'))
       commitMsg += `in ${replacedContents.length} parts:`
 
       // TODO: first chapter keeps its files and name, and all others are put in @end queue
@@ -125,7 +126,7 @@ export default class Split extends BaseCommand<typeof Split> {
 
       commitMsg = commitMsg.replace(/, $/, '')
 
-      ux.info(`modified files:${toEditPretty.resultHighlighColor()}`.resultNormalColor())
+      ux.info(resultNormalColor(`modified files:${resultHighlighColor(toEditPretty)}`))
 
       if (compact) {
         await coreUtils.compactFileNumbers()

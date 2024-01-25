@@ -10,6 +10,7 @@ import { Container } from 'typescript-ioc'
 import { SoftConfig } from '../shared/soft-config'
 import { FsUtils } from '../shared/fs-utils'
 import { CoreUtils } from '../shared/core-utils'
+import { actionStartColor, actionStopColor } from '../shared/colorize'
 // import Command from './initialized-base'
 
 const debug = d('edit')
@@ -104,7 +105,7 @@ export default class Edit extends BaseCommand<typeof Edit> {
       throw new ChptrError('No files matching input', 'edit.run', 20)
     }
 
-    ux.action.start('Reading and processing files'.actionStartColor())
+    ux.action.start(actionStartColor('Reading and processing files'))
     for (const filename of toEditFiles) {
       const fullPath = path.join(rootPath, filename)
 
@@ -114,6 +115,6 @@ export default class Edit extends BaseCommand<typeof Edit> {
     }
 
     const toEditPretty = toEditFiles.map(f => `\n    ${f}`)
-    ux.action.stop(`${toEditPretty}\n${toEditFiles.length > 1 ? 'were' : 'was'} modified`.actionStopColor())
+    ux.action.stop(actionStopColor(`${toEditPretty}\n${toEditFiles.length > 1 ? 'were' : 'was'} modified`))
   }
 }
