@@ -2,12 +2,10 @@ import { ux } from '@oclif/core'
 import * as moment from 'moment'
 import { LogOptions, MoveSummary, SimpleGit } from 'simple-git'
 import { Inject, InjectValue, Singleton } from 'typescript-ioc'
-
 import { ChapterId } from './chapter-id'
+import { actionStartColor, actionStopColor, infoColor, resultHighlighColor } from './colorize'
 import { SoftConfig } from './soft-config'
-
 import minimatch = require('minimatch')
-import { actionStartColor, infoColor, actionStopColor, resultHighlighColor } from './colorize'
 
 const debug = require('debug')('git-utils')
 

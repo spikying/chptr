@@ -1,16 +1,15 @@
 import { Args, Flags, ux } from '@oclif/core'
 import { glob } from 'glob'
 import * as path from 'node:path'
-
+import { Container } from 'typescript-ioc'
 import { ChapterId } from '../shared/chapter-id'
 import { ChptrError } from '../shared/chptr-error'
+import { actionStartColor, actionStopColor } from '../shared/colorize'
+import { CoreUtils } from '../shared/core-utils'
+import { FsUtils } from '../shared/fs-utils'
+import { SoftConfig } from '../shared/soft-config'
 import { QueryBuilder } from '../shared/ui-utils'
 import BaseCommand, { d } from './base'
-import { Container } from 'typescript-ioc'
-import { SoftConfig } from '../shared/soft-config'
-import { FsUtils } from '../shared/fs-utils'
-import { CoreUtils } from '../shared/core-utils'
-import { actionStartColor, actionStopColor } from '../shared/colorize'
 // import Command from './initialized-base'
 
 const debug = d('edit')

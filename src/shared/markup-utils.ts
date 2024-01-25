@@ -4,14 +4,13 @@ import * as JsDiff from 'diff'
 import * as moment from 'moment'
 import * as path from 'node:path'
 import { Inject, InjectValue, Singleton } from 'typescript-ioc'
-
 import { ChapterId } from './chapter-id'
 import { ChptrError } from './chptr-error'
+import { actionStartColor, actionStopColor } from './colorize'
 import { FsUtils } from './fs-utils'
 import { GitUtils } from './git-utils'
 import { SoftConfig, WordCountObject } from './soft-config'
 import { ITable, tableize } from './ui-utils'
-import { actionStartColor, actionStopColor } from './colorize'
 
 const debug = require('debug')('markup-utils')
 

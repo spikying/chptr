@@ -1,12 +1,11 @@
-import { Flags, ux } from '@oclif/core'
-
+import { Flags } from '@oclif/core'
 import { SoftConfig } from '../../shared/soft-config'
 import BaseCommand, { d } from '../base'
 // import Command from '../compactable-base'
-import MetadataExecutor from '../../shared/metadata-executor'
 import { Container } from 'typescript-ioc'
-import { FsUtils } from '../../shared/fs-utils'
 import { compact } from '../../flags/compact-flag'
+import { FsUtils } from '../../shared/fs-utils'
+import MetadataExecutor from '../../shared/metadata-executor'
 
 const debug = d('build:metadata')
 

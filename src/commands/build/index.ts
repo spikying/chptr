@@ -1,10 +1,9 @@
 import { Flags } from '@oclif/core'
-
+import { Container } from 'typescript-ioc'
 import { BuildType, CoreUtils } from '../../shared/core-utils'
+import MetadataExecutor from '../../shared/metadata-executor'
 import { QueryBuilder } from '../../shared/ui-utils'
 import BaseCommand, { d } from '../base'
-import { Container } from 'typescript-ioc'
-import MetadataExecutor from '../../shared/metadata-executor'
 import { metadataFlags } from './metadata'
 
 const debug = d('build')

@@ -1,14 +1,13 @@
 import { Args, Command, Flags, Interfaces } from '@oclif/core'
-import * as path from 'node:path'
 import * as notifier from 'node-notifier'
+import * as path from 'node:path'
 import { Container, ObjectFactory, Scope } from 'typescript-ioc'
-
+import { simpleGit } from 'simple-git'
+import { BootstrapChptr } from '../shared/bootstrap-functions'
+import { CoreUtils } from '../shared/core-utils'
 import { FsUtils } from '../shared/fs-utils'
 import { HardConfig } from '../shared/hard-config'
 import { SoftConfig } from '../shared/soft-config'
-import { simpleGit } from 'simple-git'
-import { CoreUtils } from '../shared/core-utils'
-import { BootstrapChptr } from '../shared/bootstrap-functions'
 import WatchConfig from '../shared/watch-config'
 
 export const d = (cmdName: string) => require('debug')(`chptr:${cmdName}`)

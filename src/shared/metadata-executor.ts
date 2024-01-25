@@ -1,15 +1,15 @@
-import { Inject, InjectValue } from 'typescript-ioc'
-import { CoreUtils } from './core-utils'
-import { MarkupUtils } from './markup-utils'
-import { FsUtils } from './fs-utils'
-import { glob } from 'glob'
-import path = require('path')
-import { SoftConfig, WordCountObject } from './soft-config'
 import { ux } from '@oclif/core'
-import { tableize } from './ui-utils'
-import { ChptrError } from './chptr-error'
+import { glob } from 'glob'
 import * as moment from 'moment'
+import { Inject, InjectValue } from 'typescript-ioc'
+import { ChptrError } from './chptr-error'
 import { actionStartColor, actionStopColor } from './colorize'
+import { CoreUtils } from './core-utils'
+import { FsUtils } from './fs-utils'
+import { MarkupUtils } from './markup-utils'
+import { SoftConfig, WordCountObject } from './soft-config'
+import { tableize } from './ui-utils'
+import path = require('path')
 
 const debug = require('debug')('build:metadata-executor')
 

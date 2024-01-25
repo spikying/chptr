@@ -2,15 +2,14 @@ import { Args, Flags, ux } from '@oclif/core'
 import * as path from 'node:path'
 import { SimpleGit } from 'simple-git'
 import * as validator from 'validator'
-
+import { Container } from 'typescript-ioc'
 import { ChptrError } from '../shared/chptr-error'
+import { actionStartColor, actionStopColor, infoColor, resultHighlighColor, resultNormalColor } from '../shared/colorize'
+import { FsUtils } from '../shared/fs-utils'
+import { HardConfig } from '../shared/hard-config'
 import { Author, SoftConfig } from '../shared/soft-config'
 import { QueryBuilder, tableize } from '../shared/ui-utils'
 import BaseCommand, { d } from './base'
-import { Container } from 'typescript-ioc'
-import { FsUtils } from '../shared/fs-utils'
-import { HardConfig } from '../shared/hard-config'
-import { resultNormalColor, resultHighlighColor, infoColor, actionStartColor, actionStopColor } from '../shared/colorize'
 
 const debug = d('command:init')
 

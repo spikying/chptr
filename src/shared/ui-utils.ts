@@ -1,6 +1,6 @@
 import { ux } from '@oclif/core'
-import { FsUtils } from './fs-utils'
 import { actionStartColor, actionStopColor, infoColor, normalColor, resultHighlighColor, resultNormalColor } from './colorize'
+import { FsUtils } from './fs-utils'
 
 const debug = require('debug')('ui-utils')
 

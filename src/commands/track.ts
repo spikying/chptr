@@ -1,14 +1,13 @@
 import { Args, ux } from '@oclif/core'
 import * as path from 'node:path'
-
+import { Container } from 'typescript-ioc'
 import { ChptrError } from '../shared/chptr-error'
+import { actionStartColor, actionStopColor } from '../shared/colorize'
+import { CoreUtils } from '../shared/core-utils'
+import { GitUtils } from '../shared/git-utils'
+import { SoftConfig } from '../shared/soft-config'
 import { QueryBuilder } from '../shared/ui-utils'
 import BaseCommand, { d } from './base'
-import { Container } from 'typescript-ioc'
-import { GitUtils } from '../shared/git-utils'
-import { CoreUtils } from '../shared/core-utils'
-import { SoftConfig } from '../shared/soft-config'
-import { actionStartColor, actionStopColor } from '../shared/colorize'
 // import Command from './initialized-base'
 
 const debug = d('track')

@@ -1,10 +1,9 @@
 import { Args, Flags } from '@oclif/core'
-
+import { Container } from 'typescript-ioc'
+import { compact } from '../flags/compact-flag'
+import { CoreUtils } from '../shared/core-utils'
 import { QueryBuilder } from '../shared/ui-utils'
 import BaseCommand, { d } from './base'
-import { compact } from '../flags/compact-flag'
-import { Container } from 'typescript-ioc'
-import { CoreUtils } from '../shared/core-utils'
 // import Command from './compactable-base'
 
 const debug = d('reorder')

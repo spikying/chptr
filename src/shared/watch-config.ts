@@ -1,14 +1,14 @@
 import { observableDiff } from 'deep-diff'
-import { tableize } from './ui-utils'
-import { Inject, InjectValue } from 'typescript-ioc'
-import { SoftConfig } from './soft-config'
-import { GitUtils } from './git-utils'
-import { FsUtils } from './fs-utils'
 import { glob } from 'glob'
-import path = require('path')
+import { Inject, InjectValue } from 'typescript-ioc'
 import { ChapterId } from './chapter-id'
-import { MarkupUtils } from './markup-utils'
+import { FsUtils } from './fs-utils'
+import { GitUtils } from './git-utils'
 import { HardConfig } from './hard-config'
+import { MarkupUtils } from './markup-utils'
+import { SoftConfig } from './soft-config'
+import { tableize } from './ui-utils'
+import path = require('path')
 
 const debug = require('debug')('WatchConfig')
 

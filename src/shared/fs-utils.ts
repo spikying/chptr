@@ -1,15 +1,13 @@
 import { ux } from '@oclif/core'
-
 import { glob } from 'glob'
 import * as latinize from 'latinize'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 import { promisify } from 'node:util'
-
-import sanitize = require('sanitize-filename')
 import { Singleton } from 'typescript-ioc'
 import { ChptrError } from './chptr-error'
-import { resultNormalColor, resultHighlighColor, errorColor } from './colorize'
+import { errorColor, resultHighlighColor, resultNormalColor } from './colorize'
+import sanitize = require('sanitize-filename')
 
 const debug = require('debug')('fs-utils')
 

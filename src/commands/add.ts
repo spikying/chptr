@@ -1,11 +1,9 @@
-import { Args, Flags } from '@oclif/core'
-
-import BaseCommand, { d } from './base'
-import { compact } from '../flags/compact-flag'
+import { Args } from '@oclif/core'
 import { Container } from 'typescript-ioc'
+import { compact } from '../flags/compact-flag'
 import { CoreUtils } from '../shared/core-utils'
 import { QueryBuilder } from '../shared/ui-utils'
-// import Command from './compactable-base'
+import BaseCommand, { d } from './base'
 
 const debug = d('add')
 
@@ -40,20 +38,20 @@ export default class Add extends BaseCommand<typeof Add> {
 
   async run() {
     debug(`Running Add command`)
-    const { args, flags } = await this.parse(Add)
+    // const { args, flags } = await this.parse(Add)
 
     const coreUtils = Container.get(CoreUtils)
 
     const queryBuilder = new QueryBuilder()
-    if (!args.name) {
+    if (!this.args.name) {
       queryBuilder.add('name', queryBuilder.textinput('What name do you want as a chapter name?', 'chapter'))
     }
 
     const queryResponses: any = await queryBuilder.responses()
 
-    const name: string = args.name || queryResponses.name
+    const name: string = this.args.name || queryResponses.name
 
-    const futureId = await coreUtils.checkArgPromptAndExtractChapterId(args.number, '', true)
+    const futureId = await coreUtils.checkArgPromptAndExtractChapterId(this.args.number, '', true)
 
     const toStageFiles = await coreUtils.addChapterFiles(
       name,

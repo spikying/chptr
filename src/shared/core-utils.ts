@@ -6,10 +6,10 @@ import { exec } from 'node:child_process'
 import * as path from 'node:path'
 import { file as tmpFile } from 'tmp-promise'
 import { Container, Inject, InjectValue, Singleton } from 'typescript-ioc'
-
 import { BootstrapChptr } from './bootstrap-functions'
 import { ChapterId } from './chapter-id'
 import { ChptrError } from './chptr-error'
+import { actionStartColor, actionStopColor, errorColor, resultSecondaryColor } from './colorize'
 import { FsUtils } from './fs-utils'
 import { GitUtils } from './git-utils'
 import { HardConfig } from './hard-config'
@@ -17,10 +17,8 @@ import { MarkupUtils } from './markup-utils'
 import { SoftConfig } from './soft-config'
 import { Statistics } from './statistics'
 import { QueryBuilder, tableize } from './ui-utils'
-
 import yaml = require('js-yaml')
 import sanitize = require('sanitize-filename')
-import { actionStartColor, actionStopColor, errorColor, resultSecondaryColor } from './colorize'
 
 const debug = require('debug')('core-utils')
 
