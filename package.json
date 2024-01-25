@@ -4,6 +4,7 @@
     "chptr": "./bin/run.js"
   },
   "dependencies": {
+    "@braintree/sanitize-url": "^7.0.0",
     "@oclif/core": "^3",
     "@oclif/errors": "^1.3.6",
     "@oclif/plugin-help": "^6",
