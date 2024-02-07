@@ -43,22 +43,22 @@ export default class Reorder extends BaseCommand<typeof Reorder> {
 
     const coreUtils = Container.get(CoreUtils)
 
-    const { args, flags } = await this.parse(Reorder)
+    // const { args, flags } = await this.parse(Reorder)
 
-    const { compact } = flags
+    const { compact } = this.flags
 
     const queryBuilder = new QueryBuilder()
-    if (!args.originId) {
+    if (!this.args.originId) {
       queryBuilder.add('originId', queryBuilder.textinput('What chapter to use as origin?', ''))
     }
 
-    if (!args.destinationId) {
+    if (!this.args.destinationId) {
       queryBuilder.add('destinationId', queryBuilder.textinput('What chapter to use as destination?'))
     }
 
     const queryResponses: any = await queryBuilder.responses()
-    const originId = args.originId || queryResponses.originId
-    const destinationId = args.destinationId || queryResponses.destinationId
+    const originId = this.args.originId || queryResponses.originId
+    const destinationId = this.args.destinationId || queryResponses.destinationId
 
     await coreUtils.reorder(originId, destinationId)
 
@@ -74,7 +74,7 @@ export default class Reorder extends BaseCommand<typeof Reorder> {
       commitMessage += '\nAdded digits to chapter numbers'
     }
 
-    if (flags.save) {
+    if (this.flags.save) {
       await coreUtils.preProcessAndCommitFiles(commitMessage)
     }
   }

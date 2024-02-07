@@ -41,20 +41,20 @@ export default class Delete extends BaseCommand<typeof Delete> {
 
   async run() {
     debug('Running Delete command')
-    const { args, flags } = await this.parse(Delete)
+    // const { args, flags } = await this.parse(Delete)
 
-    const { compact } = flags
-    const { save } = flags
+    const { compact } = this.flags
+    const { save } = this.flags
 
     const coreUtils = Container.get(CoreUtils)
 
     const queryBuilder = new QueryBuilder()
-    if (!args.name) {
+    if (!this.args.name) {
       queryBuilder.add('name', queryBuilder.textinput('Chapter number or filename to delete?'))
     }
 
     const queryResponses: any = await queryBuilder.responses()
-    const nameOrNumber: any = args.name || queryResponses.name
+    const nameOrNumber: any = this.args.name || queryResponses.name
 
     if (!nameOrNumber) {
       throw new ChptrError('Name or number input empty', 'delete.run', 4)

@@ -73,6 +73,7 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
     this.flags = flags as Flags<T>
     this.args = args as Args<T>
 
+    debug(`will use path ${flags.path}`)
     const rootPath = path.join(flags.path as string)
 
     Container.bindName('rootPath').to(rootPath)

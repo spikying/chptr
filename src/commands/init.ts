@@ -99,23 +99,23 @@ export default class Init extends BaseCommand<typeof Init> {
   static strict = false
   // private flagForce = 'false'
 
-  private git: SimpleGit = Container.getValue('git') as SimpleGit
   private fsUtils: FsUtils = Container.get(FsUtils)
-  private hardConfig: HardConfig = Container.get(HardConfig)
-
+  
   async run() {
     debug('Running Init command')
-    const { args, flags } = await this.parse(Init)
+    const git: SimpleGit = Container.getValue('git') as SimpleGit
+    const hardConfig: HardConfig = Container.get(HardConfig)
+    // const { args, flags } = await this.parse(Init)
 
-    const { force } = flags
+    const { force } = this.flags
     const forceAll = force === 'true' || force === 'all'
 
     // Create folder structure, with /config
     try {
-      const madeDir = await this.fsUtils.createSubDirectoryFromDirectoryPathIfNecessary(this.hardConfig.configPath)
+      const madeDir = await this.fsUtils.createSubDirectoryFromDirectoryPathIfNecessary(hardConfig.configPath)
 
       if (madeDir) {
-        ux.info(resultNormalColor(`Created directory ${resultHighlighColor(this.hardConfig.configPath)}`))
+        ux.info(resultNormalColor(`Created directory ${resultHighlighColor(hardConfig.configPath)}`))
       }
     } catch (error) {
       // If directory already exists, silently swallow the error
@@ -127,8 +127,8 @@ export default class Init extends BaseCommand<typeof Init> {
 
     const forceConfigFile =
       forceAll ||
-      force === path.basename(this.hardConfig.configJSON5FilePath) ||
-      force === path.basename(this.hardConfig.configYAMLFilePath)
+      force === path.basename(hardConfig.configJSON5FilePath) ||
+      force === path.basename(hardConfig.configYAMLFilePath)
 
     const notEmptyString = function (val: string): string {
       if (val) {
@@ -146,37 +146,37 @@ export default class Init extends BaseCommand<typeof Init> {
       throw new ChptrError('Must be an email address', 'init.run.emailstring', 7)
     }
 
-    const hasYAMLConfigFile = await this.fsUtils.fileExists(this.hardConfig.configYAMLFilePath)
-    const hasJSON5ConfigFile = await this.fsUtils.fileExists(this.hardConfig.configJSON5FilePath)
+    const hasYAMLConfigFile = await this.fsUtils.fileExists(hardConfig.configYAMLFilePath)
+    const hasJSON5ConfigFile = await this.fsUtils.fileExists(hardConfig.configJSON5FilePath)
     let existingStyle = ''
     if (hasJSON5ConfigFile) {
       existingStyle = 'JSON5'
     } else if (hasYAMLConfigFile) {
       existingStyle = 'YAML'
-    } else if (!flags.style) {
+    } else if (!this.flags.style) {
       queryBuilder.add('style', queryBuilder.list(['JSON5', 'YAML'], 'Choose a config file style.', 'JSON5'))
     }
 
     if (forceConfigFile || (!hasYAMLConfigFile && !hasJSON5ConfigFile)) {
       const options: any = {
         author: {
-          arg: flags.author,
+          arg: this.flags.author,
           query: queryBuilder.textinput('What is the name of the author?', undefined, notEmptyString)
         },
         directorystructure: {
-          arg: flags.directorystructure,
+          arg: this.flags.directorystructure,
           query: queryBuilder.list(Init.directoryStructureOptions, 'What directory structure do you initially want?', 'chapters/')
         },
         email: {
-          arg: flags.email,
+          arg: this.flags.email,
           query: queryBuilder.textinput('What is the email of the author?', undefined, emailString)
         },
         language: {
-          arg: flags.language,
+          arg: this.flags.language,
           query: queryBuilder.textinput('What language code do you use? (ex. en, fr, es...)', 'en')
         },
         name: {
-          arg: args.name,
+          arg: this.args.name,
           query: queryBuilder.textinput('What is the project working name?', 'MyNovel', notEmptyString)
         }
       }
@@ -190,10 +190,10 @@ export default class Init extends BaseCommand<typeof Init> {
 
     // check if we prompt for gitRemote and keep doGitOperation=true
     let doGitOperation = true
-    if (!flags.gitRemote) {
+    if (!this.flags.gitRemote) {
       const isRepoWithRemote =
-        (await this.git.checkIsRepo()) &&
-        (await this.git.getRemotes(false).then((result: any[]) => result.find(value => value.name === 'origin') !== undefined))
+        (await git.checkIsRepo()) &&
+        (await git.getRemotes(false).then((result: any[]) => result.find(value => value.name === 'origin') !== undefined))
 
       const forceConfig = forceAll || force === 'gitRemote'
       if (!isRepoWithRemote || forceConfig) {
@@ -206,13 +206,13 @@ export default class Init extends BaseCommand<typeof Init> {
     // do prompt what's necessary
     const queryResponses: any = await queryBuilder.responses()
 
-    const name = args.name || queryResponses.name
-    const remoteRepo = flags.gitRemote || queryResponses.gitRemote || ''
-    const authorName = flags.author || queryResponses.author || ''
-    const authorEmail = flags.email || queryResponses.email || ''
-    const language = flags.language || queryResponses.language || 'en'
-    const style = existingStyle || flags.style || queryResponses.style
-    const directorystructure = flags.directorystructure || queryResponses.directorystructure
+    const name = this.args.name || queryResponses.name
+    const remoteRepo = this.flags.gitRemote || queryResponses.gitRemote || ''
+    const authorName = this.flags.author || queryResponses.author || ''
+    const authorEmail = this.flags.email || queryResponses.email || ''
+    const language = this.flags.language || queryResponses.language || 'en'
+    const style = existingStyle || this.flags.style || queryResponses.style
+    const directorystructure = this.flags.directorystructure || queryResponses.directorystructure
 
     // prepare for creating config files
 
@@ -230,20 +230,20 @@ export default class Init extends BaseCommand<typeof Init> {
 
     const allConfigOperations = [
       {
-        content: this.hardConfig.templateEmptyFileString,
-        fullPathName: this.hardConfig.emptyFilePath
+        content: hardConfig.templateEmptyFileString,
+        fullPathName: hardConfig.emptyFilePath
       },
       {
         content: `\n# ${name}\n\nA novel by ${authorName}.`, // can't be moved to HardConfig because it depends on not-yet-initialized soft config values
-        fullPathName: this.hardConfig.readmeFilePath
+        fullPathName: hardConfig.readmeFilePath
       },
       {
-        content: this.hardConfig.templateGitignoreString,
-        fullPathName: this.hardConfig.gitignoreFilePath
+        content: hardConfig.templateGitignoreString,
+        fullPathName: hardConfig.gitignoreFilePath
       },
       {
-        content: this.hardConfig.templateGitattributesString,
-        fullPathName: this.hardConfig.gitattributesFilePath
+        content: hardConfig.templateGitattributesString,
+        fullPathName: hardConfig.gitattributesFilePath
       }
     ]
 
@@ -252,22 +252,22 @@ export default class Init extends BaseCommand<typeof Init> {
       allConfigOperations.push(
         {
           content: virginSoftConfig.configDefaultsWithMetaYAMLString(overrideObj),
-          fullPathName: this.hardConfig.configYAMLFilePath
+          fullPathName: hardConfig.configYAMLFilePath
         },
         {
-          content: this.hardConfig.metadataFieldsDefaultsYAMLString,
-          fullPathName: this.hardConfig.metadataFieldsYAMLFilePath
+          content: hardConfig.metadataFieldsDefaultsYAMLString,
+          fullPathName: hardConfig.metadataFieldsYAMLFilePath
         }
       )
     } else if (style === 'JSON5') {
       allConfigOperations.push(
         {
           content: virginSoftConfig.configDefaultsWithMetaJSON5String(overrideObj),
-          fullPathName: this.hardConfig.configJSON5FilePath
+          fullPathName: hardConfig.configJSON5FilePath
         },
         {
-          content: this.hardConfig.metadataFieldsDefaultsJSONString,
-          fullPathName: this.hardConfig.metadataFieldsJSON5FilePath
+          content: hardConfig.metadataFieldsDefaultsJSONString,
+          fullPathName: hardConfig.metadataFieldsJSON5FilePath
         }
       )
     } else {
@@ -313,29 +313,29 @@ export default class Init extends BaseCommand<typeof Init> {
       try {
         ux.action.start(actionStartColor('Working on git repository'))
 
-        const isRepo = await this.git.checkIsRepo()
+        const isRepo = await git.checkIsRepo()
         if (!isRepo) {
-          await this.git.init()
-          await this.git.add('./*')
-          await this.git.commit('Initial commit')
+          await git.init()
+          await git.add('./*')
+          await git.commit('Initial commit')
           didGitInit = true
         }
 
-        const hasRemote: boolean = await this.git
+        const hasRemote: boolean = await git
           .getRemotes(false)
           .then((result: any[]) => result.find(value => value.name === 'origin') !== undefined)
         if (!hasRemote && remoteRepo) {
-          await this.git.addRemote('origin', remoteRepo)
+          await git.addRemote('origin', remoteRepo)
           didAddRemote = true
         }
 
-        const hasRemote2: boolean = await this.git
+        const hasRemote2: boolean = await git
           .getRemotes(false)
           .then((result: any[]) => result.find(value => value.name === 'origin') !== undefined)
         if (hasRemote2) {
-          await this.git.pull('origin', 'master', { '--allow-unrelated-histories': null, '--commit': null })
-          await this.git.push('origin', 'master', { '-u': null })
-          await this.git.pull('origin', 'master')
+          await git.pull('origin', 'master', { '--allow-unrelated-histories': null, '--commit': null })
+          await git.push('origin', 'master', { '-u': null })
+          await git.pull('origin', 'master')
           didSyncRemote = true
         }
       } catch (error: any) {
@@ -361,7 +361,7 @@ export default class Init extends BaseCommand<typeof Init> {
       }
     } else {
       // show why remote was not updated
-      const remote = await this.git.getRemotes(true).then((result: any[]) => result.find(value => value.name === 'origin'))
+      const remote = await git.getRemotes(true).then((result: any[]) => result.find(value => value.name === 'origin'))
       const remoteName = remote ? remote.refs.fetch : ''
       table.accumulator(
         infoColor(`git repository already exists with remote ${remoteName.resultNormalColor()}`),
@@ -372,8 +372,8 @@ export default class Init extends BaseCommand<typeof Init> {
     table.show('Init operations not done')
 
     // save other created files
-    await this.git.add('./**/*.*')
-    const commitSummary = await this.git.commit('Init command has created some new files')
+    await git.add('./**/*.*')
+    const commitSummary = await git.commit('Init command has created some new files')
     if (commitSummary.commit) {
       ux.info(`Commited all available files ${resultHighlighColor(commitSummary.commit)}`)
     }

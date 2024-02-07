@@ -30,7 +30,7 @@ export default class Track extends BaseCommand<typeof Track> {
 
   async run() {
     debug('Running Track command')
-    const { args } = await this.parse(Track)
+    // const { args } = await this.parse(Track)
 
     const gitUtils = Container.get(GitUtils)
     const coreUtils = Container.get(CoreUtils)
@@ -39,7 +39,7 @@ export default class Track extends BaseCommand<typeof Track> {
 
     const queryBuilder = new QueryBuilder(true)
 
-    if (!args.filename) {
+    if (!this.args.filename) {
       const untrackedGitFiles = await gitUtils.GetGitListOfUntrackedFiles()
       const untrackedGitFilesFlat: string[] = []
       for (const utFile of untrackedGitFiles) {
@@ -76,7 +76,7 @@ export default class Track extends BaseCommand<typeof Track> {
     }
 
     const queryResponses: any = await queryBuilder.responses()
-    const filename = args.filename || queryResponses.filename || ''
+    const filename = this.args.filename || queryResponses.filename || ''
 
     if (!filename) {
       throw new ChptrError('No filename to track', 'track.run', 22)

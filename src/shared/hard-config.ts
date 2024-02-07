@@ -39,6 +39,7 @@ export class HardConfig {
   private readonly rootPath: string
   constructor(@InjectValue('rootPath') rootPath: string) {
     debug('CONSTRUCTOR HARD-CONFIG')
+    debug(`will use path ${rootPath}`)
     this.rootPath = path.join(rootPath)
   }
 

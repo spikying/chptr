@@ -41,9 +41,9 @@ export default class Split extends BaseCommand<typeof Split> {
 
   async run() {
     debug('In Split command')
-    const { args, flags } = await this.parse(Split)
-    const { type } = flags
-    const { compact } = flags
+    // const { args, flags } = await this.parse(Split)
+    const { type } = this.flags
+    const { compact } = this.flags
 
     const coreUtils = Container.get(CoreUtils)
     const softConfig = Container.get(SoftConfig)
@@ -52,8 +52,8 @@ export default class Split extends BaseCommand<typeof Split> {
     const statistics = Container.get(Statistics)
     const markupUtils = Container.get(MarkupUtils)
 
-    debug(`args: ${JSON.stringify(args)}`)
-    const chapterId = await coreUtils.checkArgPromptAndExtractChapterId(args.origin || '', 'What chapter to split?')
+    debug(`args: ${JSON.stringify(this.args)}`)
+    const chapterId = await coreUtils.checkArgPromptAndExtractChapterId(this.args.origin || '', 'What chapter to split?')
     if (!chapterId) {
       throw new ChptrError('No chapter found with id given', 'split.run', 45)
     }
