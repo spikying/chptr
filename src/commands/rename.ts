@@ -4,7 +4,7 @@ import * as path from 'node:path'
 import { Container } from 'typescript-ioc'
 import { ChapterId } from '../shared/chapter-id'
 import { ChptrError } from '../shared/chptr-error'
-import { actionStartColor, actionStopColor } from '../shared/colorize'
+import { actionStartColor, actionStopColor, errorColor } from '../shared/colorize'
 import { CoreUtils } from '../shared/core-utils'
 import { FsUtils } from '../shared/fs-utils'
 import { GitUtils } from '../shared/git-utils'
@@ -233,7 +233,7 @@ export default class Rename extends BaseCommand<typeof Rename> {
       // extractedMarkup.title = newTitle
     } catch (error: any) {
       throw new ChptrError(
-        `Could not load and extract metadata from ${metadataFile}.  ${error.toString().errorColor()}`,
+        `Could not load and extract metadata from ${metadataFile}.  ${errorColor(error.toString())}`,
         'rename.replacetitleinobject',
         48
       )

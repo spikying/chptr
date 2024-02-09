@@ -180,7 +180,7 @@ export class FsUtils {
         .replaceAll('\r\n', '\n')
       return content
     } catch (error: any) {
-      debug(error.toString().errorColor())
+      debug(errorColor(error.toString()))
       ux.warn(errorColor(`Could not read file content of ${filepath}`))
       return ''
     }

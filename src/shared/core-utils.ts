@@ -281,9 +281,9 @@ export class CoreUtils {
       await Promise.all(pandocRuns).catch(async error => {
         await this.fsUtils.createFile(tempMdFilePath, fullCleanedOrTransformedContent)
         throw new ChptrError(
-          `Error trying to run Pandoc.  You need to have it installed and accessible globally, with version 2.7.3 minimally.\nLook into ${tempMdFilePath.toString()} with following error:\n${error
-            .toString()
-            .errorColor()}\nYou can delete temp file afterwards.`,
+          `Error trying to run Pandoc.  You need to have it installed and accessible globally, with version 2.7.3 minimally.\nLook into ${tempMdFilePath.toString()} with following error:\n${errorColor(
+            error.toString()
+          )}\nYou can delete temp file afterwards.`,
           'command:build:index',
           52
         )
@@ -649,7 +649,33 @@ export class CoreUtils {
       ]
     }
 
-    if (filetype === 'pdf' || filetype === 'tex') {
+    if (filetype === 'pdf') {
+      chaptersFile = '"' + tmpMDfileTexPath + '" '
+
+      const cssFullPath = path.join(this.hardConfig.configPath, 'template.css')
+      if (await this.fsUtils.fileExists(cssFullPath)) {
+        pandocArgs = [...pandocArgs, `--css`, `"${cssFullPath}"`]
+      } else {
+        ux.warn(`For a better output, create a css template at ${cssFullPath}`)
+      }
+
+      const headerFullPath = path.join(this.hardConfig.configPath, 'header.html')
+      if (await this.fsUtils.fileExists(headerFullPath)) {
+        pandocArgs = [...pandocArgs, `--variable`, `header-html="${headerFullPath}"`]
+      } else {
+        ux.warn(`For a better output, create a header template at ${headerFullPath}`)
+      }
+
+      pandocArgs = pandocArgs.concat(await this.luaFilters('*.latex.lua', allLuaFilters))
+      pandocArgs = [
+        ...pandocArgs,
+        '--top-level-division=chapter',
+        '--to',
+        'html+smart' //+fancy_lists-emoji+definition_lists'
+      ]
+    }
+
+    if (filetype === 'tex') {
       chaptersFile = '"' + tmpMDfileTexPath + '" '
 
       const templateFullPath = path.join(this.hardConfig.configPath, 'template.latex')

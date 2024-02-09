@@ -4,7 +4,7 @@ import { SimpleGit } from 'simple-git'
 import * as validator from 'validator'
 import { Container } from 'typescript-ioc'
 import { ChptrError } from '../shared/chptr-error'
-import { actionStartColor, actionStopColor, infoColor, resultHighlighColor, resultNormalColor } from '../shared/colorize'
+import { actionStartColor, actionStopColor, errorColor, infoColor, resultHighlighColor, resultNormalColor } from '../shared/colorize'
 import { FsUtils } from '../shared/fs-utils'
 import { HardConfig } from '../shared/hard-config'
 import { Author, SoftConfig } from '../shared/soft-config'
@@ -339,7 +339,7 @@ export default class Init extends BaseCommand<typeof Init> {
           didSyncRemote = true
         }
       } catch (error: any) {
-        this.warn(error.toString().errorColor())
+        this.warn(errorColor(error.toString()))
       } finally {
         let msg = ''
         if (!didGitInit && !didAddRemote && !didSyncRemote) {

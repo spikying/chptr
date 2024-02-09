@@ -14,6 +14,7 @@ import { HardConfig } from './hard-config'
 import Convict = require('convict')
 import yaml = require('js-yaml')
 import JSON5 = require('json5')
+import { errorColor } from './colorize'
 const moment = require('moment')
 
 Convict.addFormat(require('convict-format-with-validator').email)
@@ -244,7 +245,7 @@ export class SoftConfig {
           throw new ChptrError('config style must be JSON5 or YAML', 'soft-config:ctor', 308)
         }
       } catch (error: any) {
-        debug(error.toString().errorColor())
+        debug(errorColor(error.toString()))
         throw new ChptrError(`loading or processing config files error: ${error.toString().infoColor()}`, 'soft-config.ctor', 200)
       }
 
