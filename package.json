@@ -15,7 +15,7 @@
     "debug": "^4.3.4",
     "deep-diff": "^1.0.2",
     "diff": "^5.2.0",
-    "glob": "^10.3.10",
+    "glob": "^10.3.12",
     "inquirer": "^8.2.6",
     "inquirer-fuzzy-path": "^2.3.0",
     "js-yaml": "^4.1.0",
