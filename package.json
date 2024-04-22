@@ -38,7 +38,7 @@
     "@types/convict": "^6.1.6",
     "@types/debug": "^4.1.12",
     "@types/deep-diff": "^1.0.5",
-    "@types/diff": "^5.0.9",
+    "@types/diff": "^5.2.0",
     "@types/inquirer": "^9.0.7",
     "@types/js-yaml": "^4.0.9",
     "@types/latinize": "^0.2.18",
