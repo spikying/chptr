@@ -28,7 +28,7 @@
     "typescript-ioc": "^3.2.2",
     "validator": "^13.11.0",
     "word-regex": "^0.1.2",
-    "yaml": "^2.4.1"
+    "yaml": "^2.4.5"
   },
   "description": "CLI tool to handle separate Markdown files with special markup notations and export as a complete document",
   "devDependencies": {
